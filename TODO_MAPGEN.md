@@ -5,7 +5,7 @@
 - [ ] Construire une vraie bibliothèque/procédure de formes Upgraded réutilisable avec tous les archétypes.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
 
-## UX / outillage — v1.3
+## UX / outillage
 - [x] Barre de progression de génération (progression par étapes du pipeline).
 - [x] Bouton seed aléatoire.
 - [x] Import `.edm` / `.map` / `.sav` en lecture.
@@ -19,6 +19,17 @@
 - [~] Génération multi-tailles : sélecteur prêt, mais seule 768 est calibrée dans le moteur actuel.
 - [x] Onglet Statistiques basique.
 - [x] Scrollbars dans Validations / Pipeline / Métadonnées / Statistiques.
+
+### Visualisation / confort
+- [ ] Ajouter un slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** (pas pour la vue Globale), afin de comparer plus facilement les couches avec la map.
+- [ ] Quand un processus est terminé, ne pas laisser la barre de progression verte et pleine : signaler visuellement la fin (disparition, état terminé ou changement de couleur, par exemple bleu).
+- [ ] Étendre la barre de progression à **tous les processus potentiellement longs**, pas uniquement à la génération.
+- [ ] Pouvoir déplacer la visualisation par drag dans toutes les directions et rendre le zoom molette plus fluide / moins latent.
+- [ ] Ajouter un mode de projection de la visualisation reprenant la forme en **parallélogramme** utilisée par le jeu.
+
+### Statistiques
+- [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
+- [ ] Ajouter plus tard des graphiques pour les statistiques qui gagnent à être visualisées.
 - [ ] Édition directe de la map — gros morceau, **pas maintenant**.
 
 ## À préserver

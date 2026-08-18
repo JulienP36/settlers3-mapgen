@@ -19,6 +19,7 @@ PIPELINE_STAGES = (
     'hydrology.bathymetry',
     'hydrology.river_cleanup',
     'biomes.start_mini_swamps',
+    'biomes.swamp_transitions',
     'snow.summit_rebuild',
     'resources.minerals_v7_nogap',
     'resources.fish_shore_only',

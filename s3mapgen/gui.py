@@ -17,7 +17,7 @@ VIEWS={'Global':'global','Heightmap':'heightmap','Ressources':'resources','Terri
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__();self.title('Settlers III MapGen v1.3.1');self.geometry('1380x860');self.minsize(1080,720)
+        super().__init__();self.title('Settlers III MapGen v1.3.2');self.geometry('1380x860');self.minsize(1080,720)
         self.generator=MapGenerator(LEGACY_PROFILE,LIBRARY,UPGRADED_PROFILE,UPGRADED_REFERENCE,progress_callback=self._progress_stage)
         self.current=None;self.photo=None;self.import_source=None;self.zoom=1.0
         self._build();self._size_changed()
@@ -108,7 +108,7 @@ class App(tk.Tk):
         folder=Path(filedialog.askdirectory(title='Dossier de sortie') or '')
         if not folder:return
         st=self.current.state;srcfmt=st.metadata.get('source_format');side=st.side
-        base=f"S3_{st.metadata.get('archetype','Imported')}_{st.metadata.get('mode','Map')}_{len(st.starts) or st.metadata.get('players',0)}P_{side}x{side}_seed_{st.metadata.get('seed','import')}_MapGenV1_3_1".replace(' ','')
+        base=f"S3_{st.metadata.get('archetype','Imported')}_{st.metadata.get('mode','Map')}_{len(st.starts) or st.metadata.get('players',0)}P_{side}x{side}_seed_{st.metadata.get('seed','import')}_MapGenV1_3_2".replace(' ','')
         made=[]
         if side==768:
             edm=folder/(base+'.edm');mp=folder/('1-'+base+'.map');export_with_scaffold(st,EDM_SCAFFOLD,edm);export_with_scaffold(st,MAP_SCAFFOLD,mp);made += [edm.name,mp.name]

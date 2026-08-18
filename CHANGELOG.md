@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.3.2 — editor-safe starts / snow blocking / swamp transitions
+- Starts : ajout d'une marge de sécurité éditeur autour des 33 cellules natives, sans nettoyage artificiel du terrain.
+- Starts : distance conservatrice accrue vis-à-vis de l'eau et exclusion stricte des objets statiques dans le halo éditeur.
+- Building Stones : le footprint complet doit désormais rester hors du halo protégé du start, pas seulement l'ancre.
+- Neige : `Snow129` et `Snow128` deviennent non marchables via l'accessibility statique, sur le même principe que le correctif Water.
+- Marais : reconstruction systématique `Grass16 -> 21 -> 81 -> 80` depuis le masque complet ; les mini-marais de départ utilisent désormais une famille cohérente.
+- Validators : ajout de contrôles d'accessibilité Snow et de chaînes de transitions Desert/Swamp/Snow.
+- TODO Markdown enrichi avec les prochaines améliorations UI/statistiques demandées.
+- Suppression de `docs/user_todo_20260818.txt`, désormais entièrement absorbé dans `TODO_MAPGEN.md`.
+- Développé avec l'assistance de ChatGPT.
+
 ## v1.3.1 — preview crash fix / README presentation
 - Correction du crash `NameError: Image is not defined` lors de la génération/rafraîchissement de l'aperçu.
 - Import explicite de `PIL.Image` utilisé par le redimensionnement/zoom.

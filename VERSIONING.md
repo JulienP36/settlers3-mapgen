@@ -6,7 +6,8 @@ Current reconstructed tags:
 - `v1.1` — modes/archetypes separation and early-start architecture;
 - `v1.2` — Upgraded profile implementation;
 - `v1.3` — tooling/UX pass (imports, views, zoom, statistics, dynamic size/player UI);
-- `v1.3.1` — preview resize crash fix + README project presentation.
+- `v1.3.1` — preview resize crash fix + README project presentation;
+- `v1.3.2` — editor-safe starts, Snow blocking and Swamp transition hardening.
 
 Future releases should follow:
 1. update code + references/TODO;
