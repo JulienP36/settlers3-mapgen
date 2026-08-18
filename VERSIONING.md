@@ -5,7 +5,8 @@ Current reconstructed tags:
 - `v1.0.1` — Windows launcher/Python detection fix;
 - `v1.1` — modes/archetypes separation and early-start architecture;
 - `v1.2` — Upgraded profile implementation;
-- `v1.3` — tooling/UX pass (imports, views, zoom, statistics, dynamic size/player UI).
+- `v1.3` — tooling/UX pass (imports, views, zoom, statistics, dynamic size/player UI);
+- `v1.3.1` — preview resize crash fix + README project presentation.
 
 Future releases should follow:
 1. update code + references/TODO;

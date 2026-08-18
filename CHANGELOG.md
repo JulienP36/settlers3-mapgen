@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.1 — preview crash fix / README presentation
+- Correction du crash `NameError: Image is not defined` lors de la génération/rafraîchissement de l'aperçu.
+- Import explicite de `PIL.Image` utilisé par le redimensionnement/zoom.
+- Ajout d'un test de non-régression dédié au rendu GUI.
+- README entièrement remis à jour avec une présentation du projet, les modes, archétypes, architecture des starts et état réel de la v1.3.1.
+- Aucun changement dans les règles de génération Legacy/Upgraded.
+
 ## v1.3 — tooling / UX
 - Ajout barre de progression par étapes de pipeline.
 - Bouton seed aléatoire.

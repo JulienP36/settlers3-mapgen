@@ -1,36 +1,28 @@
-# Settlers III MapGen v1.2 — Release validation
+# Settlers III MapGen v1.3.1 — Release validation
 
 Date: 2026-08-18
 
-## Targeted automated tests
-- Architecture names / Upgraded enabled / Custom reserved: PASS
-- Starts before detailed hydrology: PASS
-- Upgraded 4P full HARD validators: PASS
-- Upgraded 20P full HARD validators: PASS
-- Legacy still generates: PASS
-- Custom fails explicitly: PASS
+## Scope of this patch
+- Fix GUI preview crash caused by a missing `PIL.Image` import.
+- Refresh README with a complete project presentation and current v1.3.1 status.
+- No modification to Legacy or Upgraded generation rules/configuration.
 
-(The complete historical smoke suite is computationally long in this environment; targeted v1.2 tests were run individually.)
+## Targeted automated checks
+- `tests/test_gui_regressions.py`: **PASS**.
+- `s3mapgen` compileall: **PASS**.
+- GUI module import: **PASS**.
+- `Image.Resampling.NEAREST` available: **PASS**.
+- Package version: `1.3.1`.
 
-## Upgraded sample 20P — seed 2026082002
-- 35/35 validators PASS.
-- Starts static: 20/20 PASS.
-- Water H/access: PASS.
-- External edge Water7: PASS.
-- Micro-water 1–4: 0.
-- River orphans: 0; bad Water mouths: 0; max=55.
-- Fish: 32,313; Water-only; no River; <=HEX12 true Shore; 0 on map edge.
-- Minerals exact family occupied-cell totals: PASS.
-- Adult trees: 1,652 total in 20P (=1,352 global + up to 15/player bonus).
-- SmallTree84: 406.
-- Building Stones: 1,783 anchors total / 15,220 units total; footprint PASS; min HEX4.
-- Decorations: desert60 / swamp2 / pure stones89 / reefs11.
-- No ordinary objects on Mountain.
-- EDM + MAP exported successfully.
+## Existing generation regression suite
+A full `pytest -q` run was started in the execution environment. Five tests completed successfully before the environment timeout; no failure was observed before timeout. This patch does not modify the generation engine, profiles, resources, objects, starts or validators.
 
-## Remaining external validation
-- Official editor start acceptance, especially high player counts.
-- View Map / game crash smoke.
-- Immediate SAV runtime Water check.
-- Controlled Building Stone harvestability / exact editor hitbox.
-- Visual validation of Upgraded morphology before generalized fresh-shape work.
+The previous v1.2/v1.3 generation validation remains the latest completed generation validation:
+- Upgraded 4P HARD validators: PASS.
+- Upgraded 20P HARD validators: PASS.
+- Legacy generation: PASS.
+- 20P Upgraded sample: 35/35 validators PASS.
+
+## External validation still required
+- User-side Windows GUI generation/preview smoke after this crash fix.
+- Official editor/game validation remains required for generated maps as before.
