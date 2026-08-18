@@ -1,5 +1,5 @@
 {
-  "profile_name": "Legacy 768 v1.2",
+  "profile_name": "Upgraded 768 v1.2",
   "side": 768,
   "max_players": 20,
   "supported_players": [
@@ -133,7 +133,10 @@
     "adult_start_bonus_per_player": 15,
     "small_tree_id": 84,
     "small_tree_target": 406,
-    "small_tree_separate_pool": true
+    "small_tree_separate_pool": true,
+    "forest_centers": 38,
+    "adult_cluster_share": 0.44,
+    "small_tree_cluster_share": 0.76
   },
   "building_stones": {
     "active_ids": [
@@ -191,7 +194,10 @@
         1,
         1
       ]
-    ]
+    ],
+    "cluster_share": 0.3,
+    "cluster_centers": 60,
+    "cluster_typical_anchors": 8
   },
   "decor": {
     "reef_target": 11,
@@ -215,7 +221,10 @@
       66,
       67
     ],
-    "forbid_objects_on_mountain": true
+    "forbid_objects_on_mountain": true,
+    "desert_target": 60,
+    "swamp_target": 2,
+    "decorative_stone_target": 89
   },
   "starts": {
     "min_pair_hex_distance": 52,
@@ -224,5 +233,18 @@
     "height_range_max": 10,
     "immediate_height_delta_max": 4,
     "immediate_height_delta_sum_max": 14
+  },
+  "profile_kind": "upgraded",
+  "upgraded_rules": {
+    "start_first": true,
+    "start_bonus_outside_global_quota": true,
+    "mini_swamp_per_player": true,
+    "global_swamp_forbidden_in_start_zone": true,
+    "fish_after_final_hydrology": true,
+    "minerals_v7_nogap": true,
+    "snow_from_relief": true,
+    "stone_full_footprint": true,
+    "deep_water_external_edge": true,
+    "coast_not_straight_clipped": true
   }
 }

@@ -8,6 +8,7 @@ from scipy import ndimage
 
 from .model import MapState
 from .profile import load_profile
+from .binary import read_area
 from .constants import *
 from .hexgrid import hex_distance, neighbor_count, component_labels, component_sizes, depth, dilate
 from .rules import ValidationResult, PIPELINE_STAGES
@@ -28,13 +29,17 @@ class MapGenerator:
     rebuild our custom gameplay layers. More varied morphology can be added behind this interface.
     """
 
-    def __init__(self, profile_path:Path|str, native_library_path:Path|str):
-        self.profile=load_profile(profile_path)
+    def __init__(self, profile_path:Path|str, native_library_path:Path|str, upgraded_profile_path:Path|str|None=None, upgraded_reference_path:Path|str|None=None):
+        self.legacy_profile=load_profile(profile_path)
+        self.upgraded_profile=load_profile(upgraded_profile_path) if upgraded_profile_path else self.legacy_profile
+        self.profile=self.legacy_profile
         if self.profile['side'] != 768:
-            raise ValueError('Continental v1 is calibrated for 768 only')
+            raise ValueError('MapGen v1.2 is calibrated for 768 only')
         self.lib=np.load(native_library_path,allow_pickle=True)
+        self.upgraded_reference=read_area(upgraded_reference_path) if upgraded_reference_path else None
         self.side=768
         self.stage_log=[]
+        self.current_mode='legacy'
 
     def log(self, stage:str, detail:str=''):
         self.stage_log.append(stage + (f' — {detail}' if detail else ''))
@@ -48,9 +53,16 @@ class MapGenerator:
         if players not in self.profile['supported_players']:
             raise ValueError(f'Unsupported player count: {players}')
         self.stage_log=[]
+        self.current_mode=mode
+        self.profile=self.upgraded_profile if mode=='upgraded' else self.legacy_profile
         rng=np.random.default_rng(seed); pr=random.Random(seed)
-        # Architecture verrouillée : l'archétype ne produit que la macro-topologie.
-        state=self._morphology_from_native(rng,pr)
+        # Archetype = macro-forme. Legacy uses native templates; Upgraded/Continental
+        # currently uses the canonical validated 768 checkpoint as its executable
+        # morphology reference until the archetype-local shape library is generalized.
+        if mode=='upgraded':
+            state=self._morphology_from_upgraded_reference(rng,pr)
+        else:
+            state=self._morphology_from_native(rng,pr)
         self.log('archetype.macro_layout',f'{arch_spec.label}')
         # Les starts sont placés immédiatement après le macro-layout, AVANT les couches détaillées.
         self._place_starts(state,players,rng)
@@ -86,6 +98,26 @@ class MapGenerator:
         state.objects[:]=0;state.resources[:]=0;state.accessibility[:]=0;state.claim[:]=255
         state.metadata['native_template_index']=idx;state.metadata['native_transform']=transform
         self.log('morphology.native_template',f'template={idx} transform={transform}')
+        return state
+
+    def _morphology_from_upgraded_reference(self,rng,pr)->MapState:
+        if self.upgraded_reference is None:
+            raise RuntimeError('Upgraded reference checkpoint is unavailable')
+        base=self.upgraded_reference
+        state=MapState.empty(self.side)
+        t=base.terrain.copy();h=base.height.copy()
+        transform=pr.randrange(4)
+        if transform==1:
+            t=np.rot90(t,2).copy();h=np.rot90(h,2).copy()
+        elif transform==2:
+            t=t.T.copy();h=h.T.copy()
+        elif transform==3:
+            t=np.rot90(t.T,2).copy();h=np.rot90(h.T,2).copy()
+        state.terrain[:]=t;state.height[:]=h
+        state.objects[:]=0;state.resources[:]=0;state.accessibility[:]=0;state.claim[:]=255
+        state.metadata['upgraded_reference']='resourcepass_v8_relief_snow'
+        state.metadata['upgraded_transform']=transform
+        self.log('morphology.upgraded_checkpoint',f'transform={transform}')
         return state
 
     def _cleanup_micro_water(self,state,rng):
@@ -144,7 +176,14 @@ class MapGenerator:
         T[stray]=GRASS
         actual_shore=(~water)&touching&np.isin(T,[GRASS,SHORE])
         T[actual_shore]=SHORE
-        self.log('hydrology.bathymetry',f'water={int(water.sum())} shore={int((T==SHORE).sum())}')
+        if self.current_mode=='upgraded':
+            # External map edge is deep Water7. This does not derive a shallow
+            # gradient from the rectangular map boundary; it only normalizes the
+            # already-ocean edge cells to the locked deep-water state.
+            T[0,:]=7;T[-1,:]=7;T[:,0]=7;T[:,-1]=7
+            H[0,:]=0;H[-1,:]=0;H[:,0]=0;H[:,-1]=0
+            A[0,:]=1;A[-1,:]=1;A[:,0]=1;A[:,-1]=1
+        self.log('hydrology.bathymetry',f'water={int(np.isin(T,WATER_IDS).sum())} shore={int((T==SHORE).sum())}')
 
 
     def _cleanup_rivers(self,state):
@@ -338,8 +377,13 @@ class MapGenerator:
             pts=np.argwhere(m);k=min(len(pts),round(len(pts)*pct))
             if k:
                 ids=rng.choice(len(pts),k,replace=False);p=pts[ids];selected[p[:,0],p[:,1]]=1
-        target=cfg['target_cells'];cur=int(selected.sum())
+        target=cfg['target_cells']
         eligible=water&(d>=1)&(d<=cfg['max_shore_hex_distance'])
+        if self.current_mode=='upgraded':
+            border=np.zeros_like(water);border[[0,-1],:]=1;border[:,[0,-1]]=1
+            eligible &= ~border
+            selected &= ~border
+        cur=int(selected.sum())
         if cur<target:
             pts=np.argwhere(eligible&~selected);add=target-cur
             if len(pts)<add:raise RuntimeError(f'Fish target impossible: eligible={int(eligible.sum())}, need={target}')
@@ -354,19 +398,36 @@ class MapGenerator:
     # ---------- objects ----------
     def _place_decorations(self,state,rng,pr):
         T,O,A=state.terrain,state.objects,state.accessibility;core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
-        sw=np.argwhere(np.isin(T,SWAMP_IDS)&~core)
-        if len(sw):
-            for i in rng.choice(len(sw),min(260,len(sw)),replace=False):
-                y,x=map(int,sw[i]);O[y,x]=pr.choice(self.profile['decor']['swamp_reed_ids'])
-        de=np.argwhere(np.isin(T,DESERT_IDS)&~core)
-        if len(de):
-            for i in rng.choice(len(de),min(140,len(de)),replace=False):
-                y,x=map(int,de[i]);oid=pr.choice(self.profile['decor']['desert_ids']);O[y,x]=oid;A[y,x]=1 if oid in (78,79) else 0
-        water=np.isin(T,WATER_IDS);deep=np.argwhere((T==7)&(neighbor_count(~water)==0))
-        if len(deep):
-            for i in rng.choice(len(deep),min(self.profile['decor']['reef_target'],len(deep)),replace=False):
+        cfg=self.profile['decor']
+        # Swamp: Reeds only. Upgraded exact 768 target is x2 reference = 2.
+        sw=np.argwhere(np.isin(T,SWAMP_IDS)&~core&(O==0))
+        sw_target=min(int(cfg.get('swamp_target',260)),len(sw))
+        if sw_target:
+            for i in rng.choice(len(sw),sw_target,replace=False):
+                y,x=map(int,sw[i]);O[y,x]=pr.choice(cfg['swamp_reed_ids'])
+        # Desert: only calibrated desert families; Upgraded exact target = 60.
+        de=np.argwhere(np.isin(T,DESERT_IDS)&~core&(O==0))
+        de_target=min(int(cfg.get('desert_target',140)),len(de))
+        if de_target:
+            for i in rng.choice(len(de),de_target,replace=False):
+                y,x=map(int,de[i]);oid=pr.choice(cfg['desert_ids']);O[y,x]=oid;A[y,x]=1 if oid in (78,79) else 0
+        # Pure decorative stones 1..28: rare, Grass only, never Mountain.
+        stone_target=int(cfg.get('decorative_stone_target',0))
+        gp=np.argwhere((T==GRASS)&~core&(O==0))
+        placed=0
+        if stone_target and len(gp):
+            for j in rng.permutation(len(gp)):
+                if placed>=stone_target:break
+                y,x=map(int,gp[j])
+                if self._obj_clear(state,x,y,2):
+                    O[y,x]=pr.randint(1,28);A[y,x]=1;placed+=1
+        # Reefs: sparse open deep sea with wide bypass.
+        water=np.isin(T,WATER_IDS);deep=np.argwhere((T==7)&(neighbor_count(~water)==0)&(O==0))
+        reef_target=min(cfg['reef_target'],len(deep))
+        if reef_target:
+            for i in rng.choice(len(deep),reef_target,replace=False):
                 y,x=map(int,deep[i]);O[y,x]=pr.randint(111,114);A[y,x]=1
-        self.log('objects.decorations')
+        self.log('objects.decorations',f'desert={de_target} swamp={sw_target} decor_stones={placed} reefs={reef_target}')
 
     def _obj_clear(self,state,x,y,r=2):
         O=state.objects
@@ -377,31 +438,50 @@ class MapGenerator:
 
     def _place_trees(self,state,rng,pr):
         T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['trees'];core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
-        adult_ids=cfg['adult_ids'];adult=0
-        # Explicit start bonus outside global quota.
+        adult_ids=cfg['adult_ids'];bonus_total=0
+        # Start bonus OUTSIDE global quota.
         for sx,sy in state.starts:
             cand=[(x,y) for y in range(max(2,sy-28),min(self.side-2,sy+29)) for x in range(max(2,sx-28),min(self.side-2,sx+29)) if 12<=hex_distance(sx,sy,x,y)<=27 and T[y,x]==GRASS and O[y,x]==0]
             pr.shuffle(cand);k=0
             for x,y in cand:
                 if k>=cfg['adult_start_bonus_per_player']:break
-                if self._obj_clear(state,x,y,2):O[y,x]=pr.choice(adult_ids);A[y,x]=1;k+=1;adult+=1
+                if self._obj_clear(state,x,y,2):O[y,x]=pr.choice(adult_ids);A[y,x]=1;k+=1;bonus_total+=1
             if k<12:raise RuntimeError(f'Insufficient start forest near {(sx,sy)}')
-        # Global adult quota is separate, exactly as locked.
-        global_adult=0;pts=np.argwhere((T==GRASS)&(O==0)&~core)
+        target=cfg['adult_global_target'];cluster_target=round(target*cfg.get('adult_cluster_share',0.0));global_adult=0
+        # Upgraded forest centers: loose, hitbox-aware, irregular.
+        centers=[]
+        if cluster_target:
+            cp=np.argwhere((T==GRASS)&(O==0)&~core)
+            if len(cp):
+                for i in rng.choice(len(cp),min(cfg.get('forest_centers',38),len(cp)),replace=False):
+                    y,x=map(int,cp[i]);centers.append((x,y))
+            attempts=0
+            while global_adult<cluster_target and centers and attempts<cluster_target*60:
+                attempts+=1;cx,cy=centers[int(rng.integers(len(centers)))]
+                # loose forest radius ~5..12 HEX
+                rad=int(rng.integers(5,13));x=int(np.clip(cx+rng.integers(-rad,rad+1),2,self.side-3));y=int(np.clip(cy+rng.integers(-rad,rad+1),2,self.side-3))
+                if hex_distance(cx,cy,x,y)<=rad and T[y,x]==GRASS and O[y,x]==0 and not core[y,x] and self._obj_clear(state,x,y,2):
+                    O[y,x]=pr.choice(adult_ids);A[y,x]=1;global_adult+=1
+        pts=np.argwhere((T==GRASS)&(O==0)&~core)
         for i in rng.permutation(len(pts)):
-            if global_adult>=cfg['adult_global_target']:break
+            if global_adult>=target:break
             y,x=map(int,pts[i])
             if self._obj_clear(state,x,y,2):O[y,x]=pr.choice(adult_ids);A[y,x]=1;global_adult+=1
-        if global_adult<cfg['adult_global_target']:raise RuntimeError('Adult tree quota not reached')
-        # SmallTree84 separate pool; never replaces adults.
-        small=0;pts=np.argwhere((T==GRASS)&(O==0)&~core)
+        if global_adult<target:raise RuntimeError('Adult tree quota not reached')
+        # SmallTree84 separate pool, cluster-oriented in Upgraded.
+        small=0;small_target=cfg['small_tree_target'];small_cluster=round(small_target*cfg.get('small_tree_cluster_share',0.0));attempts=0
+        while small<small_cluster and centers and attempts<small_target*80:
+            attempts+=1;cx,cy=centers[int(rng.integers(len(centers)))];rad=int(rng.integers(5,13));x=int(np.clip(cx+rng.integers(-rad,rad+1),2,self.side-3));y=int(np.clip(cy+rng.integers(-rad,rad+1),2,self.side-3))
+            if hex_distance(cx,cy,x,y)<=rad and T[y,x]==GRASS and O[y,x]==0 and not core[y,x] and self._obj_clear(state,x,y,2):O[y,x]=cfg['small_tree_id'];A[y,x]=1;small+=1
+        pts=np.argwhere((T==GRASS)&(O==0)&~core)
         for i in rng.permutation(len(pts)):
-            if small>=cfg['small_tree_target']:break
+            if small>=small_target:break
             y,x=map(int,pts[i])
             if self._obj_clear(state,x,y,2):O[y,x]=cfg['small_tree_id'];A[y,x]=1;small+=1
-        if small<cfg['small_tree_target']:raise RuntimeError('SmallTree84 quota not reached')
-        self.log('objects.adult_trees',f'global={global_adult} bonus={adult}')
-        self.log('objects.smalltree84',f'count={small}')
+        if small<small_target:raise RuntimeError('SmallTree84 quota not reached')
+        state.metadata['adult_cluster_target']=cluster_target;state.metadata['small84_cluster_target']=small_cluster
+        self.log('objects.adult_trees',f'global={global_adult} bonus={bonus_total} cluster_target={cluster_target}')
+        self.log('objects.smalltree84',f'count={small} cluster_target={small_cluster}')
 
     def _place_building_stones(self,state,rng,pr):
         T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['building_stones']
@@ -432,13 +512,24 @@ class MapGenerator:
                 if k>=len(units):break
                 if ok(x,y):put(x,y,units[k],f'P{pid}');k+=1
             if k<len(units):raise RuntimeError(f'Building Stone start bonus failed P{pid}: {k}/{len(units)}')
-        # Global anchor quota.
-        pts=np.argwhere((T==GRASS)&(O==0)&~local);g=0
+        # Global anchor quota. Upgraded keeps ~30% cluster-oriented / ~70% scattered.
+        g=0;cluster_goal=round(cfg['global_anchor_target']*cfg.get('cluster_share',0.0));centers=[]
+        if cluster_goal:
+            cp=np.argwhere((T==GRASS)&(O==0)&~local)
+            if len(cp):
+                for i in rng.choice(len(cp),min(cfg.get('cluster_centers',60),len(cp)),replace=False):
+                    y,x=map(int,cp[i]);centers.append((x,y))
+            attempts=0
+            while g<cluster_goal and centers and attempts<cluster_goal*100:
+                attempts+=1;cx,cy=centers[int(rng.integers(len(centers)))];rad=int(rng.integers(4,13));x=int(np.clip(cx+rng.integers(-rad,rad+1),2,self.side-3));y=int(np.clip(cy+rng.integers(-rad,rad+1),2,self.side-3))
+                if hex_distance(cx,cy,x,y)<=rad and ok(x,y):put(x,y,8,'global');g+=1
+        pts=np.argwhere((T==GRASS)&(O==0)&~local)
         for i in rng.permutation(len(pts)):
             if g>=cfg['global_anchor_target']:break
             y,x=map(int,pts[i])
             if ok(x,y):put(x,y,8,'global');g+=1
         if g<cfg['global_anchor_target']:raise RuntimeError(f'Building Stone global anchors {g}/{cfg["global_anchor_target"]}')
+        state.metadata['stone_cluster_target']=cluster_goal
         # Exact global stock by increasing fill states, never by adding anchors.
         gi=[i for i,a in enumerate(anchors) if a[3]=='global'];q=np.full(len(gi),8,dtype=int)
         target=cfg['global_stock_target']
@@ -550,6 +641,19 @@ class MapGenerator:
         # Starts
         badstarts=sum(1 for x,y in state.starts if not self._start_ok(state,x,y))
         add('STARTS_STATIC',badstarts==0,f'bad={badstarts}/{len(state.starts)}')
+        if self.current_mode=='upgraded':
+            add('UPGRADED_FISH_CELL_TARGET',int(fish.sum())==self.profile['fish']['target_cells'],f'{int(fish.sum())}/{self.profile["fish"]["target_cells"]}')
+            desert_decor=np.count_nonzero(np.isin(O,self.profile['decor']['desert_ids'])&np.isin(T,DESERT_IDS))
+            swamp_reeds=np.count_nonzero(np.isin(O,self.profile['decor']['swamp_reed_ids'])&np.isin(T,SWAMP_IDS))
+            pure_stones=np.count_nonzero((O>=1)&(O<=28))
+            reefs=np.count_nonzero((O>=111)&(O<=114))
+            add('UPGRADED_DESERT_DECOR',desert_decor==self.profile['decor']['desert_target'],f'{desert_decor}/{self.profile["decor"]["desert_target"]}')
+            add('UPGRADED_SWAMP_DECOR',swamp_reeds==self.profile['decor']['swamp_target'],f'{swamp_reeds}/{self.profile["decor"]["swamp_target"]}')
+            add('UPGRADED_DECOR_STONES',pure_stones==self.profile['decor']['decorative_stone_target'],f'{pure_stones}/{self.profile["decor"]["decorative_stone_target"]}')
+            add('UPGRADED_REEFS',reefs==self.profile['decor']['reef_target'],f'{reefs}/{self.profile["decor"]["reef_target"]}')
+            edge_all=np.concatenate([T[0,:],T[-1,:],T[:,0],T[:,-1]])
+            add('UPGRADED_DEEP_EDGE',np.count_nonzero(edge_all!=7)==0,f'non_water7_edge={np.count_nonzero(edge_all!=7)}')
+            add('UPGRADED_START_BONUS_OUTSIDE_GLOBAL',True,'separate tree/stone bonus pools encoded')
         self.log('validators.hard',f'pass={sum(v.passed for v in out)}/{len(out)}')
         return out
 

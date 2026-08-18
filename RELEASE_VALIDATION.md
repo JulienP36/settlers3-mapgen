@@ -1,30 +1,36 @@
-# Settlers III MapGen v1.1 — release validation
+# Settlers III MapGen v1.2 — Release validation
 
-Date : 2026-08-18
+Date: 2026-08-18
 
-## Résultat automatisé
+## Targeted automated tests
+- Architecture names / Upgraded enabled / Custom reserved: PASS
+- Starts before detailed hydrology: PASS
+- Upgraded 4P full HARD validators: PASS
+- Upgraded 20P full HARD validators: PASS
+- Legacy still generates: PASS
+- Custom fails explicitly: PASS
 
-- `pytest`: **6/6 tests PASS**.
-- 4P Legacy/Continental : HARD checks PASS.
-- 20P Legacy/Continental : HARD checks PASS.
-- starts placés avant `hydrology.micro_water_cleanup` : PASS.
-- les 20 starts restent valides après pipeline complet : PASS.
-- export checksum EDM : PASS.
-- Upgraded non implémenté : refus explicite PASS.
-- Custom non implémenté : refus explicite PASS.
+(The complete historical smoke suite is computationally long in this environment; targeted v1.2 tests were run individually.)
 
-## Architecture désormais vérifiée
+## Upgraded sample 20P — seed 2026082002
+- 35/35 validators PASS.
+- Starts static: 20/20 PASS.
+- Water H/access: PASS.
+- External edge Water7: PASS.
+- Micro-water 1–4: 0.
+- River orphans: 0; bad Water mouths: 0; max=55.
+- Fish: 32,313; Water-only; no River; <=HEX12 true Shore; 0 on map edge.
+- Minerals exact family occupied-cell totals: PASS.
+- Adult trees: 1,652 total in 20P (=1,352 global + up to 15/player bonus).
+- SmallTree84: 406.
+- Building Stones: 1,783 anchors total / 15,220 units total; footprint PASS; min HEX4.
+- Decorations: desert60 / swamp2 / pure stones89 / reefs11.
+- No ordinary objects on Mountain.
+- EDM + MAP exported successfully.
 
-```text
-Archetype.macro_layout
-    -> starts.maximin_early
-    -> starts.reserve_zones
-    -> hydrology / terrain detail
-    -> resources / balance
-    -> objects
-    -> validators
-```
-
-## Important
-
-Cette release ne prétend pas encore fournir Upgraded. Elle garantit seulement que l'architecture est prête à le recevoir sans mélanger la macro-forme de l'archétype avec les règles du mode de génération.
+## Remaining external validation
+- Official editor start acceptance, especially high player counts.
+- View Map / game crash smoke.
+- Immediate SAV runtime Water check.
+- Controlled Building Stone harvestability / exact editor hitbox.
+- Visual validation of Upgraded morphology before generalized fresh-shape work.

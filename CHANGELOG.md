@@ -1,20 +1,19 @@
 # Changelog
 
-## v1.1 — 2026-08-18
+## v1.2 — Upgraded activation
+- Upgraded mode activated; no fallback to Legacy.
+- Separate Legacy and Upgraded profiles.
+- Canonical Upgraded 768 reference checkpoint bundled.
+- Starts remain early/reserved.
+- Upgraded fish/mineral/wood/SmallTree84/Stone/decor rules encoded.
+- Tree clustering targets added (~44% adults, ~76% SmallTree84).
+- Stone clustering target added (~30%).
+- Upgraded exact decoration targets: desert60, swamp Reeds2, pure stones89, reefs11.
+- External edge normalized to deep Water7 in Upgraded.
+- Upgraded fish explicitly cannot be derived from map edge.
+- Additional Upgraded-specific validators and tests.
+- Rule matrix and Snapshot V5 added.
 
-- séparation explicite **Generation Mode** / **Archetype** ;
-- noms de travail : **Legacy / Upgraded / Custom** ;
-- archétypes réservés : Continental / Large Islands / Small Islands ;
-- Legacy + Continental reste le seul couple activé ;
-- Upgraded et Custom sont visibles mais refusés proprement tant qu'ils ne sont pas implémentés ;
-- starts déplacés très tôt dans le pipeline, immédiatement après le macro-layout ;
-- réservation explicite de leur zone avant hydrologie détaillée ;
-- redistribution micro-water interdite dans la zone protégée des starts ;
-- métadonnées enrichies : mode, archétype, `starts_placed_early` ;
-- CLI : `--mode` et `--archetype` ;
-- noms d'exports incluent mode + archétype ;
-- nouveaux tests de non-régression architecture/starts/20P.
-
-## v1 — 2026-08-18
-
-Première GUI persistante, aperçu réel, génération, validators et export EDM/MAP.
+## v1.1
+- Generation Mode and Archetype separated.
+- Starts moved early in pipeline.

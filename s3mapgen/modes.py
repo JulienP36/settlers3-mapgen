@@ -14,7 +14,7 @@ MODES = {
         'Fidélité maximale au générateur Settlers III ; baseline reverse-engineering.'
     ),
     'upgraded': GenerationMode(
-        'upgraded', 'Upgraded', False,
+        'upgraded', 'Upgraded', True,
         'Preset amélioré accumulant toutes les règles custom validées du projet.'
     ),
     'custom': GenerationMode(

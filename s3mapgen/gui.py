@@ -4,7 +4,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk,filedialog,messagebox
 from PIL import ImageTk
-from .app_paths import PROFILE,LIBRARY,EDM_SCAFFOLD,MAP_SCAFFOLD,OUTPUT
+from .app_paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY,EDM_SCAFFOLD,MAP_SCAFFOLD,OUTPUT
 from .engine import MapGenerator
 from .preview import render
 from .binary import export_with_scaffold
@@ -14,7 +14,7 @@ from .archetypes import ARCHETYPES, ARCHETYPE_ORDER
 class App(tk.Tk):
     def __init__(self):
         super().__init__();self.title('Settlers III MapGen v1.1');self.geometry('1280x820');self.minsize(1050,700)
-        self.generator=MapGenerator(PROFILE,LIBRARY);self.current=None;self.photo=None
+        self.generator=MapGenerator(LEGACY_PROFILE,LIBRARY,UPGRADED_PROFILE,UPGRADED_REFERENCE);self.current=None;self.photo=None
         self._build()
 
     def _build(self):
@@ -33,7 +33,7 @@ class App(tk.Tk):
         ttk.Button(top,text='Générer',command=self.generate).grid(row=1,column=5,padx=4)
         self.export_btn=ttk.Button(top,text='Exporter EDM + MAP',command=self.export,state='disabled');self.export_btn.grid(row=1,column=6,padx=4)
         ttk.Button(top,text='Sauver aperçu PNG',command=self.save_preview).grid(row=1,column=7,padx=4)
-        self.status=tk.StringVar(value='Prêt — Legacy / Continental disponible. Upgraded et Custom sont réservés pour les prochaines passes.')
+        self.status=tk.StringVar(value='Prêt — Legacy et Upgraded / Continental disponibles. Custom reste réservé.')
         ttk.Label(top,textvariable=self.status).grid(row=2,column=0,columnspan=8,sticky='w',pady=(8,0))
 
         pan=ttk.Panedwindow(self,orient='horizontal');pan.pack(fill='both',expand=True,padx=8,pady=(0,8))
@@ -57,7 +57,7 @@ class App(tk.Tk):
     def _selection_changed(self):
         m=MODES[self._mode_key()];a=ARCHETYPES[self._arch_key()]
         if not m.implemented:
-            self.status.set(f'{m.label} est réservé dans la v1.1 ; son profil sera récupéré depuis les références/checkpoints avant activation.')
+            self.status.set(f'{m.label} est réservé ; son profil n’est pas encore activé.')
         elif not a.implemented:
             self.status.set(f'{a.label} est réservé comme macro-archétype mais pas encore implémenté.')
         else:
@@ -90,7 +90,7 @@ class App(tk.Tk):
         if hard_fail:messagebox.showerror('Export refusé','Un ou plusieurs HARD checks échouent.');return
         folder=Path(filedialog.askdirectory(title='Dossier de sortie') or '')
         if not folder:return
-        seed=self.current.state.metadata['seed'];p=self.current.state.metadata['players'];mode=self.current.state.metadata.get('mode','Legacy').replace(' ','');arch=self.current.state.metadata.get('archetype','Continental').replace(' ','');base=f'S3_{arch}_{mode}_{p}P_768x768_seed_{seed}_MapGenV1_1'
+        seed=self.current.state.metadata['seed'];p=self.current.state.metadata['players'];mode=self.current.state.metadata.get('mode','Legacy').replace(' ','');arch=self.current.state.metadata.get('archetype','Continental').replace(' ','');base=f'S3_{arch}_{mode}_{p}P_768x768_seed_{seed}_MapGenV1_2'
         edm=folder/(base+'.edm');mp=folder/('1-'+base+'.map');png=folder/(base+'_preview.png')
         export_with_scaffold(self.current.state,EDM_SCAFFOLD,edm);export_with_scaffold(self.current.state,MAP_SCAFFOLD,mp);render(self.current.state,png)
         messagebox.showinfo('Export terminé',f'{edm.name}\n{mp.name}\n{png.name}')

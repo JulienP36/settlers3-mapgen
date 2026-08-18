@@ -68,3 +68,15 @@ def export_with_scaffold(state:MapState, scaffold:Path|str, output:Path|str):
     struct.pack_into('<I',b,0,checksum(b))
     Path(output).write_bytes(b)
     return checksum(b),len(b)
+
+
+def read_area(path:Path|str)->MapState:
+    version,parts=parse_parts(path)
+    for t,p in parts:
+        if t==6 and len(p)>=4:
+            side=struct.unpack_from('<I',p,0)[0]
+            if len(p)==4+side*side*6:
+                import numpy as np
+                area=np.frombuffer(p,dtype=np.uint8,offset=4).reshape(side,side,6).copy()
+                return MapState(side,area)
+    raise ValueError('Compatible Area part not found')
