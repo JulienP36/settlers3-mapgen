@@ -1,0 +1,78 @@
+from __future__ import annotations
+import json, traceback
+from pathlib import Path
+import tkinter as tk
+from tkinter import ttk,filedialog,messagebox
+from PIL import ImageTk
+from .app_paths import PROFILE,LIBRARY,EDM_SCAFFOLD,MAP_SCAFFOLD,OUTPUT
+from .engine import Continental768Generator
+from .preview import render
+from .binary import export_with_scaffold
+
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__();self.title('Settlers III MapGen v1');self.geometry('1280x820');self.minsize(1050,700)
+        self.generator=Continental768Generator(PROFILE,LIBRARY);self.current=None;self.photo=None
+        self._build()
+
+    def _build(self):
+        top=ttk.Frame(self,padding=8);top.pack(fill='x')
+        ttk.Label(top,text='Archétype').grid(row=0,column=0,sticky='w');self.arch=tk.StringVar(value='Continental');ttk.Combobox(top,textvariable=self.arch,values=['Continental'],state='readonly',width=15).grid(row=1,column=0,padx=(0,8))
+        ttk.Label(top,text='Taille').grid(row=0,column=1,sticky='w');self.size=tk.StringVar(value='768');ttk.Combobox(top,textvariable=self.size,values=['768'],state='readonly',width=8).grid(row=1,column=1,padx=(0,8))
+        ttk.Label(top,text='Joueurs').grid(row=0,column=2,sticky='w');self.players=tk.IntVar(value=4);ttk.Spinbox(top,from_=2,to=20,textvariable=self.players,width=7).grid(row=1,column=2,padx=(0,8))
+        ttk.Label(top,text='Seed').grid(row=0,column=3,sticky='w');self.seed=tk.StringVar(value='2026081901');ttk.Entry(top,textvariable=self.seed,width=16).grid(row=1,column=3,padx=(0,8))
+        ttk.Button(top,text='Générer',command=self.generate).grid(row=1,column=4,padx=4)
+        self.export_btn=ttk.Button(top,text='Exporter EDM + MAP',command=self.export,state='disabled');self.export_btn.grid(row=1,column=5,padx=4)
+        ttk.Button(top,text='Sauver aperçu PNG',command=self.save_preview).grid(row=1,column=6,padx=4)
+        self.status=tk.StringVar(value='Prêt — Continental v1 est volontairement calibré sur 768×768.')
+        ttk.Label(top,textvariable=self.status).grid(row=2,column=0,columnspan=7,sticky='w',pady=(8,0))
+
+        pan=ttk.Panedwindow(self,orient='horizontal');pan.pack(fill='both',expand=True,padx=8,pady=(0,8))
+        left=ttk.Frame(pan);right=ttk.Frame(pan);pan.add(left,weight=3);pan.add(right,weight=2)
+        self.canvas=tk.Canvas(left,bg='#181818',highlightthickness=0);self.canvas.pack(fill='both',expand=True)
+        self.canvas.bind('<Configure>',lambda e:self._refresh_preview())
+        nb=ttk.Notebook(right);nb.pack(fill='both',expand=True)
+        f1=ttk.Frame(nb);f2=ttk.Frame(nb);f3=ttk.Frame(nb);nb.add(f1,text='Validations');nb.add(f2,text='Pipeline');nb.add(f3,text='Métadonnées')
+        self.validation=tk.Text(f1,wrap='word',font=('Consolas',10));self.validation.pack(fill='both',expand=True)
+        self.pipeline=tk.Text(f2,wrap='word',font=('Consolas',10));self.pipeline.pack(fill='both',expand=True)
+        self.meta=tk.Text(f3,wrap='word',font=('Consolas',10));self.meta.pack(fill='both',expand=True)
+
+    def generate(self):
+        try:
+            seed=int(self.seed.get());players=int(self.players.get());self.status.set('Génération…');self.update_idletasks()
+            self.current=self.generator.generate(players,seed)
+            hard_fail=[v for v in self.current.validations if v.hard and not v.passed]
+            self.validation.delete('1.0','end')
+            for v in self.current.validations:self.validation.insert('end',v.label()+'\n')
+            self.pipeline.delete('1.0','end');self.pipeline.insert('end','\n'.join(self.current.stage_log))
+            self.meta.delete('1.0','end');self.meta.insert('end',json.dumps(self.current.state.metadata,indent=2,ensure_ascii=False,default=str))
+            self.export_btn.configure(state='disabled' if hard_fail else 'normal')
+            self.status.set(f'Généré — {len(self.current.validations)-len(hard_fail)}/{len(self.current.validations)} checks OK' + (f' — {len(hard_fail)} HARD FAIL' if hard_fail else ' — EXPORT AUTORISÉ'))
+            self._refresh_preview()
+        except Exception as e:
+            self.status.set('Erreur de génération');messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
+
+    def _refresh_preview(self):
+        if not self.current:return
+        im=render(self.current.state,labels=True)
+        w=max(100,self.canvas.winfo_width()-10);h=max(100,self.canvas.winfo_height()-10);im.thumbnail((w,h))
+        self.photo=ImageTk.PhotoImage(im);self.canvas.delete('all');self.canvas.create_image(w//2,h//2,image=self.photo,anchor='center')
+
+    def export(self):
+        if not self.current:return
+        hard_fail=[v for v in self.current.validations if v.hard and not v.passed]
+        if hard_fail:messagebox.showerror('Export refusé','Un ou plusieurs HARD checks échouent.');return
+        folder=Path(filedialog.askdirectory(title='Dossier de sortie') or '')
+        if not folder:return
+        seed=self.current.state.metadata['seed'];p=self.current.state.metadata['players'];base=f'S3_Continental_{p}P_768x768_seed_{seed}_MapGenV1'
+        edm=folder/(base+'.edm');mp=folder/('1-'+base+'.map');png=folder/(base+'_preview.png')
+        export_with_scaffold(self.current.state,EDM_SCAFFOLD,edm);export_with_scaffold(self.current.state,MAP_SCAFFOLD,mp);render(self.current.state,png)
+        messagebox.showinfo('Export terminé',f'{edm.name}\n{mp.name}\n{png.name}')
+
+    def save_preview(self):
+        if not self.current:return
+        path=filedialog.asksaveasfilename(defaultextension='.png',filetypes=[('PNG','*.png')])
+        if path:render(self.current.state,path)
+
+def main():
+    App().mainloop()
