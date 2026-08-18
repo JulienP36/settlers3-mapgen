@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated maps / reports / previews
+output/
+*.log
+
+# Local user files / saves
+*.sav
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Release packages are produced outside the source tree
+*.zip
