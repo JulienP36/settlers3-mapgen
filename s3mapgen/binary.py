@@ -80,3 +80,48 @@ def read_area(path:Path|str)->MapState:
                 area=np.frombuffer(p,dtype=np.uint8,offset=4).reshape(side,side,6).copy()
                 return MapState(side,area)
     raise ValueError('Compatible Area part not found')
+
+def read_starts(path:Path|str)->list[tuple[int,int]]:
+    try:
+        _,parts=parse_parts(path)
+        for t,p in parts:
+            if t==2 and len(p)>=45 and len(p)%45==0:
+                out=[]
+                for off in range(0,len(p),45):
+                    _,x,y=struct.unpack_from('<III',p,off);out.append((int(x),int(y)))
+                return out
+    except Exception:
+        pass
+    return []
+
+def read_sav_state(path:Path|str)->MapState:
+    """Read the confirmed static/runtime map fields from a version-11 SAV. Read-only."""
+    import numpy as np
+    b=Path(path).read_bytes()
+    if len(b)<12: raise ValueError('SAV trop court')
+    version=struct.unpack_from('<I',b,4)[0]
+    if version!=11: raise ValueError(f'Version SAV non supportée: {version}')
+    off=8; cols={}
+    while off+8<=len(b):
+        t,total=struct.unpack_from('<II',b,off)
+        if total<8 or off+total>len(b): raise ValueError(f'Part SAV invalide à {off}')
+        low=t&0xffff; x=(t>>16)&0xffff
+        if low==3:
+            p=decrypt(b[off+8:off+total],t)
+            if len(p)%24==0: cols[x]=p
+        off+=total
+    if not cols: raise ValueError('Aucune colonne runtime type-3 trouvée')
+    side=max(cols)+1
+    if len(cols)!=side: raise ValueError(f'Colonnes SAV incomplètes: {len(cols)}/{side}')
+    area=np.zeros((side,side,6),np.uint8);area[:,:,3]=255
+    for x in range(side):
+        p=cols[x]
+        if len(p)!=side*24: raise ValueError(f'Payload colonne {x}: {len(p)} != {side*24}')
+        a=np.frombuffer(p,dtype=np.uint8).reshape(side,24)
+        area[:,x,0]=a[:,4]
+        terr=a[:,6].copy();terr[terr==28]=16;area[:,x,1]=terr
+        area[:,x,2]=a[:,14]
+        area[:,x,3]=a[:,8]
+        area[:,x,5]=a[:,17]
+    st=MapState(side,area);st.metadata.update({'source_format':'SAV','source_path':str(path),'sav_version':version,'territories_available':True})
+    return st

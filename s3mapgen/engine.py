@@ -29,7 +29,7 @@ class MapGenerator:
     rebuild our custom gameplay layers. More varied morphology can be added behind this interface.
     """
 
-    def __init__(self, profile_path:Path|str, native_library_path:Path|str, upgraded_profile_path:Path|str|None=None, upgraded_reference_path:Path|str|None=None):
+    def __init__(self, profile_path:Path|str, native_library_path:Path|str, upgraded_profile_path:Path|str|None=None, upgraded_reference_path:Path|str|None=None, progress_callback=None):
         self.legacy_profile=load_profile(profile_path)
         self.upgraded_profile=load_profile(upgraded_profile_path) if upgraded_profile_path else self.legacy_profile
         self.profile=self.legacy_profile
@@ -40,9 +40,13 @@ class MapGenerator:
         self.side=768
         self.stage_log=[]
         self.current_mode='legacy'
+        self.progress_callback=progress_callback
 
     def log(self, stage:str, detail:str=''):
         self.stage_log.append(stage + (f' — {detail}' if detail else ''))
+        if self.progress_callback:
+            try:self.progress_callback(stage, detail, len(self.stage_log))
+            except Exception:pass
 
     def generate(self, players:int, seed:int, mode:str='legacy', archetype:str='continental')->GenerationOutput:
         mode_spec=get_mode(mode); arch_spec=get_archetype(archetype)

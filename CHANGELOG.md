@@ -1,19 +1,14 @@
 # Changelog
 
-## v1.2 — Upgraded activation
-- Upgraded mode activated; no fallback to Legacy.
-- Separate Legacy and Upgraded profiles.
-- Canonical Upgraded 768 reference checkpoint bundled.
-- Starts remain early/reserved.
-- Upgraded fish/mineral/wood/SmallTree84/Stone/decor rules encoded.
-- Tree clustering targets added (~44% adults, ~76% SmallTree84).
-- Stone clustering target added (~30%).
-- Upgraded exact decoration targets: desert60, swamp Reeds2, pure stones89, reefs11.
-- External edge normalized to deep Water7 in Upgraded.
-- Upgraded fish explicitly cannot be derived from map edge.
-- Additional Upgraded-specific validators and tests.
-- Rule matrix and Snapshot V5 added.
-
-## v1.1
-- Generation Mode and Archetype separated.
-- Starts moved early in pipeline.
+## v1.3 — tooling / UX
+- Ajout barre de progression par étapes de pipeline.
+- Bouton seed aléatoire.
+- Import EDM/MAP/SAV (SAV en lecture seule).
+- Vues Global / Heightmap / Ressources / Territoires.
+- Zoom par slider et molette.
+- Sélecteur de toutes les tailles natives + max joueurs dynamique.
+- Génération reste volontairement limitée à 768 tant que les autres tailles ne sont pas calibrées.
+- Onglet Statistiques basique.
+- Scrollbars sur les onglets texte.
+- Export SAV non inventé : copie inchangée seulement si la source importée est déjà un SAV.
+- TODO actualisé avec la généralisation future de la morphologie Upgraded.
