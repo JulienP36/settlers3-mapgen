@@ -112,3 +112,16 @@ Le CLI refuse également l'export si un HARD validator échoue.
 - GUI avancée (zoom, couches togglables, édition interactive, presets).
 
 Ces éléments peuvent désormais être ajoutés sans réécrire les invariants déjà acquis.
+
+## Dépannage Windows — Python introuvable
+
+Les lanceurs testent maintenant `py -3` puis `python`.
+
+Si aucun des deux ne fonctionne :
+
+1. lancer `install_python_and_run.bat` pour tenter l'installation automatique via `winget` ;
+2. ou installer Python 3.12 64 bits manuellement en cochant **Add Python to PATH** ;
+3. relancer ensuite `install_and_run.bat`.
+
+Le raccourci `python.exe` qui redirige uniquement vers le Microsoft Store n'est pas une installation Python utilisable par MapGen.
+
