@@ -566,3 +566,41 @@ Validation confidence tiers:
 
 A rule confirmed in long-play overrides an older assumption from a short-form/static-only test when they conflict.
 
+
+
+---
+
+## 24. Generator hardening after long-play — 2026-08-19
+
+Latest explicit validation supersedes older start/accessibility details where they conflict.
+
+### 24.1 Editor-safe starts
+
+The exact native 33-cell Grass footprint and slope rules remain mandatory, but they are not sufficient for editor acceptance.
+Generation must additionally select starts that already possess a conservative natural safety halo:
+
+- no non-Grass terrain within the configured editor terrain halo;
+- Water farther than the configured water halo;
+- no static object within the configured object halo after all object passes;
+- Building Stone validation applies to the complete 7-cell footprint, not only to its anchor;
+- do **not** manufacture visible circular Grass clearings to satisfy these rules.
+
+Current 768 conservative calibration: terrain halo 10 HEX, Water halo 20 HEX, object halo 14 HEX. These values are intentionally conservative and remain subject to official-editor validation.
+
+### 24.2 Snow accessibility
+
+Long-play on a generated map showed soldiers could cross full Snow, unlike standard native behavior. Native runtime SAV observations show the inner Snow family (`129`, `128`) in the non-walkable runtime navigation state, while the generated long-play retained the walkable mountain state.
+
+Static generator rule: set accessibility = 1 on `Snow129` and `Snow128`, analogous to the validated Water accessibility correction. Keep `RockSnow35` as the outer traversable transition unless later native calibration proves otherwise.
+
+### 24.3 Swamp transitions
+
+All Swamp terrain must be derived from a coherent family mask and repainted by HEX depth:
+
+```text
+depth 1 -> Grass/Swamp transition 21
+depth 2 -> Swamp transition 81
+depth >=3 -> Swamp core 80
+```
+
+This applies to global Swamps and start bonus mini-Swamps. Manual independent painting of IDs `21/81/80` is forbidden. A hard validator must reject any illegal Swamp transition edge.

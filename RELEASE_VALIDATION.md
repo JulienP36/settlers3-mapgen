@@ -1,28 +1,29 @@
-# Settlers III MapGen v1.3.1 — Release validation
+# Settlers III MapGen v1.3.2 — Release validation
 
-Date: 2026-08-18
+Date: 2026-08-19
 
 ## Scope of this patch
-- Fix GUI preview crash caused by a missing `PIL.Image` import.
-- Refresh README with a complete project presentation and current v1.3.1 status.
-- No modification to Legacy or Upgraded generation rules/configuration.
+- Harden start selection for official-editor acceptance: naturally clear Grass halo, greater Water clearance and strict static-object clearance.
+- Keep all later object/resource passes outside the protected start halo, including full Building Stone footprints.
+- Make inner Snow terrains `129/128` non-walkable through static accessibility, matching the runtime behavior observed on standard/native maps.
+- Rebuild Swamp transition chains systematically as `Grass16 -> 21 -> 81 -> 80`, including start mini-swamps.
+- Add hard validators for start clearances, Snow accessibility, and Desert/Swamp/Snow transition chains.
+- Consolidate the old text TODO into `TODO_MAPGEN.md` and record the requested future UI/statistics work.
 
-## Targeted automated checks
-- `tests/test_gui_regressions.py`: **PASS**.
-- `s3mapgen` compileall: **PASS**.
-- GUI module import: **PASS**.
-- `Image.Resampling.NEAREST` available: **PASS**.
-- Package version: `1.3.1`.
-
-## Existing generation regression suite
-A full `pytest -q` run was started in the execution environment. Five tests completed successfully before the environment timeout; no failure was observed before timeout. This patch does not modify the generation engine, profiles, resources, objects, starts or validators.
-
-The previous v1.2/v1.3 generation validation remains the latest completed generation validation:
-- Upgraded 4P HARD validators: PASS.
-- Upgraded 20P HARD validators: PASS.
-- Legacy generation: PASS.
-- 20P Upgraded sample: 35/35 validators PASS.
+## Automated checks performed
+- Python module compilation: PASS.
+- Legacy 4P generation: completed with no HARD validator failure.
+- Upgraded 4P generation: completed with no HARD validator failure.
+- Upgraded 20P generation: completed with no HARD validator failure.
+- Targeted regression tests: 5 focused generator tests PASS (Upgraded 4P, Upgraded 20P, Legacy 4P, editor-safe start halos, Snow/Swamp hardening).
+- `SNOW_ACCESS`: enforced by a HARD validator.
+- `SWAMP_TRANSITIONS`: enforced by a HARD validator.
+- Start terrain/water/object halos: enforced by HARD validators.
 
 ## External validation still required
-- User-side Windows GUI generation/preview smoke after this crash fix.
-- Official editor/game validation remains required for generated maps as before.
+The three gameplay/editor corrections remain **candidate fixes** until validated in the official tools:
+- repeated editor acceptance of generated starts;
+- soldiers unable to enter full/inner Snow;
+- visual inspection confirming no missing Swamp connector textures.
+
+A static PASS is a non-regression guard, not a replacement for editor/game validation.

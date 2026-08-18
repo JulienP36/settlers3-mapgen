@@ -232,7 +232,10 @@
     "local_bonus_outer_hex": 42,
     "height_range_max": 10,
     "immediate_height_delta_max": 4,
-    "immediate_height_delta_sum_max": 14
+    "immediate_height_delta_sum_max": 14,
+    "editor_terrain_clear_hex": 10,
+    "editor_water_clear_hex": 20,
+    "editor_object_clear_hex": 14
   },
   "profile_kind": "upgraded",
   "upgraded_rules": {

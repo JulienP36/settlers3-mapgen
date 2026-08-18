@@ -27,8 +27,9 @@
 6. `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md`
    - Binary writer/checksum/Area semantics.
 
-7. `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md`
-   - Runtime verification.
+7. `SETTLERS3_SAV_FORMAT_REFERENCE_v2_LONGPLAY.md`
+   - Runtime verification and 16-save long-play findings.
+   - Keep `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` as the original calibration baseline.
 
 8. `SETTLERS3_TODO_POSTCHECKPOINT_v4_LONGPLAY.md`
    - Current unresolved work. A TODO must never silently override a validated rule.
@@ -67,10 +68,12 @@ Before generating:
 
 Before export:
 - [ ] checksum valid.
-- [ ] all starts valid under current start rules.
+- [ ] all starts valid under current start rules, including editor terrain/water/object safety halos.
 - [ ] 0 ordinary objects on Rocky.
 - [ ] Water0..7 height=0.
 - [ ] Water0..7 accessibility=1.
+- [ ] Snow129/Snow128 accessibility=1.
+- [ ] 0 illegal Desert/Swamp/Snow transition-neighbour contacts.
 - [ ] 0 inland Water components size1..4.
 - [ ] 0 orphan River components.
 - [ ] river practical max obeys map-size cap.

@@ -39,3 +39,31 @@ def test_legacy_still_runs():
 def test_custom_still_fails_explicitly():
     with pytest.raises(NotImplementedError):
         gen().generate(4,2026081901,mode='custom',archetype='continental')
+
+def test_upgraded_start_editor_clearance_and_terrain_safety():
+    from s3mapgen.constants import GRASS, WATER_IDS
+    from s3mapgen.hexgrid import hex_distance
+    res=gen().generate(20,2026082002,mode='upgraded',archetype='continental')
+    st=res.state; p=gen().upgraded_profile['starts']
+    for sx,sy in st.starts:
+        for y in range(max(0,sy-p['editor_water_clear_hex']),min(st.side,sy+p['editor_water_clear_hex']+1)):
+            for x in range(max(0,sx-p['editor_water_clear_hex']),min(st.side,sx+p['editor_water_clear_hex']+1)):
+                d=hex_distance(sx,sy,x,y)
+                if d<=p['editor_terrain_clear_hex']:
+                    assert st.terrain[y,x]==GRASS
+                if d<=p['editor_water_clear_hex']:
+                    assert int(st.terrain[y,x]) not in WATER_IDS
+                if d<=p['editor_object_clear_hex']:
+                    assert st.objects[y,x]==0
+
+
+def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal():
+    from s3mapgen.constants import SNOW, SNOW_TRANS
+    import numpy as np
+    res=gen().generate(4,2026082001,mode='upgraded',archetype='continental')
+    snow=np.isin(res.state.terrain,[SNOW_TRANS,SNOW])
+    assert snow.any()
+    assert np.all(res.state.accessibility[snow]==1)
+    rules={v.rule_id:v for v in res.validations}
+    assert rules['SNOW_ACCESS'].passed
+    assert rules['SWAMP_TRANSITIONS'].passed

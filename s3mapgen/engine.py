@@ -75,6 +75,7 @@ class MapGenerator:
         self._finalize_water(state)
         self._cleanup_rivers(state)
         self._place_start_swamps(state,rng,pr)
+        self._rebuild_swamp_transitions(state)
         self._rebuild_snow(state,rng)
         self._generate_minerals(state,rng,pr)
         self._generate_fish(state,rng)
@@ -223,7 +224,7 @@ class MapGenerator:
 
     # ---------- starts ----------
     def _start_ok(self,state,x,y):
-        T,H=state.terrain,state.height
+        T,H,O=state.terrain,state.height,state.objects
         vals=[]
         for dx,dy in START_FOOTPRINT:
             X,Y=x+dx,y+dy
@@ -232,25 +233,62 @@ class MapGenerator:
         p=self.profile['starts']
         if max(vals)-min(vals)>p['height_range_max']:return False
         dif=[abs(int(H[y+dy,x+dx])-int(H[y,x])) for dx,dy in HEX6]
-        return max(dif)<=p['immediate_height_delta_max'] and sum(dif)<=p['immediate_height_delta_sum_max']
+        if max(dif)>p['immediate_height_delta_max'] or sum(dif)>p['immediate_height_delta_sum_max']:
+            return False
+        # Editor-conservative safety halo. A technically valid 33-cell footprint can still
+        # be rejected when terrain or blockers sit too close to it. Never clear a visible
+        # disc: select starts that already have enough natural clearance instead.
+        terrain_clear=int(p.get('editor_terrain_clear_hex',10))
+        water_clear=int(p.get('editor_water_clear_hex',20))
+        object_clear=int(p.get('editor_object_clear_hex',14))
+        r=max(terrain_clear,water_clear,object_clear)
+        for Y in range(max(0,y-r),min(self.side,y+r+1)):
+            for X in range(max(0,x-r),min(self.side,x+r+1)):
+                d=hex_distance(x,y,X,Y)
+                if d<=terrain_clear and T[Y,X]!=GRASS:return False
+                if d<=water_clear and T[Y,X] in WATER_IDS:return False
+                if d<=object_clear and O[Y,X]!=0:return False
+        return True
 
     def _place_starts(self,state,players,rng):
+        T=state.terrain
+        p=self.profile['starts']
+        # Precompute conservative forbidden halos once; doing local scans for every
+        # candidate would be prohibitively expensive on a 768² map.
+        terrain_clear=int(p.get('editor_terrain_clear_hex',10))
+        water_clear=int(p.get('editor_water_clear_hex',20))
+        unsafe_near=dilate(T!=GRASS,terrain_clear)
+        water_near=dilate(np.isin(T,WATER_IDS),water_clear)
         valid=[]
         for y in range(12,self.side-12,2):
             for x in range(12,self.side-12,2):
-                if self._start_ok(state,x,y): valid.append((x,y))
-        if len(valid)<players:raise RuntimeError(f'Only {len(valid)} valid starts')
-        starts=[];minsep=self.profile['starts']['min_pair_hex_distance']
+                if unsafe_near[y,x] or water_near[y,x]:
+                    continue
+                # Fast geometric/height check; objects are still empty at this stage.
+                vals=[];ok=True
+                for dx,dy in START_FOOTPRINT:
+                    X,Y=x+dx,y+dy
+                    if not(5<=X<self.side-5 and 5<=Y<self.side-5) or T[Y,X]!=GRASS:
+                        ok=False;break
+                    vals.append(int(state.height[Y,X]))
+                if not ok or max(vals)-min(vals)>p['height_range_max']:
+                    continue
+                dif=[abs(int(state.height[y+dy,x+dx])-int(state.height[y,x])) for dx,dy in HEX6]
+                if max(dif)<=p['immediate_height_delta_max'] and sum(dif)<=p['immediate_height_delta_sum_max']:
+                    valid.append((x,y))
+        if len(valid)<players:raise RuntimeError(f'Only {len(valid)} editor-safe starts')
+        starts=[];minsep=p['min_pair_hex_distance']
         for _ in range(players):
             sample=valid if len(valid)<=9000 else [valid[i] for i in rng.choice(len(valid),9000,replace=False)]
             if not sample: raise RuntimeError('Cannot maintain start spacing')
-            def score(p):
-                d=min([hex_distance(p[0],p[1],q[0],q[1]) for q in starts],default=999)
-                return d + float(rng.random())
+            def score(pos):
+                d=min([hex_distance(pos[0],pos[1],q[0],q[1]) for q in starts],default=999)
+                # Prefer naturally generous clearance as a tie-breaker.
+                return d + float(rng.random())*0.001
             best=max(sample,key=score);starts.append(best)
-            valid=[p for p in valid if hex_distance(p[0],p[1],best[0],best[1])>=minsep]
+            valid=[q for q in valid if hex_distance(q[0],q[1],best[0],best[1])>=minsep]
         state.starts=starts
-        self.log('starts.maximin_early',f'players={players}')
+        self.log('starts.maximin_early',f'players={players} terrain_clear={terrain_clear} water_clear={water_clear}')
 
     def _core_mask(self,state,radius):
         m=np.zeros((self.side,self.side),bool)
@@ -261,23 +299,57 @@ class MapGenerator:
         return m
 
     def _place_start_swamps(self,state,rng,pr):
-        T=state.terrain;core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
+        T=state.terrain
+        core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
         for sx,sy in state.starts:
             cand=[]
-            for y in range(max(3,sy-28),min(self.side-3,sy+29)):
-                for x in range(max(3,sx-28),min(self.side-3,sx+29)):
+            for y in range(max(4,sy-30),min(self.side-4,sy+31)):
+                for x in range(max(4,sx-30),min(self.side-4,sx+31)):
                     d=hex_distance(sx,sy,x,y)
-                    if 18<=d<=25 and T[y,x]==GRASS:cand.append((x,y))
+                    if 20<=d<=27 and T[y,x]==GRASS:cand.append((x,y))
             pr.shuffle(cand);placed=False
-            # fixed irregular 6-cell native-like mini-mask, no circular clearing.
-            shapes=[[(0,0),(1,0),(0,1),(-1,0),(0,-1),(1,1)],[(0,0),(-1,0),(0,-1),(1,0),(1,1),(0,1)]]
             for x,y in cand:
-                shape=pr.choice(shapes);pts=[(x+dx,y+dy) for dx,dy in shape]
-                if all(T[Y,X]==GRASS and not core[Y,X] for X,Y in pts):
-                    for i,(X,Y) in enumerate(pts):T[Y,X]=SWAMP if i<2 else SWAMP_TRANS if i<4 else GRASS_SWAMP_TRANS
-                    placed=True;break
-            if not placed:raise RuntimeError(f'Could not place start mini-swamp near {(sx,sy)}')
+                # Minimum coherent three-layer swamp: radius-2 HEX family (19 cells),
+                # plus a few optional radius-3 cells to break the perfect outline.
+                base=[];outer=[]
+                for Y in range(y-3,y+4):
+                    for X in range(x-3,x+4):
+                        d=hex_distance(x,y,X,Y)
+                        if d<=2:base.append((X,Y))
+                        elif d==3:outer.append((X,Y))
+                if not all(T[Y,X]==GRASS and not core[Y,X] for X,Y in base):
+                    continue
+                pr.shuffle(outer)
+                extras=[]
+                for X,Y in outer:
+                    if len(extras)>=4:break
+                    if T[Y,X]==GRASS and not core[Y,X]:extras.append((X,Y))
+                pts=base+extras
+                pset=set(pts)
+                def clean_halo(points,pointset):
+                    for X,Y in points:
+                        for dx,dy in HEX6:
+                            xx,yy=X+dx,Y+dy
+                            if (xx,yy) not in pointset and T[yy,xx]!=GRASS:
+                                return False
+                    return True
+                if not clean_halo(pts,pset):
+                    pts=base;pset=set(base)
+                    if not clean_halo(pts,pset):
+                        continue
+                for X,Y in pts:T[Y,X]=GRASS_SWAMP_TRANS
+                placed=True;break
+            if not placed:raise RuntimeError(f'Could not place coherent start mini-swamp near {(sx,sy)}')
         self.log('biomes.start_mini_swamps',f'count={len(state.starts)}')
+
+    def _rebuild_swamp_transitions(self,state):
+        T=state.terrain
+        family=np.isin(T,SWAMP_IDS)
+        d=depth(family,256)
+        T[family&(d==1)]=GRASS_SWAMP_TRANS
+        T[family&(d==2)]=SWAMP_TRANS
+        T[family&(d>=3)]=SWAMP
+        self.log('biomes.swamp_transitions',f'family_cells={int(family.sum())} core={int((T==SWAMP).sum())}')
 
     # ---------- snow ----------
     def _rebuild_snow(self,state,rng):
@@ -401,7 +473,7 @@ class MapGenerator:
 
     # ---------- objects ----------
     def _place_decorations(self,state,rng,pr):
-        T,O,A=state.terrain,state.objects,state.accessibility;core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
+        T,O,A=state.terrain,state.objects,state.accessibility;core=self._core_mask(state,max(self.profile['starts']['technical_clear_hex'],self.profile['starts'].get('editor_object_clear_hex',14)))
         cfg=self.profile['decor']
         # Swamp: Reeds only. Upgraded exact 768 target is x2 reference = 2.
         sw=np.argwhere(np.isin(T,SWAMP_IDS)&~core&(O==0))
@@ -441,11 +513,11 @@ class MapGenerator:
         return True
 
     def _place_trees(self,state,rng,pr):
-        T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['trees'];core=self._core_mask(state,self.profile['starts']['technical_clear_hex'])
+        T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['trees'];core=self._core_mask(state,max(self.profile['starts']['technical_clear_hex'],self.profile['starts'].get('editor_object_clear_hex',14)))
         adult_ids=cfg['adult_ids'];bonus_total=0
         # Start bonus OUTSIDE global quota.
         for sx,sy in state.starts:
-            cand=[(x,y) for y in range(max(2,sy-28),min(self.side-2,sy+29)) for x in range(max(2,sx-28),min(self.side-2,sx+29)) if 12<=hex_distance(sx,sy,x,y)<=27 and T[y,x]==GRASS and O[y,x]==0]
+            cand=[(x,y) for y in range(max(2,sy-28),min(self.side-2,sy+29)) for x in range(max(2,sx-28),min(self.side-2,sx+29)) if self.profile['starts'].get('editor_object_clear_hex',14)+2<=hex_distance(sx,sy,x,y)<=30 and T[y,x]==GRASS and O[y,x]==0]
             pr.shuffle(cand);k=0
             for x,y in cand:
                 if k>=cfg['adult_start_bonus_per_player']:break
@@ -489,7 +561,7 @@ class MapGenerator:
 
     def _place_building_stones(self,state,rng,pr):
         T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['building_stones']
-        core=self._core_mask(state,self.profile['starts']['technical_clear_hex']);local=self._core_mask(state,33)
+        core=self._core_mask(state,max(self.profile['starts']['technical_clear_hex'],self.profile['starts'].get('editor_object_clear_hex',14)));local=self._core_mask(state,33)
         fp=[tuple(x) for x in cfg['footprint']];foot=np.zeros_like(core);blocked=np.zeros_like(core);anchors=[]
         # blocked area enforces conservative min anchor HEX distance >=4.
         def mark_block(x,y):
@@ -501,7 +573,7 @@ class MapGenerator:
             for dx,dy in fp:
                 X,Y=x+dx,y+dy
                 if not(1<=X<self.side-1 and 1<=Y<self.side-1):return False
-                if T[Y,X]!=GRASS or O[Y,X]!=0 or foot[Y,X]:return False
+                if core[Y,X] or T[Y,X]!=GRASS or O[Y,X]!=0 or foot[Y,X]:return False
             return True
         def put(x,y,u,tag):
             O[y,x]=cfg['exhausted_id']-u
@@ -510,7 +582,7 @@ class MapGenerator:
         # Local start bonus, 53 stock/player.
         units=cfg['start_bonus_units']
         for pid,(sx,sy) in enumerate(state.starts,1):
-            cand=[(x,y) for y in range(max(2,sy-43),min(self.side-2,sy+44)) for x in range(max(2,sx-43),min(self.side-2,sx+44)) if 13<=hex_distance(sx,sy,x,y)<=42]
+            cand=[(x,y) for y in range(max(2,sy-43),min(self.side-2,sy+44)) for x in range(max(2,sx-43),min(self.side-2,sx+44)) if self.profile['starts'].get('editor_object_clear_hex',14)+2<=hex_distance(sx,sy,x,y)<=42]
             pr.shuffle(cand);k=0
             for x,y in cand:
                 if k>=len(units):break
@@ -551,12 +623,16 @@ class MapGenerator:
     def _final_accessibility(self,state):
         T,O,A=state.terrain,state.objects,state.accessibility
         water=np.isin(T,WATER_IDS);A[water]=1
+        # Native runtime navigation shows the inner Snow family (129/128) as non-walkable,
+        # analogous to the already-validated Water accessibility correction.
+        snow_block=np.isin(T,[SNOW_TRANS,SNOW]);A[snow_block]=1
         # Ordinary object anchors block by default for confirmed trees/palms/reefs/stones.
         treeish=np.isin(O,[68,69,70,71,72,78,79,84,111,112,113,114])
         A[treeish]=1
         # Never allow ordinary objects on Mountain family.
         bad=(O!=0)&np.isin(T,MOUNTAIN_IDS)
         O[bad]=0;A[bad]=0
+        A[snow_block]=1
         self.log('accessibility.finalize')
 
     # ---------- validators ----------
@@ -567,6 +643,22 @@ class MapGenerator:
         water=np.isin(T,WATER_IDS);river=np.isin(T,RIVER_IDS);mount=np.isin(T,MOUNTAIN_IDS)
         add('WATER_HEIGHT',np.count_nonzero(H[water])==0,f'nonzero={np.count_nonzero(H[water])}')
         add('WATER_ACCESS',np.count_nonzero(A[water]!=1)==0,f'bad={np.count_nonzero(A[water]!=1)}')
+        snow_block=np.isin(T,[SNOW_TRANS,SNOW])
+        add('SNOW_ACCESS',np.count_nonzero(A[snow_block]!=1)==0,f'bad={np.count_nonzero(A[snow_block]!=1)}')
+        # Strict family transition chains: prevent missing connector textures.
+        def transition_bad(tid,allowed):
+            bad=0
+            for y,x in np.argwhere(T==tid):
+                for dx,dy in HEX6:
+                    X,Y=int(x+dx),int(y+dy)
+                    if 0<=X<self.side and 0<=Y<self.side and int(T[Y,X]) not in allowed:bad+=1
+            return bad
+        desert_bad=sum(transition_bad(t,a) for t,a in ((20,{16,20,65}),(65,{20,65,64}),(64,{65,64})))
+        swamp_bad=sum(transition_bad(t,a) for t,a in ((21,{16,21,81}),(81,{21,81,80}),(80,{81,80})))
+        snow_bad=sum(transition_bad(t,a) for t,a in ((35,{32,35,129}),(129,{35,129,128}),(128,{129,128})))
+        add('DESERT_TRANSITIONS',desert_bad==0,f'bad_edges={desert_bad}')
+        add('SWAMP_TRANSITIONS',swamp_bad==0,f'bad_edges={swamp_bad}')
+        add('SNOW_TRANSITIONS',snow_bad==0,f'bad_edges={snow_bad}')
         # The literal map edge should normally be deep Water7; the GRADIENT is in the outer frame inward from it.
         yy,xx=np.mgrid[0:self.side,0:self.side]
         bd=np.minimum.reduce([xx,yy,self.side-1-xx,self.side-1-yy])
@@ -645,6 +737,18 @@ class MapGenerator:
         # Starts
         badstarts=sum(1 for x,y in state.starts if not self._start_ok(state,x,y))
         add('STARTS_STATIC',badstarts==0,f'bad={badstarts}/{len(state.starts)}')
+        sp=self.profile['starts'];bad_terrain=bad_water=bad_objects=0
+        for sx,sy in state.starts:
+            r=max(sp.get('editor_terrain_clear_hex',10),sp.get('editor_water_clear_hex',20),sp.get('editor_object_clear_hex',14))
+            for y in range(max(0,sy-r),min(self.side,sy+r+1)):
+                for x in range(max(0,sx-r),min(self.side,sx+r+1)):
+                    dd=hex_distance(sx,sy,x,y)
+                    if dd<=sp.get('editor_terrain_clear_hex',10) and T[y,x]!=GRASS:bad_terrain+=1
+                    if dd<=sp.get('editor_water_clear_hex',20) and T[y,x] in WATER_IDS:bad_water+=1
+                    if dd<=sp.get('editor_object_clear_hex',14) and O[y,x]!=0:bad_objects+=1
+        add('START_TERRAIN_CLEARANCE',bad_terrain==0,f'bad_cells={bad_terrain}')
+        add('START_WATER_CLEARANCE',bad_water==0,f'bad_cells={bad_water}')
+        add('START_OBJECT_CLEARANCE',bad_objects==0,f'bad_cells={bad_objects}')
         if self.current_mode=='upgraded':
             add('UPGRADED_FISH_CELL_TARGET',int(fish.sum())==self.profile['fish']['target_cells'],f'{int(fish.sum())}/{self.profile["fish"]["target_cells"]}')
             desert_decor=np.count_nonzero(np.isin(O,self.profile['decor']['desert_ids'])&np.isin(T,DESERT_IDS))

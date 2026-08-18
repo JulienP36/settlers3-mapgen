@@ -18,7 +18,7 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.3.1
+## État actuel — v1.3.2
 
 La GUI est fonctionnelle sous Windows et permet actuellement :
 
@@ -33,6 +33,9 @@ La GUI est fonctionnelle sous Windows et permet actuellement :
 - validations automatiques ;
 - métadonnées, pipeline et premières statistiques ;
 - tailles natives visibles avec adaptation automatique du nombre maximal de joueurs.
+- starts avec halo conservateur destiné à réduire les positions refusées par l'éditeur ;
+- neige intérieure non marchable (`129/128`) ;
+- transitions de marais reconstruites et validées automatiquement.
 
 > Les tailles autres que 768 sont visibles dans l'interface mais leur génération reste volontairement bloquée tant que leur calibration n'est pas validée. Le writer `.SAV` n'est pas encore implémenté : un SAV importé peut être analysé et copié, mais le programme n'invente pas un nouveau SAV.
 
