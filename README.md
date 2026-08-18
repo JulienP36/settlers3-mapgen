@@ -1,127 +1,97 @@
-# Settlers III MapGen v1
+# Settlers III MapGen v1.1
 
-Première itération du générateur persistant décidée après la validation longue du profil **Continental**.
+Mise à jour architecturale de la première GUI fonctionnelle.
 
-## Pourquoi cette v1 existe
+## Principe central
 
-Les références Markdown étaient devenues suffisamment riches pour décrire les règles, mais les scripts ponctuels pouvaient encore oublier une étape. La v1 transforme donc les règles verrouillées en :
+MapGen sépare désormais explicitement deux notions :
 
-- pipeline explicite ;
-- profil JSON unique ;
-- modules génération / format / aperçu / validations ;
-- HARD checks bloquant l'export ;
-- GUI avec aperçu déterministe de la vraie grille Area ;
-- tests de non-régression.
+- **Archétype** = macro-forme de la carte (répartition globale terre/eau et grandes masses).
+- **Mode de génération** = tout le reste : relief, formes locales des zones, hydrologie détaillée, ressources, objets, balance, starts et validators spécifiques.
 
-## Portée volontaire de la v1
+Les deux axes sont indépendants. À terme, n'importe quel archétype pourra être combiné avec n'importe quel mode.
 
-**Continental 768×768, 2 à 20 joueurs.**
+## Modes réservés
 
-C'est volontaire : 768 est la taille pour laquelle les quotas et références sont les plus complets. L'architecture est prête à recevoir d'autres profils ensuite, sans inventer de scaling implicite.
+- **Legacy** — fonctionnel actuellement. Base fidèle au comportement Settlers III / reverse-engineering.
+- **Upgraded** — réservé dans l'architecture, non activé tant que toutes les règles custom validées n'ont pas été récupérées proprement depuis les références/checkpoints.
+- **Custom** — réservé dans l'architecture, futur mode manuel avec paramètres exposés et avertissements.
 
-## Lancer sous Windows
+La GUI affiche les trois noms dès maintenant, mais refuse explicitement de générer avec un mode non implémenté plutôt que de produire un faux preset incomplet.
 
-1. Installer Python 3.11+ depuis python.org en cochant `Add Python to PATH`.
-2. Double-cliquer `install_and_run.bat` la première fois.
-3. Les fois suivantes, `run_gui.bat` suffit.
+## Archétypes
 
-Dépendances : NumPy, SciPy, Pillow. Tkinter est inclus dans l'installation CPython Windows standard.
+- **Continental** — fonctionnel actuellement.
+- **Large Islands** — réservé.
+- **Small Islands** — réservé.
+
+L'archétype doit rester une couche de macro-topologie. Les formes locales des montagnes, biomes, rivières, objets, ressources et leur balance relèvent du mode.
+
+## Ordre de génération verrouillé
+
+La v1.1 corrige un point architectural important : **les starts sont placés très tôt**.
+
+Ordre conceptuel :
+
+```text
+1. Archetype: macro-layout
+2. STARTS maximin / fair-play
+3. Réservation des zones techniques et zones de bonus
+4. Hydrologie détaillée / corrections
+5. Biomes / relief / Snow
+6. Ressources
+7. Balance locale autour des starts
+8. Objets / décorations
+9. Accessibilité finale
+10. Validators
+11. Export
+```
+
+Une passe tardive doit s'adapter aux starts réservés ; elle ne doit pas repousser leur placement à la fin.
 
 ## GUI
 
-La fenêtre permet de choisir :
+La GUI conserve les fonctions de v1 :
 
-- Continental ;
+- aperçu déterministe de la vraie `Area` ;
+- nombre de joueurs / seed ;
+- PASS/FAIL validators ;
+- journal du pipeline ;
+- métadonnées ;
+- export EDM/MAP bloqué si HARD FAIL.
+
+Elle ajoute maintenant :
+
+- sélecteur **Mode de génération** ;
+- sélecteur **Archétype** ;
+- état explicite lorsqu'un mode/archétype est réservé mais non implémenté.
+
+## Portée actuelle
+
 - 768×768 ;
 - 2–20 joueurs ;
-- seed déterministe.
+- Legacy + Continental seulement réellement générables.
 
-Elle affiche :
+Cette limitation est volontaire : Upgraded ne sera activé qu'après transcription exhaustive des règles custom en configuration + pipeline + validators/tests.
 
-- aperçu visuel de la vraie `Area` générée ;
-- liste PASS/FAIL des invariants ;
-- étapes du pipeline ;
-- métadonnées de génération.
+## Installation Windows
 
-`Exporter EDM + MAP` reste désactivé si un **HARD check** échoue.
+- première installation : `install_python_and_run.bat` ou `install_and_run.bat` ;
+- ensuite : `run_gui.bat`.
 
-## Règles déjà encodées
+Les lanceurs testent `py -3` puis `python`.
 
-- morphologie basée sur la bibliothèque native 768, sans génération d'image imaginaire ;
-- Water0..7 hauteur 0 / accessibility 1 ;
-- dégradé d'eau contrôlé dans la bande extérieure ;
-- suppression des inland Water components 1–4 et redistribution vers une masse d'eau existante ;
-- rivières connectées à l'eau, arrêt au premier contact, 0 orpheline, plafond 55 ;
-- poissons uniquement à distance 1–12 d'une **vraie Shore48** ; le bord du tableau ne compte jamais comme une côte ;
-- 32 313 cases poisson ; quantité +30% par case, saturation 15 ;
-- minerais v7 : familles/cellules exactes, petites croissances compactes, quantité +30% ;
-- Snow reconstruit depuis relief / profondeur montagne ;
-- adultes globaux 1352 + bonus de départ séparé ;
-- SmallTree84 = 406 séparés, validés long-play ;
-- Building Stones : quota global, stock, bonus local 53 unités/joueur, footprint 7 cellules, espacement conservateur >=4 HEX ;
-- aucun objet ordinaire sur Mountain ;
-- Swamp -> Reeds only ;
-- starts choisis avant les objets, footprint 33 cellules et contraintes de relief ;
-- export EDM/MAP via scaffold binaire + checksum validé.
+## Tests de release
 
-## Important sur la morphologie v1
+La v1.1 vérifie notamment :
 
-Pour éviter de réintroduire les régressions de formes, le backend v1 choisit actuellement un des terrains natifs 768 de la bibliothèque puis lui applique uniquement une transformation HEX-compatible globale (identité / 180° / transpose). C'est délibérément conservateur.
+- registre séparé modes / archétypes ;
+- starts placés avant l'hydrologie détaillée ;
+- 20 starts survivent au pipeline complet ;
+- HARD checks du moteur ;
+- export checksum ;
+- refus explicite de Upgraded/Custom tant qu'ils ne sont pas implémentés.
 
-La prochaine étape pourra remplacer **uniquement** `morphology.native_template` par un compositeur procédural de formes natives plus varié. Tous les modules resources/objets/validators resteront alors inchangés.
+## Règle de non-régression
 
-## Structure
-
-```text
-s3mapgen/
-  binary.py      lecture/écriture/checksum EDM/MAP
-  engine.py      pipeline Continental v1
-  hexgrid.py     HEX6 / distances / composantes
-  model.py       MapState
-  preview.py     rendu déterministe
-  profile.py     profil JSON
-  rules.py       registre pipeline + résultats validation
-  gui.py         GUI Tkinter
-  cli.py         mode ligne de commande
-config/
-  continental_768_v1.json
-data/
-  SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz
-  scaffold_768.edm/.map
-references/
-  références canoniques copiées avec la release
-tests/
-  smoke tests
-```
-
-## CLI
-
-```bash
-python run_cli.py --players 20 --seed 2026081902 --out output/test
-```
-
-Le CLI refuse également l'export si un HARD validator échoue.
-
-## Ce que la v1 ne prétend pas encore résoudre
-
-- diversification procédurale complète des silhouettes ;
-- autres tailles 384–704 ;
-- calibration définitive de toutes les hitboxes d'objets ;
-- validation runtime SAV automatique après lancement du jeu ;
-- archétypes Large Islands / Small Islands ;
-- GUI avancée (zoom, couches togglables, édition interactive, presets).
-
-Ces éléments peuvent désormais être ajoutés sans réécrire les invariants déjà acquis.
-
-## Dépannage Windows — Python introuvable
-
-Les lanceurs testent maintenant `py -3` puis `python`.
-
-Si aucun des deux ne fonctionne :
-
-1. lancer `install_python_and_run.bat` pour tenter l'installation automatique via `winget` ;
-2. ou installer Python 3.12 64 bits manuellement en cochant **Add Python to PATH** ;
-3. relancer ensuite `install_and_run.bat`.
-
-Le raccourci `python.exe` qui redirige uniquement vers le Microsoft Store n'est pas une installation Python utilisable par MapGen.
-
+Une règle validée pour un profil doit progressivement exister sous une forme exécutable : configuration, étape du pipeline, validator ou test. Les références Markdown restent la documentation historique ; le programme devient la source exécutable de vérité.

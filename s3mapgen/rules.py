@@ -12,11 +12,12 @@ class ValidationResult:
         return ('PASS' if self.passed else 'FAIL') + f' {self.rule_id}: {self.message}'
 
 PIPELINE_STAGES = (
-    'morphology.native_template',
+    'archetype.macro_layout',
+    'starts.maximin_early',
+    'starts.reserve_zones',
     'hydrology.micro_water_cleanup',
     'hydrology.bathymetry',
     'hydrology.river_cleanup',
-    'starts.maximin',
     'biomes.start_mini_swamps',
     'snow.summit_rebuild',
     'resources.minerals_v7_nogap',

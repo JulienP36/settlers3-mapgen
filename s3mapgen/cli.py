@@ -2,19 +2,19 @@ from __future__ import annotations
 import argparse,json
 from pathlib import Path
 from .app_paths import PROFILE,LIBRARY,EDM_SCAFFOLD,MAP_SCAFFOLD
-from .engine import Continental768Generator
+from .engine import MapGenerator
 from .binary import export_with_scaffold
 from .preview import render
 
 def main():
     ap=argparse.ArgumentParser(description='Settlers III MapGen v1')
-    ap.add_argument('--players',type=int,default=4);ap.add_argument('--seed',type=int,required=True);ap.add_argument('--out',type=Path,default=Path('output'))
+    ap.add_argument('--players',type=int,default=4);ap.add_argument('--seed',type=int,required=True);ap.add_argument('--mode',choices=['legacy','upgraded','custom'],default='legacy');ap.add_argument('--archetype',choices=['continental','large_islands','small_islands'],default='continental');ap.add_argument('--out',type=Path,default=Path('output'))
     args=ap.parse_args();args.out.mkdir(parents=True,exist_ok=True)
-    g=Continental768Generator(PROFILE,LIBRARY);res=g.generate(args.players,args.seed)
+    g=MapGenerator(PROFILE,LIBRARY);res=g.generate(args.players,args.seed,mode=args.mode,archetype=args.archetype)
     hard=[v for v in res.validations if v.hard and not v.passed]
     print('\n'.join(v.label() for v in res.validations))
     if hard:raise SystemExit(f'Export refused: {len(hard)} hard validation failure(s)')
-    base=f'S3_Continental_{args.players}P_768x768_seed_{args.seed}_MapGenV1'
+    base=f'S3_{args.archetype}_{args.mode}_{args.players}P_768x768_seed_{args.seed}_MapGenV1_1'
     export_with_scaffold(res.state,EDM_SCAFFOLD,args.out/(base+'.edm'))
     export_with_scaffold(res.state,MAP_SCAFFOLD,args.out/('1-'+base+'.map'))
     render(res.state,args.out/(base+'_preview.png'))

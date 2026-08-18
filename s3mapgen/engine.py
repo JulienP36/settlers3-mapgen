@@ -11,6 +11,8 @@ from .profile import load_profile
 from .constants import *
 from .hexgrid import hex_distance, neighbor_count, component_labels, component_sizes, depth, dilate
 from .rules import ValidationResult, PIPELINE_STAGES
+from .modes import get_mode
+from .archetypes import get_archetype
 
 @dataclass
 class GenerationOutput:
@@ -18,7 +20,7 @@ class GenerationOutput:
     validations: list[ValidationResult]
     stage_log: list[str]
 
-class Continental768Generator:
+class MapGenerator:
     """Checkpoint-safe v1 Continental generator.
 
     V1 deliberately uses complete native 768 terrain/height templates as its morphology source.
@@ -37,16 +39,25 @@ class Continental768Generator:
     def log(self, stage:str, detail:str=''):
         self.stage_log.append(stage + (f' — {detail}' if detail else ''))
 
-    def generate(self, players:int, seed:int)->GenerationOutput:
+    def generate(self, players:int, seed:int, mode:str='legacy', archetype:str='continental')->GenerationOutput:
+        mode_spec=get_mode(mode); arch_spec=get_archetype(archetype)
+        if not mode_spec.implemented:
+            raise NotImplementedError(f"Le mode {mode_spec.label} est réservé dans l'architecture mais pas encore implémenté.")
+        if not arch_spec.implemented:
+            raise NotImplementedError(f"L'archétype {arch_spec.label} est réservé dans l'architecture mais pas encore implémenté.")
         if players not in self.profile['supported_players']:
             raise ValueError(f'Unsupported player count: {players}')
         self.stage_log=[]
         rng=np.random.default_rng(seed); pr=random.Random(seed)
+        # Architecture verrouillée : l'archétype ne produit que la macro-topologie.
         state=self._morphology_from_native(rng,pr)
+        self.log('archetype.macro_layout',f'{arch_spec.label}')
+        # Les starts sont placés immédiatement après le macro-layout, AVANT les couches détaillées.
+        self._place_starts(state,players,rng)
+        self.log('starts.reserve_zones',f'technical_hex={self.profile["starts"]["technical_clear_hex"]}')
         self._cleanup_micro_water(state,rng)
         self._finalize_water(state)
         self._cleanup_rivers(state)
-        self._place_starts(state,players,rng)
         self._place_start_swamps(state,rng,pr)
         self._rebuild_snow(state,rng)
         self._generate_minerals(state,rng,pr)
@@ -56,7 +67,7 @@ class Continental768Generator:
         self._place_building_stones(state,rng,pr)
         self._final_accessibility(state)
         vals=self.validate(state)
-        state.metadata.update(seed=int(seed),players=int(players),profile=self.profile['profile_name'],pipeline=list(PIPELINE_STAGES))
+        state.metadata.update(seed=int(seed),players=int(players),mode=mode_spec.label,mode_key=mode,archetype=arch_spec.label,archetype_key=archetype,profile=self.profile['profile_name'],pipeline=list(PIPELINE_STAGES),starts_placed_early=True)
         return GenerationOutput(state,vals,list(self.stage_log))
 
     # ---------- morphology ----------
@@ -110,6 +121,10 @@ class Continental768Generator:
                 lake=(lab==target_id)
                 grown=0
                 frontier=(neighbor_count(lake)>0)&~water&(T==GRASS)
+                # Starts were already placed: hydrology may adapt around them, never overwrite their reserved zone.
+                if state.starts:
+                    protected=self._core_mask(state,self.profile['starts']['technical_clear_hex']+2)
+                    frontier &= ~protected
                 pts=np.argwhere(frontier)
                 if len(pts):
                     order=rng.permutation(len(pts))
@@ -192,7 +207,7 @@ class Continental768Generator:
             best=max(sample,key=score);starts.append(best)
             valid=[p for p in valid if hex_distance(p[0],p[1],best[0],best[1])>=minsep]
         state.starts=starts
-        self.log('starts.maximin',f'players={players}')
+        self.log('starts.maximin_early',f'players={players}')
 
     def _core_mask(self,state,radius):
         m=np.zeros((self.side,self.side),bool)
@@ -537,3 +552,7 @@ class Continental768Generator:
         add('STARTS_STATIC',badstarts==0,f'bad={badstarts}/{len(state.starts)}')
         self.log('validators.hard',f'pass={sum(v.passed for v in out)}/{len(out)}')
         return out
+
+
+# Backward-compatible alias for v1 callers/tests.
+Continental768Generator = MapGenerator

@@ -1,29 +1,30 @@
-# Settlers III MapGen v1 — release validation
+# Settlers III MapGen v1.1 — release validation
 
-Date: 2026-08-18
+Date : 2026-08-18
 
-## Smoke matrix
+## Résultat automatisé
 
-- 768×768 / 4P / seed `2026081901`: **28/28 validations PASS**.
-- 768×768 / 20P / seed `2026081902`: **28/28 validations PASS**.
-- EDM binary export checksum: **PASS**.
-- GUI module import: **PASS**.
+- `pytest`: **6/6 tests PASS**.
+- 4P Legacy/Continental : HARD checks PASS.
+- 20P Legacy/Continental : HARD checks PASS.
+- starts placés avant `hydrology.micro_water_cleanup` : PASS.
+- les 20 starts restent valides après pipeline complet : PASS.
+- export checksum EDM : PASS.
+- Upgraded non implémenté : refus explicite PASS.
+- Custom non implémenté : refus explicite PASS.
 
-## Hard checks currently enforced
+## Architecture désormais vérifiée
 
-- Water height/accessibility.
-- Outer-frame bathymetry gradient.
-- No inland Water components 1–4.
-- River connection, stop-at-first-Water, length cap.
-- Fish nonzero, Water-only, no River, actual Shore48 distance <=12, no map-edge-derived fish.
-- Exact mineral family cell counts.
-- No ordinary objects on Mountain.
-- Adult tree quota range and Grass legality.
-- Swamp decorations are Reeds only.
-- SmallTree84 exact pool.
-- Building Stone footprint, spacing, anchor quota, stock quota and Grass legality.
-- Static start validity.
+```text
+Archetype.macro_layout
+    -> starts.maximin_early
+    -> starts.reserve_zones
+    -> hydrology / terrain detail
+    -> resources / balance
+    -> objects
+    -> validators
+```
 
 ## Important
 
-Passing these validators means the **program has applied its encoded rules consistently**. It does not replace official Settlers III editor/game validation. In particular, 20P metadata and exact remaining object hitboxes still need continued game-side testing.
+Cette release ne prétend pas encore fournir Upgraded. Elle garantit seulement que l'architecture est prête à le recevoir sans mélanger la macro-forme de l'archétype avec les règles du mode de génération.
