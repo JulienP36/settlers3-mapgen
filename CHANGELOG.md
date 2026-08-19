@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.5 — Legacy/Upgraded audit + start clusters + resource-state fixes — CANDIDATE
+- Séparation conceptuelle puis implémentée entre **Legacy** et **Upgraded** : Legacy reste native-like hors correctifs de stabilité/validité ; Upgraded part de cette base et ajoute uniquement les améliorations explicitement validées.
+- Morphologie macro commune par archétype ; starts toujours placés très tôt et protégés contre les passes suivantes.
+- Hydrologie : Legacy conserve les petits étangs/rivières natives ; Upgraded supprime/redistribue les plans d'eau de 1–4 cellules et applique un trimming de rivière calibré par taille (`~0.0245*side + 34.7`).
+- Neige commune Legacy/Upgraded, avec chaîne validée `Rocky32 -> 35 -> 129 -> Snow128`; Terrain34 reste une variante Rocky interne rare et minéralisable.
+- Minerais Upgraded : cible ~90 % du support montagneux accessible, ratios empiriques natifs, géométrie v7 no-gap, quantité/case +30 % cap15 ; Legacy conserve son comportement natif-like.
+- Arbres : pool natif complet `68..77 + 80..81` dans les deux modes ; Palms `78..79` comptées comme bois récoltable. Upgraded utilise ~130 % du volume natif complet + SmallTree84 séparé.
+- Désert commun natif-like : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`.
+- Petites végétations/fleurs/buissons/champignons identiques Legacy/Upgraded ; Wrecks/Grave/Stumps communs natifs.
+- Mud conservé en Legacy, désactivé en Upgraded. Terrain24 conservé en Legacy et volontairement différé en Upgraded pour une passe isolée ultérieure.
+- Swamp Upgraded ~+30 % global avec protection HEX6 contre les contacts incompatibles ; Reeds restent natifs dans les deux modes.
+- Decorative Stones : densité native Legacy, environ ÷10 Upgraded ; Reefs : Legacy 0, Upgraded rares et navigation-safe.
+- **Bonus de départ Upgraded reconstruits comme de vrais clusters** centrés sur la bordure du territoire initial (~rayon HEX34) : forêt `41 adultes + 21 SmallTree84` par joueur ; tas de pierre `8 ancres / 84 unités`, états 9–12 unités/ancre.
+- Building Stones globales : suppression de l'uniformisation des états. Legacy génère une distribution variée native-like ; Upgraded une distribution variée biaisée vers les états plus pleins, avec correction fine pour atteindre exactement le stock cible.
+- Building Stone 13 / ID127 est désormais générée comme dans le natif (~20 ancres globales sur 768), compte dans la densité d'ancres mais **jamais dans le stock exploitable**.
+- **ID127 est constructible** : contrairement aux états actifs `115..126`, son ancien footprint 7 cellules est libéré (`accessibility=0`) avant validation/export.
+- Validators v1.5 : ancres totales `115..127`, stock actif `115..126`, variété d'états, quota d'ID127, terrain légal et constructibilité de l'état épuisé.
+- Goods Default reste verrouillé : Legacy=Medium (`2`), Upgraded=High (`3`).
+- Nouveau wrapper GUI `gui_v15.py`; `run_gui.py` lance v1.5 et les exports sont nommés `MapGenV1_5`. CLI également mis à jour en v1.5.
+- Nouvelle idée de modificateur futur **Réaliste** : distributions végétales guidées par l'environnement (plus d'arbres près de l'eau, champignons favorisés près des marais, etc.), à développer séparément sans modifier les modes de base.
+- Statut : **candidate**, à valider dans l'éditeur + View Map/in-game avant promotion/tag.
+
 ## v1.4 — dark mode / visualization comfort — VALIDÉE
 - Nouveau thème **Sombre / Clair**, sombre par défaut, configurable dans un nouvel onglet `Paramètres`.
 - Préférences d'affichage persistées dans le profil utilisateur Windows (`APPDATA/Settlers3MapGen/settings.json`).
