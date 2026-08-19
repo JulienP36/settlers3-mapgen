@@ -53,17 +53,17 @@
 - [x] Barre progression, seed aléatoire, import EDM/MAP/SAV, export EDM+MAP 768.
 - [~] Export SAV non validé ; copie inchangée d'un SAV importé seulement.
 - [x] Vues global / heightmap / ressources / territoires.
-- [ ] Vue **Chemins / zones creusées** Terrain28.
-- [ ] Vue **Cultures** blé/vigne/riz.
-- [ ] **Nouvelle vue Heatmap**, paramétrable par ressource, pour visualiser les zones de meilleure concentration :
-  - [ ] arbres ;
-  - [ ] Building Stones ;
-  - [ ] poissons ;
-  - [ ] Coal ;
-  - [ ] Iron ;
-  - [ ] Gold ;
-  - [ ] Gemstones ;
-  - [ ] Sulfur.
+- [x] Vue **Chemins / zones creusées** Terrain28 ; Terrain28 runtime désormais préservé lors de l'import SAV au lieu d'être normalisé en Grass.
+- [x] Vue **Cultures** blé/vigne/riz avec familles visuellement distinctes.
+- [x] **Nouvelle vue Heatmap**, paramétrable par ressource, basée sur une densité locale déterministe et pondérée par stock réel lorsque disponible :
+  - [x] arbres ;
+  - [x] Building Stones ;
+  - [x] poissons ;
+  - [x] Coal ;
+  - [x] Iron ;
+  - [x] Gold ;
+  - [x] Gemstones ;
+  - [x] Sulfur.
 - [ ] **Internationalisation UI Français / Anglais** : permettre de changer la langue. Traduire les titres/labels utilisateur ; les contenus techniques des sections Debug/Validations/Pipeline/Métadonnées peuvent rester en anglais.
 - [ ] Palette exacte des couleurs joueurs.
 - [ ] Contour de zone de départ d'origine sur import SAV.
@@ -77,8 +77,8 @@
   - [ ] Garder plusieurs résultats récents de session, avec limite mémoire raisonnable et possibilité de vider le cache manuellement.
   - [ ] Ne jamais écrire ce cache sur disque automatiquement ; fermeture du programme = cache détruit.
 - [ ] **Historique de session / comparaison A-B** : liste des générations récentes avec rappel seed/mode/taille/joueurs/modificateurs, sélection de deux entrées et bascule rapide A/B ; plus tard éventuellement vue côte-à-côte ou différence visuelle.
-- [ ] Bouton **recentrer / zoom 100 %** pour revenir instantanément à une vue propre après navigation.
-- [ ] Action rapide **copier le seed** de la génération courante.
+- [x] Bouton **Recentrer** : revient au zoom 100 % et recentre la carte.
+- [x] Action rapide **Copier seed** de la génération courante.
 - [ ] Raccourcis clavier simples à définir après stabilisation des nouveaux contrôles (générer, recentrer, changer de vue, A/B).
 
 ## Statistiques — grosse passe après l'UI
