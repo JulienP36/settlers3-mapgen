@@ -10,8 +10,9 @@
 - [x] **Goods Default corrigé et validé** : le writer encode explicitement un preset valide dans Map Info (`Legacy=Medium`, `Upgraded=High`) ; les deux contrôles 4P frais démarrent sans crash avec `Défaut`.
 
 ## Prochaine grosse étape génération
-- [ ] **Upgraded : généraliser la morphologie locale** pour ne plus dépendre du checkpoint 768 comme référence exécutable.
-- [ ] Construire une vraie bibliothèque/procédure de formes Upgraded réutilisable avec tous les archétypes.
+- [x] **Découpler Upgraded du checkpoint 768 comme référence exécutable** : la GUI/CLI utilisent désormais une façade où la macro-géographie vient de la bibliothèque d'archétype, indépendamment du mode. Test dédié avec chemin de checkpoint inexistant : OK.
+- [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` est en place et exploite actuellement les 3 templates natifs 768 existants + transformations ; élargir ensuite la variété/procédure de formes et préparer les autres archétypes.
+- [ ] Valider visuellement la première candidate Upgraded issue de la bibliothèque Continental commune avant d'augmenter davantage la variété.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
 
 ## UX / outillage
@@ -51,8 +52,8 @@
 - [ ] Édition directe de la map — gros morceau, **pas maintenant**.
 
 ## À préserver
-- [ ] Archetype = macro-forme uniquement.
-- [ ] Mode = contenu/règles/balance/objets/ressources/etc.
+- [x] Archetype = macro-forme uniquement.
+- [x] Mode = contenu/règles/balance/objets/ressources/etc.
 - [ ] Starts générés très tôt et protégés par les passes suivantes.
 - [ ] Legacy / Upgraded / Custom restent séparés.
 - [ ] Aucun aperçu imaginaire : rendu déterministe depuis les vraies données.
