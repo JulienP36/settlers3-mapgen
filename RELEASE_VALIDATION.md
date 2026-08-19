@@ -11,51 +11,39 @@ Date: 2026-08-19
 - Reconstruction systématique des transitions de marais `Grass16 -> 21 -> 81 -> 80`, y compris les mini-marais de départ.
 - Validators HARD pour les marges de starts, l'accessibility Snow et les chaînes de transitions Desert/Swamp/Snow.
 
-### Contrôles automatisés
-- Compilation des modules Python : PASS.
-- Legacy 4P : génération sans HARD failure.
-- Upgraded 4P : génération sans HARD failure.
-- Upgraded 20P : génération sans HARD failure.
-- Tests de non-régression ciblés : PASS.
-- `SNOW_ACCESS`, `SWAMP_TRANSITIONS` et halos start : contrôlés par validators HARD.
-
 ### Validation externe utilisateur
-Quatre générations **Continental 768×768** ont été testées dans les outils officiels :
+Quatre générations **Continental 768×768** ont été testées dans les outils officiels : Legacy 4P, Legacy 20P, Upgraded 4P et Upgraded 20P.
 
-- Legacy 4 joueurs ;
-- Legacy 20 joueurs ;
-- Upgraded 4 joueurs ;
-- Upgraded 20 joueurs.
+Résultats : starts acceptés par l'éditeur, aucun crash View Map/in-game, correction des marais confirmée et neige intérieure non traversable comme prévu.
 
-Résultats sur les quatre :
+Conclusion : **v1.3.2 validée** pour ce périmètre de contrôle.
 
-- positions de départ acceptées par l'éditeur ;
-- aucun crash lors de la vue in-game / View Map ;
-- correction des marais jugée effective ;
-- neige intérieure non traversable comme prévu.
+## v1.4 — VALIDÉE
 
-Conclusion : **la v1.3.2 sort du statut candidate et est considérée validée pour ce périmètre de contrôle**. Cette validation ne signifie pas que tous les seeds possibles ont été exhaustivement testés.
-
-## v1.4 candidate — validation en cours
-
-La v1.4 conserve le moteur/règles de génération validés de la v1.3.2 et ajoute principalement des améliorations de visualisation et d'interface :
+La v1.4 conserve le moteur/règles de génération validés de la v1.3.2 et ajoute les améliorations de visualisation et d'interface suivantes :
 
 - thème sombre / clair et préférences persistantes ;
 - overlays avec opacité réglable ;
-- projection parallélogramme ;
+- projection parallélogramme à décalage de 0,5 cellule par ligne ;
 - drag et zoom améliorés ;
 - barre de progression étendue ;
 - palette joueurs unifiée ;
-- marqueurs `P1` à `P20` nets et colorés ;
-- contour du territoire initial des starts dérivé des données SAV natives (3500 cellules, étendue ±35 cellules) ;
-- projection parallélogramme à décalage de 0,5 cellule par ligne, sans déformer les labels ;
-- listes déroulantes corrigées en mode sombre ;
-- sliders positionnables directement par clic sur la barre.
+- marqueurs `P1` à `P20` nets, colorés et non déformés ;
+- contour du territoire initial dérivé des SAV natifs : 3500 cellules, étendue ±35 cellules ;
+- territoire initial rendu comme un vrai cercle dans la géométrie parallélogramme, avec déformation inverse en vue carrée ;
+- listes déroulantes corrigées en mode sombre, ouvertes comme fermées ;
+- sliders positionnables directement par clic sur leur barre.
 
-Les dernières corrections v1.4 restent à revalider visuellement par l'utilisateur avant promotion hors statut candidate.
+### Validation utilisateur finale
+Les deux derniers points restant à confirmer ont été contrôlés visuellement et validés :
 
-## Problème connu séparé
+- géométrie du cercle de territoire en vues parallélogramme et carrée : **OK** ;
+- fond/texte des combobox fermées en thème sombre : **OK**.
+
+Conclusion : **v1.4 sort du statut candidate et est considérée validée**.
+
+## Problème connu séparé — prochaine investigation
 
 Un crash a été observé en jeu quand les **fournitures de départ sont laissées sur `Défaut`**. Les presets explicites `Low`, `Medium` et `High` n'ont pas reproduit ce crash dans le contrôle concerné.
 
-Ce problème n'est pas attribué pour l'instant aux corrections Snow/Swamp/start de la v1.3.2 et doit faire l'objet d'une investigation dédiée.
+Ce problème est séparé de la validation v1.4 et devient la prochaine investigation prioritaire.
