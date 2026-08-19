@@ -71,3 +71,25 @@ Deux générations **fraîches v1.4 4P** ont été testées :
 Aucun message `You have lost` et aucun divide-by-zero sur ces deux contrôles.
 
 Conclusion : **le crash Goods Default est corrigé et validé**.
+
+## Morphologie Upgraded indépendante — PREMIÈRE CANDIDATE VALIDÉE
+
+### Candidate
+`S3_Continental_Upgraded_4P_768x768_seed_2026081908_archetype_library_v1`
+
+Cette candidate est la première génération Upgraded évaluée après découplage de la macro-morphologie vis-à-vis de l'ancien checkpoint EDM exécutable. La géographie est fournie par la bibliothèque d'archétype puis les règles Upgraded sont appliquées par-dessus.
+
+### Validation utilisateur
+Contrôle dans l'éditeur et en jeu :
+
+- géographie globale jugée **excellente** ;
+- forme du continent / côtes / biomes / hydrologie : aucun défaut bloquant signalé ;
+- starts : **OK** ;
+- démarrage / vue in-game : **aucun crash** ;
+- heightmap générale jugée correcte ; vérification statistique effectuée ensuite : le relief montagneux correspond à la référence native 768/4P source et reste dans l'enveloppe des trois références 768.
+
+### Réserves non bloquantes séparées de la validation
+- Quelques singletons terrain `34` subsistent dans des zones Rocky. Ils sont visuellement bénins mais proviennent d'un ancien transitionnel Rocky/Snow non nettoyé par le rebuild Snow ; nettoyage à faire séparément (`34 -> Rocky32` avant reconstruction Snow).
+- Un terrain natif non plaçable directement dans l'éditeur, visuellement proche d'un **Grass jaune / herbes sèches**, doit encore être identifié précisément parmi les IDs non nommés. Il ne doit pas être ajouté volontairement à Upgraded avant identification.
+
+Conclusion : **la première morphologie Upgraded indépendante est validée comme base de généralisation**. La prochaine étape peut augmenter la diversité de formes sans revenir à une dépendance au checkpoint EDM historique.
