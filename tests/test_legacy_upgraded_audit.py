@@ -54,6 +54,7 @@ def test_tree_pool_and_v15_start_forest_are_locked():
 def test_v15_building_stone_rules_are_locked():
     legacy = load(LEGACY_PROFILE)
     upgraded = load(UPGRADED_PROFILE)
+    expected_footprint = [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
     for profile in (legacy, upgraded):
         stones = profile['building_stones']
         assert stones['active_ids'] == list(range(115, 127))
@@ -61,7 +62,7 @@ def test_v15_building_stone_rules_are_locked():
         assert stones['exhausted_buildable'] is True
         assert stones['global_anchor_target'] == 1683
         assert stones['global_exhausted_anchor_target'] == 20
-        assert stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[1,1],[0,1]] or stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
+        assert stones['footprint'] == expected_footprint
     assert legacy['building_stones']['global_stock_target'] == 10892
     assert legacy['building_stones']['start_bonus_anchor_target'] == 0
     assert legacy['building_stones']['start_bonus_stock_per_player'] == 0
