@@ -3,7 +3,7 @@ import argparse, json
 from pathlib import Path
 
 from .app_paths import LEGACY_PROFILE, UPGRADED_PROFILE, UPGRADED_REFERENCE, LIBRARY, EDM_SCAFFOLD, MAP_SCAFFOLD
-from .generator import MapGenerator
+from .generator_v15 import MapGenerator
 from .binary import export_with_scaffold
 from .preview import render
 
