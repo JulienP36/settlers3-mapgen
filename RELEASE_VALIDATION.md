@@ -42,8 +42,32 @@ Les deux derniers points restant à confirmer ont été contrôlés visuellement
 
 Conclusion : **v1.4 sort du statut candidate et est considérée validée**.
 
-## Problème connu séparé — prochaine investigation
+## Correctif Goods Default — VALIDÉ
 
-Un crash a été observé en jeu quand les **fournitures de départ sont laissées sur `Défaut`**. Les presets explicites `Low`, `Medium` et `High` n'ont pas reproduit ce crash dans le contrôle concerné.
+### Cause racine
+Le writer MapGen écrivait par erreur `player_count - 1` dans le 3e DWORD du bloc Map Info. Ce DWORD correspond au réglage éditeur **Goods Default** :
 
-Ce problème est séparé de la validation v1.4 et devient la prochaine investigation prioritaire.
+- `1` = Low ;
+- `2` = Medium ;
+- `3` = High.
+
+Sur une map 20 joueurs, l'ancienne écriture produisait donc `19`, valeur invalide : dans `Edit Map Settings`, aucun preset Low/Medium/High n'était sélectionné et le lancement avec `Défaut` pouvait provoquer une erreur/crash.
+
+### Correctif
+Le writer sérialise désormais explicitement :
+
+- **Legacy → Medium (`2`)** ;
+- **Upgraded → High (`3`)** ;
+- fallback sûr → Medium pour un mode inconnu/importé.
+
+Un test de non-régression verrouille le champ afin que le nombre de joueurs ne puisse plus être écrit comme Goods Default.
+
+### Validation utilisateur
+Deux générations **fraîches v1.4 4P** ont été testées :
+
+- Legacy : `Edit Map Settings` affiche bien **Medium**, démarrage avec `Défaut` sans crash ;
+- Upgraded : `Edit Map Settings` affiche bien **High**, démarrage avec `Défaut` sans crash.
+
+Aucun message `You have lost` et aucun divide-by-zero sur ces deux contrôles.
+
+Conclusion : **le crash Goods Default est corrigé et validé**.
