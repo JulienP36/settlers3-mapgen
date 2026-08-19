@@ -22,41 +22,43 @@ User visual identification:
 | 80 | resembles Birch 1 | internal/tree variant, exact semantics unknown |
 | 81 | resembles Birch 2 | internal/tree variant, exact semantics unknown |
 
-These IDs are not added to the normal static tree pool yet.
+These IDs are visually identified as tree-family variants but are not added to the normal static tree pool yet.
 
 ## Unknown / invisible
 
 - `82`, `83`: no visible object in the controlled editor calibration on tested supports/heights. Exact role remains unknown; defer to future binary/runtime analysis.
 
-## Wheat growth/runtime states
+## Wheat growth/runtime states — IDENTIFIED FAMILY
 
-IDs `85..93` form a coherent **9-state wheat cycle**.
+IDs `85..93` form a coherent **9-state wheat family/cycle**.
 
-- `85..91`: successive growth states (exact ordinal naming not yet locked beyond visual progression).
+- `85..91`: successive wheat growth states.
 - `92`: mature / harvestable wheat.
-- `93`: post-harvest state — cut straw/stubble lying on the ground, temporary fallow-like state before disappearing.
+- `93`: **chaume** — post-harvest cut straw/stubble lying on the ground, temporary state before disappearing.
 
-These are runtime crop states, not ordinary static map decorations.
+The family identification is considered visually confirmed. Exact timing/duration of intermediate stages remains a runtime-mechanics detail, not an object-ID ambiguity.
 
-## Grape/vine growth/runtime states
+## Grape/vine growth/runtime states — IDENTIFIED FAMILY
 
-IDs `94..102` form a coherent **9-state grape/vine cycle**.
+IDs `94..102` form a coherent **9-state grape/vine family/cycle**.
 
-- `94..101`: successive vine states.
-- `102`: ninth state, visually resembles the first state (`94`).
+- `94..101`: successive vine/grape states.
+- `102`: ninth vine-family state; visually resembles `94`.
 
-Interpretation to test later: this may reflect the vineyard gameplay cycle where vines persist and return to an early growth state after harvest instead of requiring replanting. This interpretation is plausible but not yet treated as binary-confirmed semantics.
+All IDs `94..102` are considered identified as members of the grape/vine family. The precise runtime transition semantics between `102` and `94` remain open. A plausible explanation is the vineyard-specific behavior where vines persist after harvest and re-enter an early growth state without requiring replanting, but this mechanical interpretation is not yet binary-confirmed.
 
-## Rice growth/runtime states
+## Rice growth/runtime states — IDENTIFIED FAMILY
 
-IDs `103..110` correspond to **rice growth/runtime states**.
+IDs `103..110` are considered identified as members of the **rice growth/runtime family**.
 
-Rice normally grows only on Swamp terrain, so these IDs should be rechecked later in a controlled Swamp or live-game context to establish exact stage ordering and any terrain coupling.
+Rice normally grows on Swamp terrain. Exact stage ordering and terrain/runtime coupling can be refined later from a live SAV, but the family identification itself is retained as confirmed visual information.
 
 ## Generator decisions
 
 - Do not deliberately generate IDs `73..110` as ordinary decorative/static objects in Upgraded.
 - Keep the already-confirmed static tree pool (`68..72`, `78`, `79`, `84`) unchanged.
 - Keep `82/83` as unresolved runtime/technical IDs.
-- Treat `85..110` as runtime agriculture-state families for analysis/statistics, not static object families.
-- Future SAV/live-game analysis should correlate crop object-state IDs with terrain IDs underneath them, especially wheat field/fallow terrain and rice-on-Swamp behavior.
+- Treat `85..93` as wheat runtime states, including `93 = chaume`.
+- Treat `94..102` as grape/vine runtime states; only the exact `102 -> 94` cycle semantics remain unresolved.
+- Treat `103..110` as rice runtime states.
+- Future SAV/live-game analysis should correlate crop object-state IDs with terrain IDs underneath them, especially cultivated/fallow terrain for wheat and rice-on-Swamp behavior.
