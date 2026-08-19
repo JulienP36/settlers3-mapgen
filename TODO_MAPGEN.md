@@ -15,83 +15,72 @@
 - [x] **Terrain34 requalifié par analyse native** : sur les 3 SAV natives 768 analysées, toutes les cellules 34 sont des singletons entièrement entourés de Rocky32 et ne touchent jamais `35/129/128`. Ne plus normaliser `34 -> Rocky32` et ne pas l'insérer dans l'anneau Snow. Terrain34 est une variante rare interne Rocky, minéralisable si elle est valide.
 - [x] **Chaîne Snow corrigée/validée visuellement** : `Rocky32 -> 35 (1 cellule) -> 129 (1 cellule) -> Snow128`. Terrain34 n'appartient pas à cette chaîne.
 - [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` exploite les 3 templates natifs 768 + transformations HEX compatibles ; première candidate Upgraded validée.
-- [~] **Audit actif Legacy / Upgraded** : règle directrice verrouillée : Legacy imite le générateur original au plus près ; seules les corrections de bug/stabilité/starts peuvent l'améliorer. Upgraded part de cette base Legacy et porte les améliorations volontaires. Les deux modes peuvent partager les mêmes grandes morphologies ; le contenu et les règles de placement peuvent diverger.
-- [x] **Minerais — séparation verrouillée** : Legacy reste native-like et ne doit pas recevoir le preset Upgraded. Upgraded cible ~90 % du Rocky accessible minéralisé, ratios empiriques natifs ~50.186/21.564/14.417/5.446/8.388 % (Coal/Iron/Gold/Gems/Sulfur ; à lisser plus tard vers des nombres ronds plausibles), géométrie v7 no-gap, +30 % de quantité par case cap15, minerai autorisé sous Snow et sur Terrain34 valide.
-- [x] **Hydrologie — séparation verrouillée** : suppression/redistribution des étangs de 1–4 cellules = Upgraded uniquement. Trimming/cap pratique des rivières = Upgraded uniquement et doit être **size-scaled**, jamais une constante universelle `55`. Legacy conserve le comportement natif.
-- [x] **Objets / arbres — séparation verrouillée** : Legacy utilise le pool natif complet d'arbres `68..77 + 80..81`, avec proportions natives. Upgraded part du même pool complet, augmente le volume total d'arbres à ~130 % de la baseline native et ajoute SmallTree84 comme bonus séparé. Si les futures générations paraissent trop forestières, ramener le volume Upgraded au volume Legacy plutôt que réduire le pool d'IDs.
-- [x] **Placement arbres Upgraded** : mélange de petites forêts irrégulières/aérées et d'arbres clairsemés ; Legacy peut conserver une organisation spatiale différente plus native-like.
-- [x] **Building Stones** : états `115..127`, stock `127-id`, footprint 7 cellules et prévention des collisions = commun/correctif technique. Legacy conserve densité/stock/comportement natifs ; Upgraded garde son propre placement en petits clusters + pierres dispersées et son stock amélioré.
-- [x] **Objets — récifs / roseaux / décorations** : récifs = `Legacy 0`, `Upgraded rares et non gênants`. Roseaux = comportement natif identique dans Legacy et Upgraded ; dans les marais, seuls les roseaux sont générés. Pierres décoratives = quantité native en Legacy, quantité fortement réduite (~native/10) en Upgraded. Petites plantes non bloquantes (buissons, fleurs, champignons, petites herbes) = même comportement natif dans Legacy et Upgraded.
-- [x] **Biomes** : Mud présent en Legacy selon le générateur natif ; Mud désactivé en Upgraded. Swamp global natif en Legacy et ~+30 % en Upgraded ; mini-marais bonus de start = Upgraded uniquement. Terrain24 (herbe jaune/sèche) est bien généré nativement et reste Legacy pour l'instant ; probablement à ajouter plus tard à Upgraded avec le même comportement puisqu'il s'agit d'une variante de Grass.
-- [ ] Finir l'audit sur désert / Snow / starts / derniers paramètres de contenu.
-- [ ] **Après l'audit : recalibrer explicitement les bonus de départ Upgraded** (arbres + Building Stones), séparément des quotas globaux.
-- [ ] Après l'audit, reprendre le **compositeur de formes natives / native stamps** pour diversifier réellement les seeds sans warp global : silhouette principale native + composants natifs réutilisables (îles, lacs, massifs, Desert, Swamp, Rivers), translation + transformations HEX compatibles, transitions reconstruites ensuite.
-- [ ] Interdits pour cette diversification : pas de warp global, pas de rescaling agressif, pas d'ellipses/blobs procéduraux artificiels pour remplacer les familles natives.
-- [ ] Produire plusieurs candidates 768 distinctes et valider que la variété augmente sans perdre le niveau visuel de la seed `2026081908`.
+- [x] **Audit Legacy / Upgraded terminé conceptuellement**. Référence canonique : `references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md`.
+- [x] **Minerais — séparation verrouillée** : Legacy reste native-like. Upgraded cible ~90 % du Rocky accessible, ratios natifs empiriques à lisser plus tard, v7 no-gap, +30 % quantité/case cap15, minerai sous Snow et Terrain34 valide.
+- [x] **Hydrologie — séparation verrouillée** : étangs 1–4 supprimés/redistribués = Upgraded seulement. River trimming/cap = Upgraded seulement et size-scaled. Cible pratique p99 : `~0.0245*side + 34.7`, avec queue rare autorisée au-dessus ; Legacy garde le comportement natif.
+- [x] **Arbres** : Legacy pool natif complet `68..77 + 80..81`, proportions/volume natifs. Upgraded même pool + volume total ~130 % de la vraie baseline native + SmallTree84 bonus séparé. Palms `78..79` = arbres récoltables et comptés dans les quotas bois.
+- [x] **Building Stones** : états `115..127`, stock `127-id`, footprint 7 cellules commun/bugfix. Legacy densité/stock natifs ; Upgraded stock amélioré, petits clusters + dispersé.
+- [x] **Décorations** : récifs `Legacy=0`, Upgraded rares/non gênants. Roseaux comportement natif identique dans les deux, seuls objets Swamp. Pierres décoratives native Legacy / ~native÷10 Upgraded. Petites plantes/fleurs/champignons/buissons = natif identique dans les deux. Wrecks `29..33`, Grave objet `34`, Tree Stumps `41..42` = comportement natif identique dans les deux.
+- [x] **Désert** : comportement natif commun : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`.
+- [x] **Biomes** : Mud natif Legacy / désactivé Upgraded. Swamp global natif Legacy / ~+30 % Upgraded. Terrain24 généré en Legacy selon observations ; ajout Upgraded confirmé mais volontairement différé à un changement isolé.
+- [x] **Snow** : même génération Legacy/Upgraded. Toute variante « montagnes plus réalistes » devra être un changement explicite/modificateur, pas une divergence cachée.
+- [x] **Starts** : placés très tôt dans les deux modes, zones protégées des passes suivantes ; comportement actuel conservé tant qu'aucune seed ne réintroduit invalidité/crash. Pas de cercles Grass/flattening artificiels. Bonus mini-marais/forêt/pierre = Upgraded uniquement.
+- [ ] **Implémenter maintenant la séparation Legacy / Upgraded dans le code** selon la référence canonique, puis générer des maps de contrôle.
+- [ ] **Après séparation : recalibrer explicitement les bonus de départ Upgraded** (arbres + Building Stones), séparément des quotas globaux.
+- [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable, pas pendant la grosse séparation actuelle.
+- [ ] Tester visuellement le nouveau volume d'arbres Upgraded basé sur le pool complet ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
+- [ ] Valider les scalings multi-tailles (arbres, stones, décorations, Swamp, reefs, désert, rivières) sur 384/448/512/576/640/704/768.
+- [ ] Après ces contrôles, reprendre le **compositeur de formes natives / native stamps** pour diversifier réellement les seeds sans warp global.
+- [ ] Produire plusieurs candidates 768 distinctes et valider la variété sans perdre la qualité de la seed `2026081908`.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
 
 ## Modificateurs futurs — architecture orthogonale aux modes
 - [ ] Ne pas créer un quatrième générateur Barebone : implémenter un système de **modificateurs** combinables avec les modes (`Legacy + modifiers`, `Upgraded + modifiers`).
 - [ ] **Barebone** : retire tout ce qui est purement cosmétique et sans utilité gameplay, sans toucher aux objets/terrains qui bloquent, fournissent des ressources ou ont un effet fonctionnel.
-- [ ] Prévoir d'autres modificateurs indépendants, notamment une **densité de forêt** configurable si nécessaire après les tests du nouveau pool complet d'arbres.
-- [ ] Idée expérimentale future : modificateur **cultures présentes au démarrage** (blé/vigne/riz), à étudier en tenant compte du decay runtime rapide et sans l'intégrer au générateur standard.
+- [ ] Prévoir un modificateur **densité de forêt** configurable.
+- [ ] Idée expérimentale : modificateur **cultures présentes au démarrage** (blé/vigne/riz), à étudier avec le decay runtime.
+- [ ] Variante future possible : **montagnes plus réalistes** comme modificateur explicite plutôt que divergence silencieuse entre Legacy et Upgraded.
 
 ## Reverse engineering terrain/runtime — découvertes enregistrées
-- [x] `Terrain24` : **herbe jaune / sèche**, variante visuelle de Grass ; blend propre **uniquement avec Grass16** ; visible dans les générations natives/Legacy. Ne pas l'ajouter volontairement à Upgraded pour l'instant, mais ajout futur probable avec comportement identique au Legacy.
+- [x] `Terrain24` : **herbe jaune / sèche**, variante visuelle de Grass ; blend propre uniquement avec Grass16 ; visible/générée nativement. Legacy oui ; Upgraded ajout futur confirmé mais différé.
 - [x] `Terrain22` : **sol cultivé / terrain agricole runtime**, fortement corrélé au blé et à la vigne ; revient vers Grass lorsque les cultures/terres abandonnées disparaissent.
-- [x] `Terrain28` : **sol runtime travaillé/usé**. Confirmé sous zones aplanies/creusées de bâtiments et sur petits chemins de passage. Retour rapide à Grass après disparition d'une zone bâtiment ; persistance des chemins possiblement différente, à tester seulement si utile plus tard.
+- [x] `Terrain28` : **sol runtime travaillé/usé** sous zones aplanies de bâtiments et chemins de passage ; retour à Grass confirmé, vitesse possiblement différente pour chemins.
 - [~] `Terrain18`, `19`, `23` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement.
-- [x] `Terrain34` : rare détail interne Rocky observé nativement ; 100 % des voisins HEX6 sont Rocky32 dans les trois références 768 contrôlées. Ce n'est pas un anneau Rocky/Snow malgré l'ancien libellé historique ; peut porter du minerai.
-- [x] `85..93` : famille runtime blé ; `92` récoltable, `93` = **chaume**.
-- [x] `94..102` : famille runtime vigne/raisin ; `102` appartient bien au cycle, mécanique exacte du retour vers `94` encore ouverte.
-- [x] `103..110` : famille runtime riz ; observée sur terrain marais/runtime compatible.
-- [~] `82/83` : IDs techniques/persistants invisibles dans l'éditeur, y compris sur Terrain28 ; analyse visuelle close pour l'instant.
+- [x] `Terrain34` : rare détail interne Rocky observé nativement ; 100 % voisins HEX6 Rocky32 dans les trois références 768 ; peut porter du minerai.
+- [x] `85..93` : famille runtime blé ; `92` récoltable, `93` = chaume.
+- [x] `94..102` : famille runtime vigne/raisin ; `102` appartient au cycle.
+- [x] `103..110` : famille runtime riz.
+- [~] `82/83` : IDs techniques/persistants invisibles dans l'éditeur ; analyse visuelle close pour l'instant.
 
 ## UX / outillage
-- [x] Barre de progression de génération (progression par étapes du pipeline).
+- [x] Barre de progression de génération.
 - [x] Bouton seed aléatoire.
 - [x] Import `.edm` / `.map` / `.sav` en lecture.
 - [x] Export EDM + MAP pour les tailles disposant d'un scaffold validé (768 actuellement).
-- [~] Export SAV : **writer SAV non validé** ; copie inchangée autorisée uniquement pour un SAV importé.
+- [~] Export SAV : writer non validé ; copie inchangée autorisée uniquement pour SAV importé.
 - [x] Visualisations : global / heightmap / ressources / territoires.
-- [x] Vue territoires depuis `claim`, particulièrement utile sur SAV.
-- [ ] Ajouter une vue **Chemins / zones creusées** basée sur `Terrain28`, utilisable sur tout format mais surtout utile sur SAV.
-- [ ] Ajouter une vue **Cultures** pour SAV : distinguer visuellement au minimum blé (`85..93`), vigne (`94..102`) et riz (`103..110`) avec des couleurs différentes ; exploiter les états runtime plutôt que les seuls objets statiques.
-- [ ] Corriger la **palette des couleurs joueurs** pour correspondre exactement aux couleurs du jeu, si les valeurs exactes peuvent être récupérées/calibrées.
-- [ ] Lors d'un import `.sav`, afficher aussi le **contour de la zone de départ d'origine** des joueurs comme pour EDM/MAP ; ne pas confondre avec la vue Territoires dynamique.
-- [x] Zoom sur la visualisation (slider + molette).
-- [x] Toutes les tailles natives visibles : 384/448/512/576/640/704/768.
-- [x] Nombre max joueurs adapté : 8/11/15/19/20/20/20.
-- [~] Génération multi-tailles : sélecteur prêt, mais seule 768 est calibrée dans le moteur actuel.
-- [x] Onglet Statistiques basique.
-- [x] Scrollbars dans Validations / Pipeline / Métadonnées / Statistiques.
-- [x] Onglet **Paramètres** avec préférences persistantes dans le profil utilisateur.
-- [x] Thème sombre / clair, sombre par défaut.
-- [x] Listes déroulantes lisibles en mode sombre, ouvertes comme fermées.
-
-### Visualisation / confort
-- [x] Slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** ; 0 % montre la map globale, 100 % la couche seule.
-- [x] À la fin d'un processus, la barre passe en état terminé bleu puis disparaît automatiquement ; état erreur rouge.
-- [x] Barre de progression étendue aux générations, imports, exports et sauvegardes d'aperçu.
-- [x] Déplacement de la visualisation par drag.
-- [x] Zoom molette temporisé/caché pour réduire la latence et sensibilité réglable.
-- [x] Projection **parallélogramme** optionnelle pour la visualisation, sans modifier les données réelles de la map.
-- [x] Projection parallélogramme recalée sur un décalage de **0,5 cellule par ligne**.
-- [x] Marqueurs `P1` à `P20` en bitmap net et couleur joueur.
-- [x] Les textes `P1` à `P20` restent droits / non déformés en projection parallélogramme.
-- [x] Contour du territoire initial des starts : vrai cercle dans la géométrie parallélogramme, déformation inverse en vue carrée, couleur joueur, dimension dérivée des SAV natifs (**3500 cellules, ±35 cellules**).
-- [x] Clic sur la barre des sliders = déplacement immédiat du curseur à la position cliquée.
+- [x] Vue territoires depuis `claim`.
+- [ ] Ajouter vue **Chemins / zones creusées** basée sur `Terrain28`.
+- [ ] Ajouter vue **Cultures** : blé `85..93`, vigne `94..102`, riz `103..110`.
+- [ ] Corriger la **palette exacte des couleurs joueurs**.
+- [ ] Sur import `.sav`, afficher aussi le **contour de zone de départ d'origine**.
+- [x] Zoom, molette, drag, projection parallélogramme, labels P1..P20 nets, sliders corrigés, thème sombre et combobox corrigées.
+- [x] Toutes tailles natives visibles : 384/448/512/576/640/704/768.
+- [x] Max joueurs : 8/11/15/19/20/20/20.
+- [~] Génération multi-tailles : sélecteur prêt, calibration moteur encore à compléter.
+- [x] Onglet Statistiques basique + scrollbars + Paramètres persistants.
 
 ### Statistiques
-- [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
-- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `23`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
-- [ ] Suivre explicitement `Terrain24` dans les stats comme herbe jaune/sèche et `Terrain22/28` comme terrains runtime lorsqu'ils sont présents dans un SAV.
-- [ ] Ajouter plus tard des graphiques pour les statistiques qui gagnent à être visualisées.
-- [ ] Édition directe de la map — gros morceau, **pas maintenant**.
+- [ ] Enrichir fortement : ressources, pourcentages, objets-ressources, décorations, terrains, territoires.
+- [ ] Inclure IDs terrain non identifiés séparément.
+- [ ] Suivre explicitement Terrain24 et terrains runtime 22/28.
+- [ ] Ajouter graphiques utiles plus tard.
+- [ ] Édition directe de la map — pas maintenant.
 
 ## À préserver
 - [x] Archetype = macro-forme uniquement.
 - [x] Mode = contenu/règles/balance/objets/ressources/etc.
-- [ ] Starts générés très tôt et protégés par les passes suivantes.
-- [ ] Legacy / Upgraded / Custom restent séparés.
-- [ ] Aucun aperçu imaginaire : rendu déterministe depuis les vraies données.
+- [x] Starts générés très tôt et protégés par les passes suivantes.
+- [x] Legacy / Upgraded restent conceptuellement séparés selon la référence canonique.
+- [ ] Custom reste à définir proprement sans casser cette séparation.
+- [x] Aucun aperçu imaginaire : rendu déterministe depuis les vraies données.
