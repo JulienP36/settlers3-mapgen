@@ -27,7 +27,7 @@ These IDs are visually identified as tree-family variants but are not added to t
 
 ## IDs 82 / 83 — PRESENT BUT STILL SEMANTICALLY UNKNOWN
 
-Controlled editor calibration rendered IDs `82` and `83` invisibly.
+Controlled editor calibration rendered IDs `82` and `83` invisibly, including a dedicated retry on Terrain28.
 
 Long-play SAV analysis proves they are nevertheless present:
 - byte-14 ID82: exactly 3 cells in every offensive snapshot;
@@ -36,7 +36,7 @@ Long-play SAV analysis proves they are nevertheless present:
 - dynamic cell byte7 is `0` at all six positions in all snapshots;
 - their runtime terrain is initially mainly Terrain28 and progressively returns to Grass16 at several coordinates.
 
-Therefore `82/83` are real persistent technical/static IDs, not unused values, but their exact visual/gameplay semantics remain unresolved. They do not appear as byte7 runtime crop-state values in this series.
+Therefore `82/83` are real persistent technical/static IDs, not unused values, but their exact visual/gameplay semantics remain unresolved. Their invisibility persists even when manually placed on Terrain28, so future work should decode them from SAV/runtime context rather than more static visual calibration.
 
 ## Wheat growth/runtime states — IDENTIFIED FAMILY
 
@@ -139,6 +139,43 @@ Terrain22 decay between consecutive snapshots overwhelmingly returns to Grass16.
 
 Interpretation: Terrain22 is now a **strong candidate for cultivated/ploughed/field ground** created during agriculture and reverting to Grass when fields decay. Exact official game naming remains unknown and should not be invented.
 
+## Runtime Terrain28 — PATH / TRAFFIC-WEAR TERRAIN (STRONG)
+
+A dedicated editor calibration showed Terrain28 visually as path-like ground. This matches the user's known gameplay behavior: repeated settler traffic creates visible paths/tracks, and unused tracks can fade back into Grass.
+
+The eight offensive SAVs strongly support that interpretation.
+
+Terrain28 cell counts by snapshot:
+
+| snapshot | Terrain28 cells |
+|---:|---:|
+| 1 | 73334 |
+| 2 | 68075 |
+| 3 | 66329 |
+| 4 | 62714 |
+| 5 | 58960 |
+| 6 | 40351 |
+| 7 | 36905 |
+| 8 | 35893 |
+
+Observed reversible Grass/28 transitions between consecutive snapshots:
+
+| interval | Grass16 -> 28 | 28 -> Grass16 | 28 -> 28 |
+|---|---:|---:|---:|
+| 1 -> 2 | 6516 | 11783 | 61509 |
+| 2 -> 3 | 2032 | 3779 | 64292 |
+| 3 -> 4 | 6667 | 10276 | 56045 |
+| 4 -> 5 | 1965 | 5728 | 56983 |
+| 5 -> 6 | 4661 | 23281 | 35673 |
+| 6 -> 7 | 1455 | 4898 | 35448 |
+| 7 -> 8 | 9574 | 10575 | 26316 |
+
+This bidirectional `16 <-> 28` behavior is exactly what is expected from traffic-wear paths that appear through use and fade when traffic stops. Snapshot-1 Terrain28 persistence also decays steadily: of 73334 initial cells, only 24043 are still Terrain28 by snapshot 8.
+
+In snapshot 8, Terrain28 is overwhelmingly adjacent only to Terrain28 and Grass16, reinforcing that it is a Grass-derived runtime surface rather than a biome transition.
+
+Decision: treat Terrain28 as **runtime path/traffic-wear terrain** with strong confidence. Do not generate it as static map geography; the game should create/remove it naturally from settler movement.
+
 ## Important SAV byte distinction
 
 The played SAV series shows that crop stage tracking should focus on **runtime cell byte7**:
@@ -156,4 +193,5 @@ This refines the earlier static-startup interpretation of byte14 as an exact MAP
 - Treat `94..102` as grape/vine runtime states; long-play evidence supports cyclic persistence after `102`.
 - Treat `103..110` as rice runtime states strongly coupled to runtime Terrain21.
 - Track Terrain22 explicitly in future SAV statistics as probable cultivated/field terrain.
-- Do not add Terrain22 to procedural static generation until its raw MAP/EDM legality and exact role are separately calibrated.
+- Treat Terrain28 as runtime path/traffic-wear terrain and let the engine create/remove it naturally.
+- Do not add Terrain22 or Terrain28 to procedural static generation until a specific gameplay reason requires doing so.
