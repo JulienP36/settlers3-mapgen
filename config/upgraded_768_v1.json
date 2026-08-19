@@ -75,6 +75,7 @@
     "active_ids": [115,116,117,118,119,120,121,122,123,124,125,126],
     "exhausted_id": 127,
     "global_anchor_target": 1683,
+    "global_exhausted_anchor_target": 20,
     "global_stock_target": 14160,
     "global_stock_weighted_fullness": true,
     "start_bonus_anchor_target": 8,
