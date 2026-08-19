@@ -22,14 +22,16 @@
 - [x] Hydrologie : Legacy conserve étangs/rivières natifs ; Upgraded supprime/redistribue 1–4 cellules et applique un p99 river size-scaled `~0.0245*side + 34.7`.
 - [x] Arbres : pool `68..77 + 80..81` dans les deux. Legacy volume natif ; Upgraded ~130 % + SmallTree84 séparé. Palms `78..79` comptés dans le bois.
 - [x] Building Stones : footprint 7 cellules commun ; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
+- [x] **États Building Stones corrigés** : ne plus uniformiser les ancres. Legacy conserve une distribution native-like variée ; Upgraded reste varié mais biaisé vers les pierres plus pleines, avec ajustement fin pour atteindre exactement le stock cible.
 - [x] Décorations : reefs Legacy=0 / Upgraded rares ; Reeds natifs communs ; pierres déco native Legacy / ~÷10 Upgraded ; petites végétations, Wrecks, Grave, Stumps communs natifs.
 - [x] Désert : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`, comportement commun natif.
 - [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement. L'expansion Swamp Upgraded refuse désormais tout nouveau contact HEX6 avec un terrain incompatible.
 - [x] Terrain24 : conservé en Legacy ; retiré temporairement d'Upgraded pendant cette grosse passe. **Ajout Upgraded confirmé mais différé à une modification isolée.**
 - [x] Snow : même génération Legacy/Upgraded. Terrain34 est neutralisé seulement pendant le calcul de profondeur Snow puis restauré uniquement s'il reste entièrement entouré de Rocky32.
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
-- [x] **Bonus de départ Upgraded recalibrés** : forêt bonus conservée à **15 arbres adultes/joueur** (déjà équilibrée avec la végétation globale) ; Building Stones normalisés à **5 ancres pleines × 12 = 60 unités/joueur**, hors quota global. Mini-marais inchangé.
-- [ ] **Prochaine action : préparer la nouvelle version** à partir de cette base auditée/recalibrée, puis effectuer sa validation éditeur/View Map.
+- [x] **Bonus de départ Upgraded — nouvelle règle** : abandon de l'ancien bonus dispersé `15 arbres + 5 stones`. Les bonus sont maintenant de vrais clusters centrés sur la **bordure du territoire initial (~rayon HEX 34)** afin que la bordure traverse le cluster. Forêt bonus ≈ cluster global moyen : **41 adultes + 21 SmallTree84/joueur**. Tas de Building Stones bonus ≈ cluster global moyen : **8 ancres/joueur**, bien remplies mais variées, **84 unités/joueur** au total (9..12 unités/ancre). Mini-marais inchangé.
+- [ ] **Prochaine action immédiate : régénérer une candidate Upgraded fraîche avec les nouveaux clusters de départ + nouvelle distribution de Building Stones, puis contrôler visuellement la bordure, la forme des clusters et la variété 115..126.**
+- [ ] Après validation de cette candidate, préparer la nouvelle version.
 - [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
 - [ ] Valider les scalings multi-tailles : arbres, stones, décorations, Swamp, reefs, désert, rivières.
