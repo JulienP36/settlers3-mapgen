@@ -15,19 +15,20 @@
 - [x] Terrain34 requalifié : variante Rocky rare, singleton entouré de Rocky32, minéralisable ; jamais anneau Snow.
 - [x] Chaîne Snow validée : `Rocky32 -> 35 (1 cellule) -> 129 (1 cellule) -> Snow128`.
 - [x] **Audit Legacy / Upgraded terminé conceptuellement**. Référence : `references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md`.
-- [x] **Séparation Legacy / Upgraded implémentée dans la façade `s3mapgen/generator.py` et les deux profils 768.** Les tests de verrouillage de configuration sont dans `tests/test_legacy_upgraded_audit.py`.
-- [~] **Validation de la séparation implémentée : À FAIRE sur génération réelle.** Aucun runner CI n'a été déclenché par les commits et le runtime de travail ne peut pas joindre GitHub pour exécuter le dépôt localement. Ne pas promouvoir cette passe comme validée avant génération + éditeur/game test.
+- [x] **Séparation Legacy / Upgraded implémentée** dans `s3mapgen/generator.py` + profils 768 ; tests de verrouillage dans `tests/test_legacy_upgraded_audit.py`.
+- [x] **Smoke statique local de la séparation : PASS** sur Legacy 4P/20P et Upgraded 4P/20P, 0 HARD failure. La copie locale a été reconstruite depuis l'archive v1.4 complète + la façade/profils audités ; ce smoke ne remplace pas le test officiel éditeur/View Map.
+- [~] **Validation externe restante** : tester les deux candidates 4P auditées dans l'éditeur puis View Map/in-game avant promotion.
 - [x] Minerais : Legacy reste sur son comportement courant ; Upgraded cible ~90 % du support minier, ratios natifs empiriques, v7 no-gap, +30 % quantité/case cap15, minerai sous Snow + Terrain34 valide.
 - [x] Hydrologie : Legacy conserve étangs/rivières natifs ; Upgraded supprime/redistribue 1–4 cellules et applique un p99 river size-scaled `~0.0245*side + 34.7`.
 - [x] Arbres : pool `68..77 + 80..81` dans les deux. Legacy volume natif ; Upgraded ~130 % + SmallTree84 séparé. Palms `78..79` comptés dans le bois.
 - [x] Building Stones : footprint 7 cellules commun ; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
 - [x] Décorations : reefs Legacy=0 / Upgraded rares ; Reeds natifs communs ; pierres déco native Legacy / ~÷10 Upgraded ; petites végétations, Wrecks, Grave, Stumps communs natifs.
 - [x] Désert : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`, comportement commun natif.
-- [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement.
+- [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement. L'expansion Swamp Upgraded refuse désormais tout nouveau contact HEX6 avec un terrain incompatible.
 - [x] Terrain24 : conservé en Legacy ; retiré temporairement d'Upgraded pendant cette grosse passe. **Ajout Upgraded confirmé mais différé à une modification isolée.**
 - [x] Snow : même génération Legacy/Upgraded. Terrain34 est neutralisé seulement pendant le calcul de profondeur Snow puis restauré uniquement s'il reste entièrement entouré de Rocky32.
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
-- [ ] **Prochaine action immédiate : générer une paire de contrôle 768 Legacy + Upgraded avec les nouveaux profils**, inspecter validations/statistiques, puis test éditeur/View Map.
+- [ ] **Prochaine action immédiate : test éditeur/View Map des candidates Legacy + Upgraded 4P auditées.**
 - [ ] **Après ce contrôle : recalibrer les bonus de départ Upgraded** (arbres + Building Stones), séparément des quotas globaux.
 - [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
