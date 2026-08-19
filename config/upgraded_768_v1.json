@@ -94,6 +94,7 @@
   },
   "decor": {
     "reef_target": 11,
+    "reef_edge_margin": 2,
     "swamp_reeds_only": true,
     "desert_ids": [43,44,45,46,47,48,49],
     "desert_target": 30,
