@@ -1,6 +1,5 @@
 from __future__ import annotations
 from pathlib import Path
-import math
 import numpy as np
 from PIL import Image,ImageDraw,ImageFont
 from .constants import *
@@ -18,10 +17,10 @@ PLAYER_COLORS=(
     (70,150,115),(210,95,115),(150,155,55),(95,105,190),(200,135,205),
 )
 
-# The native start footprint contains 33 cells.  Its furthest footprint point is
-# five map pixels from the start anchor in the square preview, so a six-pixel
-# outline encloses the complete initial footprint without filling the territory.
-_START_TERRITORY_RADIUS=max(6,int(math.ceil(max(math.hypot(dx,dy) for dx,dy in START_FOOTPRINT))))
+# Immediate-start native SAV calibration: each 4P initial claim contains exactly
+# 3500 cells and spans 71x71 array coordinates.  The visual guide therefore uses
+# the observed +/-35-cell extent around the start anchor.
+START_TERRITORY_RADIUS=35
 
 
 def _global_rgb(state:MapState)->np.ndarray:
@@ -63,8 +62,8 @@ def _blend(global_rgb:np.ndarray,overlay_rgb:np.ndarray,alpha:int)->np.ndarray:
     return np.rint(global_rgb.astype(np.float32)*(1-a)+overlay_rgb.astype(np.float32)*a).clip(0,255).astype(np.uint8)
 
 
-def _pixel_label(text:str,color:tuple[int,int,int],scale:int)->Image.Image:
-    """Return a crisp bitmap label, scaled only with nearest-neighbour sampling."""
+def _pixel_label(text:str,color:tuple[int,int,int])->Image.Image:
+    """Return a native-resolution bitmap label with no anti-aliasing."""
     font=ImageFont.load_default()
     probe=Image.new('1',(64,20),0);d=ImageDraw.Draw(probe)
     box=d.textbbox((0,0),text,font=font,stroke_width=0)
@@ -73,34 +72,53 @@ def _pixel_label(text:str,color:tuple[int,int,int],scale:int)->Image.Image:
     md.text((2-box[0],2-box[1]),text,font=font,fill=1)
     outline=Image.new('1',mask.size,0)
     for ox,oy in ((-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,-1),(-1,1),(1,1)):
-        shifted=Image.new('1',mask.size,0);shifted.paste(mask,(ox,oy));outline=Image.fromarray(np.maximum(np.asarray(outline,dtype=np.uint8),np.asarray(shifted,dtype=np.uint8)).astype(np.uint8)*255).convert('1')
-    sprite=Image.new('RGB',mask.size,(0,0,0))
-    sprite.paste(color,(0,0),mask)
+        shifted=Image.new('1',mask.size,0);shifted.paste(mask,(ox,oy))
+        outline=Image.fromarray(np.maximum(np.asarray(outline,dtype=np.uint8),np.asarray(shifted,dtype=np.uint8)).astype(np.uint8)*255).convert('1')
+    sprite=Image.new('RGB',mask.size,(0,0,0));sprite.paste(color,(0,0),mask)
     alpha=Image.fromarray(np.maximum(np.asarray(outline,dtype=np.uint8),np.asarray(mask,dtype=np.uint8)).astype(np.uint8)*255,'L')
     sprite.putalpha(alpha)
-    if scale!=1:sprite=sprite.resize((sprite.width*scale,sprite.height*scale),Image.Resampling.NEAREST)
     return sprite
 
 
-def _draw_start_markers(im:Image.Image,state:MapState,scale:int)->None:
-    d=ImageDraw.Draw(im)
-    radius=_START_TERRITORY_RADIUS*scale
-    width=max(1,scale)
+def _draw_start_circles(im:Image.Image,state:MapState)->None:
+    d=ImageDraw.Draw(im);r=START_TERRITORY_RADIUS
     for i,(x,y) in enumerate(state.starts,1):
         color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
-        X,Y=x*scale,y*scale
-        d.ellipse((X-radius,Y-radius,X+radius,Y+radius),outline=color,width=width)
-        label=_pixel_label(f'P{i}',color,scale)
-        im.paste(label,(X+radius+2*scale,Y-label.height//2),label)
+        d.ellipse((x-r,y-r,x+r,y+r),outline=color,width=1)
 
 
-def project_parallelogram(im:Image.Image,shear:float=0.5)->Image.Image:
-    """Deterministic row shear matching the game's parallelogram-style map footprint."""
+def _draw_square_labels(im:Image.Image,state:MapState)->None:
+    for i,(x,y) in enumerate(state.starts,1):
+        color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
+        label=_pixel_label(f'P{i}',color)
+        im.paste(label,(x+START_TERRITORY_RADIUS+2,y-label.height//2),label)
+
+
+def _project_point(x:int,y:int,source_height:int)->tuple[int,int]:
+    # Projection raster uses 2x2 source pixels. One logical source row therefore
+    # moves exactly one output pixel horizontally: a true half-pixel/cell offset.
+    return 2*x+(source_height-1-y),2*y
+
+
+def _draw_projected_labels(im:Image.Image,state:MapState,source_height:int)->None:
+    for i,(x,y) in enumerate(state.starts,1):
+        color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
+        X,Y=_project_point(x,y,source_height)
+        label=_pixel_label(f'P{i}',color).resize((_pixel_label(f'P{i}',color).width*2,_pixel_label(f'P{i}',color).height*2),Image.Resampling.NEAREST)
+        im.paste(label,(X+2*START_TERRITORY_RADIUS+4,Y-label.height//2),label)
+
+
+def project_parallelogram(im:Image.Image)->Image.Image:
+    """Pixel-perfect oblique projection: every source row is offset by half a cell."""
     src=im.convert('RGBA');w,h=src.size
-    max_shift=int(round((h-1)*shear));px=np.asarray(src)
-    canvas=np.zeros((h,w+max_shift,4),dtype=np.uint8)
+    px=np.asarray(src)
+    # Expand each native pixel to 2x2. A one-output-pixel shift per native row is
+    # therefore exactly half a native cell, with no alternating round-to-int jitter.
+    expanded=np.repeat(np.repeat(px,2,axis=0),2,axis=1)
+    canvas=np.zeros((2*h,2*w+(h-1),4),dtype=np.uint8)
     for y in range(h):
-        shift=int(round((h-1-y)*shear));canvas[y,shift:shift+w]=px[y]
+        shift=h-1-y
+        canvas[2*y:2*y+2,shift:shift+2*w]=expanded[2*y:2*y+2]
     return Image.fromarray(canvas,'RGBA')
 
 
@@ -109,8 +127,14 @@ def render(state:MapState, output:Path|str|None=None, scale:int=1, labels:bool=T
     base=_global_rgb(state)
     rgb=base if view=='global' else _blend(base,_overlay_rgb(state,view),overlay_alpha)
     im=Image.fromarray(rgb,'RGB')
-    if scale!=1:im=im.resize((state.side*scale,state.side*scale),Image.Resampling.NEAREST)
-    if labels and view=='global':_draw_start_markers(im,state,scale)
-    if projection=='parallelogram':im=project_parallelogram(im)
+    if labels and view=='global':
+        _draw_start_circles(im,state)
+        if projection=='square':_draw_square_labels(im,state)
+    if projection=='parallelogram':
+        source_height=im.height
+        im=project_parallelogram(im)
+        # Labels are added after projection so P1..P20 stay rectangular and crisp.
+        if labels and view=='global':_draw_projected_labels(im,state,source_height)
+    if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im
