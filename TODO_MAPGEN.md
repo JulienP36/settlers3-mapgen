@@ -70,6 +70,16 @@
 - [x] Zoom/molette/drag/projection parallélogramme/labels/sliders/thème sombre.
 - [x] Tailles natives visibles 384..768 et max joueurs adaptés.
 - [~] Génération multi-tailles : UI prête, calibration moteur à compléter.
+- [ ] **Cache temporaire des résultats de génération, mémoire de session uniquement** : aucune persistance entre deux lancements du programme.
+  - [ ] Clé de cache au minimum : seed + taille + joueurs + mode + archétype + modificateurs/paramètres qui affectent la génération.
+  - [ ] Réutiliser instantanément un résultat déjà généré dans la session au lieu de recalculer.
+  - [ ] Préparer la comparaison rapide d'un même seed/taille entre deux versions de génération ou deux combinaisons de modificateurs.
+  - [ ] Garder plusieurs résultats récents de session, avec limite mémoire raisonnable et possibilité de vider le cache manuellement.
+  - [ ] Ne jamais écrire ce cache sur disque automatiquement ; fermeture du programme = cache détruit.
+- [ ] **Historique de session / comparaison A-B** : liste des générations récentes avec rappel seed/mode/taille/joueurs/modificateurs, sélection de deux entrées et bascule rapide A/B ; plus tard éventuellement vue côte-à-côte ou différence visuelle.
+- [ ] Bouton **recentrer / zoom 100 %** pour revenir instantanément à une vue propre après navigation.
+- [ ] Action rapide **copier le seed** de la génération courante.
+- [ ] Raccourcis clavier simples à définir après stabilisation des nouveaux contrôles (générer, recentrer, changer de vue, A/B).
 
 ## Statistiques — grosse passe après l'UI
 Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, pas seulement un résumé. Ajouter autant de statistiques utiles que nécessaire tant qu'elles restent lisibles et exploitables.
