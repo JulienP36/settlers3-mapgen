@@ -1,5 +1,5 @@
 {
-  "profile_name": "Upgraded 768 v1.5-audit",
+  "profile_name": "Upgraded 768 v1.5",
   "profile_kind": "upgraded",
   "side": 768,
   "max_players": 20,
@@ -74,6 +74,7 @@
   "building_stones": {
     "active_ids": [115,116,117,118,119,120,121,122,123,124,125,126],
     "exhausted_id": 127,
+    "exhausted_buildable": true,
     "global_anchor_target": 1683,
     "global_exhausted_anchor_target": 20,
     "global_stock_target": 14160,
@@ -122,6 +123,7 @@
     "minerals_v7_nogap": true,
     "snow_from_relief": true,
     "stone_full_footprint": true,
+    "stone_exhausted_buildable": true,
     "deep_water_external_edge": true,
     "coast_not_straight_clipped": true
   }
