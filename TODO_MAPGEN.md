@@ -12,9 +12,10 @@
 
 ## Prochaine grosse étape génération
 - [x] **Découpler Upgraded du checkpoint 768 comme référence exécutable** : la GUI/CLI utilisent désormais une façade où la macro-géographie vient de la bibliothèque d'archétype, indépendamment du mode.
-- [x] **Nettoyer le résidu terrain 34** : les templates de morphologie normalisent désormais `34 -> Rocky32` avant le rebuild Snow ; la chaîne Snow légale est reconstruite ensuite depuis le relief.
+- [x] **Terrain34 requalifié par analyse native** : sur les 3 SAV natives 768 analysées, toutes les cellules 34 sont des singletons entièrement entourés de Rocky32 et ne touchent jamais `35/129/128`. Ne plus normaliser `34 -> Rocky32` et ne pas l'insérer dans l'anneau Snow. La chaîne visible Snow reste `Rocky32 -> 35 -> 129 -> Snow128` ; les 34 natifs sont préservés comme rares détails internes Rocky.
 - [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` exploite les 3 templates natifs 768 + transformations HEX compatibles ; première candidate Upgraded validée.
-- [ ] **Étape active : compositeur de formes natives / native stamps**. Diversifier réellement les seeds sans warp global : silhouette principale native + composants natifs réutilisables (îles, lacs, massifs, Desert, Swamp, Rivers), translation + transformations HEX compatibles, transitions reconstruites ensuite.
+- [ ] **Étape active après contrôle Snow/Terrain34 : audit de séparation Legacy / Upgraded.** Classer chaque règle en `commun moteur`, `Legacy uniquement`, `Upgraded uniquement`, puis corriger les mélanges historiques avant de poursuivre la diversification.
+- [ ] Après l'audit, reprendre le **compositeur de formes natives / native stamps** pour diversifier réellement les seeds sans warp global : silhouette principale native + composants natifs réutilisables (îles, lacs, massifs, Desert, Swamp, Rivers), translation + transformations HEX compatibles, transitions reconstruites ensuite.
 - [ ] Interdits pour cette diversification : pas de warp global, pas de rescaling agressif, pas d'ellipses/blobs procéduraux artificiels pour remplacer les familles natives.
 - [ ] Produire plusieurs candidates 768 distinctes et valider que la variété augmente sans perdre le niveau visuel de la seed `2026081908`.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
@@ -23,7 +24,8 @@
 - [x] `Terrain24` : **herbe jaune / sèche**, variante visuelle de Grass ; blend propre **uniquement avec Grass16** ; visible dans les générations natives/Legacy, mais ne pas l'ajouter volontairement à Upgraded pour l'instant.
 - [x] `Terrain22` : **sol cultivé / terrain agricole runtime**, fortement corrélé au blé et à la vigne ; revient vers Grass lorsque les cultures/terres abandonnées disparaissent.
 - [x] `Terrain28` : **sol runtime travaillé/usé**. Confirmé sous zones aplanies/creusées de bâtiments et sur petits chemins de passage. Retour rapide à Grass après disparition d'une zone bâtiment ; persistance des chemins possiblement différente, à tester seulement si utile plus tard.
-- [~] `Terrain18`, `19`, `23`, `34` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement. `34` est désormais normalisé hors des templates Upgraded avant reconstruction Snow.
+- [~] `Terrain18`, `19`, `23` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement.
+- [x] `Terrain34` : rare détail interne Rocky observé nativement ; 100 % des voisins HEX6 sont Rocky32 dans les trois références 768 contrôlées. Ce n'est pas un anneau Rocky/Snow malgré l'ancien libellé historique.
 - [x] `85..93` : famille runtime blé ; `92` récoltable, `93` = **chaume**.
 - [x] `94..102` : famille runtime vigne/raisin ; `102` appartient bien au cycle, mécanique exacte du retour vers `94` encore ouverte.
 - [x] `103..110` : famille runtime riz ; observée sur terrain marais/runtime compatible.
@@ -66,7 +68,7 @@
 
 ### Statistiques
 - [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
-- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `23`, `34`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
+- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `23`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
 - [ ] Suivre explicitement `Terrain24` dans les stats comme herbe jaune/sèche et `Terrain22/28` comme terrains runtime lorsqu'ils sont présents dans un SAV.
 - [ ] Ajouter plus tard des graphiques pour les statistiques qui gagnent à être visualisées.
 - [ ] Édition directe de la map — gros morceau, **pas maintenant**.
