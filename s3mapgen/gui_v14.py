@@ -33,6 +33,9 @@ class App(BaseApp):
         self.canvas.bind('<Button-4>',lambda e:self._linux_zoom(1))
         self.canvas.bind('<Button-5>',lambda e:self._linux_zoom(-1))
         self._settings_tab()
+        self._bind_scale_jump(self.zoom_scale,self.zoom_var,.5,4.0,self._zoom_changed)
+        self._bind_scale_jump(self.opacity_scale,self.opacity_var,0,100,self._opacity_changed)
+        self._bind_scale_jump(self.wheel_scale,self.wheel_var,1.04,1.20,self._wheel_changed)
 
     def _settings_tab(self):
         f=ttk.Frame(self.nb,padding=14);self.nb.add(f,text='Paramètres');f.columnconfigure(1,weight=1)
@@ -51,11 +54,22 @@ class App(BaseApp):
         ttk.Label(f,text='Le parallélogramme modifie uniquement le rendu, jamais les données.',style='Hint.TLabel',wraplength=360).grid(row=5,column=0,columnspan=3,sticky='w')
         ttk.Label(f,text='Sensibilité molette').grid(row=6,column=0,sticky='w',pady=(14,6))
         self.wheel_var=tk.DoubleVar(value=float(self.prefs['wheel_zoom']))
-        ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed()).grid(row=6,column=1,sticky='ew')
+        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=6,column=1,sticky='ew')
         self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=6,column=2,padx=(8,0))
         ttk.Separator(f).grid(row=7,column=0,columnspan=3,sticky='ew',pady=16)
         ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=8,column=0,columnspan=3,sticky='w')
         ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=9,column=0,columnspan=3,sticky='w',pady=(6,0))
+
+    def _bind_scale_jump(self,scale,var,lo,hi,changed):
+        def jump(e):
+            if 'disabled' in scale.state():return 'break'
+            try:element=str(scale.identify(e.x,e.y))
+            except Exception:element=''
+            if 'slider' in element:return None
+            w=max(1,scale.winfo_width());pad=min(9,max(0,w//4))
+            usable=max(1,w-2*pad);fraction=max(0.0,min(1.0,(e.x-pad)/usable))
+            var.set(lo+(hi-lo)*fraction);changed();return 'break'
+        scale.bind('<Button-1>',jump,add='+')
 
     def _apply_theme(self):
         dark=self.prefs['theme']=='dark';s=ttk.Style(self)
@@ -71,7 +85,12 @@ class App(BaseApp):
         s.configure('Section.TLabel',background=bg,foreground=accent,font=('TkDefaultFont',10,'bold'));s.configure('Hint.TLabel',background=bg,foreground=muted)
         s.configure('TNotebook',background=bg,borderwidth=0);s.configure('TNotebook.Tab',background=panel,foreground=fg,padding=(10,6));s.map('TNotebook.Tab',background=[('selected',field)])
         s.configure('TButton',background=field,foreground=fg);s.map('TButton',background=[('active',panel)])
-        s.configure('TCombobox',fieldbackground=field,background=field,foreground=fg);s.configure('TSpinbox',fieldbackground=field,foreground=fg);s.configure('TEntry',fieldbackground=field,foreground=fg)
+        s.configure('TCombobox',fieldbackground=field,background=field,foreground=fg,selectbackground=field,selectforeground=fg)
+        self.option_add('*TCombobox*Listbox.background',field)
+        self.option_add('*TCombobox*Listbox.foreground',fg)
+        self.option_add('*TCombobox*Listbox.selectBackground',panel)
+        self.option_add('*TCombobox*Listbox.selectForeground',fg)
+        s.configure('TSpinbox',fieldbackground=field,foreground=fg);s.configure('TEntry',fieldbackground=field,foreground=fg)
         trough='#3c4043' if dark else '#dddddd';s.configure('Running.Horizontal.TProgressbar',troughcolor=trough,background='#35a853');s.configure('Done.Horizontal.TProgressbar',troughcolor=trough,background='#4285f4');s.configure('Error.Horizontal.TProgressbar',troughcolor=trough,background='#d93025')
         for w in (self.validation,self.pipeline,self.meta,self.stats):w.configure(bg=textbg,fg=fg,insertbackground=fg,selectbackground='#4f6480' if dark else '#b8d2ff')
         self.canvas.configure(bg=canvas)
