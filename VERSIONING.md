@@ -9,16 +9,26 @@ Current reconstructed tags / milestones:
 - `v1.3.1` — preview resize crash fix + README project presentation;
 - `v1.3.2` — editor-safe starts, Snow blocking and Swamp transition hardening; **validated externally on Legacy/Upgraded 4P/20P Continental 768×768**;
 - `v1.4` — dark/light UI, persistent settings, overlays, improved progress/navigation, parallelogram visualization, SAV-calibrated start-territory outlines, crisp player labels, dark combobox fixes and click-to-position sliders; **validated visually by the user**;
-- `v1.5` — **candidate**: audit complet Legacy/Upgraded, hydrologie/minerais/biomes/objets séparés, pool d'arbres natif complet, nouveaux clusters de départ Upgraded sur la bordure du territoire initial, Building Stones `115..127` variées avec stock réel séparé des ancres, ID127 natif et constructible, nouveaux validateurs et exports `MapGenV1_5`.
+- `v1.5` — **VALIDÉE / STABLE** pour le périmètre Continental 768 calibré : audit complet Legacy/Upgraded, hydrologie/minerais/biomes/objets séparés, géométrie minière v7 no-gap canonique, pool d'arbres natif complet, clusters de départ Upgraded sur la bordure du territoire initial, Building Stones `115..127` variées avec stock réel séparé des ancres, ID127 natif/constructible dans le modèle statique, récifs éloignés des bords, nouveaux validateurs et exports `MapGenV1_5`.
 
-La ligne v1.4 reste la dernière release entièrement validée/promue. La v1.5 est préparée dans le code mais **ne doit pas être taguée comme stable avant validation éditeur + View Map/in-game d'une génération fraîche**.
+La **v1.5 est la release stable actuelle**. Sa génération de référence `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202` a passé l'ouverture éditeur, la validation des starts et View Map/in-game sans crash. Le micro-test pratique ID127 reste facultatif/non bloquant.
 
-Correctifs déjà validés et conservés dans v1.5 :
+Correctifs validés et conservés dans v1.5 :
 - Goods Default : `Legacy=Medium/2`, `Upgraded=High/3`, fallback Medium ;
 - starts placés tôt et protégés ;
 - Water accessibility ;
 - Snow intérieur non traversable ;
-- footprint actif des Building Stones.
+- footprint actif des Building Stones ;
+- ID127 épuisé exclu du stock et footprint statique libéré ;
+- géométrie minière Upgraded v7 no-gap canonique ;
+- marge de 2 cellules pour les récifs Upgraded.
+
+Ordre de développement retenu après v1.5 :
+1. terminer les TODO UI/outillage ;
+2. enrichir massivement l'onglet Statistiques ;
+3. calibrer et valider les tailles 384–704 ;
+4. démarrer l'archétype Large Islands / Grandes îles ;
+5. reprendre ensuite modificateurs et autres évolutions.
 
 Future releases should follow:
 1. update code + references/TODO;
