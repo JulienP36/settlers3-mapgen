@@ -20,7 +20,9 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 ## État actuel — v1.4 candidate
 
-La GUI est fonctionnelle sous Windows et permet actuellement :
+La base de génération **v1.3.2 est validée** sur quatre contrôles Continental 768×768 : Legacy 4P, Legacy 20P, Upgraded 4P et Upgraded 20P. Dans les quatre cas, les starts ont été acceptés par l'éditeur et la vue in-game n'a pas provoqué de crash. Les transitions de marais sont corrigées et la neige intérieure n'est plus traversable comme prévu.
+
+La GUI v1.4 candidate est fonctionnelle sous Windows et permet actuellement :
 
 - génération **Legacy** et **Upgraded** sur l'archétype **Continental 768×768** ;
 - choix du nombre de joueurs et du seed ;
@@ -28,11 +30,14 @@ La GUI est fonctionnelle sous Windows et permet actuellement :
 - import `.EDM`, `.MAP` et `.SAV` ;
 - export `.EDM` / `.MAP` pour les configurations actuellement sérialisables ;
 - aperçu Global / Heightmap / Ressources / Territoires ;
-- thème **Sombre / Clair**, avec sombre par défaut ;
+- thème **Sombre / Clair**, avec sombre par défaut et listes déroulantes adaptées au thème ;
 - onglet **Paramètres** et préférences persistantes ;
 - superposition réglable des vues Heightmap / Ressources / Territoires sur la map globale ;
-- vue carrée ou projection **Parallélogramme** ;
+- vue carrée ou projection **Parallélogramme** à pas de demi-cellule par ligne ;
+- marqueurs `P1` à `P20` nets, en bitmap, colorés selon le joueur et non déformés par la projection ;
+- contour non rempli du **territoire initial** de chaque start, dimensionné d'après les SAV natifs (3500 cellules, étendue ±35 cellules) ;
 - zoom slider + molette temporisée, sensibilité réglable et déplacement de la map par drag ;
+- clic direct sur la barre des sliders pour positionner immédiatement le curseur ;
 - barre de progression pour génération/import/export/aperçu avec état de fin visuel ;
 - validations automatiques ;
 - métadonnées, pipeline et premières statistiques ;
@@ -42,6 +47,10 @@ La GUI est fonctionnelle sous Windows et permet actuellement :
 - transitions de marais reconstruites et validées automatiquement.
 
 > Les tailles autres que 768 sont visibles dans l'interface mais leur génération reste volontairement bloquée tant que leur calibration n'est pas validée. Le writer `.SAV` n'est pas encore implémenté : un SAV importé peut être analysé et copié, mais le programme n'invente pas un nouveau SAV.
+
+### Problème connu à investiguer
+
+Un crash a été observé lors du lancement en jeu quand les **fournitures de départ sont laissées sur « Défaut »**. Les presets explicites **Low / Medium / High** ne reproduisent pas ce crash dans le test concerné. Ce problème est volontairement séparé de la validation v1.4 et doit être investigué avant d'étendre le périmètre de génération.
 
 ## Modes de génération
 
@@ -129,6 +138,8 @@ Dépendances Python principales : NumPy, SciPy et Pillow.
 Les validators du programme sont des **garde-fous de non-régression**. Un PASS signifie que les règles encodées sont respectées ; il ne remplace pas une validation dans l'éditeur officiel ou en jeu.
 
 La hiérarchie de validation du projet reste : parser/checksum → éditeur → View Map/smoke test → SAV runtime → long-play.
+
+La v1.3.2 a passé son contrôle externe ciblé sur quatre générations 768×768. La v1.4 reste candidate tant que les dernières modifications de visualisation et d'interface n'ont pas été revalidées visuellement.
 
 ## Documentation technique
 
