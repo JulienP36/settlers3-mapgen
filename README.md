@@ -18,13 +18,13 @@ Les **positions de départ sont placées très tôt**. Toutes les passes suivant
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données EDM/MAP/SAV ; aucune image fictive de carte n'est utilisée.
 
-## État actuel — v1.5 CANDIDATE
+## État actuel — v1.5 VALIDÉE / STABLE
 
 - **v1.3.2** : moteur de stabilité validé extérieurement sur Continental 768×768 Legacy/Upgraded 4P/20P (starts acceptés, aucun crash View Map/in-game).
 - **v1.4** : interface/visualisation validée (thème sombre, projection parallélogramme, overlays, zoom/drag, territoires initiaux, labels joueurs).
-- **v1.5** : nouvelle candidate moteur intégrant l'audit complet Legacy/Upgraded, les nouveaux clusters de départ et les corrections Building Stones. Elle doit encore être validée dans l'éditeur/View Map avant promotion/tag stable.
+- **v1.5** : release moteur validée/stable pour le périmètre Continental 768 calibré, intégrant l'audit complet Legacy/Upgraded, les nouveaux clusters de départ, les corrections Building Stones et la géométrie minière v7 no-gap canonique.
 
-Le correctif **Goods Default** est déjà validé et conservé : `Legacy=Medium/2`, `Upgraded=High/3`, fallback sûr Medium.
+Le correctif **Goods Default** est validé et conservé : `Legacy=Medium/2`, `Upgraded=High/3`, fallback sûr Medium.
 
 ### Principaux changements v1.5
 
@@ -32,18 +32,28 @@ Le correctif **Goods Default** est déjà validé et conservé : `Legacy=Medium/
 - macro-morphologie commune par archétype ;
 - neige commune `Rocky32 -> 35 -> 129 -> Snow128`, Terrain34 conservé comme variante Rocky minéralisable ;
 - hydrologie Upgraded : suppression/redistribution des plans d'eau 1–4 cellules + trimming de rivière size-scaled ;
-- minerais Upgraded : ~90 % du support montagneux accessible, ratios natifs empiriques, v7 no-gap, stock/case augmenté ;
+- minerais Upgraded : ~90 % du support montagneux accessible, ratios natifs empiriques, **géométrie v7 no-gap canonique**, stock/case augmenté ;
 - arbres `68..77 + 80..81` dans les deux modes ; Palms `78..79` comptées comme bois ; Upgraded ~130 % volume natif + SmallTree84 séparé ;
 - Mud natif en Legacy, désactivé en Upgraded ; Swamp Upgraded ~+30 % ;
 - petites plantes/fleurs/buissons/champignons identiques dans les deux modes ;
-- Decorative Stones natives en Legacy, réduites en Upgraded ; reefs uniquement Upgraded ;
+- Decorative Stones natives en Legacy, réduites en Upgraded ; reefs uniquement Upgraded et éloignés des bords ;
 - **clusters de départ Upgraded sur la bordure du territoire initial (~HEX34)** : forêt `41 adultes + 21 SmallTree84`, pierres `8 ancres / 84 unités`, hors quotas globaux ;
-- Building Stones `115..126` variées au lieu d'un état uniforme ;
+- Building Stones `115..127` variées au lieu d'un état uniforme ;
 - environ **20 Building Stone 13 / ID127** vides générées globalement sur 768 ; elles comptent dans la densité d'ancres mais jamais dans le stock exploitable ;
-- **ID127 est constructible** : son ancien footprint 7 cellules est libéré, contrairement aux états actifs ;
-- nouveaux validators dédiés au stock réel, à la variété `115..127` et à la constructibilité d'ID127.
+- **ID127 est constructible dans le modèle statique** : son ancien footprint 7 cellules est libéré, contrairement aux états actifs ;
+- nouveaux validators dédiés au stock réel, à la variété `115..127`, à la constructibilité d'ID127 et aux récifs.
 
 > Les tailles autres que 768 sont visibles dans l'interface mais leur génération reste volontairement bloquée tant que leur calibration n'est pas validée. Le writer `.SAV` n'est pas encore implémenté : un SAV importé peut être analysé et copié, mais le programme n'invente pas un nouveau SAV.
+
+## Feuille de route immédiate
+
+L'ordre de travail actuellement retenu est :
+
+1. terminer les **TODO UI/outillage** ;
+2. enrichir fortement l'onglet **Statistiques** avec davantage de métriques, ventilations et graphiques ;
+3. valider progressivement les **tailles de maps 384 à 704** et leurs scalings ;
+4. démarrer ensuite le développement de l'archétype **Large Islands / Grandes îles** ;
+5. reprendre les modificateurs et autres améliorations après stabilisation de ces fondations.
 
 ## Interface actuelle
 
@@ -154,7 +164,7 @@ Hiérarchie de validation :
 
 `parser/checksum → éditeur → View Map/smoke → SAV runtime → long-play`
 
-La v1.5 reste **candidate** jusqu'au prochain contrôle officiel d'une génération fraîche, notamment sur les clusters de start, la variété Building Stones et la constructibilité des ID127.
+La **v1.5 est validée/stable** pour le périmètre Continental 768 actuellement calibré. La référence finale est documentée dans `RELEASE_VALIDATION.md`. Le test pratique de construction sur ID127 reste un micro-test de régression facultatif et non bloquant.
 
 ## Documentation technique
 
@@ -169,4 +179,4 @@ Références principales :
 
 ## Versioning
 
-Les releases doivent mettre à jour code, tests, changelog et documentation avant création du tag. **v1.4 est stable ; v1.5 est candidate tant que sa validation externe n'est pas terminée.**
+Les releases doivent mettre à jour code, tests, changelog et documentation avant création du tag. **v1.5 est la release stable actuelle pour Continental 768 calibré.**
