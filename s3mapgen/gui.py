@@ -34,7 +34,7 @@ class App(tk.Tk):
         ttk.Button(top,text='Aperçu PNG',command=self.save_preview).grid(row=1,column=9,padx=3)
 
         ttk.Label(top,text='Vue').grid(row=0,column=10,sticky='w');self.view=tk.StringVar(value='Global');vc=ttk.Combobox(top,textvariable=self.view,values=list(VIEWS),state='readonly',width=12);vc.grid(row=1,column=10,padx=(8,3));vc.bind('<<ComboboxSelected>>',lambda e:self._refresh_preview())
-        ttk.Label(top,text='Zoom').grid(row=0,column=11,sticky='w');self.zoom_var=tk.DoubleVar(value=1.0);zs=ttk.Scale(top,from_=0.5,to=4.0,variable=self.zoom_var,command=lambda v:self._zoom_changed());zs.grid(row=1,column=11,sticky='ew',padx=3);top.columnconfigure(11,weight=1)
+        ttk.Label(top,text='Zoom').grid(row=0,column=11,sticky='w');self.zoom_var=tk.DoubleVar(value=1.0);self.zoom_scale=ttk.Scale(top,from_=0.5,to=4.0,variable=self.zoom_var,command=lambda v:self._zoom_changed());self.zoom_scale.grid(row=1,column=11,sticky='ew',padx=3);top.columnconfigure(11,weight=1)
 
         self.progress=ttk.Progressbar(top,mode='determinate',maximum=100);self.progress.grid(row=2,column=0,columnspan=12,sticky='ew',pady=(8,2))
         self.status=tk.StringVar(value='Prêt');ttk.Label(top,textvariable=self.status).grid(row=3,column=0,columnspan=12,sticky='w')
