@@ -1,0 +1,33 @@
+name: Apply UI v1.4 payload
+
+on:
+  push:
+    branches:
+      - feat/ui-comfort-v1.4
+
+permissions:
+  contents: write
+
+jobs:
+  apply-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ui-comfort-v1.4
+          fetch-depth: 0
+      - name: Apply GUI payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f tools/ui_v1_4_gui.py.gz.b64 ]; then
+            echo "Payload already applied."
+            exit 0
+          fi
+          base64 -d tools/ui_v1_4_gui.py.gz.b64 | gzip -d > s3mapgen/gui.py
+          rm -f tools/ui_v1_4_gui.py.gz.b64 .github/workflows/apply-ui-v1.4.yml
+          git config user.name "JulienP36"
+          git config user.email "32819302+JulienP36@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add dark mode and visualization comfort controls" -m "Developed with assistance from ChatGPT."
+          git push origin HEAD:feat/ui-comfort-v1.4
