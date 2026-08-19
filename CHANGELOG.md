@@ -13,7 +13,11 @@
 - Tests ajoutés pour les préférences, le blend d'opacité et la projection parallélogramme.
 - Développé avec l'assistance de ChatGPT.
 
-## v1.3.2 — editor-safe starts / snow blocking / swamp transitions
+## v1.3.2 — editor-safe starts / snow blocking / swamp transitions — VALIDÉE
+- Validation utilisateur sur **4 générations Continental 768×768** : Legacy 4 joueurs, Legacy 20 joueurs, Upgraded 4 joueurs et Upgraded 20 joueurs.
+- Sur les 4 générations : positions de départ acceptées par l'éditeur et aucun crash lors de la vue in-game.
+- Marais : correction confirmée lors des tests.
+- Neige : zones intérieures désormais non traversables comme prévu.
 - Starts : ajout d'une marge de sécurité éditeur autour des 33 cellules natives, sans nettoyage artificiel du terrain.
 - Starts : distance conservatrice accrue vis-à-vis de l'eau et exclusion stricte des objets statiques dans le halo éditeur.
 - Building Stones : le footprint complet doit désormais rester hors du halo protégé du start, pas seulement l'ancre.
