@@ -12,17 +12,17 @@ Le projet poursuit trois objectifs complémentaires :
 - **proposer une génération améliorée** grâce au mode **Upgraded**, qui applique les règles de gameplay, de morphologie, de ressources et de sécurité affinées au cours du projet ;
 - **ouvrir progressivement la génération à l'utilisateur** avec un futur mode **Custom**, où les paramètres pourront être ajustés manuellement tout en conservant les garde-fous critiques.
 
-La forme générale de la carte est volontairement séparée du mode de génération. Les **archétypes** définissent la macro-géographie (continent, grandes îles, petites îles, etc.), tandis que le **mode de génération** contrôle le relief, les zones de terrain, l'hydrologie détaillée, les ressources, les objets, les positions de départ, la balance et les validations.
+La forme générale de la carte est volontairement séparée du mode de génération. Les **archétypes** définissent la macro-géographie, tandis que le **mode de génération** contrôle le relief, les zones de terrain, l'hydrologie détaillée, les ressources, les objets, les positions de départ, la balance et les validations.
 
-Le projet repose sur une règle importante : les **positions de départ des joueurs sont placées très tôt** dans le pipeline. Le reste de la génération doit ensuite s'adapter à ces zones réservées afin de réduire les positions invalides et de permettre un meilleur équilibrage des ressources.
+Les **positions de départ des joueurs sont placées très tôt** dans le pipeline. Le reste de la génération doit ensuite s'adapter à ces zones réservées afin de réduire les positions invalides et de permettre un meilleur équilibrage des ressources.
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.4 candidate
+## État actuel — v1.4 VALIDÉE
 
 La base de génération **v1.3.2 est validée** sur quatre contrôles Continental 768×768 : Legacy 4P, Legacy 20P, Upgraded 4P et Upgraded 20P. Dans les quatre cas, les starts ont été acceptés par l'éditeur et la vue in-game n'a pas provoqué de crash. Les transitions de marais sont corrigées et la neige intérieure n'est plus traversable comme prévu.
 
-La GUI v1.4 candidate est fonctionnelle sous Windows et permet actuellement :
+La **v1.4 est également validée** pour son périmètre d'interface et de visualisation. La GUI permet actuellement :
 
 - génération **Legacy** et **Upgraded** sur l'archétype **Continental 768×768** ;
 - choix du nombre de joueurs et du seed ;
@@ -30,12 +30,14 @@ La GUI v1.4 candidate est fonctionnelle sous Windows et permet actuellement :
 - import `.EDM`, `.MAP` et `.SAV` ;
 - export `.EDM` / `.MAP` pour les configurations actuellement sérialisables ;
 - aperçu Global / Heightmap / Ressources / Territoires ;
-- thème **Sombre / Clair**, avec sombre par défaut et listes déroulantes adaptées au thème ;
+- thème **Sombre / Clair**, avec sombre par défaut ;
+- listes déroulantes adaptées au thème, ouvertes comme fermées ;
 - onglet **Paramètres** et préférences persistantes ;
 - superposition réglable des vues Heightmap / Ressources / Territoires sur la map globale ;
 - vue carrée ou projection **Parallélogramme** à pas de demi-cellule par ligne ;
 - marqueurs `P1` à `P20` nets, en bitmap, colorés selon le joueur et non déformés par la projection ;
 - contour non rempli du **territoire initial** de chaque start, dimensionné d'après les SAV natifs (3500 cellules, étendue ±35 cellules) ;
+- territoire initial affiché comme un vrai cercle dans la géométrie parallélogramme et donc déformé/incliné en vue carrée ;
 - zoom slider + molette temporisée, sensibilité réglable et déplacement de la map par drag ;
 - clic direct sur la barre des sliders pour positionner immédiatement le curseur ;
 - barre de progression pour génération/import/export/aperçu avec état de fin visuel ;
@@ -48,9 +50,9 @@ La GUI v1.4 candidate est fonctionnelle sous Windows et permet actuellement :
 
 > Les tailles autres que 768 sont visibles dans l'interface mais leur génération reste volontairement bloquée tant que leur calibration n'est pas validée. Le writer `.SAV` n'est pas encore implémenté : un SAV importé peut être analysé et copié, mais le programme n'invente pas un nouveau SAV.
 
-### Problème connu à investiguer
+### Problème connu — prochaine investigation
 
-Un crash a été observé lors du lancement en jeu quand les **fournitures de départ sont laissées sur « Défaut »**. Les presets explicites **Low / Medium / High** ne reproduisent pas ce crash dans le test concerné. Ce problème est volontairement séparé de la validation v1.4 et doit être investigué avant d'étendre le périmètre de génération.
+Un crash a été observé lors du lancement en jeu quand les **fournitures de départ sont laissées sur « Défaut »**. Les presets explicites **Low / Medium / High** ne reproduisent pas ce crash dans le test concerné. Ce problème est séparé de la validation v1.4 et constitue la prochaine investigation prioritaire.
 
 ## Modes de génération
 
@@ -139,7 +141,7 @@ Les validators du programme sont des **garde-fous de non-régression**. Un PASS 
 
 La hiérarchie de validation du projet reste : parser/checksum → éditeur → View Map/smoke test → SAV runtime → long-play.
 
-La v1.3.2 a passé son contrôle externe ciblé sur quatre générations 768×768. La v1.4 reste candidate tant que les dernières modifications de visualisation et d'interface n'ont pas été revalidées visuellement.
+La v1.3.2 a passé son contrôle externe ciblé sur quatre générations 768×768. La v1.4 a ensuite passé sa validation visuelle finale, y compris la géométrie des territoires de départ et le thème sombre des combobox.
 
 ## Documentation technique
 
