@@ -53,16 +53,11 @@ class MapGenerator(_BaseMapGenerator):
         elif transform == 3:
             t = np.rot90(t.T, 2).copy(); h = np.rot90(h.T, 2).copy()
 
-        # Terrain34 is a rare technical Rocky/Snow transition state observed in
-        # native runtime/static sources. When imported as a raw morphology
-        # template it can survive as isolated visual speckles after our
-        # relief-driven Snow rebuild. Normalize it to Rocky before downstream
-        # biome reconstruction; the final legal Snow chain is rebuilt later as
-        # Rocky32 -> 35 -> 129 -> Snow128.
-        residual34 = int(np.count_nonzero(t == 34))
-        if residual34:
-            t = t.copy()
-            t[t == 34] = 32
+        # Native 768 calibration shows terrain34 is NOT part of the visible
+        # Rocky->Snow transition ring. It is a rare Rocky-internal terrain
+        # detail: every observed 34 cell is an isolated singleton surrounded
+        # only by Rocky32. Preserve it from the native morphology template.
+        terrain34_count = int(np.count_nonzero(t == 34))
 
         state = MapState.empty(self.side)
         state.terrain[:] = t
@@ -74,8 +69,8 @@ class MapGenerator(_BaseMapGenerator):
         state.metadata['archetype_morphology_index'] = int(idx)
         state.metadata['archetype_morphology_source'] = base.source
         state.metadata['archetype_transform'] = transform
-        state.metadata['terrain34_normalized'] = residual34
-        self.log('morphology.archetype_library', f'continental template={idx} transform={transform} terrain34_normalized={residual34}')
+        state.metadata['terrain34_preserved'] = terrain34_count
+        self.log('morphology.archetype_library', f'continental template={idx} transform={transform} terrain34_preserved={terrain34_count}')
         return state
 
     def _morphology_from_native(self, rng, pr) -> MapState:
