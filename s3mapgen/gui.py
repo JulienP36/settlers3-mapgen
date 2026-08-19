@@ -5,7 +5,8 @@ import tkinter as tk
 from tkinter import ttk,filedialog,messagebox
 from PIL import Image, ImageTk
 from .app_paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY,EDM_SCAFFOLD,MAP_SCAFFOLD
-from .engine import MapGenerator, GenerationOutput
+from .generator import MapGenerator
+from .engine import GenerationOutput
 from .preview import render
 from .binary import export_with_scaffold, read_area, read_starts, read_sav_state
 from .modes import MODES, MODE_ORDER
