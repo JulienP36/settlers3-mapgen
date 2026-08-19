@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import pytest
 from s3mapgen.app_paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY
-from s3mapgen.engine import MapGenerator
+from s3mapgen.generator import MapGenerator
 from s3mapgen.rules import PIPELINE_STAGES
 from s3mapgen.modes import MODES
 from s3mapgen.archetypes import ARCHETYPES
