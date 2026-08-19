@@ -116,8 +116,7 @@ class MapGenerator(_BaseMapGenerator):
         ids=cfg['adult_ids'];weights=cfg.get('adult_weights');return pr.choices(ids,weights=weights,k=1)[0] if weights else pr.choice(ids)
 
     def _border_cluster_center(self,state,sx,sy,radius,rng,require_grass=True):
-        T=state.terrain;cand=[]
-        r=max(1,int(radius))
+        T=state.terrain;cand=[];r=max(1,int(radius))
         for y in range(max(2,sy-r-2),min(self.side-2,sy+r+3)):
             for x in range(max(2,sx-r-2),min(self.side-2,sx+r+3)):
                 if abs(hex_distance(sx,sy,x,y)-r)<=1 and (not require_grass or T[y,x]==GRASS):cand.append((x,y))
@@ -126,8 +125,7 @@ class MapGenerator(_BaseMapGenerator):
 
     def _place_trees(self,state,rng,pr):
         T,O,A=state.terrain,state.objects,state.accessibility;cfg=self.profile['trees'];core=self._core_mask(state,max(self.profile['starts']['technical_clear_hex'],self.profile['starts'].get('editor_object_clear_hex',14)))
-        adult_bonus=int(cfg.get('adult_start_bonus_per_player',0));small_bonus=int(cfg.get('small_tree_start_bonus_per_player',0));bonus_adult=bonus_small=0
-        start_centers=[]
+        adult_bonus=int(cfg.get('adult_start_bonus_per_player',0));small_bonus=int(cfg.get('small_tree_start_bonus_per_player',0));bonus_adult=bonus_small=0;start_centers=[]
         if adult_bonus or small_bonus:
             border=int(cfg.get('start_cluster_center_hex',self.profile['starts'].get('initial_territory_hex_radius',34)));rmin=int(cfg.get('start_cluster_radius_min',5));rmax=int(cfg.get('start_cluster_radius_max',12))
             for sx,sy in state.starts:
@@ -149,12 +147,10 @@ class MapGenerator(_BaseMapGenerator):
                         else:O[y,x]=self._weighted_adult(cfg,pr);na+=1;bonus_adult+=1
                         A[y,x]=1
                     if na==adult_bonus and ns==small_bonus:start_centers.append((cx,cy));placed=True;break
-                    # rollback incomplete candidate cluster
                     for x,y,_ in local:
                         if O[y,x] in cfg['adult_ids'] or O[y,x]==cfg.get('small_tree_id',84):O[y,x]=0;A[y,x]=0
                     bonus_adult-=na;bonus_small-=ns
                 if not placed:raise RuntimeError(f'Could not place start forest cluster near {(sx,sy)}')
-
         target=int(cfg['adult_global_target']);cluster_target=round(target*float(cfg.get('adult_cluster_share',0.0)));global_adult=0;centers=[]
         if cluster_target:
             cp=np.argwhere((T==GRASS)&(O==0)&~core)
@@ -192,10 +188,7 @@ class MapGenerator(_BaseMapGenerator):
 
     def _stone_units_exact(self,count,target,rng,weighted_full=False,min_unit=1,max_unit=12):
         if count<=0:return np.zeros(0,dtype=int)
-        vals=np.arange(min_unit,max_unit+1,dtype=int)
-        weights=vals.astype(float) if weighted_full else np.ones(len(vals),float)
-        q=rng.choice(vals,size=count,replace=True,p=weights/weights.sum()).astype(int)
-        target=int(target)
+        vals=np.arange(min_unit,max_unit+1,dtype=int);weights=vals.astype(float) if weighted_full else np.ones(len(vals),float);q=rng.choice(vals,size=count,replace=True,p=weights/weights.sum()).astype(int);target=int(target)
         while int(q.sum())<target:
             ids=np.where(q<max_unit)[0]
             if not len(ids):break
@@ -224,10 +217,9 @@ class MapGenerator(_BaseMapGenerator):
             O[y,x]=cfg['exhausted_id']-int(u)
             for dx,dy in fp:X,Y=x+dx,y+dy;A[Y,X]=1;foot[Y,X]=1
             mark_block(x,y);anchors.append((x,y,int(u),tag))
-
         start_n=int(cfg.get('start_bonus_anchor_target',0));start_stock=int(cfg.get('start_bonus_stock_per_player',0));start_centers=[]
         if start_n:
-            border=int(cfg.get('start_cluster_center_hex',self.profile['starts'].get('initial_territory_hex_radius',34)));rmin=int(cfg.get('start_cluster_radius_min',4));rmax=int(cfg.get('start_cluster_radius_max',10));umin=int(cfg.get('start_bonus_unit_min',9));umax=int(cfg.get('start_bonus_unit_max',12))
+            border=int(cfg.get('start_cluster_center_hex',self.profile['starts'].get('initial_territory_hex_radius',34)));rmax=int(cfg.get('start_cluster_radius_max',10));umin=int(cfg.get('start_bonus_unit_min',9));umax=int(cfg.get('start_bonus_unit_max',12))
             for pid,(sx,sy) in enumerate(state.starts,1):
                 placed=False
                 for _ in range(100):
@@ -247,14 +239,12 @@ class MapGenerator(_BaseMapGenerator):
                         for i in range(len(anchors)-start_n,len(anchors)):
                             x,y,_,tag=anchors[i];anchors[i]=(x,y,int(cfg['exhausted_id']-O[y,x]),tag)
                         start_centers.append((cx,cy));placed=True;break
-                    # rollback incomplete attempt
                     for x,y in picked:
                         O[y,x]=0
                         for dx,dy in fp:X,Y=x+dx,y+dy;A[Y,X]=0;foot[Y,X]=0
                     anchors[:]=[a for a in anchors if a[3]!=f'P{pid}'];blocked[:]=False
                     for x,y,_,_ in anchors:mark_block(x,y)
                 if not placed:raise RuntimeError(f'Building Stone start cluster failed P{pid}')
-
         g=0;cluster_goal=round(int(cfg['global_anchor_target'])*float(cfg.get('cluster_share',0.0)));centers=[]
         if cluster_goal:
             cp=np.argwhere((T==GRASS)&(O==0)&~local)
@@ -270,10 +260,18 @@ class MapGenerator(_BaseMapGenerator):
             y,x=map(int,pts[i])
             if ok(x,y):put(x,y,1,'global');g+=1
         if g<int(cfg['global_anchor_target']):raise RuntimeError(f'Building Stone global anchors {g}/{cfg["global_anchor_target"]}')
-        gi=[i for i,a in enumerate(anchors) if a[3]=='global'];q=self._stone_units_exact(len(gi),int(cfg['global_stock_target']),rng,bool(cfg.get('global_stock_weighted_fullness',False)),1,12)
-        for value,i in zip(q,gi):x,y,_,tag=anchors[i];O[y,x]=cfg['exhausted_id']-int(value);anchors[i]=(x,y,int(value),tag)
-        state.metadata.update(building_stone_anchors=anchors,stone_cluster_target=cluster_goal,start_stone_centers=start_centers,start_stone_anchors_per_player=start_n,start_stone_stock_per_player=start_stock,stone_global_state_counts={int(oid):int((O==oid).sum()) for oid in range(115,127)})
-        self.log('objects.building_stones',f'global={g} start_bonus={len(anchors)-g} varied_states={len([v for v in state.metadata["stone_global_state_counts"].values() if v])}')
+        gi=[i for i,a in enumerate(anchors) if a[3]=='global'];exhausted_target=min(int(cfg.get('global_exhausted_anchor_target',0)),len(gi));exhausted=set()
+        if exhausted_target:
+            exhausted=set(map(int,rng.choice(len(gi),exhausted_target,replace=False)))
+        active_gi=[]
+        for pos,i in enumerate(gi):
+            if pos in exhausted:
+                x,y,_,tag=anchors[i];O[y,x]=cfg['exhausted_id'];anchors[i]=(x,y,0,tag)
+            else:active_gi.append(i)
+        q=self._stone_units_exact(len(active_gi),int(cfg['global_stock_target']),rng,bool(cfg.get('global_stock_weighted_fullness',False)),1,12)
+        for value,i in zip(q,active_gi):x,y,_,tag=anchors[i];O[y,x]=cfg['exhausted_id']-int(value);anchors[i]=(x,y,int(value),tag)
+        state.metadata.update(building_stone_anchors=anchors,stone_cluster_target=cluster_goal,start_stone_centers=start_centers,start_stone_anchors_per_player=start_n,start_stone_stock_per_player=start_stock,stone_global_exhausted_target=exhausted_target,stone_global_state_counts={int(oid):int((O==oid).sum()) for oid in range(115,128)})
+        self.log('objects.building_stones',f'global={g} exhausted={exhausted_target} start_bonus={len(anchors)-g} varied_states={len([v for v in state.metadata["stone_global_state_counts"].values() if v])}')
 
     def _final_accessibility(self,state):
         super()._final_accessibility(state);O,A=state.objects,state.accessibility;tree_pool=self.profile['trees']['adult_ids']+self.profile['trees'].get('palm_ids',[78,79])+[84];A[np.isin(O,tree_pool)]=1
@@ -283,7 +281,6 @@ class MapGenerator(_BaseMapGenerator):
         if dynamic:
             old={f:v['cells'] for f,v in families.items()}
             for f,v in families.items():v['cells']=int(dynamic[f'{f:02x}'])
-        # Base validator still reads historical start_bonus_units; provide a temporary compatible list.
         scfg=self.profile['building_stones'];old_units=scfg.get('start_bonus_units',None);start_n=int(scfg.get('start_bonus_anchor_target',0));scfg['start_bonus_units']=[1]*start_n
         try:out=super().validate(state)
         finally:
@@ -291,15 +288,21 @@ class MapGenerator(_BaseMapGenerator):
             else:scfg['start_bonus_units']=old_units
             if old:
                 for f,v in families.items():v['cells']=old[f]
-        by={v.rule_id:v for v in out};O,T=state.objects,state.terrain;cfg=self.profile['trees'];adults=int(np.isin(O,cfg['adult_ids']).sum());expected=int(cfg['adult_global_target'])+int(cfg.get('adult_start_bonus_per_player',0))*len(state.starts)
+        by={v.rule_id:v for v in out};O,T,A=state.objects,state.terrain,state.accessibility;cfg=self.profile['trees'];adults=int(np.isin(O,cfg['adult_ids']).sum());expected=int(cfg['adult_global_target'])+int(cfg.get('adult_start_bonus_per_player',0))*len(state.starts)
         if 'ADULT_TREE_QUOTA' in by:by['ADULT_TREE_QUOTA'].passed=adults==expected;by['ADULT_TREE_QUOTA'].message=f'{adults}/{expected}'
         small=int((O==cfg.get('small_tree_id',84)).sum());target=int(cfg.get('small_tree_target',0))+int(cfg.get('small_tree_start_bonus_per_player',0))*len(state.starts)
         if 'SMALLTREE84' in by:by['SMALLTREE84'].passed=small==target;by['SMALLTREE84'].message=f'{small}/{target}'
         palms=int(np.isin(O,cfg.get('palm_ids',[78,79])).sum());pt=int(cfg.get('palm_target',0));out.append(ValidationResult('PALM_QUOTA',palms==pt,f'{palms}/{pt}'));pb=np.count_nonzero(np.isin(O,cfg.get('palm_ids',[78,79]))&~np.isin(T,DESERT_IDS));out.append(ValidationResult('PALMS_ON_DESERT',pb==0,f'bad={pb}'))
-        stones=(O>=115)&(O<=126);stock=int(np.sum(scfg['exhausted_id']-O[stones]));expected_stock=int(scfg['global_stock_target'])+int(scfg.get('start_bonus_stock_per_player',0))*len(state.starts);expected_anchors=int(scfg['global_anchor_target'])+int(scfg.get('start_bonus_anchor_target',0))*len(state.starts)
-        if 'STONE_ANCHOR_QUOTA' in by:by['STONE_ANCHOR_QUOTA'].passed=int(stones.sum())==expected_anchors;by['STONE_ANCHOR_QUOTA'].message=f'{int(stones.sum())}/{expected_anchors}'
-        if 'STONE_STOCK_QUOTA' in by:by['STONE_STOCK_QUOTA'].passed=stock==expected_stock;by['STONE_STOCK_QUOTA'].message=f'{stock}/{expected_stock}'
-        state_counts={oid:int((O==oid).sum()) for oid in range(115,127)};distinct=sum(v>0 for v in state_counts.values());out.append(ValidationResult('STONE_STATE_VARIETY',distinct>=6,f'distinct_active_states={distinct} counts={state_counts}'))
+        active=(O>=115)&(O<=126);all_stones=(O>=115)&(O<=127);stock=int(np.sum(scfg['exhausted_id']-O[active]));expected_stock=int(scfg['global_stock_target'])+int(scfg.get('start_bonus_stock_per_player',0))*len(state.starts);expected_anchors=int(scfg['global_anchor_target'])+int(scfg.get('start_bonus_anchor_target',0))*len(state.starts)
+        if 'STONE_ANCHOR_QUOTA' in by:by['STONE_ANCHOR_QUOTA'].passed=int(all_stones.sum())==expected_anchors;by['STONE_ANCHOR_QUOTA'].message=f'{int(all_stones.sum())}/{expected_anchors} total incl. exhausted'
+        if 'STONE_STOCK_QUOTA' in by:by['STONE_STOCK_QUOTA'].passed=stock==expected_stock;by['STONE_STOCK_QUOTA'].message=f'{stock}/{expected_stock} active stock only'
+        state_counts={oid:int((O==oid).sum()) for oid in range(115,128)};distinct=sum(v>0 for v in state_counts.values());out.append(ValidationResult('STONE_STATE_VARIETY',distinct>=7,f'distinct_states={distinct} counts={state_counts}'))
+        exhausted=int((O==127).sum());expected_exhausted=int(scfg.get('global_exhausted_anchor_target',0));out.append(ValidationResult('STONE_EXHAUSTED_NATIVE',exhausted==expected_exhausted,f'{exhausted}/{expected_exhausted}'))
+        bad_exhausted_terrain=int(np.count_nonzero((O==127)&(T!=GRASS)));out.append(ValidationResult('STONE_EXHAUSTED_ON_GRASS',bad_exhausted_terrain==0,f'bad={bad_exhausted_terrain}'))
+        fp=[tuple(v) for v in scfg['footprint']];badfp=0
+        for y,x in np.argwhere(O==127):
+            if any(A[y+dy,x+dx]!=1 for dx,dy in fp):badfp+=1
+        out.append(ValidationResult('STONE_EXHAUSTED_FOOTPRINT',badfp==0,f'bad={badfp}'))
         if self.current_mode=='legacy':
             for rule in ('MICRO_WATER_1_4','RIVER_ORPHANS','RIVER_STOPS_AT_WATER','RIVER_LENGTH_CAP'):
                 if rule in by:by[rule].passed=True;by[rule].message='Legacy native behaviour preserved by audit'
