@@ -11,6 +11,13 @@
 - [x] **Première morphologie Upgraded indépendante validée** : seed `2026081908`, starts OK, aucun crash, relief natif conservé.
 - [x] **v1.5 VALIDÉE / STABLE** pour le périmètre Continental 768 calibré : moteur Legacy/Upgraded audité, clusters de départ, Building Stones corrigées, géométrie minière v7 no-gap restaurée et contrôles éditeur/View Map/in-game PASS.
 
+## Ordre de travail après v1.5
+1. **Finir tous les TODO UI / outillage** avant de reprendre la génération.
+2. **Grosse passe Statistiques** : enrichir fortement l'onglet avec beaucoup de métriques, ventilations et graphes utiles à l'analyse des maps.
+3. **Calibration multi-tailles** : valider progressivement 384, 448, 512, 576, 640 et 704, puis confirmer les scalings généraux.
+4. **Commencer l'archétype Large Islands / Grandes îles** une fois Continental multi-tailles suffisamment solide.
+5. Ensuite : modificateurs, Terrain24 Upgraded, autres archétypes, Custom et reverse-engineering restant selon priorité.
+
 ## Génération v1.5
 - [x] Macro-géographie découplée du mode via `ArchetypeMorphologyLibrary`.
 - [x] Terrain34 requalifié : variante Rocky rare, singleton entouré de Rocky32, minéralisable ; jamais anneau Snow.
@@ -42,26 +49,7 @@
 - [ ] Valider les scalings multi-tailles : arbres, stones, décorations, Swamp, reefs, désert, rivières.
 - [ ] Reprendre ensuite le compositeur de formes natives / native stamps et produire plusieurs seeds 768 distinctes.
 
-## Modificateurs futurs — orthogonaux aux modes
-- [ ] Système de modificateurs combinables avec Legacy/Upgraded, pas de quatrième générateur Barebone.
-- [ ] **Barebone** : retire seulement le cosmétique sans fonction gameplay.
-- [ ] **Densité de forêt** configurable.
-- [ ] Idée : **cultures présentes au démarrage** (blé/vigne/riz), à étudier avec le decay runtime.
-- [ ] Variante possible : **montagnes plus réalistes** comme modificateur explicite.
-- [ ] **Réaliste** : distribution écologique plus crédible sans changer la macro-géographie. Pistes : arbres/plantes favorisés près de l'eau, champignons favorisés près des marais/sols humides, végétation modulée par biome/relief/humidité, avec priorité à la constructibilité, aux ressources et au gameplay. À développer comme modificateur orthogonal.
-
-## Reverse engineering terrain/runtime
-- [x] Terrain24 = herbe jaune/sèche, blend uniquement Grass16, native.
-- [x] Terrain22 = terrain agricole runtime.
-- [x] Terrain28 = sol runtime travaillé/usé, bâtiments + chemins.
-- [~] Terrain18/19/23 encore non résolus.
-- [x] Terrain34 = détail Rocky rare/minéralisable, entièrement entouré de 32 dans les références contrôlées.
-- [x] `85..93` blé (`92` récoltable, `93` chaume).
-- [x] `94..102` vigne/raisin.
-- [x] `103..110` riz.
-- [~] `82/83` techniques/invisibles, différés.
-
-## UX / outillage
+## UX / outillage — priorité immédiate
 - [x] Barre progression, seed aléatoire, import EDM/MAP/SAV, export EDM+MAP 768.
 - [~] Export SAV non validé ; copie inchangée d'un SAV importé seulement.
 - [x] Vues global / heightmap / ressources / territoires.
@@ -83,7 +71,9 @@
 - [x] Tailles natives visibles 384..768 et max joueurs adaptés.
 - [~] Génération multi-tailles : UI prête, calibration moteur à compléter.
 
-### Statistiques
+## Statistiques — grosse passe après l'UI
+Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, pas seulement un résumé. Ajouter autant de statistiques utiles que nécessaire tant qu'elles restent lisibles et exploitables.
+
 - [ ] **Détail exact du nombre de cellules pour chaque tile/ID de terrain.**
 - [ ] **Quantité de chaque objet-ressource.**
 - [ ] **Building Stones : afficher aussi la quantité totale de pierre attendue/exploitable.**
@@ -91,10 +81,47 @@
 - [ ] **Graphe des ressources de montagne**, par famille, affichant :
   - [ ] quantité de cases ;
   - [ ] pourcentage du stock réel total de ressources.
+- [ ] Ajouter progressivement d'autres métriques utiles : densités par 1000 cellules de land, ratios land/ocean, biomes, eau intérieure, forêts, ressources, objets décoratifs, starts et distances pertinentes.
+- [ ] Ajouter des répartitions / percentiles utiles quand cela apporte une information réelle (tailles de blobs, tailles de massifs, lacs, rivières, clusters, distances aux starts, etc.).
+- [ ] Prévoir des graphes complémentaires lorsque la donnée est réellement mieux comprise visuellement qu'en tableau.
 - [ ] Garder les IDs terrain non résolus séparés.
 - [ ] Suivre Terrain24 et terrains runtime 22/28.
-- [ ] Graphiques utiles supplémentaires plus tard.
 - [ ] Édition directe de map — pas maintenant.
+
+## Calibration multi-tailles — après UI + Stats
+- [ ] Valider Continental 384×384.
+- [ ] Valider Continental 448×448.
+- [ ] Valider Continental 512×512.
+- [ ] Valider Continental 576×576.
+- [ ] Valider Continental 640×640.
+- [ ] Valider Continental 704×704.
+- [ ] Reconfirmer 768×768 après généralisation des scalings.
+- [ ] Pour chaque taille : starts, morphologie, montagnes/neige, minerais, arbres, Building Stones, poissons, marais, désert, décorations, récifs, rivières, lacs, quotas et stabilité éditeur/View Map/in-game.
+
+## Archétypes — après Continental multi-tailles
+- [ ] **Large Islands / Grandes îles** : commencer le développement comme prochain archétype majeur.
+- [ ] Définir le contrat macro-géographique Large Islands sans dupliquer les règles Legacy/Upgraded downstream.
+- [ ] Constituer/analyser les références natives nécessaires avant calibration.
+- [ ] **Small Islands / Petites îles** : après stabilisation Large Islands.
+
+## Modificateurs futurs — orthogonaux aux modes
+- [ ] Système de modificateurs combinables avec Legacy/Upgraded, pas de quatrième générateur Barebone.
+- [ ] **Barebone** : retire seulement le cosmétique sans fonction gameplay.
+- [ ] **Densité de forêt** configurable.
+- [ ] Idée : **cultures présentes au démarrage** (blé/vigne/riz), à étudier avec le decay runtime.
+- [ ] Variante possible : **montagnes plus réalistes** comme modificateur explicite.
+- [ ] **Réaliste** : distribution écologique plus crédible sans changer la macro-géographie. Pistes : arbres/plantes favorisés près de l'eau, champignons favorisés près des marais/sols humides, végétation modulée par biome/relief/humidité, avec priorité à la constructibilité, aux ressources et au gameplay. À développer comme modificateur orthogonal.
+
+## Reverse engineering terrain/runtime
+- [x] Terrain24 = herbe jaune/sèche, blend uniquement Grass16, native.
+- [x] Terrain22 = terrain agricole runtime.
+- [x] Terrain28 = sol runtime travaillé/usé, bâtiments + chemins.
+- [~] Terrain18/19/23 encore non résolus.
+- [x] Terrain34 = détail Rocky rare/minéralisable, entièrement entouré de 32 dans les références contrôlées.
+- [x] `85..93` blé (`92` récoltable, `93` chaume).
+- [x] `94..102` vigne/raisin.
+- [x] `103..110` riz.
+- [~] `82/83` techniques/invisibles, différés.
 
 ## Idées volontairement non actives / à clarifier plus tard
 - Génération Upgraded : aucune nouvelle idée supplémentaire pour le moment.
