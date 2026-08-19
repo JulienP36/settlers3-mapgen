@@ -58,9 +58,6 @@ def _set_players(parts, starts:list[tuple[int,int]], goods_default:int):
         if t==1 and len(p)>=24 and not done[1]:
             vals=list(struct.unpack_from('<6I',p,0))
             vals[1]=count
-            # Map Info DWORD 2 is the editor's "Goods Default" / start resources
-            # setting. Historical bug: this was incorrectly written as count-1,
-            # yielding invalid values (e.g. 19 for 20P) and no selected preset.
             vals[2]=goods_default
             parts[i][1]=bytearray(struct.pack('<6I',*vals)); done[1]=True
         elif t==2 and not done[2]:
@@ -115,7 +112,12 @@ def read_starts(path:Path|str)->list[tuple[int,int]]:
         pass
     return []
 def read_sav_state(path:Path|str)->MapState:
-    """Read the confirmed static/runtime map fields from a version-11 SAV. Read-only."""
+    """Read the confirmed static/runtime map fields from a version-11 SAV. Read-only.
+
+    Runtime terrain IDs are preserved verbatim (not normalized to Grass) so UI
+    analysis views can expose worked ground/paths (Terrain28), agricultural
+    ground (Terrain22) and future runtime terrain diagnostics.
+    """
     import numpy as np
     b=Path(path).read_bytes()
     if len(b)<12: raise ValueError('SAV trop court')
@@ -139,9 +141,9 @@ def read_sav_state(path:Path|str)->MapState:
         if len(p)!=side*24: raise ValueError(f'Payload colonne {x}: {len(p)} != {side*24}')
         a=np.frombuffer(p,dtype=np.uint8).reshape(side,24)
         area[:,x,0]=a[:,4]
-        terr=a[:,6].copy();terr[terr==28]=16;area[:,x,1]=terr
+        area[:,x,1]=a[:,6]
         area[:,x,2]=a[:,14]
         area[:,x,3]=a[:,8]
         area[:,x,5]=a[:,17]
-    st=MapState(side,area);st.metadata.update({'source_format':'SAV','source_path':str(path),'sav_version':version,'territories_available':True})
+    st=MapState(side,area);st.metadata.update({'source_format':'SAV','source_path':str(path),'sav_version':version,'territories_available':True,'runtime_terrain_preserved':True})
     return st
