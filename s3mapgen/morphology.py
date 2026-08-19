@@ -14,22 +14,30 @@ class MorphologyTemplate:
     archetype: str
 
 
-class UpgradedMorphologyLibrary:
-    """Runtime abstraction for Upgraded macro morphology.
+class ArchetypeMorphologyLibrary:
+    """Terrain+height templates grouped by map archetype.
 
-    NPZ is the target reusable format. During migration, an EDM checkpoint may
-    still be supplied; only its terrain and height are extracted here so the
-    generation engine itself no longer depends on EDM semantics.
+    Existing native NPZ libraries are accepted directly. EDM input remains
+    supported only as a migration/extraction source for reverse-engineering.
     """
 
     def __init__(self, path: Path | str, archetype: str = 'continental'):
         self.path = Path(path)
         if self.path.suffix.lower() == '.npz':
-            data = np.load(self.path, allow_pickle=False)
+            data = np.load(self.path, allow_pickle=True)
             self.terrain = np.asarray(data['terrain'], dtype=np.uint8)
             self.height = np.asarray(data['height'], dtype=np.uint8)
-            self.sources = np.asarray(data['source']).astype(str)
-            self.archetypes = np.asarray(data['archetype']).astype(str)
+            n = len(self.terrain)
+            if 'source' in data.files:
+                self.sources = np.asarray(data['source']).astype(str)
+            elif 'filenames' in data.files:
+                self.sources = np.asarray(data['filenames']).astype(str)
+            else:
+                self.sources = np.asarray([self.path.name] * n)
+            if 'archetype' in data.files:
+                self.archetypes = np.asarray(data['archetype']).astype(str)
+            else:
+                self.archetypes = np.asarray([archetype] * n)
         else:
             state = read_area(self.path)
             self.terrain = state.terrain[None, ...].astype(np.uint8, copy=True)
@@ -38,12 +46,12 @@ class UpgradedMorphologyLibrary:
             self.archetypes = np.asarray([archetype])
 
         if self.terrain.ndim != 3 or self.height.shape != self.terrain.shape:
-            raise ValueError('Invalid Upgraded morphology library array shapes')
+            raise ValueError('Invalid morphology library array shapes')
         n, h, w = self.terrain.shape
         if h != w:
-            raise ValueError('Upgraded morphology templates must be square')
+            raise ValueError('Morphology templates must be square')
         if len(self.sources) != n or len(self.archetypes) != n:
-            raise ValueError('Upgraded morphology metadata length mismatch')
+            raise ValueError('Morphology metadata length mismatch')
         self.side = int(w)
 
     def indices_for(self, archetype: str) -> list[int]:
@@ -70,3 +78,7 @@ class UpgradedMorphologyLibrary:
             side=np.asarray([self.side], dtype=np.int32),
         )
         return output
+
+
+# Compatibility name used by the migration tool/tests created during v1.4 work.
+UpgradedMorphologyLibrary = ArchetypeMorphologyLibrary
