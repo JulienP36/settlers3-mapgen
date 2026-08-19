@@ -23,6 +23,7 @@
 - [x] Arbres : pool `68..77 + 80..81` dans les deux. Legacy volume natif ; Upgraded ~130 % + SmallTree84 séparé. Palms `78..79` comptés dans le bois.
 - [x] Building Stones : footprint 7 cellules commun ; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
 - [x] **États Building Stones corrigés** : ne plus uniformiser les ancres. Legacy conserve une distribution native-like variée ; Upgraded reste varié mais biaisé vers les pierres plus pleines, avec ajustement fin pour atteindre exactement le stock cible.
+- [x] **Building Stone 13 / ID127 vide généré** : comportement natif confirmé. Référence 768 = 18/22/21 ancres vides, donc cible pratique **20 ancres globales sur 1683**. Elles comptent dans la densité/placement et conservent le footprint, mais apportent **0 unité** et sont exclues du stock exploitable. Jamais utilisées dans les clusters bonus de start.
 - [x] Décorations : reefs Legacy=0 / Upgraded rares ; Reeds natifs communs ; pierres déco native Legacy / ~÷10 Upgraded ; petites végétations, Wrecks, Grave, Stumps communs natifs.
 - [x] Désert : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`, comportement commun natif.
 - [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement. L'expansion Swamp Upgraded refuse désormais tout nouveau contact HEX6 avec un terrain incompatible.
@@ -30,7 +31,7 @@
 - [x] Snow : même génération Legacy/Upgraded. Terrain34 est neutralisé seulement pendant le calcul de profondeur Snow puis restauré uniquement s'il reste entièrement entouré de Rocky32.
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
 - [x] **Bonus de départ Upgraded — nouvelle règle** : abandon de l'ancien bonus dispersé `15 arbres + 5 stones`. Les bonus sont maintenant de vrais clusters centrés sur la **bordure du territoire initial (~rayon HEX 34)** afin que la bordure traverse le cluster. Forêt bonus ≈ cluster global moyen : **41 adultes + 21 SmallTree84/joueur**. Tas de Building Stones bonus ≈ cluster global moyen : **8 ancres/joueur**, bien remplies mais variées, **84 unités/joueur** au total (9..12 unités/ancre). Mini-marais inchangé.
-- [ ] **Prochaine action immédiate : régénérer une candidate Upgraded fraîche avec les nouveaux clusters de départ + nouvelle distribution de Building Stones, puis contrôler visuellement la bordure, la forme des clusters et la variété 115..126.**
+- [ ] **Prochaine action immédiate : régénérer une candidate Upgraded fraîche avec les nouveaux clusters de départ + nouvelle distribution de Building Stones + ID127 natifs, puis contrôler visuellement la bordure, la forme des clusters et la variété 115..127.**
 - [ ] Après validation de cette candidate, préparer la nouvelle version.
 - [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
@@ -43,6 +44,7 @@
 - [ ] **Densité de forêt** configurable.
 - [ ] Idée : **cultures présentes au démarrage** (blé/vigne/riz), à étudier avec le decay runtime.
 - [ ] Variante possible : **montagnes plus réalistes** comme modificateur explicite.
+- [ ] **Réaliste** : distribution écologique plus crédible sans changer la macro-géographie. Pistes à développer plus tard : densité d'arbres/plantes croissante près de l'eau, champignons favorisés près des marais/sols humides, végétation conditionnée par biome/relief/humidité, tout en préservant gameplay, constructibilité et ressources. À concevoir comme modificateur orthogonal, pas comme mode séparé.
 
 ## Reverse engineering terrain/runtime
 - [x] Terrain24 = herbe jaune/sèche, blend uniquement Grass16, native.
