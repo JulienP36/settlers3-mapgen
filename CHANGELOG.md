@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.4 candidate — dark mode / visualization comfort
+- Nouveau thème **Sombre / Clair**, sombre par défaut, configurable dans un nouvel onglet `Paramètres`.
+- Préférences d'affichage persistées dans le profil utilisateur Windows (`APPDATA/Settlers3MapGen/settings.json`).
+- Slider d'opacité pour Heightmap / Ressources / Territoires afin de superposer les couches à la map globale.
+- Projection optionnelle **Parallélogramme** pour rapprocher la visualisation de la géométrie affichée en jeu, sans modifier les données de map.
+- Navigation : drag de la carte dans le canvas.
+- Zoom molette : recalcul temporisé + cache de la couche de base pour réduire la latence ; sensibilité réglable.
+- Barre de progression : génération + import + export + aperçu PNG ; état terminé bleu puis disparition automatique, erreur rouge.
+- Les aperçus exportés respectent maintenant la vue, l'opacité et la projection sélectionnées.
+- Aucun changement dans les règles Legacy/Upgraded ni dans les formats EDM/MAP/SAV.
+- Tests ajoutés pour les préférences, le blend d'opacité et la projection parallélogramme.
+- Développé avec l'assistance de ChatGPT.
+
 ## v1.3.2 — editor-safe starts / snow blocking / swamp transitions
 - Starts : ajout d'une marge de sécurité éditeur autour des 33 cellules natives, sans nettoyage artificiel du terrain.
 - Starts : distance conservatrice accrue vis-à-vis de l'eau et exclusion stricte des objets statiques dans le halo éditeur.

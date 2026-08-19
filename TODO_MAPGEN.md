@@ -19,13 +19,16 @@
 - [~] Génération multi-tailles : sélecteur prêt, mais seule 768 est calibrée dans le moteur actuel.
 - [x] Onglet Statistiques basique.
 - [x] Scrollbars dans Validations / Pipeline / Métadonnées / Statistiques.
+- [x] Onglet **Paramètres** avec préférences persistantes dans le profil utilisateur.
+- [x] Thème sombre / clair, sombre par défaut pour la v1.4 candidate.
 
 ### Visualisation / confort
-- [ ] Ajouter un slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** (pas pour la vue Globale), afin de comparer plus facilement les couches avec la map.
-- [ ] Quand un processus est terminé, ne pas laisser la barre de progression verte et pleine : signaler visuellement la fin (disparition, état terminé ou changement de couleur, par exemple bleu).
-- [ ] Étendre la barre de progression à **tous les processus potentiellement longs**, pas uniquement à la génération.
-- [ ] Pouvoir déplacer la visualisation par drag dans toutes les directions et rendre le zoom molette plus fluide / moins latent.
-- [ ] Ajouter un mode de projection de la visualisation reprenant la forme en **parallélogramme** utilisée par le jeu.
+- [x] Slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** ; 0 % montre la map globale, 100 % la couche seule.
+- [x] À la fin d'un processus, la barre passe en état terminé bleu puis disparaît automatiquement ; état erreur rouge.
+- [x] Barre de progression étendue aux générations, imports, exports et sauvegardes d'aperçu.
+- [x] Déplacement de la visualisation par drag.
+- [x] Zoom molette temporisé/caché pour réduire la latence et sensibilité réglable.
+- [x] Projection **parallélogramme** optionnelle pour la visualisation, sans modifier les données réelles de la map.
 
 ### Statistiques
 - [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
