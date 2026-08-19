@@ -8,11 +8,14 @@
 - [x] Neige intérieure : non traversable comme prévu.
 - [x] **v1.4 validée** : visualisation, thème sombre, combobox fermées/ouvertes, sliders, projection parallélogramme, labels joueurs et contour de territoire initial contrôlés visuellement.
 - [x] **Goods Default corrigé et validé** : le writer encode explicitement un preset valide dans Map Info (`Legacy=Medium`, `Upgraded=High`) ; les deux contrôles 4P frais démarrent sans crash avec `Défaut`.
+- [x] **Première morphologie Upgraded indépendante validée** : `S3_Continental_Upgraded_4P_768x768_seed_2026081908_archetype_library_v1` jugée excellente, starts OK, aucun crash, relief conservé dans l'enveloppe native 768.
 
 ## Prochaine grosse étape génération
 - [x] **Découpler Upgraded du checkpoint 768 comme référence exécutable** : la GUI/CLI utilisent désormais une façade où la macro-géographie vient de la bibliothèque d'archétype, indépendamment du mode. Test dédié avec chemin de checkpoint inexistant : OK.
-- [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` est en place et exploite actuellement les 3 templates natifs 768 existants + transformations ; élargir ensuite la variété/procédure de formes et préparer les autres archétypes.
-- [ ] Valider visuellement la première candidate Upgraded issue de la bibliothèque Continental commune avant d'augmenter davantage la variété.
+- [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` est en place et exploite actuellement les 3 templates natifs 768 existants + transformations ; la première candidate Upgraded issue de cette architecture est validée. Élargir ensuite la variété/procédure de formes et préparer les autres archétypes.
+- [x] Valider visuellement la première candidate Upgraded issue de la bibliothèque Continental commune avant d'augmenter davantage la variété.
+- [ ] Nettoyer le résidu terrain `34` lors du rebuild Snow (`34 -> Rocky32` avant reconstruction) ; ce résidu est visuellement bénin mais ne doit pas survivre comme singleton parasite.
+- [ ] Identifier précisément les terrains natifs non nommés `18`, `19`, `24` ; suivre notamment le terrain visuel "grass jaune / herbes sèches" dans les statistiques futures sans l'ajouter encore volontairement à Upgraded.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
 
 ## UX / outillage
@@ -48,6 +51,7 @@
 
 ### Statistiques
 - [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
+- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `24`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
 - [ ] Ajouter plus tard des graphiques pour les statistiques qui gagnent à être visualisées.
 - [ ] Édition directe de la map — gros morceau, **pas maintenant**.
 
