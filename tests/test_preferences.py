@@ -5,14 +5,16 @@ def test_preferences_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setenv('APPDATA', str(tmp_path))
     import s3mapgen.preferences as p
     importlib.reload(p)
-    p.save_settings({'theme':'light','overlay_alpha':42,'projection':'parallelogram','wheel_zoom':1.12})
+    p.save_settings({'theme':'light','overlay_alpha':42,'projection':'parallelogram','wheel_zoom':1.12,'language':'en'})
     got=p.load_settings()
     assert got['theme']=='light'
     assert got['overlay_alpha']==42
     assert got['projection']=='parallelogram'
     assert abs(got['wheel_zoom']-1.12)<1e-9
+    assert got['language']=='en'
 
 
-def test_defaults_include_dark_mode():
+def test_defaults_include_dark_mode_and_french():
     import s3mapgen.preferences as p
     assert p.DEFAULTS['theme']=='dark'
+    assert p.DEFAULTS['language']=='fr'
