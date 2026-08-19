@@ -28,8 +28,8 @@
 - [x] Terrain24 : conservé en Legacy ; retiré temporairement d'Upgraded pendant cette grosse passe. **Ajout Upgraded confirmé mais différé à une modification isolée.**
 - [x] Snow : même génération Legacy/Upgraded. Terrain34 est neutralisé seulement pendant le calcul de profondeur Snow puis restauré uniquement s'il reste entièrement entouré de Rocky32.
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
-- [ ] **Prochaine action immédiate : test éditeur/View Map des candidates Legacy + Upgraded 4P auditées.**
-- [ ] **Après ce contrôle : recalibrer les bonus de départ Upgraded** (arbres + Building Stones), séparément des quotas globaux.
+- [x] **Bonus de départ Upgraded recalibrés** : forêt bonus conservée à **15 arbres adultes/joueur** (déjà équilibrée avec la végétation globale) ; Building Stones normalisés à **5 ancres pleines × 12 = 60 unités/joueur**, hors quota global. Mini-marais inchangé.
+- [ ] **Prochaine action : préparer la nouvelle version** à partir de cette base auditée/recalibrée, puis effectuer sa validation éditeur/View Map.
 - [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
 - [ ] Valider les scalings multi-tailles : arbres, stones, décorations, Swamp, reefs, désert, rivières.
