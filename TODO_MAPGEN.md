@@ -9,7 +9,7 @@
 - [x] **v1.4 validée** : visualisation, thème sombre, combobox, sliders, projection parallélogramme, labels joueurs et territoire initial.
 - [x] **Goods Default corrigé et validé** : `Legacy=Medium`, `Upgraded=High`.
 - [x] **Première morphologie Upgraded indépendante validée** : seed `2026081908`, starts OK, aucun crash, relief natif conservé.
-- [~] **v1.5 candidate préparée** : moteur Legacy/Upgraded audité + nouveaux clusters de départ + états Building Stones corrigés. Validation éditeur/View Map encore requise avant promotion/tag.
+- [~] **v1.5 candidate préparée** : moteur Legacy/Upgraded audité + clusters de départ + Building Stones + géométrie minière v7 restaurée. Dernier contrôle éditeur/View Map/in-game requis avant promotion/tag.
 
 ## Génération v1.5
 - [x] Macro-géographie découplée du mode via `ArchetypeMorphologyLibrary`.
@@ -17,7 +17,8 @@
 - [x] Chaîne Snow commune validée : `Rocky32 -> 35 (1 cellule) -> 129 (1 cellule) -> Snow128`.
 - [x] **Audit Legacy / Upgraded terminé conceptuellement**. Référence : `references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md`.
 - [x] **Séparation Legacy / Upgraded implémentée** dans `s3mapgen/generator.py` + profils 768 ; tests de verrouillage dans `tests/test_legacy_upgraded_audit.py`.
-- [x] Minerais : Legacy reste native-like ; Upgraded cible ~90 % du support minier, ratios natifs empiriques, v7 no-gap, +30 % quantité/case cap15, minerai sous Snow + Terrain34 valide.
+- [x] **Minerais Upgraded — géométrie v7 no-gap canonique revalidée visuellement** : nombreux petits blobs élémentaires pleins/compacts/légèrement ovoïdes, tailles lognormales ~18–105 cellules, légère variation d'aspect/orientation, pas de trous internes, pas de singleton, pas de moat forcé, blobs pouvant toucher/fusionner naturellement. Le moteur v1.5 utilise désormais explicitement cette géométrie canonique dans `generator_v15.py` ; l'ancienne croissance de frontière aléatoire est interdite pour Upgraded.
+- [x] Minerais Upgraded : cible ~90 % du support minier, ratios natifs empiriques, +30 % quantité/case cap15, minerai sous Snow + Terrain34 valide.
 - [x] Hydrologie : Legacy conserve étangs/rivières natifs ; Upgraded supprime/redistribue 1–4 cellules et applique un p99 river size-scaled `~0.0245*side + 34.7`.
 - [x] Arbres : pool `68..77 + 80..81` dans les deux. Legacy volume natif ; Upgraded ~130 % + SmallTree84 séparé. Palms `78..79` comptés dans le bois.
 - [x] Building Stones : footprint 7 cellules bloquant pour les états actifs `115..126`; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
@@ -31,11 +32,11 @@
 - [x] Terrain24 : conservé en Legacy ; retiré temporairement d'Upgraded pendant cette grosse passe. **Ajout Upgraded confirmé mais différé à une modification isolée.**
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
 - [x] **Bonus de départ Upgraded validés visuellement** : vrais clusters centrés sur la **bordure du territoire initial (~rayon HEX34)** afin que la bordure traverse le cluster. Forêt bonus ≈ cluster global moyen : **41 adultes + 21 SmallTree84/joueur**. Tas de Building Stones bonus ≈ cluster global moyen : **8 ancres/joueur**, bien remplies mais variées, **84 unités/joueur** au total (9..12 unités/ancre). Mini-marais inchangé.
-- [x] GUI/CLI préparés en **v1.5** (`gui_v15.py`, runtime final `gui_v15_runtime.py`, exports `MapGenV1_5`).
-- [x] **Contrôle binaire déterministe des changements récents PASS** sur la géographie Upgraded auditée seed `2026082102` : checksums EDM/MAP valides ; 3721 adultes (=3557+4×41), 1151 SmallTree84 (=1067+4×21), 1715 ancres stones (=1683+4×8), stock actif 14496 (=14160+4×84), 20 ID127, les 13 états 115..127 présents, aucun footprint ID127 encore bloquant ; centres forêt à 33..35 HEX et stones à 33..34 HEX des starts. **Ce contrôle réutilise volontairement les ressources/minerais de l'ancienne candidate d'audit : sa vue Ressources ne doit pas servir à valider l'algorithme minier v1.5.**
-- [ ] **Action immédiate : produire/tester une génération v1.5 fraîche** afin de valider ensemble le pipeline complet, notamment les zones de minerais Upgraded recalculées par l'algo v1.5 (~90 % du support + ratios/blobs verrouillés), les starts, l'absence de crash, la constructibilité des ID127 et la marge des récifs.
-- [ ] Après validation de la candidate : promouvoir/taguer v1.5.
-- [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
+- [x] GUI/CLI préparés en **v1.5** (`gui_v15.py`, runtime final `generator_v15.py`, exports `MapGenV1_5`).
+- [x] Contrôle objets v1.5 : checksums EDM/MAP valides ; quotas arbres/SmallTree84/Stones exacts ; 20 ID127 ; 13 états 115..127 présents ; aucun footprint ID127 bloquant ; clusters bonus sur bordure validés.
+- [x] **Contrôle ressources corrigé `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202` validé visuellement par l'utilisateur** : formes de minerais = exactement le style recherché/long-play v7. L'ancien candidat `seed_2026082201` à croissance BFS/aléatoire est invalidé et ne doit jamais servir de référence.
+- [ ] **Dernier contrôle avant release : ouvrir la candidate v7 corrigée dans l'éditeur puis View Map/in-game**, vérifier starts, absence de crash, ID127 constructible et rendu général. Si PASS : promouvoir/taguer v1.5.
+- [ ] Tester visuellement le nouveau volume d'arbres Upgraded sur plusieurs seeds ; si trop forestier, utiliser le futur modificateur de densité sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
 - [ ] Valider les scalings multi-tailles : arbres, stones, décorations, Swamp, reefs, désert, rivières.
 - [ ] Reprendre ensuite le compositeur de formes natives / native stamps et produire plusieurs seeds 768 distinctes.
