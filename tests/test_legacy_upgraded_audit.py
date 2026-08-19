@@ -80,6 +80,7 @@ def test_decoration_split_is_locked():
     upgraded = load(UPGRADED_PROFILE)
     assert legacy['decor']['reef_target'] == 0
     assert upgraded['decor']['reef_target'] > 0
+    assert upgraded['decor']['reef_edge_margin'] == 2
     assert legacy['decor']['decorative_stone_target'] == 886
     assert upgraded['decor']['decorative_stone_target'] == 89
     assert legacy['decor']['swamp_target'] == upgraded['decor']['swamp_target']
