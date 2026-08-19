@@ -1,5 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
+import math
 import numpy as np
 from PIL import Image,ImageDraw,ImageFont
 from .constants import *
@@ -8,8 +9,6 @@ from .model import MapState
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
 PALETTE={GRASS:(72,148,69),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(76,101,56),SWAMP_TRANS:(94,119,67),GRASS_SWAMP_TRANS:(115,139,78),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
 
-# Stable, high-contrast player palette shared by territory overlays and start markers.
-# The first eight preserve the colors already used by the v1.4 territory view.
 PLAYER_COLORS=(
     (220,70,70),(70,120,230),(70,190,90),(225,190,60),(180,80,210),
     (50,190,190),(230,120,50),(120,120,220),(235,105,160),(125,190,55),
@@ -18,8 +17,8 @@ PLAYER_COLORS=(
 )
 
 # Immediate-start native SAV calibration: each 4P initial claim contains exactly
-# 3500 cells and spans 71x71 array coordinates.  The visual guide therefore uses
-# the observed +/-35-cell extent around the start anchor.
+# 3500 cells and spans 71x71 array coordinates.  Radius 35 is expressed in the
+# oblique/in-game visual lattice.  Its square-array preview is therefore sheared.
 START_TERRITORY_RADIUS=35
 
 
@@ -63,7 +62,6 @@ def _blend(global_rgb:np.ndarray,overlay_rgb:np.ndarray,alpha:int)->np.ndarray:
 
 
 def _pixel_label(text:str,color:tuple[int,int,int])->Image.Image:
-    """Return a native-resolution bitmap label with no anti-aliasing."""
     font=ImageFont.load_default()
     probe=Image.new('1',(64,20),0);d=ImageDraw.Draw(probe)
     box=d.textbbox((0,0),text,font=font,stroke_width=0)
@@ -80,11 +78,24 @@ def _pixel_label(text:str,color:tuple[int,int,int])->Image.Image:
     return sprite
 
 
-def _draw_start_circles(im:Image.Image,state:MapState)->None:
-    d=ImageDraw.Draw(im);r=START_TERRITORY_RADIUS
+def _square_territory_points(x:int,y:int,r:int)->list[tuple[int,int]]:
+    # In projected space: dx'=2*dx-dy, dy'=2*dy.  A projected circle with
+    # radius 2*r maps back to this sheared ellipse in square-array coordinates.
+    pts=[]
+    for n in range(144):
+        a=2.0*math.pi*n/144.0
+        dx=r*math.cos(a)+(r/2.0)*math.sin(a)
+        dy=r*math.sin(a)
+        pts.append((int(round(x+dx)),int(round(y+dy))))
+    return pts
+
+
+def _draw_square_territories(im:Image.Image,state:MapState)->None:
+    d=ImageDraw.Draw(im)
     for i,(x,y) in enumerate(state.starts,1):
         color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
-        d.ellipse((x-r,y-r,x+r,y+r),outline=color,width=1)
+        pts=_square_territory_points(x,y,START_TERRITORY_RADIUS)
+        d.line(pts+[pts[0]],fill=color,width=1)
 
 
 def _draw_square_labels(im:Image.Image,state:MapState)->None:
@@ -95,25 +106,29 @@ def _draw_square_labels(im:Image.Image,state:MapState)->None:
 
 
 def _project_point(x:int,y:int,source_height:int)->tuple[int,int]:
-    # Projection raster uses 2x2 source pixels. One logical source row therefore
-    # moves exactly one output pixel horizontally: a true half-pixel/cell offset.
     return 2*x+(source_height-1-y),2*y
+
+
+def _draw_projected_territories(im:Image.Image,state:MapState,source_height:int)->None:
+    d=ImageDraw.Draw(im);r=2*START_TERRITORY_RADIUS
+    for i,(x,y) in enumerate(state.starts,1):
+        color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
+        X,Y=_project_point(x,y,source_height)
+        d.ellipse((X-r,Y-r,X+r,Y+r),outline=color,width=2)
 
 
 def _draw_projected_labels(im:Image.Image,state:MapState,source_height:int)->None:
     for i,(x,y) in enumerate(state.starts,1):
         color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)]
         X,Y=_project_point(x,y,source_height)
-        label=_pixel_label(f'P{i}',color).resize((_pixel_label(f'P{i}',color).width*2,_pixel_label(f'P{i}',color).height*2),Image.Resampling.NEAREST)
+        base=_pixel_label(f'P{i}',color)
+        label=base.resize((base.width*2,base.height*2),Image.Resampling.NEAREST)
         im.paste(label,(X+2*START_TERRITORY_RADIUS+4,Y-label.height//2),label)
 
 
 def project_parallelogram(im:Image.Image)->Image.Image:
-    """Pixel-perfect oblique projection: every source row is offset by half a cell."""
     src=im.convert('RGBA');w,h=src.size
     px=np.asarray(src)
-    # Expand each native pixel to 2x2. A one-output-pixel shift per native row is
-    # therefore exactly half a native cell, with no alternating round-to-int jitter.
     expanded=np.repeat(np.repeat(px,2,axis=0),2,axis=1)
     canvas=np.zeros((2*h,2*w+(h-1),4),dtype=np.uint8)
     for y in range(h):
@@ -127,14 +142,17 @@ def render(state:MapState, output:Path|str|None=None, scale:int=1, labels:bool=T
     base=_global_rgb(state)
     rgb=base if view=='global' else _blend(base,_overlay_rgb(state,view),overlay_alpha)
     im=Image.fromarray(rgb,'RGB')
-    if labels and view=='global':
-        _draw_start_circles(im,state)
-        if projection=='square':_draw_square_labels(im,state)
+    if labels and view=='global' and projection=='square':
+        _draw_square_territories(im,state)
+        _draw_square_labels(im,state)
     if projection=='parallelogram':
         source_height=im.height
         im=project_parallelogram(im)
-        # Labels are added after projection so P1..P20 stay rectangular and crisp.
-        if labels and view=='global':_draw_projected_labels(im,state,source_height)
+        if labels and view=='global':
+            # Territory is circular in the actual oblique visual lattice.
+            _draw_projected_territories(im,state,source_height)
+            # Labels remain untransformed/pixel-crisp.
+            _draw_projected_labels(im,state,source_height)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im
