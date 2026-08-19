@@ -70,14 +70,13 @@
   - [x] Limite mémoire + bouton de vidage manuel.
   - [x] Le cache reste transparent : l'historique et la comparaison sont des outils optionnels ajoutés au-dessus, pas une étape obligatoire du workflow.
 - [x] **Historique de session** : historique visible + recharge instantanée d'une génération déjà calculée.
-- [x] **Comparaison A/B légère** : sélectionner deux entrées du cache comme A et B, puis basculer instantanément A↔B en conservant vue, zoom, cadrage, projection, overlay et Heatmap ; `Ctrl+B` pour basculer.
+- [x] **Comparaison A/B légère** : sélectionner deux entrées du cache comme A et B, puis basculer instantanément A↔B en conservant vue, zoom, cadrage, projection, overlay et Heatmap ; `Ctrl+B` par défaut pour basculer.
 - [ ] **Comparaison A/B avancée éventuelle** : seulement si l'usage réel le justifie, ajouter côte-à-côte, diff visuelle par catégories (terrain/objets/ressources/hauteur/starts), synchronisation explicite des caméras et raccourcis de sélection A/B.
 - [x] Bouton **Recentrer** : revient au zoom 100 % et recentre la carte.
 - [x] Action rapide **Copier seed** de la génération courante.
-- [x] **Raccourcis clavier de base** : Ctrl+G générer, Ctrl+O importer, Ctrl+E exporter, Ctrl+R recentrer, Ctrl+Shift+C copier seed, Ctrl+B bascule A/B, F1 aide.
-- [x] **Aide v1** : F1 ouvre le rappel des commandes souris/clavier et clarifie le rôle du cache transparent.
-- [ ] **Rebind des raccourcis** : future section dans Paramètres/Aide, avec commandes nommées, détection des conflits, reset par défaut et persistance des bindings.
-- [ ] Étendre les raccourcis après retour d'usage : changer de vue, sélectionner A/B, etc.
+- [x] **Raccourcis clavier configurables** : commandes Générer/Importer/Exporter/Recentrer/Copier seed/Basculer A-B/Aide, section dédiée, persistance dans les préférences, détection des doublons et restauration des valeurs par défaut.
+- [x] **Aide dynamique** : F1/par commande affiche les raccourcis actuellement configurés, les commandes souris et le fonctionnement du cache.
+- [ ] Étendre éventuellement les commandes rebindables après retour d'usage : changer de vue, sélectionner A/B, etc.
 
 ## Statistiques — grosse passe après l'UI
 Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, pas seulement un résumé. Ajouter autant de statistiques utiles que nécessaire tant qu'elles restent lisibles et exploitables.
