@@ -6,12 +6,12 @@
 - [x] Aucun crash en View Map / vue in-game sur ces 4 contrôles.
 - [x] Marais : correction visuelle confirmée.
 - [x] Neige intérieure : non traversable comme prévu.
-- [~] **v1.4 candidate** : dernières corrections de visualisation / thème / sliders à revalider visuellement.
+- [x] **v1.4 validée** : visualisation, thème sombre, combobox fermées/ouvertes, sliders, projection parallélogramme, labels joueurs et contour de territoire initial contrôlés visuellement.
 
 ## Bug prioritaire à investiguer ensuite
 - [ ] **Fournitures de départ = Défaut** : erreur puis crash observés au lancement en jeu dans le test concerné.
 - [ ] Comparer précisément ce qui diffère entre `Défaut` et les presets explicites `Low / Medium / High`, qui ne reproduisent pas le crash.
-- [ ] Garder cette investigation séparée des corrections purement visuelles de la v1.4.
+- [ ] Garder cette investigation séparée des corrections purement visuelles de la v1.4 désormais validée.
 
 ## Prochaine grosse étape génération
 - [ ] **Upgraded : généraliser la morphologie locale** pour ne plus dépendre du checkpoint 768 comme référence exécutable.
@@ -33,8 +33,8 @@
 - [x] Onglet Statistiques basique.
 - [x] Scrollbars dans Validations / Pipeline / Métadonnées / Statistiques.
 - [x] Onglet **Paramètres** avec préférences persistantes dans le profil utilisateur.
-- [x] Thème sombre / clair, sombre par défaut pour la v1.4 candidate.
-- [x] Listes déroulantes lisibles en mode sombre (fond sombre + texte clair, y compris menu ouvert).
+- [x] Thème sombre / clair, sombre par défaut.
+- [x] Listes déroulantes lisibles en mode sombre, ouvertes comme fermées.
 
 ### Visualisation / confort
 - [x] Slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** ; 0 % montre la map globale, 100 % la couche seule.
@@ -46,7 +46,7 @@
 - [x] Projection parallélogramme recalée sur un décalage de **0,5 cellule par ligne**.
 - [x] Marqueurs `P1` à `P20` en bitmap net et couleur joueur.
 - [x] Les textes `P1` à `P20` restent droits / non déformés en projection parallélogramme.
-- [x] Contour du territoire initial des starts : non rempli, couleur joueur, rayon/étendue dérivé des SAV natifs (**3500 cellules, ±35 cellules**).
+- [x] Contour du territoire initial des starts : vrai cercle dans la géométrie parallélogramme, déformation inverse en vue carrée, couleur joueur, dimension dérivée des SAV natifs (**3500 cellules, ±35 cellules**).
 - [x] Clic sur la barre des sliders = déplacement immédiat du curseur à la position cliquée.
 
 ### Statistiques
