@@ -12,12 +12,14 @@ Points principaux :
 - starts toujours placés très tôt et protégés ;
 - neige commune `Rocky32 -> 35 -> 129 -> Snow128`, Terrain34 conservé comme variante Rocky interne/minéralisable ;
 - Upgraded : petits plans d'eau 1–4 supprimés/redistribués, trimming rivière size-scaled, minerais ~90 % support, Swamp ~+30 %, Mud désactivé, reefs rares, decorative stones réduites ;
+- **géométrie minière Upgraded v7 no-gap canonique** : petits blobs élémentaires pleins, compacts, légèrement ovoïdes, tailles lognormales ~18–105 cellules, variations modestes d'aspect/orientation, aucun trou/singleton/moat forcé, fusion naturelle autorisée ;
 - arbres `68..77 + 80..81` communs, Palms `78..79` comptées comme bois ; Upgraded ~130 % volume natif + SmallTree84 séparé ;
 - bonus Upgraded : forêt `41 adultes + 21 SmallTree84` et tas de pierre `8 ancres / 84 unités`, tous deux centrés sur la bordure du territoire initial (~HEX34) ;
 - Building Stones globales variées au lieu d'un état uniforme ; Legacy distribution native-like, Upgraded biaisée vers les états pleins ;
 - environ 20 Building Stone 13 / ID127 vides sur les 1683 ancres globales, conformément aux références natives 768 ;
 - ID127 compte dans la densité d'ancres mais pas dans le stock exploitable ;
 - **ID127 est constructible** : le footprint 7 cellules est libéré (`accessibility=0`) avant validation/export, contrairement aux états actifs `115..126` ;
+- récifs Upgraded à au moins 2 cellules des bords ;
 - GUI/CLI/exports nommés v1.5.
 
 ### Validators v1.5
@@ -29,21 +31,24 @@ La candidate doit passer au minimum :
 - nombre d'ID127 ;
 - ID127 uniquement sur Grass ;
 - `STONE_EXHAUSTED_BUILDABLE` : aucune des 7 cellules d'un tas épuisé ne reste bloquante ;
+- `REEF_EDGE_MARGIN` ;
 - validations existantes starts, transitions, Water/Snow, minerais, poissons et décorations.
 
-### Validation externe requise avant promotion
-Sur au moins une génération **Upgraded Continental 768×768 fraîche** :
+### Validations visuelles utilisateur obtenues
+- **Bonus de départ Upgraded** : validés. La bordure du territoire initial traverse les clusters bonus ; volumes forêt/pierres jugés bons.
+- **Répartition des états Building Stones `115..127`** : validée visuellement.
+- **Géométrie minière v7 no-gap** : revalidée explicitement sur `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`. L'utilisateur confirme que les formes correspondent exactement à la référence de long-play recherchée.
+- L'ancienne candidate `S3_V1_5_FINALCANDIDATE_UPGRADED_4P_768x768_seed_2026082201` est **invalidée pour la forme des minerais** : bons volumes/ratios mais croissance de blobs incorrecte. Elle ne doit pas servir de référence.
+
+### Validation externe encore requise avant promotion
+Sur la candidate v7 corrigée :
 1. ouverture éditeur sans erreur ;
 2. starts tous valides ;
 3. View Map / lancement sans crash ;
-4. bordure du territoire initial traversant visiblement les clusters forêt + Building Stones bonus ;
-5. volumes des clusters bonus proches des clusters globaux ;
-6. Building Stones visiblement variées (`115..127`), pas un état unique répété ;
-7. présence de quelques ID127 vides ;
-8. confirmation en jeu/éditeur qu'un ID127 n'empêche pas de construire sur son ancien footprint ;
-9. contrôle visuel général de la densité d'arbres Upgraded.
+4. confirmation pratique que les ID127 n'empêchent pas la construction ;
+5. contrôle général final en jeu.
 
-Tant que ces points ne sont pas confirmés, **v1.5 reste candidate et ne doit pas être taguée stable**.
+Tant que ces derniers points ne sont pas confirmés, **v1.5 reste candidate et ne doit pas être taguée stable**.
 
 ## v1.3.2 — VALIDÉE
 
