@@ -15,8 +15,17 @@
 - [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` est en place et exploite actuellement les 3 templates natifs 768 existants + transformations ; la première candidate Upgraded issue de cette architecture est validée. Élargir ensuite la variété/procédure de formes et préparer les autres archétypes.
 - [x] Valider visuellement la première candidate Upgraded issue de la bibliothèque Continental commune avant d'augmenter davantage la variété.
 - [ ] Nettoyer le résidu terrain `34` lors du rebuild Snow (`34 -> Rocky32` avant reconstruction) ; ce résidu est visuellement bénin mais ne doit pas survivre comme singleton parasite.
-- [ ] Identifier précisément les terrains natifs non nommés `18`, `19`, `24` ; suivre notamment le terrain visuel "grass jaune / herbes sèches" dans les statistiques futures sans l'ajouter encore volontairement à Upgraded.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
+
+## Reverse engineering terrain/runtime — découvertes enregistrées
+- [x] `Terrain24` : **herbe jaune / sèche**, variante visuelle de Grass ; blend propre **uniquement avec Grass16** ; visible dans les générations natives/Legacy, mais ne pas l'ajouter volontairement à Upgraded pour l'instant.
+- [x] `Terrain22` : **sol cultivé / terrain agricole runtime**, fortement corrélé au blé et à la vigne ; revient vers Grass lorsque les cultures/terres abandonnées disparaissent.
+- [x] `Terrain28` : **sol runtime travaillé/usé**. Confirmé sous zones aplanies/creusées de bâtiments et sur petits chemins de passage. Retour rapide à Grass après disparition d'une zone bâtiment ; persistance des chemins possiblement différente, à tester seulement si utile plus tard.
+- [~] `Terrain18`, `19`, `23`, `34` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement.
+- [x] `85..93` : famille runtime blé ; `92` récoltable, `93` = **chaume**.
+- [x] `94..102` : famille runtime vigne/raisin ; `102` appartient bien au cycle, mécanique exacte du retour vers `94` encore ouverte.
+- [x] `103..110` : famille runtime riz ; observée sur terrain marais/runtime compatible.
+- [~] `82/83` : IDs techniques/persistants invisibles dans l'éditeur, y compris sur Terrain28 ; analyse visuelle close pour l'instant.
 
 ## UX / outillage
 - [x] Barre de progression de génération (progression par étapes du pipeline).
@@ -26,6 +35,10 @@
 - [~] Export SAV : **writer SAV non validé** ; copie inchangée autorisée uniquement pour un SAV importé.
 - [x] Visualisations : global / heightmap / ressources / territoires.
 - [x] Vue territoires depuis `claim`, particulièrement utile sur SAV.
+- [ ] Ajouter une vue **Chemins / zones creusées** basée sur `Terrain28`, utilisable sur tout format mais surtout utile sur SAV.
+- [ ] Ajouter une vue **Cultures** pour SAV : distinguer visuellement au minimum blé (`85..93`), vigne (`94..102`) et riz (`103..110`) avec des couleurs différentes ; exploiter les états runtime plutôt que les seuls objets statiques.
+- [ ] Corriger la **palette des couleurs joueurs** pour correspondre exactement aux couleurs du jeu, si les valeurs exactes peuvent être récupérées/calibrées.
+- [ ] Lors d'un import `.sav`, afficher aussi le **contour de la zone de départ d'origine** des joueurs comme pour EDM/MAP ; ne pas confondre avec la vue Territoires dynamique.
 - [x] Zoom sur la visualisation (slider + molette).
 - [x] Toutes les tailles natives visibles : 384/448/512/576/640/704/768.
 - [x] Nombre max joueurs adapté : 8/11/15/19/20/20/20.
@@ -51,7 +64,8 @@
 
 ### Statistiques
 - [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
-- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `24`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
+- [ ] Inclure les IDs terrain encore non identifiés (`18`, `19`, `23`, `34`, etc.) dans les statistiques exactes au lieu de les fusionner prématurément dans une famille nommée.
+- [ ] Suivre explicitement `Terrain24` dans les stats comme herbe jaune/sèche et `Terrain22/28` comme terrains runtime lorsqu'ils sont présents dans un SAV.
 - [ ] Ajouter plus tard des graphiques pour les statistiques qui gagnent à être visualisées.
 - [ ] Édition directe de la map — gros morceau, **pas maintenant**.
 
