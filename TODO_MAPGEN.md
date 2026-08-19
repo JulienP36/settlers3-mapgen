@@ -7,11 +7,7 @@
 - [x] Marais : correction visuelle confirmée.
 - [x] Neige intérieure : non traversable comme prévu.
 - [x] **v1.4 validée** : visualisation, thème sombre, combobox fermées/ouvertes, sliders, projection parallélogramme, labels joueurs et contour de territoire initial contrôlés visuellement.
-
-## Bug prioritaire à investiguer ensuite
-- [ ] **Fournitures de départ = Défaut** : erreur puis crash observés au lancement en jeu dans le test concerné.
-- [ ] Comparer précisément ce qui diffère entre `Défaut` et les presets explicites `Low / Medium / High`, qui ne reproduisent pas le crash.
-- [ ] Garder cette investigation séparée des corrections purement visuelles de la v1.4 désormais validée.
+- [x] **Goods Default corrigé et validé** : le writer encode explicitement un preset valide dans Map Info (`Legacy=Medium`, `Upgraded=High`) ; les deux contrôles 4P frais démarrent sans crash avec `Défaut`.
 
 ## Prochaine grosse étape génération
 - [ ] **Upgraded : généraliser la morphologie locale** pour ne plus dépendre du checkpoint 768 comme référence exécutable.
