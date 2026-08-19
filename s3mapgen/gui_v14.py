@@ -86,6 +86,7 @@ class App(BaseApp):
         s.configure('TNotebook',background=bg,borderwidth=0);s.configure('TNotebook.Tab',background=panel,foreground=fg,padding=(10,6));s.map('TNotebook.Tab',background=[('selected',field)])
         s.configure('TButton',background=field,foreground=fg);s.map('TButton',background=[('active',panel)])
         s.configure('TCombobox',fieldbackground=field,background=field,foreground=fg,selectbackground=field,selectforeground=fg)
+        s.map('TCombobox',fieldbackground=[('readonly',field),('disabled',field)],background=[('readonly',field),('disabled',field)],foreground=[('readonly',fg)],selectbackground=[('readonly',field)],selectforeground=[('readonly',fg)])
         self.option_add('*TCombobox*Listbox.background',field)
         self.option_add('*TCombobox*Listbox.foreground',fg)
         self.option_add('*TCombobox*Listbox.selectBackground',panel)
