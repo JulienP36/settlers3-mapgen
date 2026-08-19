@@ -1,9 +1,9 @@
 # Changelog
 
-## v1.4 candidate — dark mode / visualization comfort
+## v1.4 — dark mode / visualization comfort — VALIDÉE
 - Nouveau thème **Sombre / Clair**, sombre par défaut, configurable dans un nouvel onglet `Paramètres`.
 - Préférences d'affichage persistées dans le profil utilisateur Windows (`APPDATA/Settlers3MapGen/settings.json`).
-- Listes déroulantes corrigées en thème sombre : fond sombre et texte clair, y compris dans le menu ouvert.
+- Listes déroulantes corrigées en thème sombre : fond sombre et texte clair, aussi bien fermées qu'ouvertes.
 - Slider d'opacité pour Heightmap / Ressources / Territoires afin de superposer les couches à la map globale.
 - Les sliders Zoom / Opacité / Sensibilité molette se positionnent directement à l'endroit cliqué sur leur barre.
 - Projection optionnelle **Parallélogramme** pour rapprocher la visualisation de la géométrie affichée en jeu, sans modifier les données de map.
@@ -13,11 +13,13 @@
 - Barre de progression : génération + import + export + aperçu PNG ; état terminé bleu puis disparition automatique, erreur rouge.
 - Les aperçus exportés respectent maintenant la vue, l'opacité et la projection sélectionnées.
 - Starts : ajout d'un contour non rempli du **territoire initial**, coloré selon le joueur et dimensionné d'après les SAV natifs : 3500 cellules, étendue ±35 cellules.
+- Le territoire initial est un vrai cercle dans la géométrie parallélogramme et apparaît donc déformé/incliné en vue carrée.
 - Marqueurs `P1` à `P20` : couleur du joueur et rendu bitmap net, sans anti-aliasing, cohérent avec le pixel art de la map.
 - En projection parallélogramme, les textes `P1` à `P20` sont ajoutés après projection et restent donc droits / non déformés.
 - Palette joueur unifiée avec la vue Territoires pour conserver la même correspondance de couleurs.
 - Aucun changement dans les règles Legacy/Upgraded ni dans les formats EDM/MAP/SAV.
 - Tests ajoutés / adaptés pour les préférences, le blend d'opacité, la projection parallélogramme et les marqueurs de starts.
+- Validation visuelle utilisateur finale : cercle territoire et combobox sombre contrôlés OK ; v1.4 promue hors statut candidate.
 - Problème connu séparé à investiguer : crash observé avec les fournitures de départ sur `Défaut`, non reproduit avec `Low / Medium / High` dans le contrôle concerné.
 - Développé avec l'assistance de ChatGPT.
 
