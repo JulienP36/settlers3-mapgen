@@ -21,6 +21,9 @@
 - Validation visuelle utilisateur finale : cercle territoire et combobox sombre contrôlés OK ; v1.4 promue hors statut candidate.
 - **Correctif Goods Default validé** : le 3e DWORD de Map Info n'est plus écrit comme `player_count - 1` ; il encode désormais un preset valide (`Legacy=Medium/2`, `Upgraded=High/3`, fallback Medium).
 - Validation en jeu du correctif Goods Default sur deux générations fraîches v1.4 4P : réglages Medium/High visibles dans `Edit Map Settings` et aucun crash au démarrage avec `Défaut`.
+- **Morphologie Upgraded indépendante : première candidate validée** (`seed 2026081908`, Continental 768×768 4P). Géographie jugée excellente, starts OK, aucun crash ; relief montagneux vérifié conforme à la référence native 768 source.
+- La validation de cette candidate autorise la poursuite de la généralisation de la bibliothèque de formes sans revenir à l'ancien checkpoint EDM exécutable.
+- Deux suivis non bloquants sont conservés : nettoyage des singletons terrain `34` lors du rebuild Snow, et identification des terrains natifs non nommés `18/19/24` dont le « grass jaune / herbes sèches » observé en Legacy.
 - Développé avec l'assistance de ChatGPT.
 
 ## v1.3.2 — editor-safe starts / snow blocking / swamp transitions — VALIDÉE
