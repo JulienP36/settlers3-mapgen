@@ -7,6 +7,7 @@ DEFAULTS = {
     'overlay_alpha': 68,
     'projection': 'square',
     'wheel_zoom': 1.10,
+    'language': 'fr',
 }
 
 
@@ -28,6 +29,7 @@ def load_settings() -> dict:
     cfg['projection'] = 'parallelogram' if cfg.get('projection') == 'parallelogram' else 'square'
     cfg['overlay_alpha'] = max(0, min(100, int(cfg.get('overlay_alpha', 68))))
     cfg['wheel_zoom'] = max(1.02, min(1.30, float(cfg.get('wheel_zoom', 1.10))))
+    cfg['language'] = 'en' if cfg.get('language') == 'en' else 'fr'
     return cfg
 
 
