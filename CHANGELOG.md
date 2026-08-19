@@ -17,10 +17,10 @@
 - Marqueurs `P1` à `P20` : couleur du joueur et rendu bitmap net, sans anti-aliasing, cohérent avec le pixel art de la map.
 - En projection parallélogramme, les textes `P1` à `P20` sont ajoutés après projection et restent donc droits / non déformés.
 - Palette joueur unifiée avec la vue Territoires pour conserver la même correspondance de couleurs.
-- Aucun changement dans les règles Legacy/Upgraded ni dans les formats EDM/MAP/SAV.
 - Tests ajoutés / adaptés pour les préférences, le blend d'opacité, la projection parallélogramme et les marqueurs de starts.
 - Validation visuelle utilisateur finale : cercle territoire et combobox sombre contrôlés OK ; v1.4 promue hors statut candidate.
-- Problème connu séparé à investiguer : crash observé avec les fournitures de départ sur `Défaut`, non reproduit avec `Low / Medium / High` dans le contrôle concerné.
+- **Correctif Goods Default validé** : le 3e DWORD de Map Info n'est plus écrit comme `player_count - 1` ; il encode désormais un preset valide (`Legacy=Medium/2`, `Upgraded=High/3`, fallback Medium).
+- Validation en jeu du correctif Goods Default sur deux générations fraîches v1.4 4P : réglages Medium/High visibles dans `Edit Map Settings` et aucun crash au démarrage avec `Défaut`.
 - Développé avec l'assistance de ChatGPT.
 
 ## v1.3.2 — editor-safe starts / snow blocking / swamp transitions — VALIDÉE
