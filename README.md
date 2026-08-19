@@ -18,21 +18,25 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.3.2
+## État actuel — v1.4 candidate
 
 La GUI est fonctionnelle sous Windows et permet actuellement :
 
 - génération **Legacy** et **Upgraded** sur l'archétype **Continental 768×768** ;
 - choix du nombre de joueurs et du seed ;
 - seed aléatoire ;
-- barre de progression ;
 - import `.EDM`, `.MAP` et `.SAV` ;
 - export `.EDM` / `.MAP` pour les configurations actuellement sérialisables ;
 - aperçu Global / Heightmap / Ressources / Territoires ;
-- zoom de l'aperçu ;
+- thème **Sombre / Clair**, avec sombre par défaut ;
+- onglet **Paramètres** et préférences persistantes ;
+- superposition réglable des vues Heightmap / Ressources / Territoires sur la map globale ;
+- vue carrée ou projection **Parallélogramme** ;
+- zoom slider + molette temporisée, sensibilité réglable et déplacement de la map par drag ;
+- barre de progression pour génération/import/export/aperçu avec état de fin visuel ;
 - validations automatiques ;
 - métadonnées, pipeline et premières statistiques ;
-- tailles natives visibles avec adaptation automatique du nombre maximal de joueurs.
+- tailles natives visibles avec adaptation automatique du nombre maximal de joueurs ;
 - starts avec halo conservateur destiné à réduire les positions refusées par l'éditeur ;
 - neige intérieure non marchable (`129/128`) ;
 - transitions de marais reconstruites et validées automatiquement.
@@ -134,7 +138,7 @@ Les références principales sont dans `references/`. En particulier :
 - `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` — règles canoniques ;
 - `SETTLERS3_UPGRADED_RULE_MATRIX_v1.md` — correspondance règles Upgraded / implémentation / validators ;
 - `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md` — format EDM/MAP ;
-- `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` — lecture SAV ;
+- `SETTLERS3_SAV_FORMAT_REFERENCE_v2_LONGPLAY.md` — lecture SAV et résultats long-play ;
 - `TODO_MAPGEN.md` — feuille de route courante.
 
 ## Versioning
