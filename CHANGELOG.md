@@ -9,8 +9,11 @@
 - Zoom molette : recalcul temporisé + cache de la couche de base pour réduire la latence ; sensibilité réglable.
 - Barre de progression : génération + import + export + aperçu PNG ; état terminé bleu puis disparition automatique, erreur rouge.
 - Les aperçus exportés respectent maintenant la vue, l'opacité et la projection sélectionnées.
+- Starts : ajout d'un contour non rempli autour du footprint initial, coloré selon le joueur.
+- Marqueurs `P1` à `P20` : couleur du joueur et rendu bitmap net, sans anti-aliasing, cohérent avec le pixel art de la map.
+- Palette joueur unifiée avec la vue Territoires pour conserver la même correspondance de couleurs.
 - Aucun changement dans les règles Legacy/Upgraded ni dans les formats EDM/MAP/SAV.
-- Tests ajoutés pour les préférences, le blend d'opacité et la projection parallélogramme.
+- Tests ajoutés pour les préférences, le blend d'opacité, la projection parallélogramme et les nouveaux marqueurs de starts.
 - Développé avec l'assistance de ChatGPT.
 
 ## v1.3.2 — editor-safe starts / snow blocking / swamp transitions — VALIDÉE
