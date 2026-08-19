@@ -41,6 +41,7 @@ TEXTS={
     'Ressource Heatmap':{'en':'Heatmap resource'},'Recentrer':{'en':'Reset view'},
     'Copier seed':{'en':'Copy seed'},'Langue':{'en':'Language'},'Aide':{'en':'Help'},
     'Historique session':{'en':'Session history'},'Charger':{'en':'Load'},'Vider cache':{'en':'Clear cache'},
+    'Définir A':{'en':'Set A'},'Définir B':{'en':'Set B'},'Basculer A/B':{'en':'Toggle A/B'},
 }
 
 MINERAL_NAMES={0x10:'Coal',0x20:'Iron',0x30:'Gold',0x40:'Gemstones',0x50:'Sulfur'}
@@ -57,6 +58,8 @@ class App(V14App):
     def __init__(self):
         self.session_cache=SessionGenerationCache(max_items=8)
         self._history_lookup={}
+        self._compare_slots={'A':None,'B':None}
+        self._compare_active=None
         self._display_origin=(0,0)
         self._display_factor=1.0
         super().__init__()
@@ -91,6 +94,11 @@ class App(V14App):
         self.history_combo.grid(row=5,column=1,columnspan=6,sticky='ew',padx=(3,3),pady=(4,0))
         ttk.Button(top,text='Charger',command=self._load_history).grid(row=5,column=7,padx=3,pady=(4,0))
         ttk.Button(top,text='Vider cache',command=self._clear_history).grid(row=5,column=8,padx=3,pady=(4,0))
+        ttk.Button(top,text='Définir A',command=lambda:self._set_compare_slot('A')).grid(row=5,column=9,padx=3,pady=(4,0))
+        ttk.Button(top,text='Définir B',command=lambda:self._set_compare_slot('B')).grid(row=5,column=10,padx=3,pady=(4,0))
+        ttk.Button(top,text='Basculer A/B',command=self._toggle_compare).grid(row=5,column=11,padx=3,pady=(4,0))
+        self.compare_var=tk.StringVar(value='A: —   |   B: —')
+        ttk.Label(top,textvariable=self.compare_var,anchor='w').grid(row=6,column=0,columnspan=17,sticky='ew',pady=(1,2))
 
         self.canvas.bind('<Motion>',self._inspect_motion,add='+')
         self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
@@ -173,7 +181,7 @@ class App(V14App):
         if self._projection_combo:self._projection_combo.configure(values=list(PROJECTION_LABELS[lang].values()))
         self.projection_var.set(PROJECTION_LABELS[lang][self.prefs['projection']])
         self.lang_var.set(LANG_LABELS[lang])
-        self._update_view_controls();self._clear_inspector()
+        self._update_view_controls();self._clear_inspector();self._refresh_compare_label()
 
     def _language_changed(self):
         self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr'
@@ -272,14 +280,17 @@ class App(V14App):
     def _load_history(self):
         pair=self._history_lookup.get(self.history_var.get())
         if not pair:return
-        key,result=pair
+        self._activate_cached(pair[0],pair[1],reset_pan=True)
+        self.status.set(('Loaded from session cache' if self.prefs.get('language')=='en' else 'Chargé depuis le cache de session')+f' — {self._history_label(pair[0])}')
+
+    def _activate_cached(self,key,result,reset_pan=False):
         self.seed.set(str(key.seed));self.size.set(str(key.side));self.players.set(key.players)
         self.current=result;self.import_source=None
-        self._populate_current();self._invalidate_preview();self._refresh_preview(True)
-        self.status.set(('Loaded from session cache' if self.prefs.get('language')=='en' else 'Chargé depuis le cache de session')+f' — {self._history_label(key)}')
+        self._populate_current();self._invalidate_preview();self._refresh_preview(reset_pan)
 
     def _clear_history(self):
-        self.session_cache.clear();self._refresh_history_combo()
+        self.session_cache.clear();self._compare_slots={'A':None,'B':None};self._compare_active=None
+        self._refresh_history_combo();self._refresh_compare_label()
         self.status.set('Session cache cleared' if self.prefs.get('language')=='en' else 'Cache de session vidé')
 
     def generate(self):
@@ -288,7 +299,7 @@ class App(V14App):
             if side!=768:raise NotImplementedError(f'La génération {side}×{side} est réservée mais pas encore calibrée. Max joueurs={NATIVE_LIMITS[side]}.')
             key=self._cache_key();cached=self.session_cache.get(key)
             if cached is not None:
-                self.current=cached;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history_combo()
+                self._activate_cached(key,cached,reset_pan=True);self._refresh_history_combo()
                 self.status.set(('Cache hit — generation reused' if self.prefs.get('language')=='en' else 'Cache trouvé — génération réutilisée')+f' — {self._history_label(key)}')
                 return
             self._task_begin('Generation…' if self.prefs.get('language')=='en' else 'Génération…',2);self.import_source=None
@@ -299,6 +310,41 @@ class App(V14App):
         except Exception as e:
             self._task_error();messagebox.showerror('MapGen',f'{e}')
 
+    # ---------- lightweight A/B comparison ----------
+    def _selected_history_pair(self):
+        return self._history_lookup.get(self.history_var.get())
+
+    def _set_compare_slot(self,slot):
+        pair=self._selected_history_pair()
+        if not pair:
+            self.status.set('Select a cached generation first' if self.prefs.get('language')=='en' else 'Sélectionne d’abord une génération du cache')
+            return
+        self._compare_slots[slot]=pair
+        self._refresh_compare_label()
+        self.status.set((f'Comparison {slot} set' if self.prefs.get('language')=='en' else f'Comparaison {slot} définie')+f' — {self._history_label(pair[0])}')
+
+    def _short_compare_label(self,pair):
+        if not pair:return '—'
+        key,_=pair
+        return f'{key.seed}/{key.mode}/{key.players}P'
+
+    def _refresh_compare_label(self):
+        if not hasattr(self,'compare_var'):return
+        marker=self._compare_active or '—'
+        self.compare_var.set(f'A: {self._short_compare_label(self._compare_slots["A"])}   |   B: {self._short_compare_label(self._compare_slots["B"])}   |   active: {marker}')
+
+    def _toggle_compare(self):
+        a=self._compare_slots['A'];b=self._compare_slots['B']
+        if not a or not b:
+            self.status.set('Set both A and B first' if self.prefs.get('language')=='en' else 'Définis d’abord A et B')
+            return
+        target='B' if self._compare_active=='A' else 'A'
+        pair=self._compare_slots[target]
+        # Keep view/zoom/projection/heatmap and current canvas fractions unchanged.
+        self._activate_cached(pair[0],pair[1],reset_pan=False)
+        self._compare_active=target;self._refresh_compare_label()
+        self.status.set((f'Comparison {target}' if self.prefs.get('language')=='en' else f'Comparaison {target}')+f' — {self._history_label(pair[0])}')
+
     # ---------- shortcuts / help ----------
     def _bind_shortcuts(self):
         self.bind_all('<Control-g>',lambda e:self.generate())
@@ -306,14 +352,15 @@ class App(V14App):
         self.bind_all('<Control-e>',lambda e:self.export())
         self.bind_all('<Control-r>',lambda e:self._reset_view())
         self.bind_all('<Control-Shift-C>',lambda e:self._copy_seed())
+        self.bind_all('<Control-b>',lambda e:self._toggle_compare())
         self.bind_all('<F1>',lambda e:self._show_help())
 
     def _show_help(self):
         en=self.prefs.get('language')=='en'
         text=(
-            'Keyboard shortcuts\n\nCtrl+G  Generate\nCtrl+O  Import\nCtrl+E  Export\nCtrl+R  Reset view\nCtrl+Shift+C  Copy seed\nF1  Help\n\nMouse\nWheel: zoom\nLeft drag: pan\nHover map: inspect exact cell data\n\nShortcuts will become rebindable in Settings in a future UI pass.'
+            'Keyboard shortcuts\n\nCtrl+G  Generate\nCtrl+O  Import\nCtrl+E  Export\nCtrl+R  Reset view\nCtrl+Shift+C  Copy seed\nCtrl+B  Toggle comparison A/B\nF1  Help\n\nMouse\nWheel: zoom\nLeft drag: pan\nHover map: inspect exact cell data\n\nCache\nGenerating the exact same parameters again reuses the in-memory result instantly. Session history and A/B are optional analysis tools on top of that transparent cache.\n\nShortcuts will become rebindable in Settings in a future UI pass.'
             if en else
-            'Raccourcis clavier\n\nCtrl+G  Générer\nCtrl+O  Importer\nCtrl+E  Exporter\nCtrl+R  Recentrer\nCtrl+Shift+C  Copier le seed\nF1  Aide\n\nSouris\nMolette : zoom\nClic gauche + glisser : déplacer\nSurvol de la map : inspecter les données exactes de la cellule\n\nLes raccourcis deviendront reconfigurables dans Paramètres lors d’une future passe UI.'
+            'Raccourcis clavier\n\nCtrl+G  Générer\nCtrl+O  Importer\nCtrl+E  Exporter\nCtrl+R  Recentrer\nCtrl+Shift+C  Copier le seed\nCtrl+B  Basculer comparaison A/B\nF1  Aide\n\nSouris\nMolette : zoom\nClic gauche + glisser : déplacer\nSurvol de la map : inspecter les données exactes de la cellule\n\nCache\nRelancer exactement les mêmes paramètres réutilise instantanément le résultat en mémoire. L’historique et A/B sont seulement des outils d’analyse optionnels au-dessus de ce cache transparent.\n\nLes raccourcis deviendront reconfigurables dans Paramètres lors d’une future passe UI.'
         )
         messagebox.showinfo('Help' if en else 'Aide',text)
 
