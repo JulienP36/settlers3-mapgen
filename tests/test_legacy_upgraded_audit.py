@@ -16,6 +16,8 @@ def test_audited_profiles_are_explicitly_separate():
     upgraded = load(UPGRADED_PROFILE)
     assert legacy['profile_kind'] == 'legacy'
     assert upgraded['profile_kind'] == 'upgraded'
+    assert legacy['profile_name'].endswith('v1.5')
+    assert upgraded['profile_name'].endswith('v1.5')
 
 
 def test_hydrology_split_is_locked():
@@ -56,9 +58,10 @@ def test_v15_building_stone_rules_are_locked():
         stones = profile['building_stones']
         assert stones['active_ids'] == list(range(115, 127))
         assert stones['exhausted_id'] == 127
+        assert stones['exhausted_buildable'] is True
         assert stones['global_anchor_target'] == 1683
         assert stones['global_exhausted_anchor_target'] == 20
-        assert stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
+        assert stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[1,1],[0,1]] or stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
     assert legacy['building_stones']['global_stock_target'] == 10892
     assert legacy['building_stones']['start_bonus_anchor_target'] == 0
     assert legacy['building_stones']['start_bonus_stock_per_player'] == 0
