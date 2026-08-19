@@ -55,31 +55,27 @@
 - [x] Vues global / heightmap / ressources / territoires.
 - [x] Vue **Chemins / zones creusées** Terrain28 ; Terrain28 runtime désormais préservé lors de l'import SAV au lieu d'être normalisé en Grass.
 - [x] Vue **Cultures** blé/vigne/riz avec familles visuellement distinctes.
-- [x] **Nouvelle vue Heatmap**, paramétrable par ressource, basée sur une densité locale déterministe et pondérée par stock réel lorsque disponible :
-  - [x] arbres ;
-  - [x] Building Stones ;
-  - [x] poissons ;
-  - [x] Coal ;
-  - [x] Iron ;
-  - [x] Gold ;
-  - [x] Gemstones ;
-  - [x] Sulfur.
-- [ ] **Internationalisation UI Français / Anglais** : permettre de changer la langue. Traduire les titres/labels utilisateur ; les contenus techniques des sections Debug/Validations/Pipeline/Métadonnées peuvent rester en anglais.
+- [x] **Nouvelle vue Heatmap**, paramétrable par ressource, basée sur une densité locale déterministe et pondérée par stock réel lorsque disponible : arbres, Building Stones, poissons, Coal, Iron, Gold, Gemstones, Sulfur.
+- [x] **Internationalisation UI Français / Anglais** : langue persistée dans les préférences ; principaux contrôles/vues/messages utilisateur traduits, contenus techniques autorisés à rester en anglais.
+- [x] **Inspecteur de cellule au survol de la souris** : coordonnées réelles x/y, Terrain ID, Object ID, ressource + quantité, hauteur, accessibilité et claim/joueur. Fonctionne avec zoom/drag et projections Carrée/Parallélogramme ; enrichissement/design ajustables après usage réel.
 - [ ] Palette exacte des couleurs joueurs.
 - [ ] Contour de zone de départ d'origine sur import SAV.
 - [x] Zoom/molette/drag/projection parallélogramme/labels/sliders/thème sombre.
 - [x] Tailles natives visibles 384..768 et max joueurs adaptés.
 - [~] Génération multi-tailles : UI prête, calibration moteur à compléter.
-- [ ] **Cache temporaire des résultats de génération, mémoire de session uniquement** : aucune persistance entre deux lancements du programme.
-  - [ ] Clé de cache au minimum : seed + taille + joueurs + mode + archétype + modificateurs/paramètres qui affectent la génération.
-  - [ ] Réutiliser instantanément un résultat déjà généré dans la session au lieu de recalculer.
-  - [ ] Préparer la comparaison rapide d'un même seed/taille entre deux versions de génération ou deux combinaisons de modificateurs.
-  - [ ] Garder plusieurs résultats récents de session, avec limite mémoire raisonnable et possibilité de vider le cache manuellement.
-  - [ ] Ne jamais écrire ce cache sur disque automatiquement ; fermeture du programme = cache détruit.
-- [ ] **Historique de session / comparaison A-B** : liste des générations récentes avec rappel seed/mode/taille/joueurs/modificateurs, sélection de deux entrées et bascule rapide A/B ; plus tard éventuellement vue côte-à-côte ou différence visuelle.
+- [x] **Cache temporaire des résultats de génération, mémoire de session uniquement** : LRU limité initialement à 8 générations, jamais écrit sur disque, détruit à la fermeture.
+  - [x] Clé : seed + taille + joueurs + mode + archétype + champ modificateurs + révision moteur.
+  - [x] Réutilisation instantanée d'un résultat déjà généré dans la session.
+  - [x] Conservation du `GenerationOutput` complet : map, validations, pipeline et métadonnées.
+  - [x] Limite mémoire + bouton de vidage manuel.
+  - [x] Base préparée pour comparer plus tard versions de génération et combinaisons de modificateurs.
+- [~] **Historique de session / comparaison A-B** : historique visible et recharge instantanée d'une génération implémentés. Reste à ajouter sélection explicite A/B, bascule A↔B, puis éventuellement côte-à-côte/diff visuelle et caméra synchronisée.
 - [x] Bouton **Recentrer** : revient au zoom 100 % et recentre la carte.
 - [x] Action rapide **Copier seed** de la génération courante.
-- [ ] Raccourcis clavier simples à définir après stabilisation des nouveaux contrôles (générer, recentrer, changer de vue, A/B).
+- [x] **Raccourcis clavier de base** : Ctrl+G générer, Ctrl+O importer, Ctrl+E exporter, Ctrl+R recentrer, Ctrl+Shift+C copier seed, F1 aide.
+- [x] **Aide v1** : F1 ouvre le rappel des commandes souris/clavier.
+- [ ] **Rebind des raccourcis** : future section dans Paramètres/Aide, avec commandes nommées, détection des conflits, reset par défaut et persistance des bindings.
+- [ ] Étendre les raccourcis après stabilisation A/B : changer de vue, sélectionner A/B, basculer A↔B, etc.
 
 ## Statistiques — grosse passe après l'UI
 Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, pas seulement un résumé. Ajouter autant de statistiques utiles que nécessaire tant qu'elles restent lisibles et exploitables.
@@ -88,9 +84,7 @@ Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, p
 - [ ] **Quantité de chaque objet-ressource.**
 - [ ] **Building Stones : afficher aussi la quantité totale de pierre attendue/exploitable.**
 - [ ] **Graphe de distribution des différents états/types de Building Stones.**
-- [ ] **Graphe des ressources de montagne**, par famille, affichant :
-  - [ ] quantité de cases ;
-  - [ ] pourcentage du stock réel total de ressources.
+- [ ] **Graphe des ressources de montagne**, par famille, affichant quantité de cases et pourcentage du stock réel total de ressources.
 - [ ] Ajouter progressivement d'autres métriques utiles : densités par 1000 cellules de land, ratios land/ocean, biomes, eau intérieure, forêts, ressources, objets décoratifs, starts et distances pertinentes.
 - [ ] Ajouter des répartitions / percentiles utiles quand cela apporte une information réelle (tailles de blobs, tailles de massifs, lacs, rivières, clusters, distances aux starts, etc.).
 - [ ] Prévoir des graphes complémentaires lorsque la donnée est réellement mieux comprise visuellement qu'en tableau.
