@@ -4,16 +4,15 @@ import numpy as np
 
 from .engine import MapGenerator as _BaseMapGenerator
 from .model import MapState
-from .morphology import UpgradedMorphologyLibrary
+from .morphology import ArchetypeMorphologyLibrary
 
 
 class MapGenerator(_BaseMapGenerator):
-    """App-facing generator with pluggable Upgraded morphology.
+    """App-facing generator with mode-independent archetype morphology.
 
-    The validated generation pipeline remains in engine.MapGenerator. This
-    facade changes only how the Upgraded macro terrain+height template is
-    supplied, isolating the historical EDM checkpoint behind a reusable
-    morphology-library interface.
+    The validated gameplay pipeline remains in engine.MapGenerator. Macro
+    geography comes from the archetype library; Legacy/Upgraded only affect
+    downstream rules, content and balance.
     """
 
     def __init__(
@@ -24,7 +23,8 @@ class MapGenerator(_BaseMapGenerator):
         upgraded_morphology_source_path: Path | str | None = None,
         progress_callback=None,
     ):
-        # Do not let the validated base engine parse/load the old Upgraded EDM.
+        # Keep the validated base engine's native library/profile setup, but
+        # never load the historical Upgraded checkpoint.
         super().__init__(
             profile_path,
             native_library_path,
@@ -32,24 +32,16 @@ class MapGenerator(_BaseMapGenerator):
             None,
             progress_callback=progress_callback,
         )
-        self.upgraded_morphology = (
-            UpgradedMorphologyLibrary(upgraded_morphology_source_path)
-            if upgraded_morphology_source_path else None
+        self.archetype_morphology = ArchetypeMorphologyLibrary(
+            native_library_path, archetype='continental'
         )
 
-    def _morphology_from_upgraded_reference(self, rng, pr) -> MapState:
-        if self.upgraded_morphology is None:
-            raise RuntimeError('Upgraded morphology source is unavailable')
-
-        indices = self.upgraded_morphology.indices_for('continental')
+    def _continental_morphology(self, pr) -> MapState:
+        indices = self.archetype_morphology.indices_for('continental')
         if not indices:
-            raise RuntimeError('No Upgraded Continental morphology template')
-
-        # With the current single validated template this consumes exactly the
-        # same PRNG call sequence as v1.4: only transform uses pr.randrange(4).
-        idx = indices[0] if len(indices) == 1 else indices[pr.randrange(len(indices))]
-        base = self.upgraded_morphology.get(idx)
-        state = MapState.empty(self.side)
+            raise RuntimeError('No Continental morphology templates available')
+        idx = indices[pr.randrange(len(indices))]
+        base = self.archetype_morphology.get(idx)
         t = base.terrain
         h = base.height
         transform = pr.randrange(4)
@@ -61,14 +53,23 @@ class MapGenerator(_BaseMapGenerator):
         elif transform == 3:
             t = np.rot90(t.T, 2).copy(); h = np.rot90(h.T, 2).copy()
 
+        state = MapState.empty(self.side)
         state.terrain[:] = t
         state.height[:] = h
         state.objects[:] = 0
         state.resources[:] = 0
         state.accessibility[:] = 0
         state.claim[:] = 255
-        state.metadata['upgraded_morphology_index'] = int(idx)
-        state.metadata['upgraded_morphology_source'] = base.source
-        state.metadata['upgraded_transform'] = transform
-        self.log('morphology.upgraded_library', f'template={idx} transform={transform}')
+        state.metadata['archetype_morphology_index'] = int(idx)
+        state.metadata['archetype_morphology_source'] = base.source
+        state.metadata['archetype_transform'] = transform
+        self.log('morphology.archetype_library', f'continental template={idx} transform={transform}')
         return state
+
+    def _morphology_from_native(self, rng, pr) -> MapState:
+        return self._continental_morphology(pr)
+
+    def _morphology_from_upgraded_reference(self, rng, pr) -> MapState:
+        # Base engine still calls this historical hook for Upgraded. Route it
+        # to the same Continental archetype source as Legacy.
+        return self._continental_morphology(pr)
