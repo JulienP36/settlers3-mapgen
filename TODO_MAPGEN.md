@@ -63,19 +63,21 @@
 - [x] Zoom/molette/drag/projection parallélogramme/labels/sliders/thème sombre.
 - [x] Tailles natives visibles 384..768 et max joueurs adaptés.
 - [~] Génération multi-tailles : UI prête, calibration moteur à compléter.
-- [x] **Cache temporaire des résultats de génération, mémoire de session uniquement** : LRU limité initialement à 8 générations, jamais écrit sur disque, détruit à la fermeture.
+- [x] **Cache transparent des résultats de génération, mémoire de session uniquement** : objectif principal = relancer exactement les mêmes paramètres sans temps de génération. LRU limité initialement à 8 générations, jamais écrit sur disque, détruit à la fermeture.
   - [x] Clé : seed + taille + joueurs + mode + archétype + champ modificateurs + révision moteur.
-  - [x] Réutilisation instantanée d'un résultat déjà généré dans la session.
+  - [x] Un nouveau clic sur **Générer** avec une clé déjà présente produit un **cache hit immédiat** et réutilise le résultat complet sans recalcul.
   - [x] Conservation du `GenerationOutput` complet : map, validations, pipeline et métadonnées.
   - [x] Limite mémoire + bouton de vidage manuel.
-  - [x] Base préparée pour comparer plus tard versions de génération et combinaisons de modificateurs.
-- [~] **Historique de session / comparaison A-B** : historique visible et recharge instantanée d'une génération implémentés. Reste à ajouter sélection explicite A/B, bascule A↔B, puis éventuellement côte-à-côte/diff visuelle et caméra synchronisée.
+  - [x] Le cache reste transparent : l'historique et la comparaison sont des outils optionnels ajoutés au-dessus, pas une étape obligatoire du workflow.
+- [x] **Historique de session** : historique visible + recharge instantanée d'une génération déjà calculée.
+- [x] **Comparaison A/B légère** : sélectionner deux entrées du cache comme A et B, puis basculer instantanément A↔B en conservant vue, zoom, cadrage, projection, overlay et Heatmap ; `Ctrl+B` pour basculer.
+- [ ] **Comparaison A/B avancée éventuelle** : seulement si l'usage réel le justifie, ajouter côte-à-côte, diff visuelle par catégories (terrain/objets/ressources/hauteur/starts), synchronisation explicite des caméras et raccourcis de sélection A/B.
 - [x] Bouton **Recentrer** : revient au zoom 100 % et recentre la carte.
 - [x] Action rapide **Copier seed** de la génération courante.
-- [x] **Raccourcis clavier de base** : Ctrl+G générer, Ctrl+O importer, Ctrl+E exporter, Ctrl+R recentrer, Ctrl+Shift+C copier seed, F1 aide.
-- [x] **Aide v1** : F1 ouvre le rappel des commandes souris/clavier.
+- [x] **Raccourcis clavier de base** : Ctrl+G générer, Ctrl+O importer, Ctrl+E exporter, Ctrl+R recentrer, Ctrl+Shift+C copier seed, Ctrl+B bascule A/B, F1 aide.
+- [x] **Aide v1** : F1 ouvre le rappel des commandes souris/clavier et clarifie le rôle du cache transparent.
 - [ ] **Rebind des raccourcis** : future section dans Paramètres/Aide, avec commandes nommées, détection des conflits, reset par défaut et persistance des bindings.
-- [ ] Étendre les raccourcis après stabilisation A/B : changer de vue, sélectionner A/B, basculer A↔B, etc.
+- [ ] Étendre les raccourcis après retour d'usage : changer de vue, sélectionner A/B, etc.
 
 ## Statistiques — grosse passe après l'UI
 Objectif : faire de cet onglet un vrai outil d'analyse détaillée des cartes, pas seulement un résumé. Ajouter autant de statistiques utiles que nécessaire tant qu'elles restent lisibles et exploitables.
