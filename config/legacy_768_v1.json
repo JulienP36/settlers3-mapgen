@@ -1,81 +1,29 @@
 {
-  "profile_name": "Legacy 768 v1.2",
+  "profile_name": "Legacy 768 v1.5-audit",
+  "profile_kind": "legacy",
   "side": 768,
   "max_players": 20,
-  "supported_players": [
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20
-  ],
+  "supported_players": [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
   "river": {
-    "practical_max_cells": 55,
+    "practical_max_cells": 999,
+    "apply_practical_trim": false,
     "max_straight_run": 4,
-    "terrain_ids": [
-      96,
-      97,
-      98,
-      99
-    ],
+    "terrain_ids": [96,97,98,99],
     "stop_at_first_water": true,
     "fish_forbidden": true
   },
   "water": {
-    "terrain_ids": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7
-    ],
+    "terrain_ids": [0,1,2,3,4,5,6,7],
     "shore_id": 48,
     "height": 0,
     "accessibility": 1,
-    "forbid_inland_components_leq": 4,
+    "forbid_inland_components_leq": 0,
+    "cleanup_micro_water": false,
     "border_must_have_gradient": true
   },
   "fish": {
     "target_cells": 32313,
-    "bands": [
-      [
-        1,
-        3,
-        0.68
-      ],
-      [
-        4,
-        6,
-        0.55
-      ],
-      [
-        7,
-        9,
-        0.4
-      ],
-      [
-        10,
-        12,
-        0.24
-      ]
-    ],
+    "bands": [[1,3,0.68],[4,6,0.55],[7,9,0.40],[10,12,0.24]],
     "max_shore_hex_distance": 12,
     "quantity_multiplier": 1.3,
     "quantity_cap": 15,
@@ -83,31 +31,11 @@
   },
   "minerals": {
     "families": {
-      "16": {
-        "name": "Coal",
-        "cells": 28375,
-        "blobs": 500
-      },
-      "32": {
-        "name": "Iron",
-        "cells": 12202,
-        "blobs": 240
-      },
-      "48": {
-        "name": "Gold",
-        "cells": 8164,
-        "blobs": 165
-      },
-      "64": {
-        "name": "Gems",
-        "cells": 3098,
-        "blobs": 75
-      },
-      "80": {
-        "name": "Sulfur",
-        "cells": 4745,
-        "blobs": 100
-      }
+      "16": {"name":"Coal","cells":28375,"blobs":500},
+      "32": {"name":"Iron","cells":12202,"blobs":240},
+      "48": {"name":"Gold","cells":8164,"blobs":165},
+      "64": {"name":"Gems","cells":3098,"blobs":75},
+      "80": {"name":"Sulfur","cells":4745,"blobs":100}
     },
     "blob_size_min": 18,
     "blob_size_max": 105,
@@ -122,99 +50,34 @@
     "target_cells": 11618
   },
   "trees": {
-    "adult_ids": [
-      68,
-      69,
-      70,
-      71,
-      72
-    ],
-    "adult_global_target": 1352,
-    "adult_start_bonus_per_player": 15,
+    "adult_ids": [68,69,70,71,72,73,74,75,76,77,80,81],
+    "adult_weights": [236,226,191,200,187,185,202,195,193,213,351,356],
+    "adult_global_target": 2736,
+    "adult_start_bonus_per_player": 0,
     "small_tree_id": 84,
-    "small_tree_target": 406,
-    "small_tree_separate_pool": true
+    "small_tree_target": 0,
+    "small_tree_separate_pool": false,
+    "palm_ids": [78,79],
+    "palm_target": 8
   },
   "building_stones": {
-    "active_ids": [
-      115,
-      116,
-      117,
-      118,
-      119,
-      120,
-      121,
-      122,
-      123,
-      124,
-      125,
-      126
-    ],
+    "active_ids": [115,116,117,118,119,120,121,122,123,124,125,126],
     "exhausted_id": 127,
     "global_anchor_target": 1683,
-    "global_stock_target": 14160,
-    "start_bonus_stock_per_player": 53,
-    "start_bonus_units": [
-      12,
-      11,
-      10,
-      10,
-      10
-    ],
+    "global_stock_target": 10892,
+    "start_bonus_stock_per_player": 0,
+    "start_bonus_units": [],
     "anchor_min_hex_distance": 4,
-    "footprint": [
-      [
-        -1,
-        -1
-      ],
-      [
-        0,
-        -1
-      ],
-      [
-        -1,
-        0
-      ],
-      [
-        0,
-        0
-      ],
-      [
-        1,
-        0
-      ],
-      [
-        0,
-        1
-      ],
-      [
-        1,
-        1
-      ]
-    ]
+    "footprint": [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
   },
   "decor": {
-    "reef_target": 11,
+    "reef_target": 0,
     "swamp_reeds_only": true,
-    "desert_ids": [
-      43,
-      44,
-      45,
-      46,
-      47,
-      48,
-      49,
-      78,
-      79
-    ],
-    "swamp_reed_ids": [
-      62,
-      63,
-      64,
-      65,
-      66,
-      67
-    ],
+    "desert_ids": [43,44,45,46,47,48,49],
+    "desert_target": 30,
+    "swamp_reed_ids": [62,63,64,65,66,67],
+    "swamp_target": 60,
+    "decorative_stone_target": 879,
     "forbid_objects_on_mountain": true
   },
   "starts": {
