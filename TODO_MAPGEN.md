@@ -11,17 +11,19 @@
 - [x] **Première morphologie Upgraded indépendante validée** : `S3_Continental_Upgraded_4P_768x768_seed_2026081908_archetype_library_v1` jugée excellente, starts OK, aucun crash, relief conservé dans l'enveloppe native 768.
 
 ## Prochaine grosse étape génération
-- [x] **Découpler Upgraded du checkpoint 768 comme référence exécutable** : la GUI/CLI utilisent désormais une façade où la macro-géographie vient de la bibliothèque d'archétype, indépendamment du mode. Test dédié avec chemin de checkpoint inexistant : OK.
-- [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` est en place et exploite actuellement les 3 templates natifs 768 existants + transformations ; la première candidate Upgraded issue de cette architecture est validée. Élargir ensuite la variété/procédure de formes et préparer les autres archétypes.
-- [x] Valider visuellement la première candidate Upgraded issue de la bibliothèque Continental commune avant d'augmenter davantage la variété.
-- [ ] Nettoyer le résidu terrain `34` lors du rebuild Snow (`34 -> Rocky32` avant reconstruction) ; ce résidu est visuellement bénin mais ne doit pas survivre comme singleton parasite.
+- [x] **Découpler Upgraded du checkpoint 768 comme référence exécutable** : la GUI/CLI utilisent désormais une façade où la macro-géographie vient de la bibliothèque d'archétype, indépendamment du mode.
+- [x] **Nettoyer le résidu terrain 34** : les templates de morphologie normalisent désormais `34 -> Rocky32` avant le rebuild Snow ; la chaîne Snow légale est reconstruite ensuite depuis le relief.
+- [~] **Bibliothèque de formes Continental** : l'infrastructure `ArchetypeMorphologyLibrary` exploite les 3 templates natifs 768 + transformations HEX compatibles ; première candidate Upgraded validée.
+- [ ] **Étape active : compositeur de formes natives / native stamps**. Diversifier réellement les seeds sans warp global : silhouette principale native + composants natifs réutilisables (îles, lacs, massifs, Desert, Swamp, Rivers), translation + transformations HEX compatibles, transitions reconstruites ensuite.
+- [ ] Interdits pour cette diversification : pas de warp global, pas de rescaling agressif, pas d'ellipses/blobs procéduraux artificiels pour remplacer les familles natives.
+- [ ] Produire plusieurs candidates 768 distinctes et valider que la variété augmente sans perdre le niveau visuel de la seed `2026081908`.
 - [ ] Reprendre ensuite la validation progressive multi-tailles, une map à la fois.
 
 ## Reverse engineering terrain/runtime — découvertes enregistrées
 - [x] `Terrain24` : **herbe jaune / sèche**, variante visuelle de Grass ; blend propre **uniquement avec Grass16** ; visible dans les générations natives/Legacy, mais ne pas l'ajouter volontairement à Upgraded pour l'instant.
 - [x] `Terrain22` : **sol cultivé / terrain agricole runtime**, fortement corrélé au blé et à la vigne ; revient vers Grass lorsque les cultures/terres abandonnées disparaissent.
 - [x] `Terrain28` : **sol runtime travaillé/usé**. Confirmé sous zones aplanies/creusées de bâtiments et sur petits chemins de passage. Retour rapide à Grass après disparition d'une zone bâtiment ; persistance des chemins possiblement différente, à tester seulement si utile plus tard.
-- [~] `Terrain18`, `19`, `23`, `34` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement.
+- [~] `Terrain18`, `19`, `23`, `34` : terrains techniques/intermédiaires encore non résolus ; ne pas les générer volontairement. `34` est désormais normalisé hors des templates Upgraded avant reconstruction Snow.
 - [x] `85..93` : famille runtime blé ; `92` récoltable, `93` = **chaume**.
 - [x] `94..102` : famille runtime vigne/raisin ; `102` appartient bien au cycle, mécanique exacte du retour vers `94` encore ouverte.
 - [x] `103..110` : famille runtime riz ; observée sur terrain marais/runtime compatible.
