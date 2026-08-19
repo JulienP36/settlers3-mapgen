@@ -2,6 +2,49 @@
 
 Date: 2026-08-19
 
+## v1.5 — CANDIDATE
+
+### Scope
+La v1.5 est la consolidation moteur après la v1.4 UI. Elle implémente l'audit complet Legacy/Upgraded et les derniers recalibrages de ressources/starts.
+
+Points principaux :
+- Legacy et Upgraded partagent la macro-morphologie mais ont désormais des politiques hydrologie/biomes/ressources/objets explicitement séparées ;
+- starts toujours placés très tôt et protégés ;
+- neige commune `Rocky32 -> 35 -> 129 -> Snow128`, Terrain34 conservé comme variante Rocky interne/minéralisable ;
+- Upgraded : petits plans d'eau 1–4 supprimés/redistribués, trimming rivière size-scaled, minerais ~90 % support, Swamp ~+30 %, Mud désactivé, reefs rares, decorative stones réduites ;
+- arbres `68..77 + 80..81` communs, Palms `78..79` comptées comme bois ; Upgraded ~130 % volume natif + SmallTree84 séparé ;
+- bonus Upgraded : forêt `41 adultes + 21 SmallTree84` et tas de pierre `8 ancres / 84 unités`, tous deux centrés sur la bordure du territoire initial (~HEX34) ;
+- Building Stones globales variées au lieu d'un état uniforme ; Legacy distribution native-like, Upgraded biaisée vers les états pleins ;
+- environ 20 Building Stone 13 / ID127 vides sur les 1683 ancres globales, conformément aux références natives 768 ;
+- ID127 compte dans la densité d'ancres mais pas dans le stock exploitable ;
+- **ID127 est constructible** : le footprint 7 cellules est libéré (`accessibility=0`) avant validation/export, contrairement aux états actifs `115..126` ;
+- GUI/CLI/exports nommés v1.5.
+
+### Validators v1.5
+La candidate doit passer au minimum :
+- quotas arbres adultes / SmallTree84 / Palms ;
+- quotas d'ancres Building Stones incluant `127` ;
+- stock pierre calculé seulement sur `115..126` ;
+- variété d'états `115..127` ;
+- nombre d'ID127 ;
+- ID127 uniquement sur Grass ;
+- `STONE_EXHAUSTED_BUILDABLE` : aucune des 7 cellules d'un tas épuisé ne reste bloquante ;
+- validations existantes starts, transitions, Water/Snow, minerais, poissons et décorations.
+
+### Validation externe requise avant promotion
+Sur au moins une génération **Upgraded Continental 768×768 fraîche** :
+1. ouverture éditeur sans erreur ;
+2. starts tous valides ;
+3. View Map / lancement sans crash ;
+4. bordure du territoire initial traversant visiblement les clusters forêt + Building Stones bonus ;
+5. volumes des clusters bonus proches des clusters globaux ;
+6. Building Stones visiblement variées (`115..127`), pas un état unique répété ;
+7. présence de quelques ID127 vides ;
+8. confirmation en jeu/éditeur qu'un ID127 n'empêche pas de construire sur son ancien footprint ;
+9. contrôle visuel général de la densité d'arbres Upgraded.
+
+Tant que ces points ne sont pas confirmés, **v1.5 reste candidate et ne doit pas être taguée stable**.
+
 ## v1.3.2 — VALIDÉE
 
 ### Scope du patch
@@ -88,8 +131,4 @@ Contrôle dans l'éditeur et en jeu :
 - démarrage / vue in-game : **aucun crash** ;
 - heightmap générale jugée correcte ; vérification statistique effectuée ensuite : le relief montagneux correspond à la référence native 768/4P source et reste dans l'enveloppe des trois références 768.
 
-### Réserves non bloquantes séparées de la validation
-- Quelques singletons terrain `34` subsistent dans des zones Rocky. Ils sont visuellement bénins mais proviennent d'un ancien transitionnel Rocky/Snow non nettoyé par le rebuild Snow ; nettoyage à faire séparément (`34 -> Rocky32` avant reconstruction Snow).
-- Un terrain natif non plaçable directement dans l'éditeur, visuellement proche d'un **Grass jaune / herbes sèches**, doit encore être identifié précisément parmi les IDs non nommés. Il ne doit pas être ajouté volontairement à Upgraded avant identification.
-
-Conclusion : **la première morphologie Upgraded indépendante est validée comme base de généralisation**. La prochaine étape peut augmenter la diversité de formes sans revenir à une dépendance au checkpoint EDM historique.
+Conclusion : **la première morphologie Upgraded indépendante est validée comme base de généralisation**.
