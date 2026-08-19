@@ -23,6 +23,7 @@ Status: **canonical mode-separation reference**
 - Desert content uses native behavior in both modes: Dead Trees 43..44, Cacti 45..48, Skeleton 49, Palms 78..79.
 - Wrecks 29..33, Grave 34 object and Tree Stumps 41..42 use native behavior in both modes.
 - Building Stone footprint/collision correctness is a shared bugfix.
+- Building Stone resource states must stay visually/statistically varied; exact stock targets must never collapse all anchors to one object state.
 
 ## 3. Legacy-only/native behavior
 
@@ -36,7 +37,7 @@ Status: **canonical mode-separation reference**
 - Reefs 111..114: **0 generated**.
 - Tree pool uses the native full startup family `68..77 + 80..81`, with native proportions and volume.
 - SmallTree84: **0 generated**.
-- Building Stones use native density, stock and spatial behavior; no custom start bonus.
+- Building Stones use native density, stock and spatial behavior; no custom start bonus. State/remaining-stock values are varied approximately native-like while preserving the exact global stock target.
 - No custom bonus swamp/forest/Building Stone package around starts.
 
 ## 4. Upgraded rules
@@ -93,13 +94,17 @@ Status: **canonical mode-separation reference**
 
 - Same functional states 115..127 and `remaining = 127 - object_id`.
 - Improved stock profile retained; spatial behavior mixes small clusters/fields with scattered anchors.
-- Start bonus remains Upgraded-only and is outside global quota.
+- Global Upgraded states must remain varied while being biased toward fuller stones; exact total stock is enforced by small per-anchor corrections, not by assigning one state to every anchor.
+- Start bonus remains Upgraded-only and outside global quota.
 
 ### 4.6 Starts
 
 - Early placement/protection architecture is common and currently considered stable.
-- Mini-swamp, bonus trees/forest and bonus Building Stones are Upgraded-only.
-- Their exact quantities/placement are intentionally deferred to the post-audit recalibration pass.
+- Mini-swamp, bonus forest and bonus Building Stones are Upgraded-only.
+- Initial territory is modeled with a practical HEX radius of about **34** cells (consistent with the validated ~3500-cell starting territory). Bonus cluster centers sit on this boundary so the territory border passes through each cluster.
+- **Bonus forest per player:** approximately one ordinary Upgraded forest-cluster volume, currently **41 adult trees + 21 SmallTree84**. This replaces the obsolete 15-tree sparse bonus. The cluster is loose/irregular, with the same overall scale as ordinary forest clusters.
+- **Bonus Building Stone cluster per player:** **8 anchors**, matching the ordinary Upgraded cluster scale. Stones are deliberately well filled but still varied, with an exact target of **84 remaining stone units/player** (average 10.5/anchor, individual anchors constrained to 9..12 units).
+- Bonus forests and stone clusters are outside the global quotas.
 
 ## 5. Future modifiers
 
@@ -115,7 +120,7 @@ Planned/possible modifiers:
 
 - Integrate Terrain24 into Upgraded only in an isolated change/test.
 - Validate the new Upgraded tree-volume calculation visually; revert volume to Legacy if too forest-heavy.
-- Recalibrate Upgraded start bonus trees + Building Stones immediately after code separation.
+- Validate the new boundary-centered start forest/stone clusters on a freshly generated candidate before release promotion.
+- Validate Building Stone state diversity visually/statistically in both Legacy and Upgraded.
 - Validate all quotas/scaling across 384/448/512/576/640/704/768 rather than extrapolating blindly from 768.
 - Validate desert/decorative multi-size scaling.
-- Implement and test the Legacy/Upgraded code separation; this audit defines intended behavior, not proof the current engine already follows it.
