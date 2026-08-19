@@ -9,30 +9,30 @@
 - [x] **v1.4 validée** : visualisation, thème sombre, combobox, sliders, projection parallélogramme, labels joueurs et territoire initial.
 - [x] **Goods Default corrigé et validé** : `Legacy=Medium`, `Upgraded=High`.
 - [x] **Première morphologie Upgraded indépendante validée** : seed `2026081908`, starts OK, aucun crash, relief natif conservé.
+- [~] **v1.5 candidate préparée** : moteur Legacy/Upgraded audité + nouveaux clusters de départ + états Building Stones corrigés. Validation éditeur/View Map encore requise avant promotion/tag.
 
-## Prochaine grosse étape génération
+## Génération v1.5
 - [x] Macro-géographie découplée du mode via `ArchetypeMorphologyLibrary`.
 - [x] Terrain34 requalifié : variante Rocky rare, singleton entouré de Rocky32, minéralisable ; jamais anneau Snow.
-- [x] Chaîne Snow validée : `Rocky32 -> 35 (1 cellule) -> 129 (1 cellule) -> Snow128`.
+- [x] Chaîne Snow commune validée : `Rocky32 -> 35 (1 cellule) -> 129 (1 cellule) -> Snow128`.
 - [x] **Audit Legacy / Upgraded terminé conceptuellement**. Référence : `references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md`.
 - [x] **Séparation Legacy / Upgraded implémentée** dans `s3mapgen/generator.py` + profils 768 ; tests de verrouillage dans `tests/test_legacy_upgraded_audit.py`.
-- [x] **Smoke statique local de la séparation : PASS** sur Legacy 4P/20P et Upgraded 4P/20P, 0 HARD failure. La copie locale a été reconstruite depuis l'archive v1.4 complète + la façade/profils audités ; ce smoke ne remplace pas le test officiel éditeur/View Map.
-- [~] **Validation externe restante** : tester les deux candidates 4P auditées dans l'éditeur puis View Map/in-game avant promotion.
-- [x] Minerais : Legacy reste sur son comportement courant ; Upgraded cible ~90 % du support minier, ratios natifs empiriques, v7 no-gap, +30 % quantité/case cap15, minerai sous Snow + Terrain34 valide.
+- [x] Minerais : Legacy reste native-like ; Upgraded cible ~90 % du support minier, ratios natifs empiriques, v7 no-gap, +30 % quantité/case cap15, minerai sous Snow + Terrain34 valide.
 - [x] Hydrologie : Legacy conserve étangs/rivières natifs ; Upgraded supprime/redistribue 1–4 cellules et applique un p99 river size-scaled `~0.0245*side + 34.7`.
 - [x] Arbres : pool `68..77 + 80..81` dans les deux. Legacy volume natif ; Upgraded ~130 % + SmallTree84 séparé. Palms `78..79` comptés dans le bois.
-- [x] Building Stones : footprint 7 cellules commun ; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
-- [x] **États Building Stones corrigés** : ne plus uniformiser les ancres. Legacy conserve une distribution native-like variée ; Upgraded reste varié mais biaisé vers les pierres plus pleines, avec ajustement fin pour atteindre exactement le stock cible.
-- [x] **Building Stone 13 / ID127 vide généré** : comportement natif confirmé. Référence 768 = 18/22/21 ancres vides, donc cible pratique **20 ancres globales sur 1683**. Elles comptent dans la densité/placement et conservent le footprint, mais apportent **0 unité** et sont exclues du stock exploitable. Jamais utilisées dans les clusters bonus de start.
+- [x] Building Stones : footprint 7 cellules bloquant pour les états actifs `115..126`; Legacy stock/densité natifs, Upgraded stock amélioré + clusters/dispersé.
+- [x] **États Building Stones variés** : Legacy distribution native-like ; Upgraded distribution variée mais biaisée vers les pierres plus pleines, avec ajustement fin pour atteindre exactement le stock cible.
+- [x] **Building Stone 13 / ID127 vide généré** : comportement natif confirmé. Référence 768 = 18/22/21 ancres vides, cible pratique **20 ancres globales sur 1683**. Elles comptent dans la densité/placement, apportent **0 unité**, sont exclues du stock exploitable et ne sont jamais utilisées dans les clusters bonus de start.
+- [x] **ID127 constructible** : contrairement aux états actifs, le tas épuisé ne bloque plus la construction ; son ancien footprint 7 cellules est remis en `accessibility=0` avant validation/export.
 - [x] Décorations : reefs Legacy=0 / Upgraded rares ; Reeds natifs communs ; pierres déco native Legacy / ~÷10 Upgraded ; petites végétations, Wrecks, Grave, Stumps communs natifs.
 - [x] Désert : Dead Trees `43..44`, Cacti `45..48`, Skeleton `49`, Palms `78..79`, comportement commun natif.
-- [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement. L'expansion Swamp Upgraded refuse désormais tout nouveau contact HEX6 avec un terrain incompatible.
+- [x] Biomes : Mud natif Legacy / désactivé Upgraded ; Swamp natif Legacy / ~+30 % global Upgraded ; mini-marais start Upgraded uniquement. L'expansion Swamp Upgraded refuse tout nouveau contact HEX6 incompatible.
 - [x] Terrain24 : conservé en Legacy ; retiré temporairement d'Upgraded pendant cette grosse passe. **Ajout Upgraded confirmé mais différé à une modification isolée.**
-- [x] Snow : même génération Legacy/Upgraded. Terrain34 est neutralisé seulement pendant le calcul de profondeur Snow puis restauré uniquement s'il reste entièrement entouré de Rocky32.
 - [x] Starts : placement précoce commun et protection conservée ; bonus mini-marais/forêt/pierre Upgraded seulement.
-- [x] **Bonus de départ Upgraded — nouvelle règle** : abandon de l'ancien bonus dispersé `15 arbres + 5 stones`. Les bonus sont maintenant de vrais clusters centrés sur la **bordure du territoire initial (~rayon HEX 34)** afin que la bordure traverse le cluster. Forêt bonus ≈ cluster global moyen : **41 adultes + 21 SmallTree84/joueur**. Tas de Building Stones bonus ≈ cluster global moyen : **8 ancres/joueur**, bien remplies mais variées, **84 unités/joueur** au total (9..12 unités/ancre). Mini-marais inchangé.
-- [ ] **Prochaine action immédiate : régénérer une candidate Upgraded fraîche avec les nouveaux clusters de départ + nouvelle distribution de Building Stones + ID127 natifs, puis contrôler visuellement la bordure, la forme des clusters et la variété 115..127.**
-- [ ] Après validation de cette candidate, préparer la nouvelle version.
+- [x] **Bonus de départ Upgraded** : vrais clusters centrés sur la **bordure du territoire initial (~rayon HEX34)** afin que la bordure traverse le cluster. Forêt bonus ≈ cluster global moyen : **41 adultes + 21 SmallTree84/joueur**. Tas de Building Stones bonus ≈ cluster global moyen : **8 ancres/joueur**, bien remplies mais variées, **84 unités/joueur** au total (9..12 unités/ancre). Mini-marais inchangé.
+- [x] GUI/CLI préparés en **v1.5** (`gui_v15.py`, exports `MapGenV1_5`).
+- [ ] **Action immédiate : générer une candidate Upgraded fraîche v1.5 puis contrôler en éditeur/View Map** : starts, absence de crash, frontière traversant les clusters bonus, volume/forme des clusters, variété `115..127`, présence de quelques ID127 et constructibilité de ces tas épuisés.
+- [ ] Après validation de la candidate : promouvoir/taguer v1.5.
 - [ ] Tester visuellement le nouveau volume d'arbres Upgraded ; si trop forestier, revenir au volume Legacy sans réduire le pool d'IDs.
 - [ ] Ajouter Terrain24 à Upgraded dans une passe isolée/testable.
 - [ ] Valider les scalings multi-tailles : arbres, stones, décorations, Swamp, reefs, désert, rivières.
@@ -44,7 +44,7 @@
 - [ ] **Densité de forêt** configurable.
 - [ ] Idée : **cultures présentes au démarrage** (blé/vigne/riz), à étudier avec le decay runtime.
 - [ ] Variante possible : **montagnes plus réalistes** comme modificateur explicite.
-- [ ] **Réaliste** : distribution écologique plus crédible sans changer la macro-géographie. Pistes à développer plus tard : densité d'arbres/plantes croissante près de l'eau, champignons favorisés près des marais/sols humides, végétation conditionnée par biome/relief/humidité, tout en préservant gameplay, constructibilité et ressources. À concevoir comme modificateur orthogonal, pas comme mode séparé.
+- [ ] **Réaliste** : distribution écologique plus crédible sans changer la macro-géographie. Pistes : arbres/plantes favorisés près de l'eau, champignons favorisés près des marais/sols humides, végétation modulée par biome/relief/humidité, avec priorité à la constructibilité, aux ressources et au gameplay. À développer comme modificateur orthogonal.
 
 ## Reverse engineering terrain/runtime
 - [x] Terrain24 = herbe jaune/sèche, blend uniquement Grass16, native.
