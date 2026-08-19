@@ -31,26 +31,49 @@ def test_hydrology_split_is_locked():
     assert upgraded['river']['p99_scale_intercept'] == 34.7
 
 
-def test_tree_pool_and_upgraded_bonus_are_locked():
+def test_tree_pool_and_v15_start_forest_are_locked():
     legacy = load(LEGACY_PROFILE)
     upgraded = load(UPGRADED_PROFILE)
     native_pool = [68,69,70,71,72,73,74,75,76,77,80,81]
     assert legacy['trees']['adult_ids'] == native_pool
     assert upgraded['trees']['adult_ids'] == native_pool
     assert legacy['trees']['small_tree_target'] == 0
-    assert upgraded['trees']['small_tree_target'] > 0
+    assert legacy['trees']['adult_start_bonus_per_player'] == 0
+    assert legacy['trees']['small_tree_start_bonus_per_player'] == 0
+    assert upgraded['trees']['small_tree_target'] == 1067
+    assert upgraded['trees']['adult_start_bonus_per_player'] == 41
+    assert upgraded['trees']['small_tree_start_bonus_per_player'] == 21
+    assert upgraded['trees']['start_cluster_center_hex'] == 34
     assert upgraded['trees']['adult_global_target'] > legacy['trees']['adult_global_target']
     assert legacy['trees']['palm_target'] > 0
     assert upgraded['trees']['palm_target'] > 0
 
 
-def test_stone_and_decoration_split_is_locked():
+def test_v15_building_stone_rules_are_locked():
     legacy = load(LEGACY_PROFILE)
     upgraded = load(UPGRADED_PROFILE)
+    for profile in (legacy, upgraded):
+        stones = profile['building_stones']
+        assert stones['active_ids'] == list(range(115, 127))
+        assert stones['exhausted_id'] == 127
+        assert stones['global_anchor_target'] == 1683
+        assert stones['global_exhausted_anchor_target'] == 20
+        assert stones['footprint'] == [[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]
     assert legacy['building_stones']['global_stock_target'] == 10892
+    assert legacy['building_stones']['start_bonus_anchor_target'] == 0
+    assert legacy['building_stones']['start_bonus_stock_per_player'] == 0
     assert upgraded['building_stones']['global_stock_target'] == 14160
-    assert legacy['building_stones']['start_bonus_units'] == []
-    assert upgraded['building_stones']['start_bonus_units']
+    assert upgraded['building_stones']['global_stock_weighted_fullness'] is True
+    assert upgraded['building_stones']['start_bonus_anchor_target'] == 8
+    assert upgraded['building_stones']['start_bonus_stock_per_player'] == 84
+    assert upgraded['building_stones']['start_bonus_unit_min'] == 9
+    assert upgraded['building_stones']['start_bonus_unit_max'] == 12
+    assert upgraded['building_stones']['start_cluster_center_hex'] == 34
+
+
+def test_decoration_split_is_locked():
+    legacy = load(LEGACY_PROFILE)
+    upgraded = load(UPGRADED_PROFILE)
     assert legacy['decor']['reef_target'] == 0
     assert upgraded['decor']['reef_target'] > 0
     assert legacy['decor']['decorative_stone_target'] == 886
