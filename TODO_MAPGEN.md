@@ -1,5 +1,18 @@
 # Settlers III MapGen — TODO programme
 
+## État de validation
+- [x] **v1.3.2 validée** sur 4 générations Continental 768×768 : Legacy 4P / 20P et Upgraded 4P / 20P.
+- [x] Starts acceptés par l'éditeur sur ces 4 contrôles.
+- [x] Aucun crash en View Map / vue in-game sur ces 4 contrôles.
+- [x] Marais : correction visuelle confirmée.
+- [x] Neige intérieure : non traversable comme prévu.
+- [~] **v1.4 candidate** : dernières corrections de visualisation / thème / sliders à revalider visuellement.
+
+## Bug prioritaire à investiguer ensuite
+- [ ] **Fournitures de départ = Défaut** : erreur puis crash observés au lancement en jeu dans le test concerné.
+- [ ] Comparer précisément ce qui diffère entre `Défaut` et les presets explicites `Low / Medium / High`, qui ne reproduisent pas le crash.
+- [ ] Garder cette investigation séparée des corrections purement visuelles de la v1.4.
+
 ## Prochaine grosse étape génération
 - [ ] **Upgraded : généraliser la morphologie locale** pour ne plus dépendre du checkpoint 768 comme référence exécutable.
 - [ ] Construire une vraie bibliothèque/procédure de formes Upgraded réutilisable avec tous les archétypes.
@@ -21,6 +34,7 @@
 - [x] Scrollbars dans Validations / Pipeline / Métadonnées / Statistiques.
 - [x] Onglet **Paramètres** avec préférences persistantes dans le profil utilisateur.
 - [x] Thème sombre / clair, sombre par défaut pour la v1.4 candidate.
+- [x] Listes déroulantes lisibles en mode sombre (fond sombre + texte clair, y compris menu ouvert).
 
 ### Visualisation / confort
 - [x] Slider de transparence pour les vues **Heightmap**, **Ressources** et **Territoires** ; 0 % montre la map globale, 100 % la couche seule.
@@ -29,6 +43,11 @@
 - [x] Déplacement de la visualisation par drag.
 - [x] Zoom molette temporisé/caché pour réduire la latence et sensibilité réglable.
 - [x] Projection **parallélogramme** optionnelle pour la visualisation, sans modifier les données réelles de la map.
+- [x] Projection parallélogramme recalée sur un décalage de **0,5 cellule par ligne**.
+- [x] Marqueurs `P1` à `P20` en bitmap net et couleur joueur.
+- [x] Les textes `P1` à `P20` restent droits / non déformés en projection parallélogramme.
+- [x] Contour du territoire initial des starts : non rempli, couleur joueur, rayon/étendue dérivé des SAV natifs (**3500 cellules, ±35 cellules**).
+- [x] Clic sur la barre des sliders = déplacement immédiat du curseur à la position cliquée.
 
 ### Statistiques
 - [ ] Enrichir fortement les statistiques, potentiellement sur plusieurs pages : quantités de ressources, pourcentages, comptes exacts des objets-ressources, objets décoratifs, terrains, territoires, etc.
