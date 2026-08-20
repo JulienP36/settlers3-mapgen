@@ -22,6 +22,16 @@ Exemples :
 
 L'historique v1.6 est documenté rétroactivement avec `RC_n` afin d'éviter une rupture de nomenclature. Les anciennes archives déjà produites peuvent conserver leur ancien nom physique ; la documentation canonique utilise désormais `RC`.
 
+## Branches permanentes
+
+Trois branches permanentes matérialisent le niveau de stabilité du projet :
+
+- `main` : uniquement les versions STABLE validées ;
+- `dev` : développement courant et checkpoints fréquents testés ;
+- `rc` : Release Candidates en cours de validation.
+
+Le flux normal est `dev` → `rc` → `main`. Les checkpoints DEV suffisamment cohérents doivent être enregistrés régulièrement sur `dev` afin de conserver une trace durable du travail même entre deux longues sessions. Une RC est promue sur `rc` uniquement lorsqu'elle est destinée à une validation externe. `main` ne reçoit le changement qu'après validation de la RC.
+
 ## Tags Git
 
 Les versions STABLE reçoivent un tag de version `vX.Y` (par exemple `v1.6`). Les builds `DEV` et `RC` ne nécessitent pas de tag Git sauf besoin exceptionnel d'archivage.
@@ -30,20 +40,22 @@ Le tag d'une version STABLE doit pointer vers le premier commit où l'état publ
 
 ## Workflow canonique d'une release STABLE
 
-1. figer la RC validée et ne plus ajouter de fonctionnalité ;
-2. nettoyer les fichiers temporaires/artefacts de test qui n'ont pas vocation à être conservés ;
-3. mettre à jour le code, `README.md`, `TODO_MAPGEN.md`, les références pertinentes et toute documentation affectée ;
-4. exécuter les tests smoke/régression et les contrôles de non-régression du moteur ;
-5. mettre à jour `CHANGELOG.md` et `RELEASE_VALIDATION.md` ;
-6. préparer le package `STABLE` et son manifest/hash ;
-7. créer le commit de release sur `main` ;
-8. vérifier l'état publié sur GitHub et corriger toute omission documentaire avant le tag ;
-9. créer le tag annoté `vX.Y` sur le commit STABLE complet ;
-10. pousser/synchroniser `main` et les tags ;
-11. éventuellement publier l'archive ZIP et les gros checkpoints binaires via GitHub Release ou Git LFS selon la politique de stockage.
+1. développer et checkpoint régulièrement sur `dev` ;
+2. figer une candidate suffisamment mature et la promouvoir sur `rc` ;
+3. valider la RC sans ajouter de fonctionnalité ;
+4. nettoyer les fichiers temporaires/artefacts de test qui n'ont pas vocation à être conservés ;
+5. mettre à jour le code, `README.md`, `TODO_MAPGEN.md`, les références pertinentes et toute documentation affectée ;
+6. exécuter les tests smoke/régression et les contrôles de non-régression du moteur ;
+7. mettre à jour `CHANGELOG.md` et `RELEASE_VALIDATION.md` ;
+8. préparer le package `STABLE` et son manifest/hash ;
+9. promouvoir l'état validé sur `main` ;
+10. vérifier l'état publié sur GitHub et corriger toute omission documentaire avant le tag ;
+11. créer le tag annoté `vX.Y` sur le commit STABLE complet ;
+12. pousser/synchroniser `main` et les tags ;
+13. publier l'archive ZIP et les gros checkpoints binaires via GitHub Release ou Git LFS selon la politique de stockage.
 
-## Branches de travail
+## Branches temporaires
 
-Les branches `feat/*`, `fix/*` et `research/*` sont temporaires. Une fois leur contenu utile intégré ou explicitement supplanté sur `main`, elles doivent être auditées puis supprimées afin d'éviter qu'un ancien état soit confondu avec la baseline courante.
+Les branches `feat/*`, `fix/*` et `research/*` restent possibles pour un travail isolé ou expérimental. Une fois leur contenu utile intégré ou explicitement supplanté sur `dev`, `rc` ou `main`, elles doivent être auditées puis supprimées afin d'éviter qu'un ancien état soit confondu avec la baseline courante.
 
-Une branche divergente ne doit jamais être supprimée uniquement parce que `main` est plus récent : ses commits uniques doivent d'abord être vérifiés. Les informations historiques utiles doivent être intégrées à `main`, à une référence canonique ou être conservées par un tag avant suppression.
+Une branche divergente ne doit jamais être supprimée uniquement parce qu'une branche permanente est plus récente : ses commits uniques doivent d'abord être vérifiés. Les informations historiques utiles doivent être intégrées à une branche permanente, à une référence canonique ou être conservées par un tag avant suppression.

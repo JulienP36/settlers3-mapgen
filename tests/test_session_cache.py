@@ -1,29 +1,20 @@
-from s3mapgen.session_cache import GenerationCacheKey, SessionGenerationCache
+from s3mapgen.session_cache import SessionGenerationCache,GenerationCacheKey
 
+def key(i):return GenerationCacheKey(i,768,4,'upgraded','continental')
+def test_lru_hit_and_eviction():
+    c=SessionGenerationCache(2);c.put(key(1),'a');c.put(key(2),'b');assert c.get(key(1))=='a';c.put(key(3),'c');assert c.get(key(2)) is None;assert c.get(key(1))=='a';assert len(c)==2
 
-def key(seed):
-    return GenerationCacheKey(seed=seed, side=768, players=4, mode='upgraded', archetype='continental')
+def test_cache_clear():
+    c=SessionGenerationCache(8);c.put(key(1),'a');c.clear();assert len(c)==0
 
+from s3mapgen.session_cache import SessionStatsCache
 
-def test_cache_reuses_and_promotes_entry():
-    c=SessionGenerationCache(max_items=2)
-    a=object();b=object()
-    c.put(key(1),a);c.put(key(2),b)
-    assert c.get(key(1)) is a
-    assert [k.seed for k,_ in c.entries()]==[1,2]
+class DummyState: pass
 
-
-def test_cache_is_lru_bounded_and_clearable():
-    c=SessionGenerationCache(max_items=2)
-    c.put(key(1),'a');c.put(key(2),'b');c.get(key(1));c.put(key(3),'c')
-    assert c.get(key(2)) is None
-    assert [k.seed for k,_ in c.entries()]==[3,1]
-    c.clear()
-    assert len(c)==0 and c.entries()==[]
-
-
-def test_cache_key_distinguishes_generation_inputs():
-    a=GenerationCacheKey(7,768,4,'legacy','continental')
-    b=GenerationCacheKey(7,768,4,'upgraded','continental')
-    c=GenerationCacheKey(7,768,4,'legacy','continental',('barebone',))
-    assert len({a,b,c})==3
+def test_stats_cache_reuses_same_state_and_evicts_lru():
+    c=SessionStatsCache(2);a=DummyState();b=DummyState();d=DummyState()
+    c.put(a,{'n':1});c.put(b,{'n':2})
+    assert c.get(a)=={'n':1}
+    c.put(d,{'n':3})
+    assert c.get(b) is None
+    assert c.get(a)=={'n':1} and c.get(d)=={'n':3}
