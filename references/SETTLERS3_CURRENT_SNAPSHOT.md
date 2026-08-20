@@ -2,62 +2,61 @@
 
 > **LIVING RECOVERY SNAPSHOT — READ AFTER `PROJECT_WORKFLOW.md` WHEN RESUMING WORK.**
 >
-> Last refreshed: **2026-08-20 — v1.7 DEV_5**
+> Last refreshed: **2026-08-21 — v1.7 DEV_7**
 
 This file is updated in place. Dated `SETTLERS3_SNAPSHOT_*` files are historical and are not the current state.
 
 ## Repository / branches
-Permanent model: `main` = STABLE, `rc` = candidate under validation, `dev` = current development/checkpoints.
-Only `main`, `dev`, `rc` remain. `main` and `rc` still point to the v1.6 STABLE lineage. `dev` is the active v1.7 branch.
+Permanent model: `main` = STABLE, `rc` = candidate under validation, `dev` = current development/checkpoints. Only `main`, `dev`, `rc` remain. `main` and `rc` stay on the v1.6 STABLE lineage; `dev` is active v1.7 work.
 
-A Git-checkout launch failure caused by mixed-version files was diagnosed and repaired on `dev`: the old `gui_v15.py` expected `SessionGenerationCache(max_items=...)` while the newer cache API uses `max_entries`. The exact DEV_5 `gui_v15.py` was restored and a fresh `fetch/reset` checkout was confirmed to launch by the user.
-
-Important: the exact runnable DEV_5 package remains `SETTLERS3_MAPGEN_V1_7_DEV_5_20260820.zip` (SHA-256 `115d056edbb90a5fde988d923f0045ca3d531208df895d5df449cf2133f253fb`). The branch is launchable again, but a final byte-for-byte synchronization audit against the large DEV_5 source files is still pending because the GitHub connector cannot directly ingest arbitrary local files and the runtime currently cannot resolve github.com via direct Git. `TODO_MAPGEN.md` tracks this explicitly.
+Git checkout launch was repaired after mixed-version files caused `SessionGenerationCache(max_items=...)` / `max_entries` incompatibility. The branch is launchable again. The exact tested DEV package remains the canonical runnable checkpoint until the large-source byte-for-byte GitHub sync audit is completed.
 
 ## Stable engine
-Generation engine v1.5 is validated and locked. Reference map lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
-Protected hashes are listed in root `PROJECT_WORKFLOW.md`; all five remain unchanged after DEV_5.
+Generation engine v1.5 is validated and locked. Reference lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`. Protected hashes are listed in `PROJECT_WORKFLOW.md` and all five remain unchanged after DEV_7.
 
 ## v1.6 STABLE
-UI/tooling checkpoint validated. GitHub Release v1.6 published. The updater intentionally follows only GitHub `releases/latest`, not DEV/RC/main.
+UI/tooling checkpoint validated and GitHub Release published. Updater follows GitHub Releases only.
 
-## v1.7 current work — Stats
-DEV_1 introduced structured map statistics, JSON/CSV export and initial charts.
-DEV_2 added Stats caching, horizontal charts, Unicode-capable fonts, terrain-family ordering, Mud, transition-family accounting and corrected adult-tree counting.
-DEV_3 added the conservative latest-STABLE updater.
-DEV_4 added local player analysis in true HEX radii 10/20/30/40 plus advanced connected-component/blob analysis and first A/B Stats graphing.
+## v1.7 Stats progression
+DEV_1 introduced structured Stats/JSON/CSV/charts. DEV_2 added Stats cache, Unicode fonts and corrected semantic groupings. DEV_3 added conservative updater. DEV_4 added true-HEX local player analysis and component/blob analysis. DEV_5 refactored chart orientation/segmentation/colors and read-only analysis panes. DEV_6 extended compact A/B with semantic stacked segments and preserved import semantics in A/B toggles.
 
-### DEV_5 additions
-- Stats schema v3;
-- normal charts switched to vertical bars for user testing;
-- water segmented as Ocean + Inland water;
-- mountain segmented as non-snow mountain + snow family;
-- mineral stock/cells segmented as outside snow + under snow;
-- Building Stones labels expressed by real remaining stock, 12 stones → 1 stone → depleted;
-- Vegetation renamed to Forestry resources / Ressources forestières;
-- agriculture colors aligned with the Agriculture view;
-- player-distance and nearby-resource gradients;
-- nearby R40 mining chart segmented by mineral family;
-- redundant nearby-mountain chart removed from the catalog;
-- height chart based on land-height distribution rather than the mechanically-zero global minimum;
-- A/B compact comparison: one metric per row, A and B bars side by side, each value centered in its own bar;
-- analysis text areas read-only but selectable/copyable;
-- Stats cache misses from history/comparison tied into loading feedback;
-- exact invariants verify that segmented chart components sum to their totals.
+### DEV_7 additions
+- quantitative gradients standardized to red → yellow → green where appropriate;
+- Building Stones gradient: full green → middle yellow → exhausted red;
+- non-zero tiny stacked segments no longer silently lose their value: external connected labels are used when needed;
+- Forestry order: Adult trees → Palms → Saplings;
+- more descriptive short height labels;
+- configurable `Ctrl+Shift+T` theme toggle;
+- nearest-opponent chart now identifies the opponent and shows both player colors; min distance red, median zone yellow, max green;
+- local analysis extended to HEX50 and HEX100 while retaining older radii internally for continuity;
+- nearby Trees/Stones/Fish charts now show 0–50 and 50–100 segments;
+- nearby Mining uses two bars/player: A ≤50 HEX, B 50–100 HEX, each segmented by mineral type;
+- largest mountain/lake/river components are visually darkest;
+- A/B Land/Stone/Fish now use semantic colors;
+- Stats schema v4.
 
-Validation of the exact DEV_5 package: **49 automated tests PASS**, real **768×768 / 10-player SAV smoke PASS**, protected v1.5 hashes unchanged, ZIP integrity verified.
+Validation: **55 automated tests PASS**, real **768×768 / 10-player SAV visual smoke PASS**, protected v1.5 hashes unchanged, ZIP integrity verified.
 
-## Naming / cleanup
-Historical module names such as `gui_v15.py`, `gui_v16.py`, runtimes and `generator_v15.py` are ambiguous. The intended naming convention is explicit `v1_5` / `v1_6`. This is recorded as a controlled future refactor because imports, tests and entry points must migrate atomically; do not casually rename protected/validated files in isolation.
+## Exact DEV_7 package
+`SETTLERS3_MAPGEN_V1_7_DEV_7_20260821.zip`
+SHA-256: `a045bea27adb42e3544f4d425cb339ac4d23daf83bf75dad2ccfa1bec7ce9079`
 
-## Object semantics
-User-facing name for object ID84 is **Pousse d’arbre / Tree sapling**, not `SmallTree84`. It is distinct from adult-tree quotas and the data model must allow future additional sapling types.
-Adult-tree IDs validated/classified for Stats include 68–77 and 80–81; exact species names for 73–77/80–81 remain unresolved and must not be invented.
+## Current next work
+- user review of DEV_7;
+- interactive graph tooltips as a later generalized graph capability;
+- optional/disableable graph ↔ map-view synchronization;
+- imported SAV/EDM/MAP in session history + configurable history capacity;
+- PNG export sharpness/resolution;
+- native-corpus comparison bands and remaining Stats analysis;
+- controlled future rename `v15/v16` modules to explicit `v1_5/v1_6`;
+- finish byte-for-byte audit/sync of GitHub large source files against the latest tested package.
 
-## Current priorities / next work
-1. complete the DEV_5 package ↔ `dev` byte-for-byte source synchronization audit;
-2. continue Stats/UI feedback from DEV_5;
-3. later recalibrate start-resource distances toward gameplay-oriented ranges around ~50/60 HEX and ~100 HEX rather than treating DEV_4 R30/R40 as canonical;
-4. support imported SAV/EDM/MAP in A/B slots;
-5. continue component distributions, native-corpus reference bands and exact known-ID nomenclature;
-6. after Stats: Continental multi-size validation 384 → 448 → 512 → 576 → 640 → 704 → 768, then v2.0 executable milestone.
+After Stats: Continental multi-size validation 384 → 448 → 512 → 576 → 640 → 704 → 768, then v2.0 executable milestone.
+
+## Recovery
+1. read `PROJECT_WORKFLOW.md`;
+2. read this snapshot;
+3. read `TODO_MAPGEN.md`;
+4. inspect latest DEV notes and `dev` tip;
+5. if touching generation, read `references/SETTLERS3_PREGEN_READ_FIRST.md`;
+6. verify protected hashes/tests before packaging or promotion.
