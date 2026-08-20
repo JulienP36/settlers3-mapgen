@@ -2,13 +2,13 @@
 
 > **LIVING RECOVERY SNAPSHOT — READ AFTER `PROJECT_WORKFLOW.md` WHEN RESUMING WORK.**
 >
-> Last refreshed: **2026-08-20 — v1.7 DEV_4 preparation**
+> Last refreshed: **2026-08-20 — v1.7 DEV_4**
 
 This file is updated in place. Dated `SETTLERS3_SNAPSHOT_*` files are historical and are not the current state.
 
 ## Repository / branches
 Permanent model: `main` = STABLE, `rc` = candidate under validation, `dev` = current development/checkpoints.
-At the start of DEV_4: `main` and `rc` remain on the v1.6 STABLE lineage; `dev` contains v1.7 Stats/tooling work. Use the actual current tip of `dev` as authoritative.
+`main` and `rc` remain on the v1.6 STABLE lineage. `dev` contains the v1.7 DEV_3 source checkpoint plus the living DEV_4 recovery documentation/notes. The exact runnable DEV_4 source package produced in the current session is `SETTLERS3_MAPGEN_V1_7_DEV_4_20260820.zip` (SHA-256 `92be12792f36e1e95c9b7f83b1cd005d6ecd8c72dd6e1cecf38664d755eb3ebf`). Because the GitHub connector cannot ingest arbitrary local files directly, do not assume the current `dev` source tree is byte-for-byte identical to that ZIP until the DEV_4 source sync is completed.
 
 ## Stable engine
 Generation engine v1.5 is validated and locked. Reference map lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
@@ -33,7 +33,7 @@ DEV_3 added conservative latest-STABLE updater.
 - A/B Stats comparison chart using cached statistics for both slots;
 - Stats schema version 2 and extended CSV player-local exports.
 
-Real SAV smoke: 768×768 / 10 players parses and produces advanced Stats. Initial uncached advanced analysis is heavier than DEV_2 (~5 s on the current test environment), but A/B/history reuse the Stats LRU and do not recompute cached states.
+Validation: 46 automated tests PASS; real 768×768 / 10-player SAV smoke PASS; protected v1.5 hashes unchanged. Initial uncached advanced analysis is heavier than DEV_2 (~5 s on the current test environment), but A/B/history reuse the Stats LRU and do not recompute cached states.
 
 ## Object semantics
 User-facing name for object ID84 is **Pousse d’arbre / Tree sapling**, not `SmallTree84`. It is distinct from adult-tree quotas and the data model must allow future additional sapling types.
