@@ -55,6 +55,21 @@ Do not wait for RC/STABLE to preserve work.
 
 At each meaningful checkpoint, update `references/SETTLERS3_CURRENT_SNAPSHOT.md` if project state, known issues, next steps, validation status or protected baselines changed.
 
+### Package ↔ branch integrity rule
+
+A DEV/RC/STABLE build is **not considered fully checkpointed** until the tested package and the corresponding Git branch contain the same intended source/runtime/tests/docs state (excluding explicitly ignored build artifacts, caches and release-only binaries).
+
+Before announcing a checkpoint as durable:
+
+1. run the relevant tests from the packaged source tree;
+2. verify protected hashes;
+3. verify the archive integrity;
+4. synchronize the affected source/runtime/tests/docs to the target branch;
+5. compare critical files or Git blob hashes when practical;
+6. launch/smoke the branch checkout when the GUI/runtime changed.
+
+If direct synchronization is technically unavailable, the snapshot must explicitly state that the ZIP is the exact runnable reference and that the branch is incomplete. Do not silently mix source files from different DEV checkpoints.
+
 ## 4. Canonical state vs history
 
 Use these roles consistently:
@@ -97,11 +112,13 @@ A test PASS is not equivalent to editor/game validation. For release promotion, 
 
 Use the naming convention from `VERSIONING.md`:
 
-- development: `mapgen_v1_7_DEV_4`, `SETTLERS3_MAPGEN_V1_7_DEV_4_YYYYMMDD.zip`;
+- development: `mapgen_v1_7_DEV_5`, `SETTLERS3_MAPGEN_V1_7_DEV_5_YYYYMMDD.zip`;
 - release candidate: `mapgen_v1_7_RC_1`, `SETTLERS3_MAPGEN_V1_7_RC_1_YYYYMMDD.zip`;
 - stable: `mapgen_v1_7_STABLE`, `SETTLERS3_MAPGEN_V1_7_STABLE_YYYYMMDD.zip`.
 
 Do not use ambiguous names such as `v17_release`.
+
+Internal module names should also prefer explicit dotted-version spelling with underscores (`v1_5`, `v1_6`) rather than ambiguous compact spellings (`v15`, `v16`) when modules are next migrated/refactored. Existing validated filenames are not renamed casually because imports/tests/package entry points must be migrated together.
 
 ## 8. RC promotion
 
@@ -115,6 +132,7 @@ Before promotion:
 - verify protected hashes;
 - package the RC;
 - record the package SHA-256;
+- verify package ↔ branch integrity;
 - keep further feature development on `dev`, not on the RC under validation.
 
 ## 9. STABLE promotion
@@ -128,7 +146,7 @@ After user/external validation of an RC:
 5. update CHANGELOG and RELEASE_VALIDATION;
 6. build the STABLE package and manifest/hash;
 7. promote validated state to `main`;
-8. verify GitHub content completeness;
+8. verify GitHub content completeness and package ↔ branch integrity;
 9. create annotated tag `vX.Y` on the complete STABLE commit;
 10. publish the GitHub Release and official STABLE ZIP;
 11. only the GitHub Release channel is considered by the updater.
