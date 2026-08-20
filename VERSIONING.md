@@ -24,6 +24,14 @@ Exemples :
 
 L'historique v1.6 est documenté rétroactivement avec `RC_n` afin d'éviter une rupture de nomenclature. Les anciennes archives déjà produites peuvent conserver leur ancien nom physique ; la documentation canonique utilise désormais `RC`.
 
+### Nommage interne des modules versionnés
+
+Pour les futurs renommages/refactors, utiliser une écriture explicite de la version avec underscore : `v1_5`, `v1_6`, etc., plutôt que les formes ambiguës `v15`, `v16`.
+
+Exemples cibles : `gui_v1_5.py`, `gui_v1_6.py`, `gui_v1_6_runtime.py`, `generator_v1_5.py`.
+
+Les fichiers historiques/validés existants ne doivent pas être renommés isolément : la migration doit être atomique et couvrir imports, tests, scripts, entry points, documentation et contrôles de hashes lorsque nécessaire.
+
 ## Branches permanentes
 
 Trois branches permanentes matérialisent le niveau de stabilité du projet :
@@ -34,7 +42,7 @@ Trois branches permanentes matérialisent le niveau de stabilité du projet :
 
 Le flux normal est `dev` → `rc` → `main`. Les checkpoints DEV suffisamment cohérents doivent être enregistrés régulièrement sur `dev` afin de conserver une trace durable du travail même entre deux longues sessions. Une RC est promue sur `rc` uniquement lorsqu'elle est destinée à une validation externe. `main` ne reçoit le changement qu'après validation de la RC.
 
-La politique détaillée de fréquence des checkpoints, reprise après perte de contexte, fichiers protégés et documentation vivante est définie dans `PROJECT_WORKFLOW.md`.
+La politique détaillée de fréquence des checkpoints, reprise après perte de contexte, fichiers protégés, intégrité package ↔ branche et documentation vivante est définie dans `PROJECT_WORKFLOW.md`.
 
 ## Tags Git
 
@@ -54,7 +62,7 @@ Le tag d'une version STABLE doit pointer vers le premier commit où l'état publ
 8. mettre à jour `CHANGELOG.md` et `RELEASE_VALIDATION.md` ;
 9. préparer le package `STABLE` et son manifest/hash ;
 10. promouvoir l'état validé sur `main` ;
-11. vérifier l'état publié sur GitHub et corriger toute omission documentaire avant le tag ;
+11. vérifier l'état publié sur GitHub, l'équivalence du source avec le package testé et corriger toute omission documentaire avant le tag ;
 12. créer le tag annoté `vX.Y` sur le commit STABLE complet ;
 13. pousser/synchroniser `main` et les tags ;
 14. publier l'archive ZIP et les gros checkpoints binaires via GitHub Release ou Git LFS selon la politique de stockage.
