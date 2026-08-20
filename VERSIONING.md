@@ -1,5 +1,7 @@
 # Convention de versionnage
 
+> Pour le workflow projet complet, toujours commencer par `PROJECT_WORKFLOW.md`, puis consulter `references/SETTLERS3_CURRENT_SNAPSHOT.md` pour l'état courant.
+
 Convention validée pour les builds du projet :
 
 - `DEV` : build de travail intermédiaire ;
@@ -32,6 +34,8 @@ Trois branches permanentes matérialisent le niveau de stabilité du projet :
 
 Le flux normal est `dev` → `rc` → `main`. Les checkpoints DEV suffisamment cohérents doivent être enregistrés régulièrement sur `dev` afin de conserver une trace durable du travail même entre deux longues sessions. Une RC est promue sur `rc` uniquement lorsqu'elle est destinée à une validation externe. `main` ne reçoit le changement qu'après validation de la RC.
 
+La politique détaillée de fréquence des checkpoints, reprise après perte de contexte, fichiers protégés et documentation vivante est définie dans `PROJECT_WORKFLOW.md`.
+
 ## Tags Git
 
 Les versions STABLE reçoivent un tag de version `vX.Y` (par exemple `v1.6`). Les builds `DEV` et `RC` ne nécessitent pas de tag Git sauf besoin exceptionnel d'archivage.
@@ -41,18 +45,19 @@ Le tag d'une version STABLE doit pointer vers le premier commit où l'état publ
 ## Workflow canonique d'une release STABLE
 
 1. développer et checkpoint régulièrement sur `dev` ;
-2. figer une candidate suffisamment mature et la promouvoir sur `rc` ;
-3. valider la RC sans ajouter de fonctionnalité ;
-4. nettoyer les fichiers temporaires/artefacts de test qui n'ont pas vocation à être conservés ;
-5. mettre à jour le code, `README.md`, `TODO_MAPGEN.md`, les références pertinentes et toute documentation affectée ;
-6. exécuter les tests smoke/régression et les contrôles de non-régression du moteur ;
-7. mettre à jour `CHANGELOG.md` et `RELEASE_VALIDATION.md` ;
-8. préparer le package `STABLE` et son manifest/hash ;
-9. promouvoir l'état validé sur `main` ;
-10. vérifier l'état publié sur GitHub et corriger toute omission documentaire avant le tag ;
-11. créer le tag annoté `vX.Y` sur le commit STABLE complet ;
-12. pousser/synchroniser `main` et les tags ;
-13. publier l'archive ZIP et les gros checkpoints binaires via GitHub Release ou Git LFS selon la politique de stockage.
+2. maintenir `references/SETTLERS3_CURRENT_SNAPSHOT.md` à jour aux jalons significatifs ;
+3. figer une candidate suffisamment mature et la promouvoir sur `rc` ;
+4. valider la RC sans ajouter de fonctionnalité ;
+5. nettoyer les fichiers temporaires/artefacts de test qui n'ont pas vocation à être conservés ;
+6. mettre à jour le code, `README.md`, `TODO_MAPGEN.md`, les références pertinentes et toute documentation affectée ;
+7. exécuter les tests smoke/régression et les contrôles de non-régression du moteur ;
+8. mettre à jour `CHANGELOG.md` et `RELEASE_VALIDATION.md` ;
+9. préparer le package `STABLE` et son manifest/hash ;
+10. promouvoir l'état validé sur `main` ;
+11. vérifier l'état publié sur GitHub et corriger toute omission documentaire avant le tag ;
+12. créer le tag annoté `vX.Y` sur le commit STABLE complet ;
+13. pousser/synchroniser `main` et les tags ;
+14. publier l'archive ZIP et les gros checkpoints binaires via GitHub Release ou Git LFS selon la politique de stockage.
 
 ## Branches temporaires
 
