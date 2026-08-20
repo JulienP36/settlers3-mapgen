@@ -15,6 +15,8 @@
 - [x] **v1.6 STABLE UI/outillage** : validation utilisateur terminée (RC_9 validée), tag et GitHub Release publiés.
 - [x] Branches permanentes `dev` / `rc` / `main` mises en place.
 - [x] Workflow projet canonique + snapshot vivant de reprise mis en place.
+- [x] Crash Git checkout lié au mélange `gui_v15.py` / `SessionGenerationCache` réparé sur `dev`.
+- [x] Audit branches : seules `main`, `dev`, `rc` subsistent.
 
 ## Règle de release / branches
 
@@ -24,7 +26,13 @@
 - `rc` = candidate en validation ;
 - `main` = STABLE uniquement.
 
-v1.6 est une surcouche UI/outillage ; `generator_v15.py` reste le moteur de référence.
+v1.6 est une surcouche UI/outillage ; le moteur v1.5 reste la référence validée.
+
+## Hygiène GitHub / source
+
+- [ ] **Finaliser la synchro byte-for-byte de `dev` avec le ZIP DEV_5 testé** pour tous les gros fichiers source/runtime/tests/docs concernés. Le lancement depuis `dev` est réparé, mais le connecteur GitHub ne peut pas ingérer directement les gros fichiers locaux et le runtime n'a pas de DNS GitHub ; ne pas déclarer DEV_5 totalement checkpointé tant que cette équivalence n'est pas vérifiée.
+- [ ] Lors du prochain refactor contrôlé, renommer les modules ambigus `v15` / `v16` vers la convention explicite `v1_5` / `v1_6` (ex. `gui_v1_5.py`, `gui_v1_6.py`, runtimes et `generator_v1_5.py`) avec migration atomique des imports, tests, scripts et entry points. **Ne pas renommer à chaud** les fichiers validés.
+- [x] Ajouter au workflow la règle : un build n'est pleinement checkpointé que lorsque package testé et branche Git contiennent le même état source/runtime/tests/docs prévu.
 
 ## UX / outillage — v1.6
 
@@ -49,7 +57,7 @@ v1.6 est une surcouche UI/outillage ; `generator_v15.py` reste le moteur de réf
 
 ## v1.7 DEV — GIGA passe Statistiques
 
-### Socle déjà implémenté
+### Socle implémenté jusqu'à DEV_5
 
 - [x] nombre exact de cellules par Terrain ID ;
 - [x] familles de terrain avec transitions agrégées ;
@@ -58,33 +66,41 @@ v1.6 est une surcouche UI/outillage ; `generator_v15.py` reste le moteur de réf
 - [x] minerais : cases occupées + stock réel + percentiles ;
 - [x] stock total exploitable Building Stones ;
 - [x] distribution des états 115..127, avec ID127 = 0 stock exploitable ;
-- [x] végétation : arbres adultes séparés des pousses d'arbre ID84 ;
-- [x] poissons / hydrologie de base ;
+- [x] ressources forestières : arbres adultes séparés des pousses d'arbre ID84 et palmiers ;
+- [x] poissons / hydrologie ;
 - [x] agriculture runtime SAV ;
-- [x] relief / percentiles de hauteur ;
+- [x] relief / percentiles de hauteur terrestre ;
 - [x] distances entre starts ;
 - [x] exports JSON / CSV ;
 - [x] graphes intégrés + export PNG ;
-- [x] graphes en barres horizontales ;
-- [x] police de graphes compatible accents français ;
-- [x] ordre logique des familles de terrain ;
 - [x] cache Stats de session pour éviter le recalcul lors des bascules A/B/historique ;
-- [x] tests Stats intégrés ; suite courante : 42 PASS au checkpoint DEV_2/DEV_3.
+- [x] analyse locale joueurs en vrais rayons HEX10/20/30/40 ;
+- [x] composantes/blobs avancés pour massifs, déserts, marais, forêts, minerais, lacs/rivières ;
+- [x] Stats schema v3 ;
+- [x] barres segmentées Eau = Mer + Lacs ;
+- [x] montagne = partie non-neige + famille Neige ;
+- [x] minerais = hors neige + sous neige ;
+- [x] Building Stones affichés 12 pierres → 1 pierre → Épuisé ;
+- [x] graphes normaux testés en orientation verticale ;
+- [x] comparaison A/B compacte : une métrique par ligne, barre A + barre B côte à côte, valeur dans chaque barre ;
+- [x] panneaux texte d'analyse read-only mais sélectionnables/copiëables ;
+- [x] feedback de progression lors d'un calcul Stats non caché sur historique/comparaison ;
+- [x] invariants mathématiques pour les nouvelles barres segmentées ;
+- [x] validation DEV_5 locale : 49 tests PASS + smoke SAV 768×768 / 10 joueurs + hashes protégés inchangés.
 
-### Suite immédiate Stats
+### Après DEV_5 — Stats / UI à poursuivre
 
-- [ ] richesse locale par joueur/start aux rayons HEX10/20/30/40 ;
-- [ ] comparaison joueurs/fair-play plus riche ;
-- [ ] comparaison A/B Stats dédiée : tableaux + graphes ;
-- [ ] densités par 1000 cellules de land/eau/support pertinent ;
-- [ ] blobs / composantes : désert, marais, boue, montagne/neige, forêts, lacs, minerais ;
-- [ ] massifs / lacs / rivières / clusters : tailles et distributions ;
-- [ ] statistiques de morphologie/compacité/longueur pertinentes ;
-- [ ] comparaison MapGen ↔ corpus natif ;
-- [ ] passe complète de nomenclature des Object IDs connus sans inventer les espèces/objets non calibrés ;
-- [ ] nouvelle palette/couleurs de graphes ;
-- [ ] suivi Terrain24 / Terrain22 / Terrain28 ;
-- [ ] autres métriques et graphes pertinents tant que lisibles/exploitables.
+- [ ] Recalibrer les distances de ressources autour des starts : conserver les rayons DEV_4 comme exploration mais étudier une lecture gameplay autour de ~50/60 HEX (claim rapide probable) et ~100 HEX (sécurité stratégique, notamment minerais).
+- [ ] Permettre d'ajouter aux slots A/B des cartes importées `.SAV`, `.EDM` et `.MAP`, pas seulement des générations conservées dans la session.
+- [ ] Couleurs A/B personnalisables.
+- [ ] Vue Hauteurs : remplacer à terme le simple dégradé blanc/gris par un rendu de type carte topographique / courbes ou classes d'altitude.
+- [ ] Densités par 1000 cellules de land/eau/support pertinent.
+- [ ] Comparaison MapGen ↔ corpus natif et bandes de référence.
+- [ ] Per-player agriculture/claims lorsque le runtime SAV permet une lecture fiable.
+- [ ] Enrichir les distributions/percentiles des massifs/lacs/rivières/clusters.
+- [ ] Continuer la nomenclature des IDs sans inventer les espèces/objets inconnus.
+- [ ] Explorer très tard l'utilisation de vrais sprites du jeu dans certains labels, uniquement si extraction propre et légitime des ressources graphiques possible ; ne jamais inventer de pseudo-sprites.
+- [ ] Agriculture : ajouter les nids d'abeilles uniquement après identification/calibration exacte.
 
 ## Updater
 
