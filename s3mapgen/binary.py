@@ -58,6 +58,9 @@ def _set_players(parts, starts:list[tuple[int,int]], goods_default:int):
         if t==1 and len(p)>=24 and not done[1]:
             vals=list(struct.unpack_from('<6I',p,0))
             vals[1]=count
+            # Map Info DWORD 2 is the editor's "Goods Default" / start resources
+            # setting. Historical bug: this was incorrectly written as count-1,
+            # yielding invalid values (e.g. 19 for 20P) and no selected preset.
             vals[2]=goods_default
             parts[i][1]=bytearray(struct.pack('<6I',*vals)); done[1]=True
         elif t==2 and not done[2]:
@@ -111,39 +114,69 @@ def read_starts(path:Path|str)->list[tuple[int,int]]:
     except Exception:
         pass
     return []
-def read_sav_state(path:Path|str)->MapState:
-    """Read the confirmed static/runtime map fields from a version-11 SAV. Read-only.
+def _extract_sav_starts_from_player_block(payload:bytes|bytearray, side:int, max_players:int=20)->list[tuple[int,int]]:
+    """Recover original player start coordinates from the confirmed SAV v11 player block.
 
-    Runtime terrain IDs are preserved verbatim (not normalized to Grass) so UI
-    analysis views can expose worked ground/paths (Terrain28), agricultural
-    ground (Terrain22) and future runtime terrain diagnostics.
+    Native corpus layout: 96-byte prefix, then 20 records of 328 bytes.
+    Each active record starts with <III> = player_id, start_x, start_y.
+    The sequence is contiguous from player 0; parsing stops at the first nonmatching id.
     """
+    out=[]
+    prefix=96; stride=328
+    for pid in range(max_players):
+        off=prefix+pid*stride
+        if off+12>len(payload): break
+        rec_pid,x,y=struct.unpack_from('<III',payload,off)
+        if rec_pid!=pid: break
+        if not (0<=x<side and 0<=y<side): break
+        out.append((int(x),int(y)))
+    return out
+
+
+def read_sav_state(path:Path|str)->MapState:
+    """Read confirmed static/runtime map fields and original starts from a version-11 SAV. Read-only."""
     import numpy as np
     b=Path(path).read_bytes()
     if len(b)<12: raise ValueError('SAV trop court')
     version=struct.unpack_from('<I',b,4)[0]
     if version!=11: raise ValueError(f'Version SAV non supportée: {version}')
-    off=8; cols={}
+    off=8; cols={}; player_blocks=[]
     while off+8<=len(b):
         t,total=struct.unpack_from('<II',b,off)
         if total<8 or off+total>len(b): raise ValueError(f'Part SAV invalide à {off}')
+        payload=decrypt(b[off+8:off+total],t)
         low=t&0xffff; x=(t>>16)&0xffff
-        if low==3:
-            p=decrypt(b[off+8:off+total],t)
-            if len(p)%24==0: cols[x]=p
+        if low==3 and len(payload)%24==0:
+            cols[x]=payload
+        elif t==6:
+            player_blocks.append(payload)
         off+=total
     if not cols: raise ValueError('Aucune colonne runtime type-3 trouvée')
     side=max(cols)+1
     if len(cols)!=side: raise ValueError(f'Colonnes SAV incomplètes: {len(cols)}/{side}')
-    area=np.zeros((side,side,6),np.uint8);area[:,:,3]=255
+    area=np.zeros((side,side,6),np.uint8); area[:,:,3]=255
     for x in range(side):
         p=cols[x]
         if len(p)!=side*24: raise ValueError(f'Payload colonne {x}: {len(p)} != {side*24}')
         a=np.frombuffer(p,dtype=np.uint8).reshape(side,24)
         area[:,x,0]=a[:,4]
-        area[:,x,1]=a[:,6]
-        area[:,x,2]=a[:,14]
+        area[:,x,1]=a[:,6]  # preserve runtime terrains, notably 22/28
+        # Byte 7 is the CURRENT runtime object field in played SAVs.
+        # Byte 14 preserves the static/original map object and becomes stale after
+        # gameplay (harvested trees/stones, crops, buildings, etc.). Importing a
+        # SAV must therefore expose byte 7 as MapState.objects.
+        area[:,x,2]=a[:,7]
         area[:,x,3]=a[:,8]
         area[:,x,5]=a[:,17]
-    st=MapState(side,area);st.metadata.update({'source_format':'SAV','source_path':str(path),'sav_version':version,'territories_available':True,'runtime_terrain_preserved':True})
+    starts=[]
+    for block in player_blocks:
+        candidate=_extract_sav_starts_from_player_block(block,side)
+        if len(candidate)>len(starts): starts=candidate
+    st=MapState(side,area); st.starts=starts
+    st.metadata.update({
+        'source_format':'SAV','source_path':str(path),'sav_version':version,
+        'territories_available':True,'runtime_terrain_preserved':True,'runtime_objects_preserved':True,
+        'sav_original_starts_available':bool(starts),
+        'start_territory_source':'sav_player_block_type6' if starts else 'unavailable',
+    })
     return st
