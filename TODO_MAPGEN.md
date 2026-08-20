@@ -1,5 +1,8 @@
 # Settlers III MapGen — TODO programme
 
+> Workflow global : `PROJECT_WORKFLOW.md`  
+> Snapshot courant/reprise : `references/SETTLERS3_CURRENT_SNAPSHOT.md`
+
 ## État de validation
 
 - [x] **v1.5 VALIDÉE / STABLE** pour Continental 768×768.
@@ -9,11 +12,17 @@
 - [x] Legacy / Upgraded séparés.
 - [x] Building Stones 115..127 et ID127 constructible gérés.
 - [x] Bonus de départ Upgraded validés.
-- [x] **v1.6 STABLE UI/outillage** : validation utilisateur terminée (RC_9 validée).
+- [x] **v1.6 STABLE UI/outillage** : validation utilisateur terminée (RC_9 validée), tag et GitHub Release publiés.
+- [x] Branches permanentes `dev` / `rc` / `main` mises en place.
+- [x] Workflow projet canonique + snapshot vivant de reprise mis en place.
 
-## Règle de release
+## Règle de release / branches
 
 **Ne pas modifier la génération v1.5 validée sans raison explicite.**
+
+- `dev` = développement courant + checkpoints fréquents ;
+- `rc` = candidate en validation ;
+- `main` = STABLE uniquement.
 
 v1.6 est une surcouche UI/outillage ; `generator_v15.py` reste le moteur de référence.
 
@@ -35,25 +44,59 @@ v1.6 est une surcouche UI/outillage ; `generator_v15.py` reste le moteur de réf
 - [x] Aide F1 dynamique.
 - [x] Palette P1..P20 validée visuellement ; P9 quasi blanc/ivoire et contours noirs validés.
 - [x] Contour de zone de départ d'origine sur import SAV : bloc joueur SAV + masque natif exact 3500 cellules, validé visuellement.
-- [ ] Comparaison A/B avancée côte-à-côte/diff uniquement si l'usage réel le justifie — non prioritaire.
+- [ ] Comparaison A/B avancée côte-à-côte/diff uniquement si l'usage réel le justifie.
 - [ ] Étendre éventuellement les commandes rebindables après retour d'usage.
 
-## Après validation v1.6 — GIGA passe Statistiques
+## v1.7 DEV — GIGA passe Statistiques
 
-- [ ] nombre exact de cellules par Terrain ID ;
-- [ ] quantité de chaque objet/ressource ;
-- [ ] stock total exploitable Building Stones ;
-- [ ] distribution des états 115..127 ;
-- [ ] graphes des ressources minières : cases + stock réel ;
-- [ ] densités par 1000 cellules de land ;
-- [ ] ratios land/ocean, biomes, eau intérieure, forêts, ressources ;
-- [ ] blobs / massifs / lacs / rivières / clusters ;
-- [ ] distances aux starts ;
-- [ ] percentiles utiles ;
+### Socle déjà implémenté
+
+- [x] nombre exact de cellules par Terrain ID ;
+- [x] familles de terrain avec transitions agrégées ;
+- [x] Boue/Mud incluse (`23/144/145`) ;
+- [x] quantité par Object ID ;
+- [x] minerais : cases occupées + stock réel + percentiles ;
+- [x] stock total exploitable Building Stones ;
+- [x] distribution des états 115..127, avec ID127 = 0 stock exploitable ;
+- [x] végétation : arbres adultes séparés des pousses d'arbre ID84 ;
+- [x] poissons / hydrologie de base ;
+- [x] agriculture runtime SAV ;
+- [x] relief / percentiles de hauteur ;
+- [x] distances entre starts ;
+- [x] exports JSON / CSV ;
+- [x] graphes intégrés + export PNG ;
+- [x] graphes en barres horizontales ;
+- [x] police de graphes compatible accents français ;
+- [x] ordre logique des familles de terrain ;
+- [x] cache Stats de session pour éviter le recalcul lors des bascules A/B/historique ;
+- [x] tests Stats intégrés ; suite courante : 42 PASS au checkpoint DEV_2/DEV_3.
+
+### Suite immédiate Stats
+
+- [ ] richesse locale par joueur/start aux rayons HEX10/20/30/40 ;
+- [ ] comparaison joueurs/fair-play plus riche ;
+- [ ] comparaison A/B Stats dédiée : tableaux + graphes ;
+- [ ] densités par 1000 cellules de land/eau/support pertinent ;
+- [ ] blobs / composantes : désert, marais, boue, montagne/neige, forêts, lacs, minerais ;
+- [ ] massifs / lacs / rivières / clusters : tailles et distributions ;
+- [ ] statistiques de morphologie/compacité/longueur pertinentes ;
+- [ ] comparaison MapGen ↔ corpus natif ;
+- [ ] passe complète de nomenclature des Object IDs connus sans inventer les espèces/objets non calibrés ;
+- [ ] nouvelle palette/couleurs de graphes ;
 - [ ] suivi Terrain24 / Terrain22 / Terrain28 ;
 - [ ] autres métriques et graphes pertinents tant que lisibles/exploitables.
 
-## Calibration multi-tailles — après UI + Stats
+## Updater
+
+- [x] `update_latest_release.bat` récupère uniquement la dernière GitHub Release STABLE dans `updates/` sans écraser l'installation.
+- [ ] comparaison locale de version ;
+- [ ] vérification SHA-256 automatique ;
+- [ ] extraction/installation atomique sûre ;
+- [ ] conservation des préférences ;
+- [ ] rollback ;
+- [ ] intégration UI éventuelle.
+
+## Calibration multi-tailles — après Stats
 
 Continental, une taille à la fois : 384×384 → 448×448 → 512×512 → 576×576 → 640×640 → 704×704 → reconfirmation 768×768.
 
@@ -73,16 +116,17 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - Legacy/Upgraded = contenu, règles, balance, ressources et objets.
 - Starts placés tôt et protégés.
 - Upgraded conserve impérativement les minerais v7 no-gap.
+- Objet ID84 = **pousse d'arbre** côté sémantique utilisateur ; ne pas afficher `SmallTree84` dans l'UI/Stats.
 - Aucun aperçu imaginaire.
 - Toute image/preview = rendu déterministe réellement issu des données EDM/MAP/SAV.
 - Ne jamais repartir d'une version invalidée du générateur.
+- Checkpointer souvent sur `dev` et maintenir le snapshot courant à jour.
 
 ## Futur UI / analyse
 
 - [ ] Vue dédiée Forêts / Carrières.
 - [ ] Éventuellement déplacer les contours initiaux SAV vers une vue dédiée pour épurer Global.
 - [ ] Nids d'abeilles amazones uniquement après identification IDs/runtime.
-- [ ] Passe complète de nomenclature des IDs et intégration inspecteur.
 - [ ] Refonte générale UI et section **Outils Map**.
 - [ ] Loupe flottante près du curseur, bouton + raccourci.
 - [ ] Passe dédiée police des labels joueurs P 1..P 20 avec propositions visuelles.
