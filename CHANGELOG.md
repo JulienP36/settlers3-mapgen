@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.6 — UI / tooling checkpoint — STABLE
+- Moteur de génération v1.5 conservé comme baseline validée ; aucune modification fonctionnelle du moteur n'est introduite par la release v1.6.
+- Import SAV v11 amélioré : lecture des starts d'origine depuis le bloc joueur dédié et conservation des données runtime pertinentes.
+- Reconstruction du territoire initial SAV à partir du masque natif exact de 3500 cellules, au lieu d'une approximation elliptique.
+- Correction de la lecture des objets agricoles runtime sur sauvegardes jouées ; vues Cultures et Chemins ajustées en conséquence.
+- Nouvelles vues et outils : Chemins, Cultures et Carte thermique.
+- Carte thermique validée pour arbres, Building Stones, poissons et ressources minières, avec couleurs cohérentes avec la vue Ressources.
+- Cache LRU transparent de session, historique de générations et comparaison A/B légère avec conservation du contexte de vue.
+- Raccourcis configurables et persistants, détection de conflits, reset global + individuel, aide F1 dynamique.
+- FR/EN persistant étendu aux principaux contrôles, vues, modes et archétypes ; sélecteur de langue avec drapeaux raster.
+- Thèmes clair/sombre harmonisés, y compris listes déroulantes et menus à images.
+- Palette joueurs P1..P20 recalée sur référence in-game et validée ; contour noir des marqueurs pour améliorer la lisibilité.
+- Palette de ressources de montagne recalée sur l'éditeur et validée.
+- Sélecteurs Vue et Carte thermique avec vraies icônes raster colorées, molette fonctionnelle et hover lisible dans les deux thèmes.
+- Overlay de progression déplacé dans la zone carte : une seule barre responsive avec détail technique intégré, validée en clair et sombre.
+- Navigation/zoom/recentrage, projection parallélogramme, sliders, inspecteur, cache, historique, A/B, Heatmap et vue Cultures validés lors de la passe RC.
+- Convention de build adoptée : `DEV`, `RC`, `STABLE`, avec noms de dossiers/archives normalisés.
+- Nettoyage du package final v1.6 STABLE : suppression des checklists RC, notes candidates et artefacts temporaires inutiles.
+- Prochaine étape : grosse passe Statistiques, puis validation Continental multi-tailles. Premier exécutable Windows prévu au jalon v2.0 après validation multi-tailles Continental.
+- **Statut : v1.6 STABLE.**
+
 ## v1.5 — Legacy/Upgraded audit + start clusters + resource-state fixes — VALIDÉE
 - Séparation conceptuelle puis implémentée entre **Legacy** et **Upgraded** : Legacy reste native-like hors correctifs de stabilité/validité ; Upgraded part de cette base et ajoute uniquement les améliorations explicitement validées.
 - Morphologie macro commune par archétype ; starts toujours placés très tôt et protégés contre les passes suivantes.
