@@ -9,108 +9,69 @@
 Le projet poursuit trois objectifs complémentaires :
 
 - **préserver le comportement historique du jeu** grâce au mode **Legacy**, qui sert de référence native et de base de reverse-engineering ;
-- **proposer une génération améliorée** grâce au mode **Upgraded**, construit sur la même base mais avec des améliorations volontaires de gameplay/équilibrage ;
-- **ouvrir progressivement la génération à l'utilisateur** avec un futur mode **Custom** et des **modificateurs orthogonaux** combinables avec Legacy/Upgraded.
+- **proposer une génération améliorée** grâce au mode **Upgraded**, qui applique les règles de gameplay, de morphologie, de ressources et de sécurité affinées au cours du projet ;
+- **ouvrir progressivement la génération à l'utilisateur** avec un futur mode **Custom**, où les paramètres pourront être ajustés manuellement tout en conservant les garde-fous critiques.
 
-La forme générale de la carte est séparée du mode de génération. Les **archétypes** définissent la macro-géographie ; le **mode** contrôle les règles de contenu, hydrologie, ressources, objets, balance et validations.
+La forme générale de la carte est volontairement séparée du mode de génération. Les **archétypes** définissent la macro-géographie (continent, grandes îles, petites îles, etc.), tandis que le **mode de génération** contrôle le relief, les zones de terrain, l'hydrologie détaillée, les ressources, les objets, les positions de départ, la balance et les validations.
 
-Les **positions de départ sont placées très tôt**. Toutes les passes suivantes doivent respecter les zones réservées afin d'éviter les anciennes positions invalides/crashs.
+Le projet repose sur une règle importante : les **positions de départ des joueurs sont placées très tôt** dans le pipeline. Le reste de la génération doit ensuite s'adapter à ces zones réservées afin de réduire les positions invalides et de permettre un meilleur équilibrage des ressources.
 
-Les aperçus visuels sont toujours des rendus déterministes issus des vraies données EDM/MAP/SAV ; aucune image fictive de carte n'est utilisée.
+Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.5 VALIDÉE / STABLE
+## État actuel — v1.6 STABLE / moteur v1.5 stable
 
-- **v1.3.2** : moteur de stabilité validé extérieurement sur Continental 768×768 Legacy/Upgraded 4P/20P (starts acceptés, aucun crash View Map/in-game).
-- **v1.4** : interface/visualisation validée (thème sombre, projection parallélogramme, overlays, zoom/drag, territoires initiaux, labels joueurs).
-- **v1.5** : release moteur validée/stable pour le périmètre Continental 768 calibré, intégrant l'audit complet Legacy/Upgraded, les nouveaux clusters de départ, les corrections Building Stones et la géométrie minière v7 no-gap canonique.
+**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.6 regroupe les ajouts UI/outillage post-v1.5 et ajoute les deux derniers TODO prioritaires avant la grosse passe Statistiques.
 
-Le correctif **Goods Default** est validé et conservé : `Legacy=Medium/2`, `Upgraded=High/3`, fallback sûr Medium.
+Référence moteur v1.5 :
+`S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-### Principaux changements v1.5
+La GUI v1.6 comprend notamment :
 
-- séparation explicite **Legacy / Upgraded** ;
-- macro-morphologie commune par archétype ;
-- neige commune `Rocky32 -> 35 -> 129 -> Snow128`, Terrain34 conservé comme variante Rocky minéralisable ;
-- hydrologie Upgraded : suppression/redistribution des plans d'eau 1–4 cellules + trimming de rivière size-scaled ;
-- minerais Upgraded : ~90 % du support montagneux accessible, ratios natifs empiriques, **géométrie v7 no-gap canonique**, stock/case augmenté ;
-- arbres `68..77 + 80..81` dans les deux modes ; Palms `78..79` comptées comme bois ; Upgraded ~130 % volume natif + SmallTree84 séparé ;
-- Mud natif en Legacy, désactivé en Upgraded ; Swamp Upgraded ~+30 % ;
-- petites plantes/fleurs/buissons/champignons identiques dans les deux modes ;
-- Decorative Stones natives en Legacy, réduites en Upgraded ; reefs uniquement Upgraded et éloignés des bords ;
-- **clusters de départ Upgraded sur la bordure du territoire initial (~HEX34)** : forêt `41 adultes + 21 SmallTree84`, pierres `8 ancres / 84 unités`, hors quotas globaux ;
-- Building Stones `115..127` variées au lieu d'un état uniforme ;
-- environ **20 Building Stone 13 / ID127** vides générées globalement sur 768 ; elles comptent dans la densité d'ancres mais jamais dans le stock exploitable ;
-- **ID127 est constructible dans le modèle statique** : son ancien footprint 7 cellules est libéré, contrairement aux états actifs ;
-- nouveaux validators dédiés au stock réel, à la variété `115..127`, à la constructibilité d'ID127 et aux récifs.
+- génération Legacy / Upgraded Continental 768×768 via le moteur v1.5 ;
+- import EDM / MAP / SAV et export EDM+MAP 768 ;
+- vues Global / Élévation / Ressources / Territoires / Chemins / Cultures / Carte thermique ;
+- thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
+- FR/EN persistant ;
+- inspecteur exact de cellule ;
+- cache LRU de session (8 générations), historique et comparaison A/B légère ;
+- raccourcis configurables/persistants avec détection de conflits et aide F1 ;
+- palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
+- **lecture des starts d'origine d'un SAV v11** et contour initial fondé sur le masque natif exact de 3500 cellules.
 
-> Les tailles autres que 768 sont visibles dans l'interface mais leur génération reste volontairement bloquée tant que leur calibration n'est pas validée. Le writer `.SAV` n'est pas encore implémenté : un SAV importé peut être analysé et copié, mais le programme n'invente pas un nouveau SAV.
+Le contour SAV n'est plus une ellipse approximative : les coordonnées de départ sont lues dans le bloc joueur du SAV et le masque initial canonique a été reconstruit à partir de 145 régions natives identiques. La vue Territoires continue, elle, d'afficher les claims runtime actuels.
 
-## Feuille de route immédiate
+> Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 
-L'ordre de travail actuellement retenu est :
-
-1. terminer les **TODO UI/outillage** ;
-2. enrichir fortement l'onglet **Statistiques** avec davantage de métriques, ventilations et graphiques ;
-3. valider progressivement les **tailles de maps 384 à 704** et leurs scalings ;
-4. démarrer ensuite le développement de l'archétype **Large Islands / Grandes îles** ;
-5. reprendre les modificateurs et autres améliorations après stabilisation de ces fondations.
-
-## Interface actuelle
-
-La GUI v1.5 reprend toute l'UX validée de v1.4 :
-
-- génération **Legacy** / **Upgraded**, Continental 768×768 ;
-- seed + nombre de joueurs ;
-- import `.EDM`, `.MAP`, `.SAV` ;
-- export `.EDM` / `.MAP` ;
-- vues Global / Heightmap / Ressources / Territoires ;
-- thème Sombre / Clair ;
-- overlays avec opacité ;
-- projection Carrée / Parallélogramme ;
-- zoom, molette et drag ;
-- contour des territoires initiaux et labels joueurs ;
-- validations, métadonnées, pipeline et statistiques ;
-- exports nommés `MapGenV1_5`.
+La **v1.6 STABLE** est le checkpoint UI/outillage validé. La priorité passe désormais à la **grosse passe Statistiques**, puis à la calibration multi-tailles Continental.
 
 ## Modes de génération
 
 ### Legacy
 
-Mode orienté fidélité au générateur original. Les différences volontaires sont limitées aux correctifs de stabilité, sérialisation, validité des starts et exceptions pratiques explicitement validées.
+Mode orienté fidélité au générateur original de Settlers III et au corpus natif analysé. Il sert aussi de baseline de comparaison pour le reverse-engineering.
 
 ### Upgraded
 
-Part du socle Legacy puis ajoute les améliorations assumées : hydrologie pratique, minerais plus exploitables, contenu/balance augmentés, clusters de départ, réduction des obstacles décoratifs et reefs rares contrôlés.
+Preset amélioré du projet. Il intègre les règles validées au fil des tests et du long-play : starts précoces, hydrologie corrigée, poissons et minerais rééquilibrés, SmallTree84, Building Stones avec footprint, décorations contrôlées, règles de transitions et validators spécifiques.
 
-La référence canonique actuelle est :
-
-`references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md`
+La matrice détaillée est disponible dans `references/SETTLERS3_UPGRADED_RULE_MATRIX_v1.md`.
 
 ### Custom
 
-Mode futur permettant d'exposer les paramètres de génération à l'utilisateur. Il reste réservé/non défini proprement.
-
-## Modificateurs futurs
-
-Les options transversales ne doivent pas créer de nouveaux modes. Elles seront combinables avec Legacy/Upgraded.
-
-Idées actuelles :
-
-- **Barebone** — retire seulement le cosmétique sans fonction gameplay ;
-- **Densité de forêt** ;
-- **Starting Crops** expérimental ;
-- **Montagnes plus réalistes** ;
-- **Réaliste** — distributions écologiques : arbres/plantes favorisés près de l'eau, champignons près des marais/sols humides, végétation modulée par biome/relief/humidité, sans sacrifier constructibilité ni gameplay.
+Mode futur permettant d'exposer les paramètres de génération à l'utilisateur. Il est actuellement réservé et non implémenté.
 
 ## Archétypes
 
 - **Continental** — implémenté ;
 - **Large Islands** — prévu ;
-- **Small Islands** — prévu.
+- **Small Islands** — prévu ;
+- d'autres macro-formes pourront être ajoutées sans dupliquer le moteur de génération.
 
-L'archétype décrit la macro-forme. Les objets, ressources, balance et règles de starts appartiennent au mode/modificateurs.
+L'archétype décrit principalement la **forme globale terre/eau**. Les objets, ressources, formes locales des zones, balance et logique de starts appartiennent au mode de génération.
 
 ## Architecture des starts
+
+Ordre conceptuel actuel :
 
 ```text
 MapConfig
@@ -121,18 +82,26 @@ Placement précoce des starts
   ↓
 Réservation des zones techniques
   ↓
-Biomes / hydrologie / ressources
+Relief / biomes / hydrologie détaillée
   ↓
-Objets + bonus locaux
+Ressources et balance locale
   ↓
-Accessibility finale
+Objets / décorations
+  ↓
+Hydrologie finale / poissons
   ↓
 Validators
   ↓
 Export
 ```
 
-Une passe tardive ne doit jamais invalider silencieusement un start réservé.
+Une passe tardive ne doit pas invalider un start réservé. Elle doit contourner la zone ou faire échouer explicitement la génération.
+
+## Morphologie Upgraded
+
+La première implémentation exécutable d'Upgraded 768 utilise encore le checkpoint terrain/height validé comme référence de morphologie locale. Cela évite de réinventer des formes déjà validées.
+
+La prochaine grosse étape de génération est de **généraliser cette morphologie Upgraded** afin de produire de nouvelles formes fraîches et compatibles avec plusieurs tailles et archétypes sans dépendre d'un unique checkpoint 768.
 
 ## Installation Windows
 
@@ -158,25 +127,21 @@ Dépendances Python principales : NumPy, SciPy et Pillow.
 
 ## Validation
 
-Les validators sont des garde-fous de non-régression ; ils ne remplacent pas le jeu.
+Les validators du programme sont des **garde-fous de non-régression**. Un PASS signifie que les règles encodées sont respectées ; il ne remplace pas une validation dans l'éditeur officiel ou en jeu.
 
-Hiérarchie de validation :
-
-`parser/checksum → éditeur → View Map/smoke → SAV runtime → long-play`
-
-La **v1.5 est validée/stable** pour le périmètre Continental 768 actuellement calibré. La référence finale est documentée dans `RELEASE_VALIDATION.md`. Le test pratique de construction sur ID127 reste un micro-test de régression facultatif et non bloquant.
+La hiérarchie de validation du projet reste : parser/checksum → éditeur → View Map/smoke test → SAV runtime → long-play.
 
 ## Documentation technique
 
-Références principales :
+Les références principales sont dans `references/`. En particulier :
 
-- `references/SETTLERS3_PREGEN_READ_FIRST.md` ;
-- `references/SETTLERS3_LEGACY_UPGRADED_AUDIT_20260819.md` ;
-- `references/SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` ;
-- `references/SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md` ;
-- `TODO_MAPGEN.md` ;
-- `RELEASE_VALIDATION.md`.
+- `SETTLERS3_PREGEN_READ_FIRST.md` — point d'entrée obligatoire avant toute modification/génération ;
+- `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` — règles canoniques ;
+- `SETTLERS3_UPGRADED_RULE_MATRIX_v1.md` — correspondance règles Upgraded / implémentation / validators ;
+- `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md` — format EDM/MAP ;
+- `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` — lecture SAV ;
+- `TODO_MAPGEN.md` — feuille de route courante.
 
 ## Versioning
 
-Les releases doivent mettre à jour code, tests, changelog et documentation avant création du tag. **v1.5 est la release stable actuelle pour Continental 768 calibré.**
+L'historique Git rétroactif est conservé depuis la v1.0 avec des tags de version. Les nouvelles releases doivent mettre à jour le code, le changelog, les tests et la documentation avant création du tag.
