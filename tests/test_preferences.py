@@ -14,3 +14,14 @@ def test_defaults_include_dark_mode_and_shortcuts():
 def test_default_overlay_opacity_is_75_percent():
     import s3mapgen.preferences as p
     assert p.DEFAULTS['overlay_alpha']==75
+
+
+def test_shift_shortcuts_use_uppercase_tk_keysym():
+    from s3mapgen.gui_v16 import App
+    assert App._tk_sequence('Ctrl+Shift+T') == '<Control-Shift-T>'
+    assert App._tk_sequence('Ctrl+Shift+C') == '<Control-Shift-C>'
+
+
+def test_simple_letter_shortcut_stays_lowercase_tk_keysym():
+    from s3mapgen.gui_v16 import App
+    assert App._tk_sequence('A') == '<a>'

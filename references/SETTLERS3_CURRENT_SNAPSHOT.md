@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — READ AFTER `PROJECT_WORKFLOW.md` WHEN RESUMING WORK.**
 >
-> Last refreshed: **2026-08-21 — v1.7 DEV_7**
+> Last refreshed: **2026-08-21 — v1.7 DEV_9**
 
 ## Repository model
 `main` = STABLE, `rc` = candidate under validation, `dev` = active development/checkpoints.
@@ -13,7 +13,7 @@
 - Reference lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
 - Protected hashes are listed in root `PROJECT_WORKFLOW.md` and must remain unchanged.
 
-## v1.7 DEV_5 — current development
+## v1.7 current development — DEV_9
 DEV_5 is a Stats/UI refactor based on DEV_4 user review.
 
 Implemented:
@@ -83,3 +83,16 @@ After Stats: Continental multi-size 384 → 448 → 512 → 576 → 640 → 704 
 - gradients massifs/lacs/rivières inversés ;
 - couleurs sémantiques A/B pour Terre/Pierre/Poisson ;
 - Stats schema v4 ; 55 tests PASS ; smoke SAV réel 768/10P PASS ; hashes protégés inchangés.
+
+
+## DEV_8 checkpoint
+Focused polish from the DEV_7 user review: Shift/AZERTY shortcut fix, sun/moon theme button, tab order cleanup, stable outlined chart values, collision-aware tiny-segment annotations, concise snow/radius notes, explicit three-point stone gradient, player/opponent chart markers, grouped nearby-mining player labels and lightweight top-3 medals. Automated validation: 57 PASS; real 768×768 / 10P SAV chart smoke PASS.
+
+
+## DEV_9 checkpoint
+- Mini-polish only; generation engine v1.5 unchanged.
+- External tiny-segment labels use left lane only.
+- Nearby mining excludes Snow-family-covered ore; global mining decomposition unchanged.
+- Nearest opponent cue: `→ [opponent color] Pn`.
+- Top-three massifs/lakes/rivers use compact `# + medal` labels.
+- Stats schema v5; 61 tests PASS; real SAV 768/10P chart smoke PASS.

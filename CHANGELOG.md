@@ -1,3 +1,10 @@
+## v1.7 DEV_9 — 2026-08-21
+- Mini-polish DEV_8 review: external chart values always use the left annotation lane.
+- Nearby mining excludes Snow-family-covered ore; Stats schema v5.
+- Nearest-opponent cue reordered to `→ [color] Pn`.
+- Top-3 component labels replaced by compact `# + medal` badges.
+- Generation engine v1.5 unchanged.
+
 ## v1.7 DEV_2 — 2026-08-20
 
 ## v1.7 DEV_5 — 2026-08-20

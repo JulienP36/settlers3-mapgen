@@ -142,3 +142,28 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - [ ] Synchronisation **optionnelle/désactivable** graphe ↔ vue map ; exemple Agriculture→Cultures, distances→vue relationnelle avec flèches.
 - [ ] Ajouter les maps importées à l'historique session et rendre la taille de l'historique configurable (base actuelle 8).
 - [ ] Revoir netteté/résolution des exports PNG graphes et vue map.
+
+## DEV_8 — polish retours DEV_7
+
+- [x] Corriger les raccourcis clavier avec `Shift` (`Ctrl+Shift+T`, `Ctrl+Shift+C`) sous Tk/Windows, y compris AZERTY.
+- [x] Ajouter un bouton raster soleil/lune pour basculer le thème.
+- [x] Placer Graphiques à côté de Statistiques, puis Paramètres à côté de Raccourcis.
+- [x] Valeurs de graphes en blanc avec contour noir fin, hors libellés d’échelle.
+- [x] Fallback des petits segments non nuls avec lignes de liaison + anti-chevauchement vertical.
+- [x] Stock minier : note concise pour la partie sous neige + légende minerais propre.
+- [x] Pierres : gradient explicite rouge → jaune → vert.
+- [x] Distances adversaires : joueur compact en axe, adversaire + flèche dans le graphe.
+- [x] Arbres/Pierres/Poissons proches : carré joueur + note 0–50 / 50–100.
+- [x] Minage proche : deux barres regroupées sous un seul joueur + carré joueur.
+- [x] Massifs/Lacs/Rivières : médailles légères top 3 sans recoloration du podium.
+- [ ] Passe dédiée Raccourcis plus tard : sélecteur/capture de touches, davantage de commandes, defaults repensés et config utilisateur étendue (JSON privilégié).
+- [ ] Étendre progressivement la config utilisateur persistante aux autres réglages utiles (historique, options UI, etc.) sans complexifier le format inutilement.
+
+## DEV_9 — mini-polish retours DEV_8
+
+- [x] Labels extérieurs des petits segments toujours placés à gauche.
+- [x] Stock minier proche : minerai sous famille Neige exclu des métriques locales.
+- [x] Distance adversaire : ordre `→ couleur adversaire label adversaire`.
+- [x] Podiums massifs/lacs/rivières : `# + médaille` pour les rangs 1–3.
+- [x] Stats schema v5 pour refléter la nouvelle sémantique du minage local.
+

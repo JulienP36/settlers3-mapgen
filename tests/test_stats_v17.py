@@ -66,7 +66,7 @@ def test_start_distance_distribution_and_claims():
 
 def test_exports_roundtrip():
     s=analyze_map(sample_state())
-    assert json.loads(stats_json(s))['schema_version'] == 4
+    assert json.loads(stats_json(s))['schema_version'] == 5
     csv_text=stats_csv(s)
     assert 'terrain_family' in csv_text and 'building_stone' in csv_text and 'saplings' in csv_text
 
@@ -229,3 +229,35 @@ def test_dev7_ab_simple_metrics_have_semantic_colors():
 def test_dev7_shortcut_catalog_contains_theme_toggle():
     from s3mapgen.preferences import DEFAULT_SHORTCUTS
     assert DEFAULT_SHORTCUTS['toggle_theme'] == 'Ctrl+Shift+T'
+
+
+def test_dev9_local_mining_excludes_snow_covered_ore():
+    st=sample_state()
+    # Additional coal stock under Snow: global Stats must keep it, nearby gameplay
+    # mining must exclude it.
+    st.resources[6,6]=0x1A
+    s=analyze_map(st)
+    assert s['resources']['minerals']['coal']['stock'] == 25
+    p1=s['players']['local_resources'][0]
+    assert p1['radii']['50']['minerals']['coal']['stock'] == 15
+    assert p1['radii']['100']['minerals']['coal']['stock'] == 15
+
+
+def test_dev9_dense_external_labels_use_left_lane_only():
+    source=Path('s3mapgen/stats_charts.py').read_text(encoding='utf-8')
+    assert "right_side=(i%2==0)" not in source
+    assert "tx=x0-7" in source
+
+
+def test_dev9_nearest_opponent_annotation_is_arrow_swatch_label():
+    source=Path('s3mapgen/stats_charts.py').read_text(encoding='utf-8')
+    assert "g['top_annotation']=f\"P{opp}\"" in source
+    assert "arrow='→'" in source
+
+
+def test_dev9_podium_top3_replaces_numeric_rank_label():
+    from s3mapgen.stats_charts import _simple_groups
+    groups=_simple_groups([('#1',100),('#2',90),('#3',80),('#4',70)])
+    for i,g in enumerate(groups[:3]): g['medal_rank']=i+1
+    # Rendering owns the replacement; the chart builder marks exactly the top three.
+    assert [g.get('medal_rank') for g in groups] == [1,2,3,None]

@@ -121,7 +121,11 @@ def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resourc
         adult=np.isin(o,ADULT_TREE_IDS) | np.isin(o,TREE_FAMILIES['palm'][0]); saplings=np.isin(o,SAPLING_IDS)
         stone_anchor=(o>=115)&(o<=127); stone_units=np.where(stone_anchor,np.maximum(0,127-o.astype(np.int16)),0)
         fish=water & ((r&0xF0)==0) & ((r&0x0F)>0); fish_qty=np.where(fish,r&0x0F,0)
-        mineral_masks={k:((r&0xF0)==fam) for k,(fam,_fr,_en) in MINERALS.items()}; mineral_qty=(r&0x0F).astype(np.int16)
+        # Local mining availability is a gameplay-oriented metric: ore hidden under
+        # the Snow family is intentionally excluded here. Global Stats still retain
+        # the full open/snow-covered split.
+        snow_family=np.isin(t,(ROCK_SNOW_TRANS,SNOW_TRANS,SNOW))
+        mineral_masks={k:(((r&0xF0)==fam) & ~snow_family) for k,(fam,_fr,_en) in MINERALS.items()}; mineral_qty=(r&0x0F).astype(np.int16)
         radii={}
         for radius in LOCAL_RADII:
             m=dist<=radius
@@ -361,7 +365,7 @@ def analyze_map(state) -> dict[str, Any]:
     }
 
     result = {
-        'schema_version': 4,
+        'schema_version': 5,
         'source': source,
         'general': {
             'side': int(state.side), 'cells': n, 'players': len(state.starts) or int(state.metadata.get('players', 0) or 0),

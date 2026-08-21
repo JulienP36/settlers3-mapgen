@@ -193,7 +193,7 @@ class App(V15StableApp):
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail=''
         super().__init__()
-        self.title('Settlers III MapGen v1.7 DEV_7 — moteur v1.5')
+        self.title('Settlers III MapGen v1.7 DEV_9 — moteur v1.5')
         self._apply_language();self._bind_shortcuts()
 
     def _build(self):
@@ -223,9 +223,12 @@ class App(V15StableApp):
         self.lang_combo.set_items([('fr',LANGUAGE_LABELS['fr'],'#0055a4','flag_fr'),('en',LANGUAGE_LABELS['en'],'#21468b','flag_en')])
         self.lang_combo.grid(row=1,column=15,padx=(8,3))
         ttk.Button(top,text='Aide',command=self._show_help).grid(row=1,column=16,padx=3)
+        self._theme_button=ttk.Button(top,command=self._toggle_theme,width=3)
+        self._theme_button.grid(row=1,column=17,padx=(5,3))
+        self._refresh_theme_button_icon()
         self.inspector_var=tk.StringVar(value='Inspecteur : —')
-        ttk.Label(top,textvariable=self.inspector_var,anchor='w').grid(row=4,column=0,columnspan=17,sticky='ew',pady=(3,1))
-        self.session_box=ttk.LabelFrame(top,text='Session / Comparaison',padding=(6,4));self.session_box.grid(row=5,column=0,columnspan=17,sticky='ew',pady=(5,2));self.session_box.columnconfigure(1,weight=1)
+        ttk.Label(top,textvariable=self.inspector_var,anchor='w').grid(row=4,column=0,columnspan=18,sticky='ew',pady=(3,1))
+        self.session_box=ttk.LabelFrame(top,text='Session / Comparaison',padding=(6,4));self.session_box.grid(row=5,column=0,columnspan=18,sticky='ew',pady=(5,2));self.session_box.columnconfigure(1,weight=1)
         ttk.Label(self.session_box,text='Historique session').grid(row=0,column=0,sticky='w')
         self.history_var=tk.StringVar(value='');self.history_combo=ttk.Combobox(self.session_box,textvariable=self.history_var,state='readonly',width=52)
         self.history_combo.grid(row=0,column=1,sticky='ew',padx=(6,3))
@@ -238,8 +241,33 @@ class App(V15StableApp):
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
         self._build_stats_charts_tab()
         self._shortcut_settings_tab()
+        self._reorder_analysis_tabs()
         self._theme_combo=self._find_combo_for_var(self.theme_var);self._projection_combo=self._find_combo_for_var(self.projection_var)
         self._capture_translatable_widgets()
+
+    def _reorder_analysis_tabs(self):
+        """Keep Statistics + Charts together, then Settings + Shortcuts."""
+        tabs=list(self.nb.tabs())
+        chart=next((t for t in tabs if self.nb.tab(t,'text')=='Graphiques'),None)
+        settings=next((t for t in tabs if self.nb.tab(t,'text')=='Paramètres'),None)
+        if chart and settings:
+            self.nb.insert(self.nb.index(settings),chart)
+
+    def _refresh_theme_button_icon(self):
+        if not hasattr(self,'_theme_button'):return
+        # Small deterministic raster icon: show the action (sun in dark mode, moon in light mode).
+        dark=self.prefs.get('theme','dark')=='dark'
+        im=Image.new('RGBA',(20,20),(0,0,0,0));d=ImageDraw.Draw(im)
+        if dark:
+            c=(245,195,55,255);d.ellipse((6,6,14,14),fill=c)
+            for x1,y1,x2,y2 in ((10,1,10,4),(10,16,10,19),(1,10,4,10),(16,10,19,10),(3,3,5,5),(15,15,17,17),(15,3,17,5),(3,15,5,17)):d.line((x1,y1,x2,y2),fill=c,width=2)
+            tip='Passer au thème clair' if self.prefs.get('language','fr')=='fr' else 'Switch to light theme'
+        else:
+            c=(75,95,145,255);d.ellipse((4,3,16,17),fill=c);d.ellipse((8,1,18,13),fill=(0,0,0,0))
+            tip='Passer au thème sombre' if self.prefs.get('language','fr')=='fr' else 'Switch to dark theme'
+        self._theme_button_icon=ImageTk.PhotoImage(im);self._theme_button.configure(image=self._theme_button_icon,text='',takefocus=False)
+        try:self._theme_button.configure(cursor='hand2')
+        except tk.TclError:pass
 
     def _build_stats_charts_tab(self):
         frame=ttk.Frame(self.nb,padding=10);self.nb.add(frame,text='Graphiques')
@@ -596,7 +624,7 @@ class App(V15StableApp):
     def _theme_changed(self):
         self.prefs['theme']=self._theme_key();self._save_prefs();self._apply_theme()
     def _toggle_theme(self):
-        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';self.theme_var.set(THEME_LABELS[self.prefs.get('language','fr')][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart()
+        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';self.theme_var.set(THEME_LABELS[self.prefs.get('language','fr')][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart()
     def _projection_changed(self):
         self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True)
 
@@ -696,7 +724,10 @@ class App(V15StableApp):
         for p in parts[:-1]:
             q=p.lower();mods.append({'ctrl':'Control','control':'Control','shift':'Shift','alt':'Alt'}.get(q,p))
         if key.upper().startswith('F') and key[1:].isdigit():key=key.upper()
-        elif len(key)==1:key=key.lower()
+        elif len(key)==1:
+            # Tk reports shifted letters as uppercase keysyms on Windows.  Using
+            # lowercase here made Ctrl+Shift+T/C unreliable (notably on AZERTY).
+            key=key.upper() if 'Shift' in mods else key.lower()
         return '<'+'-'.join(mods+[key])+'>'
     def _bind_shortcuts(self):
         for seq in self._bound_shortcuts:
