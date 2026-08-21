@@ -56,19 +56,41 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] autres métriques et graphes pertinents tant que lisibles/exploitables.
 
 
-## DEV_10 — socle Stats / Graphiques avant RC
+## DEV_10 / DEV_11 — socle Stats / Graphiques avant RC
 
 - [x] Page Statistiques assumée comme outil de **debug technique** : inventaire exhaustif de tous les Terrain IDs et Object IDs présents, sans limite Top 12.
 - [x] Densités normalisées `/1000` avec support pertinent : terre pour arbres/pierres/agriculture, eau pour poissons, montagne pour minerais.
-- [x] Export CSV enrichi avec les densités normalisées ; JSON schema v6.
+- [x] Export CSV enrichi avec les densités normalisées ; JSON schema v7 après correction Herbe sèche.
 - [x] Tooltips interactifs génériques sur les segments/barres des graphes, y compris A/B.
 - [x] Tooltips : fenêtre persistante pendant le mouvement + sémantique par segment (libre/sous neige, mer/lacs, roche/neige, rayons, minerais, A/B) — DEV_10_R2.
 - [x] Slots de comparaison A/B : état visible directement sur les boutons avec LED verte + identification courte de la map définie.
+- [x] DEV_11 : famille **Herbe** corrigée et segmentée en Herbe verte (Terrain 16) + Herbe sèche (Terrain 24), avec légende et tooltips dédiés.
+- [x] DEV_11 : tooltips enrichis avec les IDs contextuels utiles (terrain, objet ou ressource) sans ajouter systématiquement le terrain support quand il n'apporte rien.
+- [x] DEV_11 : onglet **Statistiques** confirmé comme surface utilisateur bilingue FR/EN (rapport structuré + inventaires debug).
 - [ ] Futur A/B : permettre de vider/réinitialiser séparément A, B, ou les deux ; les boutons LED/labels pourront remplacer le texte redondant sous l’historique.
 - [ ] Futur inventaires debug : tri commutable par quantité / ID / nom et option pour afficher les IDs connus mais absents de la map.
 - [ ] Futur : étendre le debug à d’autres familles runtime quand identifiées (settlers/colons, marchandises, planches, rondins, pierres taillées, outils, armes, bâtiments, etc.) sans inventer les IDs.
 - [ ] Futur : refonte UI légère de la section Comparaison, sans changer son fonctionnement de base.
 - [ ] Futur : synchronisation optionnelle/désactivable Graphiques ↔ vue Map, hors périmètre du socle v1.7 initial.
+- [ ] Futur proche traduction : ajouter **allemand (DE)** et **espagnol (ES)** à l'interface ; inclure explicitement l'onglet Statistiques dans toutes les langues utilisateur.
+- [ ] Futur proche : rendre configurables les **2 rayons** utilisés par Arbres/Pierres/Poissons/Stock minier proches (rester à deux intervalles ; pas de troisième rayon dans l'UI actuelle).
+- [ ] Futur Graphiques : proposer éventuellement plusieurs représentations d'une même métrique (ex. barres / donut) via un sélecteur, plutôt lors d'une grosse évolution Stats/Graphs.
+- [ ] Futur Graphiques : histogrammes de distribution des tailles de massifs/lacs/rivières.
+- [ ] Futur Graphiques : profil radial/cumulatif des ressources autour d'un start.
+- [ ] Idée expérimentale/non garantie : radar léger de richesse par joueur uniquement si une représentation non trompeuse apporte une vraie valeur.
+- [ ] Futur comparaison corpus : boxplots / bandes de référence pour situer MapGen dans les distributions natives lorsque ce chantier de calibration sera ouvert.
+- [ ] Très lointain/incertain : détails géométriques supplémentaires dans les tooltips massifs/lacs/rivières (périmètre, bbox, compacité, allongement) seulement si l'usage le justifie.
+
+## v1.8 / workflow de génération — planifié après v1.7
+
+- [ ] **Génération par lot / Batch Generation** : fenêtre dédiée pour préparer et lancer plusieurs maps avec les mêmes paramètres disponibles qu’une génération unitaire (mode, archétype, taille, joueurs, seed, etc.).
+- [ ] Première version limitée à **4 maps simultanées** ; architecture extensible jusqu’à 8 seulement après mesure du coût réel RAM/temps/cache.
+- [ ] Chaque map du lot possède un état visuel compact (attente / génération / terminée / erreur) et ses propres paramètres.
+- [ ] Permettre d’affecter directement un résultat du batch au slot **Comparaison A** ou **Comparaison B**.
+- [ ] Réutiliser le pipeline de génération existant ; ne pas créer un second moteur divergent.
+- [ ] **Comparaison multi-maps 3+ : fonctionnalité planifiée à très forte probabilité**, distincte de l’A/B actuelle. La repousser après une grosse passe sur le générateur afin qu’elle serve ensuite de banc d’analyse rapide pour les évolutions profondes.
+- [ ] Prévoir la multi-comparaison comme outil particulièrement utile pour comparer plusieurs variantes d’un même seed, plusieurs tailles/configurations, et plus tard plusieurs combinaisons de **Modifiers**.
+- [ ] **Modifiers / Modificateurs** : fonctionnalité future conservée explicitement dans la roadmap. Objectif : appliquer volontairement des modifications fortes/amusement aux règles ou proportions de génération (ex. eau, montagnes, ressources, végétation, etc.) sans transformer chaque variante en nouvel archétype. Les paramètres exacts et garde-fous seront définis lors du chantier dédié.
 
 ## Calibration multi-tailles — après UI + Stats
 

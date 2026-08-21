@@ -41,6 +41,7 @@ MUD_IDS = (23, 144, 145)
 MOUNTAIN_ANALYSIS_IDS = tuple(sorted(set(MOUNTAIN_IDS + (34,))))
 
 LOCAL_RADII = (10, 20, 30, 40, 50, 100)
+DRY_GRASS = 24
 
 
 def _hex_distance_grid(side: int, x0: int, y0: int) -> np.ndarray:
@@ -145,7 +146,7 @@ def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resourc
 
 TERRAIN_FAMILIES = (
     ('water', WATER_IDS, 'Eau', 'Water'),
-    ('grass', (GRASS,), 'Herbe', 'Grass'),
+    ('grass', (GRASS, DRY_GRASS), 'Herbe', 'Grass'),
     ('desert', DESERT_IDS, 'Désert', 'Desert'),
     ('mountain', MOUNTAIN_ANALYSIS_IDS, 'Montagne', 'Mountain'),
     ('snow', (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW), 'Neige', 'Snow'),
@@ -161,7 +162,7 @@ TERRAIN_NAMES = {
     16: ('Herbe', 'Grass'), 17: ('Transition roche 1', 'Rock transition 1'),
     20: ('Transition herbe/désert', 'Grass/desert transition'),
     21: ('Transition herbe/marais', 'Grass/swamp transition'),
-    22: ('Agriculture runtime', 'Runtime agriculture'), 23: ('Boue', 'Mud'), 24: ('Herbe jaune', 'Yellow grass'),
+    22: ('Agriculture runtime', 'Runtime agriculture'), 23: ('Boue', 'Mud'), 24: ('Herbe sèche', 'Dry grass'),
     28: ('Chemin runtime', 'Runtime path'), 32: ('Roche', 'Rocky'),
     33: ('Transition roche 2', 'Rock transition 2'), 34: ('Détail roche', 'Rocky detail'),
     35: ('Transition roche/neige', 'Rock/snow transition'), 48: ('Rivage', 'Shore'),
@@ -365,13 +366,14 @@ def analyze_map(state) -> dict[str, Any]:
     }
 
     result = {
-        'schema_version': 6,
+        'schema_version': 7,
         'source': source,
         'general': {
             'side': int(state.side), 'cells': n, 'players': len(state.starts) or int(state.metadata.get('players', 0) or 0),
             'land_cells': land_n, 'water_cells': int(water.sum()),
             'ocean_cells': ocean_cells, 'inland_water_cells': inland_water_cells,
             'land_pct': _pct(land_n, n), 'water_pct': _pct(int(water.sum()), n),
+            'green_grass_cells': int((T == GRASS).sum()), 'dry_grass_cells': int((T == DRY_GRASS).sum()),
             'mountain_cells': support_n, 'mountain_pct_land': _pct(support_n, land_n),
             'mountain_non_snow_cells': int(mountain_non_snow_mask.sum()), 'snow_family_cells': int(snow_family_mask.sum()),
             'desert_cells': int(np.isin(T, DESERT_IDS).sum()), 'swamp_cells': int(np.isin(T, SWAMP_IDS).sum()),

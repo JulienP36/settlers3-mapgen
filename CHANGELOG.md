@@ -1,3 +1,11 @@
+## v1.7 DEV_11 — 2026-08-21
+- Final planned feature DEV before v1.7 RC.
+- Corrected Terrain ID24 classification: Grass now includes and visually segments Green Grass ID16 + Dry Grass ID24.
+- Added contextual terrain/object/resource IDs to graph tooltips; global mining tooltips identify both mineral ID and open-rock/Snow-family terrain IDs.
+- Confirmed Statistics as a structured FR/EN user-facing surface; Stats schema v7.
+- Updated forward TODOs without adding Graph↔Map coupling or extra proximity radii.
+- Generation engine v1.5 unchanged.
+
 ## v1.7 DEV_9 — 2026-08-21
 - Mini-polish DEV_8 review: external chart values always use the left annotation lane.
 - Nearby mining excludes Snow-family-covered ore; Stats schema v5.

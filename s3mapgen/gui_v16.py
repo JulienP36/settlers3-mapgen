@@ -354,6 +354,8 @@ class App(V15StableApp):
         if hit is None:
             self._hide_chart_tooltip();return
         unit=hit.get('unit','');text=f"{hit.get('label','')}\n{hit.get('value','')}"+(f" {unit}" if unit else '')
+        details=hit.get('details') or []
+        if details:text+='\n'+'\n'.join(str(line) for line in details)
         dark=self.prefs.get('theme','dark')=='dark';bg='#202124' if dark else '#fffdf5';fg='#f1f3f4' if dark else '#202124'
         # Keep one tooltip window alive while the mouse moves across chart regions.
         # Recreating the Toplevel on every <Motion> caused visible flicker/disappearance.

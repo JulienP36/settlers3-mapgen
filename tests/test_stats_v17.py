@@ -66,7 +66,7 @@ def test_start_distance_distribution_and_claims():
 
 def test_exports_roundtrip():
     s=analyze_map(sample_state())
-    assert json.loads(stats_json(s))['schema_version'] == 6
+    assert json.loads(stats_json(s))['schema_version'] == 7
     csv_text=stats_csv(s)
     assert 'terrain_family' in csv_text and 'building_stone' in csv_text and 'saplings' in csv_text
 
@@ -265,7 +265,7 @@ def test_dev9_podium_top3_replaces_numeric_rank_label():
 
 def test_dev10_normalized_densities_and_full_debug_ids():
     s = analyze_map(sample_state())
-    assert s['schema_version'] == 6
+    assert s['schema_version'] == 7
     d = s['densities']
     assert 'adult_trees_per_1000_land' in d
     assert 'building_stone_stock_per_1000_land' in d
@@ -314,3 +314,60 @@ def test_dev10_r2_density_report_one_metric_per_line():
     lines = [line for line in block.splitlines() if '/ 1000' in line]
     assert len(lines) == 7
     assert all(' | ' not in line for line in lines)
+
+
+
+def test_dev11_dry_grass_is_part_of_grass_and_segmented():
+    st=sample_state()
+    st.terrain[4,10]=24
+    st.terrain[4,11]=24
+    s=analyze_map(st)
+    fam={r['key']:r for r in s['terrain']['families']}
+    assert fam['grass']['cells'] == s['general']['green_grass_cells'] + s['general']['dry_grass_cells']
+    assert s['general']['dry_grass_cells'] == 2
+    _im,regions=render_stats_chart(s,'terrain_families',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    dry=[r for r in regions if 'Herbe sèche' in r['label']]
+    green=[r for r in regions if 'Herbe verte' in r['label']]
+    assert dry and green
+    assert any('24' in line for line in dry[0].get('details',[]))
+    assert any('16' in line for line in green[0].get('details',[]))
+
+
+def test_dev11_mining_tooltips_include_resource_and_segment_terrain_ids():
+    st=sample_state()
+    # Put coal under pure snow as well as on open rock.
+    st.resources[6,6]=0x1A
+    s=analyze_map(st)
+    _im,regions=render_stats_chart(s,'mineral_stock',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    coal_open=next(r for r in regions if r['label']=='Charbon · Libre')
+    coal_snow=next(r for r in regions if r['label']=='Charbon · Sous neige')
+    assert any('ID 16 (0x10)' in line for line in coal_open['details'])
+    assert any('17' in line and '32' in line for line in coal_open['details'])
+    assert any('ID 16 (0x10)' in line for line in coal_snow['details'])
+    assert any('35' in line and '128' in line for line in coal_snow['details'])
+
+
+def test_dev11_object_and_agriculture_tooltip_ids():
+    s=analyze_map(sample_state())
+    _im,forest=render_stats_chart(s,'forestry',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    adult=next(r for r in forest if r['label']=='Arbres adultes')
+    assert any('68' in line and '81' in line for line in adult['details'])
+    _im,agri=render_stats_chart(s,'agriculture',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    wheat=next(r for r in agri if r['label']=='Blé')
+    assert any('85' in line and '93' in line for line in wheat['details'])
+
+
+def test_dev11_statistics_report_is_bilingual_user_facing_surface():
+    s=analyze_map(sample_state())
+    fr=format_stats_report(s,'fr'); en=format_stats_report(s,'en')
+    assert 'RÉSUMÉ' in fr and 'RESSOURCES' in fr and 'DENSITÉS NORMALISÉES / 1000' in fr
+    assert 'SUMMARY' in en and 'RESOURCES' in en and 'NORMALIZED DENSITIES / 1000' in en
+    assert 'DEBUG — ALL PRESENT TERRAIN IDs' in en and 'DEBUG — ALL PRESENT OBJECT IDs' in en
+
+
+def test_dev11_r2_ab_land_tooltip_uses_land_cells_label():
+    s = analyze_map(sample_state())
+    fr = {row[0]: row for row in build_ab_metrics(s, s, fr=True)}
+    en = {row[0]: row for row in build_ab_metrics(s, s, fr=False)}
+    assert fr['Terre'][3][0][2] == 'Cases terrestres'
+    assert en['Land'][3][0][2] == 'Land cells'
