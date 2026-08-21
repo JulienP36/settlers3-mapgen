@@ -1,86 +1,182 @@
+## v1.7 STABLE — 2026-08-21
+- Promoted RC_1 after user validation on Windows.
+- User smoke validation: GUI operational, exports operational, exported EDM reloads correctly, and in-game View Map works without regression.
+- No feature changes from RC_1; release promotion and documentation/archive hygiene only.
+- Archived v1.7 DEV/RC notes under `references/release_notes/v1_7_history/`.
+
+## v1.7 RC_1 — 2026-08-21
+- Feature freeze after user validation of DEV_11_R2.
+- Global release review completed; no functional blocker found.
+- Fixed stale GUI window title (`DEV_9` → `v1.7 RC_1`).
+- Refreshed README, release validation and current snapshot for the real v1.7 RC phase.
+- No generation-engine change.
+
+## v1.7 DEV_11 — 2026-08-21
+- Final planned feature DEV before v1.7 RC.
+- Corrected Terrain ID24 classification: Grass now includes and visually segments Green Grass ID16 + Dry Grass ID24.
+- Added contextual terrain/object/resource IDs to graph tooltips; global mining tooltips identify both mineral ID and open-rock/Snow-family terrain IDs.
+- Confirmed Statistics as a structured FR/EN user-facing surface; Stats schema v7.
+- Updated forward TODOs without adding Graph↔Map coupling or extra proximity radii.
+- Generation engine v1.5 unchanged.
+
+## v1.7 DEV_9 — 2026-08-21
+- Mini-polish DEV_8 review: external chart values always use the left annotation lane.
+- Nearby mining excludes Snow-family-covered ore; Stats schema v5.
+- Nearest-opponent cue reordered to `→ [color] Pn`.
+- Top-3 component labels replaced by compact `# + medal` badges.
+- Generation engine v1.5 unchanged.
+
+## v1.7 DEV_2 — 2026-08-20
+
+## v1.7 DEV_5 — 2026-08-20
+- Stats chart redesign: vertical normal charts, semantic colors and segmented bars.
+- Water split Ocean/Lakes; Mountain split non-snow/Snow; mining stock split outside/under Snow family.
+- Building Stone states renamed by remaining stock; Forestry Resources category; Agriculture colors aligned with map view.
+- Compact same-row A/B comparison.
+- Land-height distribution used for height chart; global min removed from chart.
+- Read-only selectable report panes and progress feedback for uncached Stats during history/comparison.
+- Stats schema v3; 49 tests PASS.
+- Cache LRU dédié aux statistiques dérivées pour accélérer historique et bascule A/B.
+- Correction du comptage des arbres adultes : IDs 68–77 et 80–81 pris en compte ; 73–77/80–81 libellés comme arbres adultes sans inventer d’espèce.
+- ID84 conservé comme « Pousse d’arbre » / « Tree sapling ».
+- Graphes explicitement horizontaux (catégories Y, valeurs X) avec grille de lecture.
+- Police système Unicode pour accents français (Segoe UI/Arial/DejaVu selon plateforme).
+- Familles terrain ordonnées : Herbe, Montagne, Désert, Marais, Boue, Rivage, Rivière, Eau.
+- Ajout de la famille Boue (23/144/145), visible même à 0 dans le graphe.
+- Transitions agrégées dans leurs familles analytiques (Désert, Marais, Montagne).
+- Palette graphique centralisée pour permettre une refonte couleur ultérieure sans toucher aux calculs.
+- 42 tests automatisés PASS ; hashes du moteur v1.5 inchangés.
+
+## v1.7 DEV_1 — 2026-08-20
+
+- Première passe GIGA Stats sans modification du moteur de génération v1.5.
+- Nouveau modèle d’analyse structuré : terrain, objets, minerais, poissons, végétation, Building Stones, agriculture, relief, hydrologie et starts.
+- `Object ID 84` exposé comme **Pousse d’arbre / Tree sapling**, jamais comme identifiant technique utilisateur.
+- Stock minier réel (quantité basse du byte ressource), distributions et occupation du support montagne.
+- Building Stones 115..127 : anchors, états, stock exploitable exact et ID127 à stock nul.
+- Premiers graphes intégrés : terrains, stock minier, états de pierres, végétation, hauteurs, agriculture et distances de starts.
+- Exports Stats JSON, CSV et graphe PNG.
+- 38 tests automatisés PASS ; hashes moteur/profils/librairie v1.5 inchangés.
+
+## v1.6 STABLE — 2026-08-20
+
+- RC_9 validée comme checkpoint final v1.6.
+- UI/outillage post-v1.5 consolidé : Heatmap, vues Chemins/Cultures, FR/EN, inspecteur, cache/historique/A-B, raccourcis, thèmes, palettes, import SAV runtime et territoire initial exact.
+- Overlay de chargement centré dans la zone carte validé en thèmes clair et sombre.
+- Nettoyage des checklists, notes et manifests temporaires de RC avant packaging STABLE.
+- Moteur de génération v1.5 et profils Legacy/Upgraded conservés inchangés.
+- Prochaine étape : grosse passe Statistiques.
+
+## v1.6 RC_9 — 2026-08-20
+
+- Ajustement ultra ciblé de l’overlay de progression : en thème clair, suppression du halo/contour noir autour du texte dans la barre.
+- Couleur du texte inchangée ; rendu thème sombre inchangé.
+- Moteur v1.5, profils et données natives inchangés.
+
 # Changelog
 
-## v1.6 — UI / tooling checkpoint — STABLE
-- Moteur de génération v1.5 conservé comme baseline validée ; aucune modification fonctionnelle du moteur n'est introduite par la release v1.6.
-- Import SAV v11 amélioré : lecture des starts d'origine depuis le bloc joueur dédié et conservation des données runtime pertinentes.
-- Reconstruction du territoire initial SAV à partir du masque natif exact de 3500 cellules, au lieu d'une approximation elliptique.
-- Correction de la lecture des objets agricoles runtime sur sauvegardes jouées ; vues Cultures et Chemins ajustées en conséquence.
-- Nouvelles vues et outils : Chemins, Cultures et Carte thermique.
-- Carte thermique validée pour arbres, Building Stones, poissons et ressources minières, avec couleurs cohérentes avec la vue Ressources.
-- Cache LRU transparent de session, historique de générations et comparaison A/B légère avec conservation du contexte de vue.
-- Raccourcis configurables et persistants, détection de conflits, reset global + individuel, aide F1 dynamique.
-- FR/EN persistant étendu aux principaux contrôles, vues, modes et archétypes ; sélecteur de langue avec drapeaux raster.
-- Thèmes clair/sombre harmonisés, y compris listes déroulantes et menus à images.
-- Palette joueurs P1..P20 recalée sur référence in-game et validée ; contour noir des marqueurs pour améliorer la lisibilité.
-- Palette de ressources de montagne recalée sur l'éditeur et validée.
-- Sélecteurs Vue et Carte thermique avec vraies icônes raster colorées, molette fonctionnelle et hover lisible dans les deux thèmes.
-- Overlay de progression déplacé dans la zone carte : une seule barre responsive avec détail technique intégré, validée en clair et sombre.
-- Navigation/zoom/recentrage, projection parallélogramme, sliders, inspecteur, cache, historique, A/B, Heatmap et vue Cultures validés lors de la passe RC.
-- Convention de build adoptée : `DEV`, `RC`, `STABLE`, avec noms de dossiers/archives normalisés.
-- Nettoyage du package final v1.6 STABLE : suppression des checklists RC, notes candidates et artefacts temporaires inutiles.
-- Prochaine étape : grosse passe Statistiques, puis validation Continental multi-tailles. Premier exécutable Windows prévu au jalon v2.0 après validation multi-tailles Continental.
-- **Statut : v1.6 STABLE.**
+## v1.6 RC_8 — 2026-08-20
 
-## v1.5 — Legacy/Upgraded audit + start clusters + resource-state fixes — VALIDÉE
-- Séparation conceptuelle puis implémentée entre **Legacy** et **Upgraded** : Legacy reste native-like hors correctifs de stabilité/validité ; Upgraded part de cette base et ajoute uniquement les améliorations explicitement validées.
-- Morphologie macro commune par archétype ; starts toujours placés très tôt et protégés contre les passes suivantes.
-- Hydrologie : Legacy conserve les petits étangs/rivières natives ; Upgraded supprime/redistribue les plans d'eau de 1–4 cellules et applique un trimming de rivière calibré par taille (`~0.0245*side + 34.7`).
-- Neige commune Legacy/Upgraded, avec chaîne validée `Rocky32 -> 35 -> 129 -> Snow128`; Terrain34 reste une variante Rocky interne rare et minéralisable.
-- **Minerais Upgraded : géométrie v7 no-gap canonique restaurée et revalidée visuellement**. Blobs pleins, compacts, légèrement ovoïdes, tailles lognormales calibrées, aucun trou/singleton/moat forcé, fusion naturelle autorisée.
-- Minerais Upgraded : cible ~90 % du support montagneux, ratios empiriques natifs, quantité/case +30 % cap15, minerai sous Snow et Terrain34 valide ; Legacy conserve son comportement séparé native-like.
-- Arbres : pool natif complet `68..77 + 80..81` dans les deux modes ; Palms `78..79` comptées comme bois récoltable. Upgraded utilise ~130 % du volume natif complet + SmallTree84 séparé.
-- Mud conservé en Legacy, désactivé en Upgraded. Terrain24 conservé en Legacy et différé en Upgraded pour une passe isolée ultérieure.
-- Swamp Upgraded ~+30 % global avec protection HEX6 ; Reeds restent natifs dans les deux modes.
-- Decorative Stones : densité native Legacy, environ ÷10 Upgraded ; Reefs : Legacy 0, Upgraded rares et à au moins 2 cellules des bords.
-- **Bonus de départ Upgraded** : forêt `41 adultes + 21 SmallTree84` par joueur ; tas de pierre `8 ancres / 84 unités`, centrés sur la bordure du territoire initial (~HEX34). Validation visuelle obtenue.
-- Building Stones globales : états `115..127` variés, Upgraded biaisé vers les états plus pleins ; répartition visuelle validée.
-- Building Stone 13 / ID127 : ~20 ancres globales sur 768, 0 stock, exclues du stock exploitable ; footprint statique libéré (`accessibility=0`).
-- Validators v1.5 : quotas arbres/SmallTree84/Palms, ancres/stock/variété/ID127, constructibilité statique ID127, récifs, starts, hydrologie, minerais, poissons et transitions.
-- Goods Default verrouillé : Legacy=Medium (`2`), Upgraded=High (`3`).
-- Runtime final `generator_v15.py`; GUI/CLI/exports nommés v1.5.
-- Référence validée : `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
-- L'ancienne candidate `seed_2026082201` est invalidée pour ses formes de minerais.
-- **Validation finale utilisateur** : ouverture éditeur OK, starts OK, View Map/in-game sans crash, rendu général validé. Le test pratique ID127 est différé sur micro-map et n'est pas bloquant.
-- **Statut : v1.5 VALIDÉE / STABLE.**
+- remplace la popup de progression par un overlay responsive centré dans la vue carte ;
+- conserve une seule barre de progression ;
+- affiche le détail technique directement dans la barre ;
+- adapte automatiquement la largeur et le centrage au viewport carte ;
+- aucune modification du moteur de génération v1.5.
 
-## v1.4 — dark mode / visualization comfort — VALIDÉE
-- Nouveau thème **Sombre / Clair**, sombre par défaut, configurable dans un nouvel onglet `Paramètres`.
-- Préférences d'affichage persistées dans le profil utilisateur Windows (`APPDATA/Settlers3MapGen/settings.json`).
-- Listes déroulantes corrigées en thème sombre : fond sombre et texte clair, aussi bien fermées qu'ouvertes.
-- Slider d'opacité pour Heightmap / Ressources / Territoires afin de superposer les couches à la map globale.
-- Les sliders Zoom / Opacité / Sensibilité molette se positionnent directement à l'endroit cliqué sur leur barre.
-- Projection optionnelle **Parallélogramme** pour rapprocher la visualisation de la géométrie affichée en jeu, sans modifier les données de map.
-- Projection parallélogramme recalée sur un décalage de **0,5 cellule par ligne**.
-- Navigation : drag de la carte dans le canvas.
-- Zoom molette : recalcul temporisé + cache de la couche de base pour réduire la latence ; sensibilité réglable.
-- Barre de progression : génération + import + export + aperçu PNG ; état terminé bleu puis disparition automatique, erreur rouge.
-- Les aperçus exportés respectent maintenant la vue, l'opacité et la projection sélectionnées.
-- Starts : ajout d'un contour non rempli du **territoire initial**, coloré selon le joueur et dimensionné d'après les SAV natifs : 3500 cellules, étendue ±35 cellules.
-- Le territoire initial est un vrai cercle dans la géométrie parallélogramme et apparaît donc déformé/incliné en vue carrée.
-- Marqueurs `P1` à `P20` : couleur du joueur et rendu bitmap net, sans anti-aliasing, cohérent avec le pixel art de la map.
-- En projection parallélogramme, les textes `P1` à `P20` sont ajoutés après projection et restent donc droits / non déformés.
-- Palette joueur unifiée avec la vue Territoires pour conserver la même correspondance de couleurs.
-- Tests ajoutés / adaptés pour les préférences, le blend d'opacité, la projection parallélogramme et les marqueurs de starts.
-- Validation visuelle utilisateur finale : cercle territoire et combobox sombre contrôlés OK ; v1.4 promue hors statut candidate.
-- **Correctif Goods Default validé** : le 3e DWORD de Map Info n'est plus écrit comme `player_count - 1` ; il encode désormais un preset valide (`Legacy=Medium/2`, `Upgraded=High/3`, fallback Medium).
-- Validation en jeu du correctif Goods Default sur deux générations fraîches v1.4 4P : réglages Medium/High visibles dans `Edit Map Settings` et aucun crash au démarrage avec `Défaut`.
-- **Morphologie Upgraded indépendante : première candidate validée** (`seed 2026081908`, Continental 768×768 4P). Géographie jugée excellente, starts OK, aucun crash ; relief montagneux vérifié conforme à la référence native 768/4P source.
+## v1.6 RC_7 — popup robuste / molette / hover menus raster
 
-## v1.3.2 — editor-safe starts / snow blocking / swamp transitions — VALIDÉE
-- Validation utilisateur sur **4 générations Continental 768×768** : Legacy 4 joueurs, Legacy 20 joueurs, Upgraded 4 joueurs et Upgraded 20 joueurs.
-- Sur les 4 générations : positions de départ acceptées par l'éditeur et aucun crash lors de la vue in-game.
-- Marais : correction confirmée lors des tests.
-- Neige : zones intérieures désormais non traversables comme prévu.
+- Popup de chargement : abandon du placement absolu interne ; le contenu remplit maintenant réellement le `Toplevel` fixe 420×108, avec barre 384 px et marges symétriques de 18 px.
+- Le changement de texte de progression ne modifie plus la géométrie du dialogue ni de la barre.
+- Molette restaurée sur les sélecteurs raster Vue, Filtre carte thermique et Langue.
+- Hover/pressed des sélecteurs raster explicitement thémé : sombre lisible en thème sombre, clair lisible en thème clair.
+- Nommage de release normalisé : `DEV`, `RC`, `STABLE`; dossier de cette build `mapgen_v1_6_RC_7`.
+- Moteur de génération v1.5 inchangé.
+
+## v1.6 RC_6 — popup fixe / filtre thermique / drapeaux
+
+- Fenêtre de chargement à géométrie fixe 420×108 : les changements de libellé ne redimensionnent plus la popup et la barre reste centrée avec marges symétriques.
+- `Ressource carte thermique` renommé **Filtre carte thermique** / **Heatmap filter**, pour ne pas limiter le sélecteur aux seules ressources à terme.
+- Sélecteur de langue remplacé par le même système raster coloré que Vue/Carte thermique, avec drapeaux France et Royaume-Uni dessinés par Pillow (aucun emoji dépendant du rendu Windows).
+- Icônes Vue/Carte thermique, cadenas, palettes joueurs/minerais, traductions et thème clair conservés tels que validés en R5/R4.
+- Moteur de génération v1.5 inchangé.
+
+## v1.6 RC_5 — sélecteurs raster / verrouillage / finition popup
+
+- Remplacement des emoji de couleur des listes Vue et Carte thermique par de vraies icônes raster dessinées par Pillow : rendu coloré indépendant du support emoji Windows/Tk.
+- Vue : pictogrammes distincts (global, élévation, ressources, territoires, chemins, cultures, carte thermique) au lieu de simples pastilles.
+- Carte thermique : pastilles raster par ressource, avec les couleurs métier centralisées.
+- Verrou Carte thermique : icône raster rouge fermée / verte ouverte, sans disque Unicode gris.
+- Listes Mode/Archétype élargies pour limiter les débordements des traductions.
+- Fenêtre de chargement : marge horizontale symétrique autour de la barre Canvas.
+- Palette joueurs, palette ressources minières, traductions, thème clair et moteur v1.5 conservés tels que validés en R4.
+- Moteur de génération v1.5 inchangé.
+
+## v1.6 RC_4 — corrections visuelles/localisation
+
+- Palette joueurs : P9 quasi blanc/ivoire ; halo noir autour des contours initiaux colorés.
+- Vue Ressources recalée sur la capture éditeur : charbon noir, fer orange, or jaune, gemmes rouge, soufre beige/ocre mieux séparé.
+- Icônes colorées renforcées dans Vue et Carte thermique.
+- Cadenas jaune fermé / vert ouvert pour le sélecteur de Carte thermique.
+- Traductions FR/EN renforcées, y compris modes, archétypes, Élévation et Carte thermique.
+- Correction robuste des listes déroulantes en thème clair.
+- Fenêtre de chargement : barre Canvas unique pour supprimer le glitch de fragment ttk.
+- TODO enrichi pour la future refonte UI, Outils Map et loupe flottante d’inspection.
+- Moteur de génération v1.5 inchangé.
+
+## v1.6 RC_1 — UI/outillage post-v1.5
+
+- Moteur de génération v1.5 stable conservé sans changement de règle.
+- Regroupement des ajouts post-v1.5 : Heatmap, Chemins/Terrain28, Cultures, FR/EN, inspecteur, cache LRU, historique, A/B léger, raccourcis configurables et aide F1.
+- Palette joueurs P1..P20 remplacée par une candidate plus fidèle au jeu, centralisée pour validation/calibration.
+- SAV v11 : extraction des coordonnées de départ d'origine depuis le bloc joueur type 6.
+- Territoire initial : remplacement de l'ellipse approximative par le masque natif exact 3500 cellules / 71×71 / bord HEX6 210 cellules.
+- Terrain22/28 runtime préservé à l'import SAV.
+- Export nommé `MapGenV1_6`; SAV toujours copié inchangé uniquement.
+- Tests modernisés sur le moteur final v1.5 et nouveaux tests SAV/territoire/cache/préférences/preview.
+
+## v1.4 candidate — dark mode / visualization comfort
+- Thème sombre/clair, préférences persistantes, overlays, drag/zoom et progression étendue.
+- Projection parallélogramme à décalage de 0,5 cellule par ligne.
+- P1..P20 bitmap nets, couleur joueur, non déformés.
+- Contour territoire initial SAV : 3500 cellules, étendue ±35.
+- Combobox corrigées en sombre et sliders click-to-position.
+- Bug connu : fournitures `Défaut` à investiguer.
+
+
+## v1.3.2 — editor-safe starts / snow blocking / swamp transitions
+- Starts : ajout d'une marge de sécurité éditeur autour des 33 cellules natives, sans nettoyage artificiel du terrain.
+- Starts : distance conservatrice accrue vis-à-vis de l'eau et exclusion stricte des objets statiques dans le halo éditeur.
+- Building Stones : le footprint complet doit désormais rester hors du halo protégé du start, pas seulement l'ancre.
+- Neige : `Snow129` et `Snow128` deviennent non marchables via l'accessibility statique, sur le même principe que le correctif Water.
+- Marais : reconstruction systématique `Grass16 -> 21 -> 81 -> 80` depuis le masque complet ; les mini-marais de départ utilisent désormais une famille cohérente.
+- Validators : ajout de contrôles d'accessibilité Snow et de chaînes de transitions Desert/Swamp/Snow.
+- TODO Markdown enrichi avec les prochaines améliorations UI/statistiques demandées.
+- Suppression de `docs/user_todo_20260818.txt`, désormais entièrement absorbé dans `TODO_MAPGEN.md`.
+- Développé avec l'assistance de ChatGPT.
 
 ## v1.3.1 — preview crash fix / README presentation
 - Correction du crash `NameError: Image is not defined` lors de la génération/rafraîchissement de l'aperçu.
 - Import explicite de `PIL.Image` utilisé par le redimensionnement/zoom.
 - Ajout d'un test de non-régression dédié au rendu GUI.
+- README entièrement remis à jour avec une présentation du projet, les modes, archétypes, architecture des starts et état réel de la v1.3.1.
+- Aucun changement dans les règles de génération Legacy/Upgraded.
 
 ## v1.3 — tooling / UX
-- Ajout barre progression par étapes de pipeline.
+- Ajout barre de progression par étapes de pipeline.
 - Bouton seed aléatoire.
 - Import EDM/MAP/SAV (SAV en lecture seule).
 - Vues Global / Heightmap / Ressources / Territoires.
 - Zoom par slider et molette.
 - Sélecteur de toutes les tailles natives + max joueurs dynamique.
+- Génération reste volontairement limitée à 768 tant que les autres tailles ne sont pas calibrées.
+- Onglet Statistiques basique.
+- Scrollbars sur les onglets texte.
+- Export SAV non inventé : copie inchangée seulement si la source importée est déjà un SAV.
+- TODO actualisé avec la généralisation future de la morphologie Upgraded.
+
+## v1.7 DEV_10
+- Stats/debug: exhaustive Terrain/Object ID inventories.
+- Stats schema v6 with normalized /1000 densities using relevant support denominators.
+- Generic interactive chart tooltips, including A/B.
+- A/B slot buttons now expose a visible set-state (green LED + short map identity).
+- Documentation/TODO cleanup before RC preparation.

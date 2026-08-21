@@ -1,0 +1,33 @@
+Settlers III MapGen v1.5 — STABLE
+==================================
+
+Scope validated: Continental 768x768.
+Final validation reference:
+S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202
+
+Validated externally in Settlers III editor / View Map / in-game:
+- editor opens the map correctly
+- starts valid
+- no crash
+- Upgraded start bonus clusters validated
+- Building Stone state distribution 115..127 validated
+- canonical v7 no-gap mineral geometry validated
+
+v1.5 highlights:
+- audited Legacy / Upgraded split
+- canonical Upgraded v7 no-gap mineral blobs
+- Upgraded start forest: 41 adults + 21 SmallTree84/player on initial-territory border
+- Upgraded start stones: 8 anchors / 84 units/player on initial-territory border
+- varied Building Stones 115..127
+- ~20 exhausted ID127 global anchors; excluded from available stock
+- ID127 static footprint released for construction
+- Upgraded reefs kept at least 2 cells from map edges
+- Goods Default: Legacy Medium / Upgraded High
+
+Non-blocking follow-up:
+- optional micro-map editor test for practical construction directly over ID127.
+
+Launch on Windows:
+- run_gui.bat
+or
+- install_and_run.bat / install_python_and_run.bat if dependencies are missing.

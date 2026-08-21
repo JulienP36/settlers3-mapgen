@@ -18,9 +18,9 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.6 STABLE / moteur v1.5 stable
+## État actuel — v1.7 STABLE / moteur v1.5 stable
 
-**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.6 regroupe les ajouts UI/outillage post-v1.5 et ajoute les deux derniers TODO prioritaires avant la grosse passe Statistiques.
+**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
@@ -42,7 +42,7 @@ Le contour SAV n'est plus une ellipse approximative : les coordonnées de dépar
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 
-La **v1.6 STABLE** est le checkpoint UI/outillage validé. La priorité passe désormais à la **grosse passe Statistiques**, puis à la calibration multi-tailles Continental.
+La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. Après une courte passe d'outillage/TODO, la priorité revient au générateur et à la calibration multi-tailles Continental.
 
 ## Modes de génération
 
@@ -145,3 +145,7 @@ Les références principales sont dans `references/`. En particulier :
 ## Versioning
 
 L'historique Git rétroactif est conservé depuis la v1.0 avec des tags de version. Les nouvelles releases doivent mettre à jour le code, le changelog, les tests et la documentation avant création du tag.
+
+## Récupérer la dernière release STABLE
+
+Sous Windows, `update_latest_release.bat` interroge uniquement la dernière GitHub Release publiée et télécharge son archive officielle dans `updates/`. Il ne suit ni `main`, ni les builds DEV/RC et n'écrase jamais l'installation courante.

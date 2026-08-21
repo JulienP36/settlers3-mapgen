@@ -2,17 +2,22 @@
 
 > **MANDATORY ENTRY POINT BEFORE EVERY MAP GENERATION, REGENERATION, PATCH OR EXPORT.**
 >
+> Project-wide workflow is defined in root `PROJECT_WORKFLOW.md` and current resumable state in `references/SETTLERS3_CURRENT_SNAPSHOT.md`.
+>
 > Do not generate a map from conversation memory alone.
 > Before touching map bytes, read the canonical files below and reconcile the requested change against them.
 
 ## A. Mandatory files — always read
+
+0. `../PROJECT_WORKFLOW.md` and `SETTLERS3_CURRENT_SNAPSHOT.md`
+   - Project workflow, protected baseline, branch/checkpoint policy and current working state.
 
 1. `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md`
    - Master generation/gameplay rules.
    - Later sections supersede older conflicting sections.
 
 2. `SETTLERS3_RESOURCE_OBJECTS_REFERENCE_v3_LONGPLAY.md`
-   - Trees, SmallTree84, Building Stones, mineral/fish stock changes.
+   - Trees, object ID84 tree saplings, Building Stones, mineral/fish stock changes.
    - Contains the corrected 7-cell Building Stone footprint rule.
 
 3. `SETTLERS3_NATIVE_MORPHOLOGY_REFERENCE_21_v3.md`
@@ -83,7 +88,7 @@ Before export:
 - [ ] fish quantity +30% per occupied cell rule applied, without increasing fish-cell count.
 - [ ] mineral quantity +30% per occupied cell rule applied, without increasing mineralized-cell count.
 - [ ] every Building Stone uses full 7-cell footprint and collision checks.
-- [ ] SmallTree84 remains separate bonus pool.
+- [ ] Object ID84 tree saplings remain a separate bonus pool.
 - [ ] start bonus forest/stone outside global quota; current bonus volume +50% vs original 384 rule.
 - [ ] controlled mini-swamp guaranteed per player.
 - [ ] desert decorations x2 and swamp decorations x2 current rule.

@@ -1,15 +1,26 @@
 # Settlers III MapGen — Release validation
 
-Date : 2026-08-20
+Date : 2026-08-21
 
-## v1.6 — STABLE
+## v1.7 — STABLE
 
-La v1.6 est validée comme checkpoint UI/outillage au-dessus du moteur de génération v1.5 stable.
+La v1.7 est la release de fondation **Statistiques / Graphiques** au-dessus du moteur de génération v1.5 stable et inchangé.
 
-Validations utilisateur principales : navigation/zoom/recentrage, projection parallélogramme, cache LRU, historique, A/B léger, raccourcis configurables et aide F1, Heatmap, vue Cultures, thèmes clair/sombre, sliders, import SAV runtime, territoire initial SAV exact, palettes joueurs et ressources, traductions FR/EN, sélecteurs raster, overlay de chargement dans la zone carte.
+Périmètre validé durant les DEV v1.7 : statistiques exactes et debug structurées, inventaires complets Terrain/Object IDs, densités normalisées, analyses locales par joueur, composants géographiques/hydrologiques, exports JSON/CSV, graphiques verticaux sémantiques, comparaison A/B, tooltips interactifs contextuels, segmentation Mer/Lacs, Roche/Neige, Herbe verte/Herbe sèche, ressources minières et agriculture, intégration FR/EN et thèmes clair/sombre.
 
-Le moteur de génération reste la référence v1.5 : `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
+La DEV_11_R2 a été validée par l'utilisateur et synchronisée exactement sur `dev` au commit `5b04aa5`. RC_1 a ensuite été validée sur Windows : lancement/UI, export, rechargement d'un EDM exporté et View Map in-game sans régression. La STABLE est une promotion de RC_1 sans nouvelle fonctionnalité.
 
-## Prochaine étape
+Le moteur de génération de référence reste v1.5 : `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`. Les fichiers moteur/config protégés doivent rester byte-for-byte identiques.
 
-Grosse passe Statistiques, puis calibration Continental 384 → 768. Le premier exécutable Windows est prévu pour le jalon v2.0 après validation multi-tailles Continental.
+## Validation STABLE
+
+- aucun ajout de fonctionnalité après l'entrée en RC ;
+- uniquement corrections de validation/release si nécessaire ;
+- tests automatisés complets au vert ;
+- hashes protégés inchangés ;
+- validation utilisateur Windows de la RC ;
+- après validation : promotion vers `main`, tag annoté `v1.7`, GitHub Release STABLE et ZIP final.
+
+## Après v1.7
+
+Courte passe de TODO/outillage, avec notamment la préparation du workflow Batch Generation v1.8, puis retour prioritaire au générateur Continental multi-tailles. La comparaison multi-maps 3+ est planifiée à très forte probabilité après une grosse passe générateur et servira notamment aux futures expérimentations Modifiers.

@@ -7,20 +7,25 @@ Read from: `SETTLERS3_PREGEN_READ_FIRST.md`
 ## 1. Adult trees
 - Keep the validated current adult-tree quota/profile.
 - Temperate adult generation uses confirmed IDs68..72.
-- SmallTree84 is separate and does not replace adult quota.
+- Object ID84 is a **tree sapling / pousse d'arbre** and is separate from the adult-tree quota.
 
-## 2. Small Tree84 — VALIDATED
+## 2. Tree sapling / pousse d'arbre — object ID84 — VALIDATED
 Long-play result:
-- Initial SmallTree84 anchors analyzed: **393**.
+- Initial object ID84 sapling anchors analyzed: **393**.
 - Runtime ID84 remaining in advanced save: **0**.
 - 390/393 (~99.24%) evolved into tree-like runtime states or disappeared.
 - Per user-approved interpretation, disappearance means it successfully grew and was then felled.
-- Therefore the current SmallTree84 placement/use is **validated**.
+- Therefore the current object ID84 sapling placement/use is **validated**.
 
-Rule:
-- Continue current SmallTree84 bonus placement method.
-- Keep it as a distinct bonus pool.
-- Never subtract it from the adult-tree target.
+Naming rule:
+- User-facing UI, Stats and reports must use `Pousse d'arbre` / `Tree sapling` rather than `SmallTree84`.
+- `ID84` may remain as an internal technical identifier in code/references where useful.
+- Data structures should not assume ID84 is the only possible sapling type forever.
+
+Generation rule:
+- Continue current ID84 sapling bonus placement method.
+- Keep saplings as a distinct bonus pool.
+- Never subtract saplings from the adult-tree target.
 - Do not directly generate unresolved IDs73..77/80..81 without separate editor calibration.
 
 ## 3. Building Stones — active IDs and stock

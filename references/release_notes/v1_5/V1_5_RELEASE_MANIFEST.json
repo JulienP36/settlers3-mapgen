@@ -1,0 +1,23 @@
+{
+  "version": "1.5",
+  "scope": "Continental 768x768 stable",
+  "head_todo_commit": "f31313fd7f528fe40d659f92e9200d4f3ae39360",
+  "v7_runtime_commit": "581d2cd9dde276f9bd02439996249b55d693ff16",
+  "checks": {
+    "python_compile": true,
+    "runtime_import": true,
+    "upgraded_start_forest": "41+21 per player",
+    "upgraded_start_stones": "8 anchors / 84 stock per player",
+    "exhausted_stones_global": 20,
+    "reef_edge_margin": 2,
+    "mineral_geometry": "v7_nogap_canonical_ovoid"
+  },
+  "key_file_sha256": {
+    "s3mapgen/generator.py": "1b73f2536c6db75dfb3856a1667d0b619d3462d9c0efa14f406c78a05556be77",
+    "s3mapgen/generator_v15.py": "3bbc9180719ebfae2bc37b29d81025731dc821e861c7b0e66894f7460f296090",
+    "s3mapgen/binary.py": "facf08185aa51fdd3287e45174f568c2ed7ce53f608b40d1ae80dea18234a421",
+    "config/legacy_768_v1.json": "bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85",
+    "config/upgraded_768_v1.json": "11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441",
+    "run_gui.py": "d13254ea7b37b60a2755b0f9ff5f8ac84bce4ea2992a4e4d142ac87e487f5e01"
+  }
+}
