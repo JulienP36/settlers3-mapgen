@@ -14,5 +14,3 @@ Advanced Stats checkpoint.
 - protected v1.5 hashes unchanged.
 
 Object ID84 remains user-facing `Pousse d’arbre` / `Tree sapling`.
-
-Canonical DEV_4 test ZIP produced in the development session: `SETTLERS3_MAPGEN_V1_7_DEV_4_20260820.zip`, SHA-256 `92be12792f36e1e95c9b7f83b1cd005d6ecd8c72dd6e1cecf38664d755eb3ebf`.

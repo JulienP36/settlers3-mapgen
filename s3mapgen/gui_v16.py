@@ -52,8 +52,8 @@ ARCHETYPE_LABELS={
 }
 
 COMMAND_LABELS={
- 'fr':{'generate':'Générer','import':'Importer','export':'Exporter','reset_view':'Recentrer','copy_seed':'Copier le seed','toggle_ab':'Basculer A/B','help':'Aide'},
- 'en':{'generate':'Generate','import':'Import','export':'Export','reset_view':'Reset view','copy_seed':'Copy seed','toggle_ab':'Toggle A/B','help':'Help'},
+ 'fr':{'generate':'Générer','import':'Importer','export':'Exporter','reset_view':'Recentrer','copy_seed':'Copier le seed','toggle_ab':'Basculer A/B','toggle_theme':'Basculer thème','help':'Aide'},
+ 'en':{'generate':'Generate','import':'Import','export':'Export','reset_view':'Reset view','copy_seed':'Copy seed','toggle_ab':'Toggle A/B','toggle_theme':'Toggle theme','help':'Help'},
 }
 
 THEME_LABELS={'fr':{'dark':'Sombre','light':'Clair'},'en':{'dark':'Dark','light':'Light'}}
@@ -193,7 +193,7 @@ class App(V15StableApp):
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail=''
         super().__init__()
-        self.title('Settlers III MapGen v1.7 DEV_2 — moteur v1.5')
+        self.title('Settlers III MapGen v1.7 DEV_7 — moteur v1.5')
         self._apply_language();self._bind_shortcuts()
 
     def _build(self):
@@ -277,9 +277,21 @@ class App(V15StableApp):
         state=self.current.state
         stats=self.session_stats_cache.get(state)
         if stats is None:
+            if getattr(self,'_task_overlay',None) is not None:self._task_progress(82,'Calcul des statistiques…' if self.prefs.get('language','fr')=='fr' else 'Computing statistics…')
             stats=analyze_map(state)
             self.session_stats_cache.put(state,stats)
         return stats
+
+    def _stats_for_output(self,out):
+        if out is None:return None
+        state=out.state
+        stats=self.session_stats_cache.get(state)
+        if stats is None:
+            stats=analyze_map(state);self.session_stats_cache.put(state,stats)
+        return stats
+
+    def _compare_stats_pair(self):
+        return (self._stats_for_output(self._compare_slots.get('A')), self._stats_for_output(self._compare_slots.get('B')))
 
     def _refresh_stats_chart(self):
         if not hasattr(self,'stats_chart_canvas'):return
@@ -289,7 +301,7 @@ class App(V15StableApp):
             c.create_text(20,20,text='—',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'));return
         try:
             w=max(420,int(c.winfo_width()));h=max(280,int(c.winfo_height()));lang=self.prefs.get('language','fr');dark=self.prefs.get('theme','dark')=='dark'
-            im=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h)
+            im=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h,compare_stats=self._compare_stats_pair())
             self._stats_chart_photo=ImageTk.PhotoImage(im);c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
         except Exception as exc:
             c.create_text(20,20,text=f'Chart error: {exc}',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'))
@@ -312,13 +324,17 @@ class App(V15StableApp):
         path=filedialog.asksaveasfilename(defaultextension='.png',filetypes=[('PNG','*.png')],initialfile=f"stats_{self._stats_chart_key()}.png")
         if not path:return
         w=max(900,int(self.stats_chart_canvas.winfo_width()));h=max(520,int(self.stats_chart_canvas.winfo_height()))
-        im=render_stats_chart(stats,self._stats_chart_key(),lang=self.prefs.get('language','fr'),dark=self.prefs.get('theme','dark')=='dark',width=w,height=h);im.save(path)
+        im=render_stats_chart(stats,self._stats_chart_key(),lang=self.prefs.get('language','fr'),dark=self.prefs.get('theme','dark')=='dark',width=w,height=h,compare_stats=self._compare_stats_pair());im.save(path)
 
     def _populate_current(self,imported=False):
+        # These panels are reports, not editors. Temporarily unlock them only while refreshing.
+        report_widgets=[w for w in (getattr(self,'validation',None),getattr(self,'pipeline',None),getattr(self,'meta',None),getattr(self,'stats',None)) if w is not None]
+        for w in report_widgets:w.configure(state='normal')
         super()._populate_current(imported=imported)
         stats=self._ensure_stats_cache();lang=self.prefs.get('language','fr')
         if stats and hasattr(self,'stats'):
             self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(stats,lang=lang))
+        for w in report_widgets:w.configure(state='disabled')
         self._refresh_stats_chart()
 
     def _walk(self,root):
@@ -579,6 +595,8 @@ class App(V15StableApp):
 
     def _theme_changed(self):
         self.prefs['theme']=self._theme_key();self._save_prefs();self._apply_theme()
+    def _toggle_theme(self):
+        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';self.theme_var.set(THEME_LABELS[self.prefs.get('language','fr')][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart()
     def _projection_changed(self):
         self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True)
 
@@ -613,19 +631,27 @@ class App(V15StableApp):
             import traceback;self._task_error();messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
     def _load_history(self):
         key=self._history_lookup.get(self.history_var.get());out=self.session_cache.get(key) if key else None
-        if out is not None:self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self.status.set('Historique chargé')
+        if out is not None:
+            need_stats=self.session_stats_cache.get(out.state) is None
+            if need_stats:self._task_begin('Chargement de l’historique…' if self.prefs.get('language','fr')=='fr' else 'Loading history…',10)
+            self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            if need_stats:self._task_done('Historique chargé' if self.prefs.get('language','fr')=='fr' else 'History loaded')
+            else:self.status.set('Historique chargé' if self.prefs.get('language','fr')=='fr' else 'History loaded')
     def _clear_history(self):self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('');self.status.set('Caches de session vidés')
     def _set_compare_slot(self,slot):
         if not self.current:return
-        self._compare_slots[slot]=self.current;self._compare_active=slot;self._refresh_compare_label()
+        need_stats=self.session_stats_cache.get(self.current.state) is None
+        if need_stats:self._task_begin((f'Préparation comparaison {slot}…' if self.prefs.get('language','fr')=='fr' else f'Preparing comparison {slot}…'),10)
+        self._compare_slots[slot]=self.current;self._compare_active=slot;self._stats_for_output(self.current);self._refresh_compare_label();self._refresh_stats_chart()
+        if need_stats:self._task_done((f'Comparaison {slot} prête' if self.prefs.get('language','fr')=='fr' else f'Comparison {slot} ready'))
     def _output_label(self,out):
         if out is None:return '—'
         m=out.state.metadata;return f"{m.get('seed','import')}/{m.get('mode_key',m.get('mode','?'))}/{len(out.state.starts) or m.get('players',0)}P"
-    def _refresh_compare_label(self):self.compare_var.set(f"A: {self._output_label(self._compare_slots['A'])}   |   B: {self._output_label(self._compare_slots['B'])}")
+    def _refresh_compare_label(self):self.compare_var.set(f"A: {self._output_label(self._compare_slots['A'])}   |   B: {self._output_label(self._compare_slots['B'])}");self._refresh_stats_chart()
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']
         if a is None or b is None:self.status.set('Définir A et B avant la bascule');return
-        self._compare_active='B' if self._compare_active!='B' else 'A';self.current=self._compare_slots[self._compare_active];self._populate_current();self._invalidate_preview();self._refresh_preview(False);self.status.set(f'Comparaison {self._compare_active}')
+        self._compare_active='B' if self._compare_active!='B' else 'A';self.current=self._compare_slots[self._compare_active];imported=bool(self.current.state.metadata.get('source_format'));self._populate_current(imported=imported);self._invalidate_preview();self._refresh_preview(False);self.status.set(f'Comparaison {self._compare_active}')
 
     def _render_options(self):
         view=self._view_key();return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key()}
@@ -677,7 +703,7 @@ class App(V15StableApp):
             try:self.unbind_all(seq)
             except tk.TclError:pass
         self._bound_shortcuts=[]
-        actions={'generate':self.generate,'import':self.import_file,'export':self.export,'reset_view':self._reset_view,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'help':self._show_help}
+        actions={'generate':self.generate,'import':self.import_file,'export':self.export,'reset_view':self._reset_view,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'toggle_theme':self._toggle_theme,'help':self._show_help}
         for cmd,shortcut in self.prefs.get('shortcuts',DEFAULT_SHORTCUTS).items():
             seq=self._tk_sequence(shortcut)
             if seq and cmd in actions:

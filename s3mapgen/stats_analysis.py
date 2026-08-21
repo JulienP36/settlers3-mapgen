@@ -14,7 +14,7 @@ from .constants import (
     DESERT_TRANS, SWAMP, SWAMP_TRANS, RIVER_IDS, SNOW, SNOW_TRANS,
     MOUNTAIN_IDS, DESERT_IDS, SWAMP_IDS,
 )
-from .hexgrid import component_labels, hex_distance
+from .hexgrid import component_labels, hex_distance, neighbor_count
 
 
 MINERALS = {
@@ -39,6 +39,105 @@ TREE_FAMILIES = {
 SAPLING_IDS = (84,)
 MUD_IDS = (23, 144, 145)
 MOUNTAIN_ANALYSIS_IDS = tuple(sorted(set(MOUNTAIN_IDS + (34,))))
+
+LOCAL_RADII = (10, 20, 30, 40, 50, 100)
+
+
+def _hex_distance_grid(side: int, x0: int, y0: int) -> np.ndarray:
+    """Vectorized distance for the project HEX6 coordinate system."""
+    yy, xx = np.indices((side, side), dtype=np.int32)
+    dx = xx - int(x0)
+    dy = yy - int(y0)
+    same_sign = (dx * dy) >= 0
+    return np.where(same_sign, np.maximum(np.abs(dx), np.abs(dy)), np.abs(dx) + np.abs(dy)).astype(np.int16)
+
+
+def _component_details(mask: np.ndarray) -> list[dict[str, Any]]:
+    labels, n = component_labels(mask)
+    if not n:
+        return []
+    neigh = neighbor_count(mask)
+    flat_labels = labels.ravel()
+    sizes = np.bincount(flat_labels, minlength=n + 1)
+    edge_weight = np.zeros(mask.shape, dtype=np.int16)
+    edge_weight[mask] = 6 - neigh[mask]
+    perimeters = np.bincount(flat_labels, weights=edge_weight.ravel(), minlength=n + 1)
+    slices = __import__('scipy').ndimage.find_objects(labels)
+    details: list[dict[str, Any]] = []
+    for cid, sl in enumerate(slices, start=1):
+        size = int(sizes[cid])
+        if not size or sl is None:
+            continue
+        sub = labels[sl] == cid
+        ly, lx = np.where(sub)
+        yoff, xoff = sl[0].start, sl[1].start
+        xs = lx.astype(np.float64) + xoff
+        ys = ly.astype(np.float64) + yoff
+        perimeter = int(round(float(perimeters[cid])))
+        if size >= 2:
+            coords = np.column_stack((xs, ys))
+            cov = np.cov(coords, rowvar=False)
+            vals = np.linalg.eigvalsh(cov)
+            elongation = float(np.sqrt(max(vals[-1], 0.0) / max(vals[0], 1e-9))) if vals.size == 2 else 1.0
+        else:
+            elongation = 1.0
+        compactness = float(min(1.0, (12.0 * size) / max(1.0, float(perimeter * perimeter))))
+        details.append({
+            'id': cid, 'cells': size, 'perimeter_hex_edges': perimeter,
+            'bbox': [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())],
+            'centroid': [round(float(xs.mean()), 3), round(float(ys.mean()), 3)],
+            'compactness': round(compactness, 6), 'elongation': round(elongation, 4),
+        })
+    details.sort(key=lambda r: (-r['cells'], r['id']))
+    return details
+
+
+def _component_summary(details: list[dict[str, Any]]) -> dict[str, Any]:
+    sizes = np.asarray([d['cells'] for d in details], dtype=np.int32)
+    perimeters = np.asarray([d['perimeter_hex_edges'] for d in details], dtype=np.int32)
+    elongations = np.asarray([d['elongation'] for d in details], dtype=np.float64)
+    return {
+        'count': len(details),
+        'size_distribution': _percentiles(sizes),
+        'perimeter_distribution': _percentiles(perimeters),
+        'elongation_distribution': _percentiles(elongations),
+        'largest': details[0] if details else None,
+    }
+
+
+def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resources: np.ndarray) -> list[dict[str, Any]]:
+    side = int(state.side)
+    max_radius = max(LOCAL_RADII)
+    players=[]
+    for i,(x,y) in enumerate(state.starts):
+        x=int(x); y=int(y)
+        x0=max(0,x-max_radius); x1=min(side,x+max_radius+1)
+        y0=max(0,y-max_radius); y1=min(side,y+max_radius+1)
+        t=terrain[y0:y1,x0:x1]; o=objects[y0:y1,x0:x1]; r=resources[y0:y1,x0:x1]
+        yy,xx=np.indices(t.shape,dtype=np.int16)
+        dx=xx + x0 - x; dy=yy + y0 - y
+        dist=np.where((dx*dy)>=0,np.maximum(np.abs(dx),np.abs(dy)),np.abs(dx)+np.abs(dy)).astype(np.int16)
+        mountain=np.isin(t,MOUNTAIN_ANALYSIS_IDS); desert=np.isin(t,DESERT_IDS); swamp=np.isin(t,SWAMP_IDS); water=np.isin(t,WATER_IDS)
+        adult=np.isin(o,ADULT_TREE_IDS) | np.isin(o,TREE_FAMILIES['palm'][0]); saplings=np.isin(o,SAPLING_IDS)
+        stone_anchor=(o>=115)&(o<=127); stone_units=np.where(stone_anchor,np.maximum(0,127-o.astype(np.int16)),0)
+        fish=water & ((r&0xF0)==0) & ((r&0x0F)>0); fish_qty=np.where(fish,r&0x0F,0)
+        mineral_masks={k:((r&0xF0)==fam) for k,(fam,_fr,_en) in MINERALS.items()}; mineral_qty=(r&0x0F).astype(np.int16)
+        radii={}
+        for radius in LOCAL_RADII:
+            m=dist<=radius
+            metrics={
+                'cells':int(m.sum()), 'adult_trees':int((adult&m).sum()), 'saplings':int((saplings&m).sum()),
+                'building_stone_anchors':int((stone_anchor&m).sum()), 'building_stone_stock':int(stone_units[m].sum()),
+                'fish_cells':int((fish&m).sum()), 'fish_stock':int(fish_qty[m].sum()),
+                'mountain_cells':int((mountain&m).sum()), 'desert_cells':int((desert&m).sum()),
+                'swamp_cells':int((swamp&m).sum()), 'water_cells':int((water&m).sum()), 'minerals':{},
+            }
+            for key,mm in mineral_masks.items():
+                om=mm&m; metrics['minerals'][key]={'cells':int(om.sum()),'stock':int(mineral_qty[om].sum())}
+            radii[str(radius)]=metrics
+        players.append({'player':i+1,'x':x,'y':y,'radii':radii})
+    return players
+
 
 TERRAIN_FAMILIES = (
     ('water', WATER_IDS, 'Eau', 'Water'),
@@ -197,9 +296,14 @@ def analyze_map(state) -> dict[str, Any]:
         mask = (R & 0xF0) == family
         qty = (R[mask] & 0x0F).astype(np.uint8)
         ore_any |= mask
+        snow_mask = mask & np.isin(T, (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW))
+        open_mask = mask & ~np.isin(T, (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW))
         minerals[key] = {
             'name_fr': fr, 'name_en': en, 'cells': int(mask.sum()),
             'stock': int(qty.sum()) if qty.size else 0,
+            'open_cells': int(open_mask.sum()), 'snow_covered_cells': int(snow_mask.sum()),
+            'open_stock': int((R[open_mask] & 0x0F).sum()) if open_mask.any() else 0,
+            'snow_covered_stock': int((R[snow_mask] & 0x0F).sum()) if snow_mask.any() else 0,
             'avg_per_occupied_cell': round(float(qty.mean()), 4) if qty.size else 0.0,
             'pct_mining_support': _pct(int(mask.sum()), support_n),
             'quantity_distribution': _percentiles(qty),
@@ -216,10 +320,20 @@ def analyze_map(state) -> dict[str, Any]:
     for cid in range(1, n_water_components + 1):
         size = int((labels == cid).sum())
         (ocean_sizes if cid in edge_ids else inland_sizes).append(size)
-    river_sizes = _component_sizes(np.isin(T, RIVER_IDS))
-    mountain_sizes = _component_sizes(np.isin(T, MOUNTAIN_ANALYSIS_IDS))
-    swamp_sizes = _component_sizes(np.isin(T, SWAMP_IDS))
-    desert_sizes = _component_sizes(np.isin(T, DESERT_IDS))
+    ocean_mask = np.isin(labels, list(edge_ids)) if edge_ids else np.zeros_like(water)
+    inland_water_mask = water & ~ocean_mask
+    ocean_cells = int(ocean_mask.sum())
+    inland_water_cells = int(inland_water_mask.sum())
+    snow_family_mask = np.isin(T, (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW))
+    mountain_non_snow_mask = mining_support & ~snow_family_mask
+
+    river_details = _component_details(np.isin(T, RIVER_IDS))
+    mountain_details = _component_details(np.isin(T, MOUNTAIN_ANALYSIS_IDS))
+    swamp_details = _component_details(np.isin(T, SWAMP_IDS))
+    desert_details = _component_details(np.isin(T, DESERT_IDS))
+    forest_details = _component_details(np.isin(O, ADULT_TREE_IDS + TREE_FAMILIES['palm'][0] + SAPLING_IDS))
+    mineral_component_details = {key: _component_details((R & 0xF0) == family) for key, (family, _fr, _en) in MINERALS.items()}
+    local_players = _local_player_stats(state, T, O, R) if state.starts else []
 
     claims = C[C != 255]
     claim_counts = Counter(map(int, claims.tolist())) if claims.size else Counter()
@@ -229,12 +343,15 @@ def analyze_map(state) -> dict[str, Any]:
     pair_distances = []
     for i, (x1, y1) in enumerate(state.starts):
         distances = []
+        opponents = []
         for j, (x2, y2) in enumerate(state.starts):
             if i == j: continue
             d = int(hex_distance(int(x1), int(y1), int(x2), int(y2)))
-            distances.append(d)
+            distances.append(d); opponents.append((d,j+1))
             if i < j: pair_distances.append(d)
-        nearest.append({'player': i+1, 'distance': min(distances) if distances else 0})
+        nearest_distance = min(distances) if distances else 0
+        nearest_player = min(opponents)[1] if opponents else None
+        nearest.append({'player': i+1, 'distance': nearest_distance, 'nearest_player': nearest_player})
 
     source = {
         'format': state.metadata.get('source_format', 'GENERATED'),
@@ -244,13 +361,15 @@ def analyze_map(state) -> dict[str, Any]:
     }
 
     result = {
-        'schema_version': 1,
+        'schema_version': 4,
         'source': source,
         'general': {
             'side': int(state.side), 'cells': n, 'players': len(state.starts) or int(state.metadata.get('players', 0) or 0),
             'land_cells': land_n, 'water_cells': int(water.sum()),
+            'ocean_cells': ocean_cells, 'inland_water_cells': inland_water_cells,
             'land_pct': _pct(land_n, n), 'water_pct': _pct(int(water.sum()), n),
             'mountain_cells': support_n, 'mountain_pct_land': _pct(support_n, land_n),
+            'mountain_non_snow_cells': int(mountain_non_snow_mask.sum()), 'snow_family_cells': int(snow_family_mask.sum()),
             'desert_cells': int(np.isin(T, DESERT_IDS).sum()), 'swamp_cells': int(np.isin(T, SWAMP_IDS).sum()),
             'mud_cells': int(np.isin(T, MUD_IDS).sum()),
             'river_cells': int(np.isin(T, RIVER_IDS).sum()), 'shore_cells': int((T == SHORE).sum()),
@@ -283,21 +402,28 @@ def analyze_map(state) -> dict[str, Any]:
             'vine': int(((O >= 94) & (O <= 102)).sum()),
             'rice': int(((O >= 103) & (O <= 110)).sum()),
         },
-        'height': {'distribution': _percentiles(H.ravel())},
+        'height': {'distribution': _percentiles(H.ravel()), 'land_distribution': _percentiles(H[land])},
         'hydrology': {
             'water_components': int(n_water_components), 'ocean_components': len(ocean_sizes),
             'inland_water_components': len(inland_sizes), 'inland_water_sizes': inland_sizes,
             'largest_inland_water': max(inland_sizes) if inland_sizes else 0,
-            'river_components': len(river_sizes), 'river_sizes': river_sizes,
+            'river_components': len(river_details), 'river_sizes': [d['cells'] for d in river_details],
+            'river_component_stats': _component_summary(river_details), 'river_details': river_details,
         },
         'spatial': {
-            'mountain_components': len(mountain_sizes), 'mountain_sizes': mountain_sizes,
-            'desert_components': len(desert_sizes), 'desert_sizes': desert_sizes,
-            'swamp_components': len(swamp_sizes), 'swamp_sizes': swamp_sizes,
+            'mountain_components': len(mountain_details), 'mountain_sizes': [d['cells'] for d in mountain_details],
+            'desert_components': len(desert_details), 'desert_sizes': [d['cells'] for d in desert_details],
+            'swamp_components': len(swamp_details), 'swamp_sizes': [d['cells'] for d in swamp_details],
+            'mountains': {'summary': _component_summary(mountain_details), 'components': mountain_details},
+            'deserts': {'summary': _component_summary(desert_details), 'components': desert_details},
+            'swamps': {'summary': _component_summary(swamp_details), 'components': swamp_details},
+            'forests': {'summary': _component_summary(forest_details), 'components': forest_details},
+            'minerals': {key: {'summary': _component_summary(rows), 'components': rows} for key, rows in mineral_component_details.items()},
         },
         'players': {
             'starts': starts, 'claims': {str(k+1): int(v) for k, v in sorted(claim_counts.items())},
             'nearest_start': nearest, 'pair_distance_distribution': _percentiles(np.asarray(pair_distances, dtype=np.int32)),
+            'local_radii': list(LOCAL_RADII), 'local_resources': local_players,
         },
     }
     return result
@@ -325,33 +451,47 @@ def stats_csv(stats: dict[str, Any]) -> str:
     for key, value in stats['vegetation']['families'].items(): w.writerow(['vegetation', 'count', key, value])
     w.writerow(['vegetation', 'count', 'saplings', stats['vegetation']['saplings']])
     for key, value in stats['agriculture'].items(): w.writerow(['agriculture', 'cells', key, value])
+    for player in stats.get('players', {}).get('local_resources', []):
+        for radius, metrics in player['radii'].items():
+            prefix=f"P{player['player']}_r{radius}"
+            for key in ('adult_trees','saplings','building_stone_stock','fish_stock','mountain_cells','desert_cells','swamp_cells','water_cells'):
+                w.writerow(['player_local', key, prefix, metrics[key]])
+            for mineral, data in metrics['minerals'].items():
+                w.writerow(['player_local_mineral', f'{mineral}_stock', prefix, data['stock']])
     return out.getvalue()
 
 
 def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
     fr = lang != 'en'
-    g = stats['general']; r = stats['resources']; v = stats['vegetation']; bs = stats['building_stones']; h = stats['height']['distribution']; hy = stats['hydrology']; p = stats['players']; ag = stats['agriculture']
+    g = stats['general']; r = stats['resources']; v = stats['vegetation']; bs = stats['building_stones']; h = stats['height'].get('land_distribution', stats['height']['distribution']); hy = stats['hydrology']; p = stats['players']; ag = stats['agriculture']
     lines = []
     lines.append(('RÉSUMÉ' if fr else 'SUMMARY'))
     lines.append('=' * 72)
     lines.append(f"{g['side']}×{g['side']} — {g['cells']:,} " + ('cellules' if fr else 'cells'))
-    lines.append((f"Terre {g['land_cells']:,} ({g['land_pct']:.2f} %) | Eau {g['water_cells']:,} ({g['water_pct']:.2f} %)" if fr else f"Land {g['land_cells']:,} ({g['land_pct']:.2f} %) | Water {g['water_cells']:,} ({g['water_pct']:.2f} %)"))
+    lines.append((f"Terre {g['land_cells']:,} ({g['land_pct']:.2f} %) | Eau {g['water_cells']:,} ({g['water_pct']:.2f} %) = mer {g.get('ocean_cells',0):,} + lacs {g.get('inland_water_cells',0):,}" if fr else f"Land {g['land_cells']:,} ({g['land_pct']:.2f} %) | Water {g['water_cells']:,} ({g['water_pct']:.2f} %) = ocean {g.get('ocean_cells',0):,} + lakes {g.get('inland_water_cells',0):,}"))
     lines.append((f"Montagne {g['mountain_cells']:,} ({g['mountain_pct_land']:.2f} % de la terre) | Désert {g['desert_cells']:,} | Marais {g['swamp_cells']:,} | Boue {g['mud_cells']:,} | Rivière {g['river_cells']:,}" if fr else f"Mountain {g['mountain_cells']:,} ({g['mountain_pct_land']:.2f} % of land) | Desert {g['desert_cells']:,} | Swamp {g['swamp_cells']:,} | Mud {g['mud_cells']:,} | River {g['river_cells']:,}"))
     lines.append('')
     lines.append('RESSOURCES' if fr else 'RESOURCES'); lines.append('-' * 72)
     for key, data in r['minerals'].items():
         name = data['name_fr' if fr else 'name_en']
-        lines.append(f"{name:<12} {data['cells']:>8,} " + ('cases' if fr else 'cells') + f" | stock {data['stock']:>9,} | {data['avg_per_occupied_cell']:.2f}/cell")
+        lines.append(f"{name:<12} {data['cells']:>8,} " + ('cases' if fr else 'cells') + f" | stock {data['stock']:>9,} | " + (f"ouvert {data.get('open_stock',data['stock']):,} / sous neige {data.get('snow_covered_stock',0):,}" if fr else f"open {data.get('open_stock',data['stock']):,} / snow-covered {data.get('snow_covered_stock',0):,}"))
     lines.append((f"Occupation support minier : {r['mining_occupied_cells']:,}/{r['mining_support_cells']:,} ({r['mining_support_occupancy_pct']:.2f} %)" if fr else f"Mining support occupancy: {r['mining_occupied_cells']:,}/{r['mining_support_cells']:,} ({r['mining_support_occupancy_pct']:.2f} %)"))
     lines.append((f"Poissons : {r['fish_cells']:,} cases | stock {r['fish_stock']:,}" if fr else f"Fish: {r['fish_cells']:,} cells | stock {r['fish_stock']:,}"))
     lines.append('')
-    lines.append('VÉGÉTATION & PIERRES' if fr else 'VEGETATION & STONES'); lines.append('-' * 72)
+    lines.append('RESSOURCES FORESTIÈRES & PIERRES' if fr else 'FORESTRY RESOURCES & STONES'); lines.append('-' * 72)
     lines.append((f"Arbres adultes : {v['adult_wood_trees']:,} | Palmiers : {v['families']['palm']:,} | Pousses d’arbre : {v['saplings']:,}" if fr else f"Adult trees: {v['adult_wood_trees']:,} | Palms: {v['families']['palm']:,} | Tree saplings: {v['saplings']:,}"))
     lines.append((f"Pierres de construction : {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} épuisées) | stock {bs['stock_total']:,}" if fr else f"Building stones: {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} exhausted) | stock {bs['stock_total']:,}"))
     lines.append('')
     lines.append('HYDROLOGIE / RELIEF' if fr else 'HYDROLOGY / HEIGHT'); lines.append('-' * 72)
     lines.append((f"Eaux intérieures : {hy['inland_water_components']} composantes | plus grande {hy['largest_inland_water']:,} cases | rivières {hy['river_components']} composantes" if fr else f"Inland waters: {hy['inland_water_components']} components | largest {hy['largest_inland_water']:,} cells | rivers {hy['river_components']} components"))
-    lines.append(f"Height min {h['min']:.0f} | P25 {h['p25']:.1f} | median {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}")
+    lines.append((f"Hauteurs terrestres P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | médiane {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}" if fr else f"Land heights P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | median {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}"))
+    sp=stats.get('spatial',{})
+    if sp.get('mountains'):
+        ms=sp['mountains']['summary']; ds=sp['deserts']['summary']; ss=sp['swamps']['summary']; fs=sp['forests']['summary']
+        if fr:
+            lines.append(f"Composantes : massifs {ms['count']} (max {int(ms['size_distribution']['max']):,}) | déserts {ds['count']} | marais {ss['count']} | forêts {fs['count']}")
+        else:
+            lines.append(f"Components: mountains {ms['count']} (max {int(ms['size_distribution']['max']):,}) | deserts {ds['count']} | swamps {ss['count']} | forests {fs['count']}")
     if any(ag.values()):
         lines.append(''); lines.append('AGRICULTURE' if fr else 'AGRICULTURE'); lines.append('-' * 72)
         lines.append((f"Blé {ag['wheat']:,} | Vigne {ag['vine']:,} | Riz {ag['rice']:,}" if fr else f"Wheat {ag['wheat']:,} | Vine {ag['vine']:,} | Rice {ag['rice']:,}"))
@@ -359,6 +499,15 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
         lines.append(''); lines.append('JOUEURS / STARTS' if fr else 'PLAYERS / STARTS'); lines.append('-' * 72)
         for row in p['nearest_start']:
             lines.append((f"P{row['player']}: adversaire le plus proche = {row['distance']} HEX" if fr else f"P{row['player']}: nearest opponent = {row['distance']} HEX"))
+        if p.get('local_resources'):
+            lines.append(''); lines.append('RESSOURCES LOCALES — 0–50 / 50–100' if fr else 'LOCAL RESOURCES — 0–50 / 50–100'); lines.append('-' * 72)
+            for row in p['local_resources']:
+                m=row['radii'].get('50', {})
+                ore=sum(v['stock'] for v in m.get('minerals',{}).values())
+                if fr:
+                    lines.append(f"P{row['player']}: arbres {m.get('adult_trees',0):,} | pousses {m.get('saplings',0):,} | pierre {m.get('building_stone_stock',0):,} | poisson {m.get('fish_stock',0):,} | minerai {ore:,}")
+                else:
+                    lines.append(f"P{row['player']}: trees {m.get('adult_trees',0):,} | saplings {m.get('saplings',0):,} | stone {m.get('building_stone_stock',0):,} | fish {m.get('fish_stock',0):,} | ore {ore:,}")
     lines.append(''); lines.append('TOP TERRAINS' if fr else 'TOP TERRAIN IDS'); lines.append('-' * 72)
     for row in stats['terrain']['ids'][:12]:
         lines.append(f"{row['id']:>3}  {row['name_fr' if fr else 'name_en']:<28} {row['cells']:>9,}  {row['pct_map']:>7.3f} %")

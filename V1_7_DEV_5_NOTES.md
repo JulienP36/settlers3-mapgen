@@ -37,9 +37,4 @@ Refonte visuelle et sémantique de la passe Statistiques à partir du retour uti
 - 49 tests PASS ;
 - smoke réel SAV 768×768 / 10 joueurs ;
 - invariants exacts vérifiés pour toutes les nouvelles barres segmentées ;
-- moteur v1.5 et fichiers protégés inchangés ;
-- ZIP exact : `SETTLERS3_MAPGEN_V1_7_DEV_5_20260820.zip` ;
-- SHA-256 : `115d056edbb90a5fde988d923f0045ca3d531208df895d5df449cf2133f253fb`.
-
-## GitHub / récupération
-Un mélange de fichiers de checkpoints différents sur `dev` provoquait un crash au lancement après pull (`SessionGenerationCache(max_items=...)` contre API `max_entries`). Le `gui_v15.py` exact du package DEV_5 a été restauré et un checkout `dev` propre a été confirmé fonctionnel. La synchro byte-for-byte des gros fichiers DEV_5 reste à auditer/finaliser ; le workflow interdit désormais de considérer un build comme pleinement checkpointé tant que package testé et branche ne correspondent pas sur l'état source/runtime/tests/docs attendu.
+- moteur v1.5 et fichiers protégés inchangés.

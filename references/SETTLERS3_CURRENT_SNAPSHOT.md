@@ -4,54 +4,56 @@
 >
 > Last refreshed: **2026-08-21 — v1.7 DEV_7**
 
-This file is updated in place. Dated `SETTLERS3_SNAPSHOT_*` files are historical and are not the current state.
+## Repository model
+`main` = STABLE, `rc` = candidate under validation, `dev` = active development/checkpoints.
 
-## Repository / branches
-Permanent model: `main` = STABLE, `rc` = candidate under validation, `dev` = current development/checkpoints. Only `main`, `dev`, `rc` remain. `main` and `rc` stay on the v1.6 STABLE lineage; `dev` is active v1.7 work.
+## Stable baseline
+- v1.6 STABLE published.
+- Generation engine v1.5 remains validated/locked.
+- Reference lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
+- Protected hashes are listed in root `PROJECT_WORKFLOW.md` and must remain unchanged.
 
-Git checkout launch was repaired after mixed-version files caused `SessionGenerationCache(max_items=...)` / `max_entries` incompatibility. The branch is launchable again. The exact tested DEV package remains the canonical runnable checkpoint until the large-source byte-for-byte GitHub sync audit is completed.
+## v1.7 DEV_5 — current development
+DEV_5 is a Stats/UI refactor based on DEV_4 user review.
 
-## Stable engine
-Generation engine v1.5 is validated and locked. Reference lineage: `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`. Protected hashes are listed in `PROJECT_WORKFLOW.md` and all five remain unchanged after DEV_7.
+Implemented:
+- vertical charts for normal Stats (Y scale left, category labels bottom) ;
+- terrain colors aligned with map palette where applicable ;
+- segmented Water = Ocean + Lakes ;
+- segmented Mountain = non-snow mountain + Snow family ;
+- segmented mineral stock = outside Snow family + under Snow family ;
+- Building Stone labels by real remaining stock (12 → 1 → exhausted), green→red gradient ;
+- Forestry Resources replaces Vegetation as user-facing chart category ;
+- Agriculture colors aligned with Agriculture view ;
+- distance/resource gradients ;
+- per-player R40 mining bar segmented by mineral type ;
+- redundant nearby-mountain chart removed ;
+- compact A/B chart: one metric row, A and B side-by-side, values inside bars ;
+- height chart uses land-height distribution and omits global minimum ;
+- report panes are read-only but selectable/copyable ;
+- Stats cache misses during history/comparison are surfaced through existing task progress UI ;
+- Stats schema v3 with exact split fields.
 
-## v1.6 STABLE
-UI/tooling checkpoint validated and GitHub Release published. Updater follows GitHub Releases only.
+Validation:
+- 49 automated tests PASS ;
+- exact identities tested: Ocean+Lakes=Water, nonSnow+Snow=Mountain, open+snow mineral cells/stock=totals ;
+- real SAV 768×768 / 10P smoke used for chart/data validation ;
+- protected v1.5 engine remains untouched.
 
-## v1.7 Stats progression
-DEV_1 introduced structured Stats/JSON/CSV/charts. DEV_2 added Stats cache, Unicode fonts and corrected semantic groupings. DEV_3 added conservative updater. DEV_4 added true-HEX local player analysis and component/blob analysis. DEV_5 refactored chart orientation/segmentation/colors and read-only analysis panes. DEV_6 extended compact A/B with semantic stacked segments and preserved import semantics in A/B toggles.
+## Object semantics
+ID84 = `Pousse d’arbre` / `Tree sapling`. Never expose `SmallTree84` as user-facing name. Adult IDs with unresolved exact species remain generic adult trees.
 
-### DEV_7 additions
-- quantitative gradients standardized to red → yellow → green where appropriate;
-- Building Stones gradient: full green → middle yellow → exhausted red;
-- non-zero tiny stacked segments no longer silently lose their value: external connected labels are used when needed;
-- Forestry order: Adult trees → Palms → Saplings;
-- more descriptive short height labels;
-- configurable `Ctrl+Shift+T` theme toggle;
-- nearest-opponent chart now identifies the opponent and shows both player colors; min distance red, median zone yellow, max green;
-- local analysis extended to HEX50 and HEX100 while retaining older radii internally for continuity;
-- nearby Trees/Stones/Fish charts now show 0–50 and 50–100 segments;
-- nearby Mining uses two bars/player: A ≤50 HEX, B 50–100 HEX, each segmented by mineral type;
-- largest mountain/lake/river components are visually darkest;
-- A/B Land/Stone/Fish now use semantic colors;
-- Stats schema v4.
+## Next Stats/UI work
+- user test DEV_5 orientation/readability ;
+- later replace exploratory R30/R40 emphasis with gameplay-calibrated near/strategic ranges, likely around 50/60 and 100 HEX after validation ;
+- imported SAV/EDM/MAP in A/B comparison slots ;
+- A/B customizable colors ;
+- topographic-style Height view ;
+- continued ID nomenclature ;
+- future actual sprite labels only if real game sprites can be extracted properly ;
+- native-corpus comparison bands/distributions.
 
-Validation: **55 automated tests PASS**, real **768×768 / 10-player SAV visual smoke PASS**, protected v1.5 hashes unchanged, ZIP integrity verified.
-
-## Exact DEV_7 package
-`SETTLERS3_MAPGEN_V1_7_DEV_7_20260821.zip`
-SHA-256: `a045bea27adb42e3544f4d425cb339ac4d23daf83bf75dad2ccfa1bec7ce9079`
-
-## Current next work
-- user review of DEV_7;
-- interactive graph tooltips as a later generalized graph capability;
-- optional/disableable graph ↔ map-view synchronization;
-- imported SAV/EDM/MAP in session history + configurable history capacity;
-- PNG export sharpness/resolution;
-- native-corpus comparison bands and remaining Stats analysis;
-- controlled future rename `v15/v16` modules to explicit `v1_5/v1_6`;
-- finish byte-for-byte audit/sync of GitHub large source files against the latest tested package.
-
-After Stats: Continental multi-size validation 384 → 448 → 512 → 576 → 640 → 704 → 768, then v2.0 executable milestone.
+After Stats: Continental multi-size 384 → 448 → 512 → 576 → 640 → 704 → 768, then v2.0 executable milestone.
 
 ## Recovery
 1. read `PROJECT_WORKFLOW.md`;
@@ -60,3 +62,24 @@ After Stats: Continental multi-size validation 384 → 448 → 512 → 576 → 6
 4. inspect latest DEV notes and `dev` tip;
 5. if touching generation, read `references/SETTLERS3_PREGEN_READ_FIRST.md`;
 6. verify protected hashes/tests before packaging or promotion.
+
+
+### DEV_6 additions
+- A/B compact rows now use semantic stacked segments where composition matters (water, mountain, forestry, mining, agriculture).
+- Imported EDM/MAP/SAV comparison states preserve import semantics when toggling A/B.
+- 51 automated tests PASS; real 768×768 / 10-player SAV visual smoke PASS.
+- R60/R100 gameplay-distance calibration remains deliberately deferred to a dedicated pass.
+
+
+### DEV_7 additions
+- consolidation des retours DEV_5/DEV_6 ;
+- gradients 3 couleurs rouge/jaune/vert ;
+- labels extérieurs pour segments positifs trop petits ;
+- ordre forestier Adultes → Palmiers → Pousses ;
+- raccourci thème configurable Ctrl+Shift+T ;
+- distances adversaires avec adversaire identifié + couleurs joueurs ;
+- ressources locales étendues à 0–50 et 50–100 HEX ;
+- minage local en deux barres par joueur ;
+- gradients massifs/lacs/rivières inversés ;
+- couleurs sémantiques A/B pour Terre/Pierre/Poisson ;
+- Stats schema v4 ; 55 tests PASS ; smoke SAV réel 768/10P PASS ; hashes protégés inchangés.

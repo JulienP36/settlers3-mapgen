@@ -21,7 +21,7 @@ class App(BaseApp):
         self.prefs=load_settings();self._preview_base=None;self._preview_key=None
         self._zoom_after=None;self._progress_after=None
         super().__init__()
-        self.title('Settlers III MapGen v1.4')
+        self.title('Settlers III MapGen v1.4 candidate')
         self._apply_theme();self._update_view_controls()
 
     def _build(self):

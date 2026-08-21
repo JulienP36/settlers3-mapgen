@@ -113,6 +113,7 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - À terme, envisager de sortir starts/territoires initiaux de la vue Global vers une vue dédiée afin d'épurer la carte globale.
 - Envisager une vue dédiée Forêts / Carrières pour l'analyse des arbres et Building Stones.
 
+
 ## Après DEV_5 — Stats / UI à poursuivre
 
 - [ ] Recalibrer les distances de ressources autour des starts : conserver les rayons DEV_4 comme exploration mais étudier une lecture gameplay autour de ~50/60 HEX (claim rapide probable) et ~100 HEX (sécurité stratégique, notamment minerais).
@@ -122,6 +123,7 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - [ ] Explorer très tard l'utilisation de vrais sprites du jeu dans certains labels, uniquement si extraction propre et légitime des ressources graphiques possible ; ne jamais inventer de pseudo-sprites.
 - [ ] Agriculture : ajouter les nids d'abeilles uniquement après identification/calibration exacte.
 - [ ] Continuer la nomenclature des IDs sans inventer les espèces/objets inconnus.
+
 
 ## DEV_7 — consolidation retours DEV_5 + DEV_6
 
@@ -140,8 +142,3 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - [ ] Synchronisation **optionnelle/désactivable** graphe ↔ vue map ; exemple Agriculture→Cultures, distances→vue relationnelle avec flèches.
 - [ ] Ajouter les maps importées à l'historique session et rendre la taille de l'historique configurable (base actuelle 8).
 - [ ] Revoir netteté/résolution des exports PNG graphes et vue map.
-
-## Hygiène GitHub / source
-
-- [ ] Finaliser l'audit/synchro byte-for-byte de `dev` avec le dernier ZIP DEV testé pour les gros fichiers source/runtime/tests/docs.
-- [ ] Refactor contrôlé futur : renommer les modules ambigus `v15` / `v16` vers `v1_5` / `v1_6` avec migration atomique des imports/tests/scripts/entry points ; ne pas renommer à chaud.

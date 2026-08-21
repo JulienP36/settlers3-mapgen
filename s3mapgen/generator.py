@@ -247,7 +247,6 @@ class MapGenerator(_BaseMapGenerator):
                     A[y, x] = 1
                 n += 1
             return n
-
         common = sum(place(k, v, T == GRASS) for k, v in _NATIVE_GRASS_DECOR_TARGETS.items())
         wrecks = sum(place(k, v, T == SHORE, True, 1) for k, v in _NATIVE_WRECK_TARGETS.items())
 
@@ -774,3 +773,4 @@ class MapGenerator(_BaseMapGenerator):
                     by[rule].passed = True
                     by[rule].message = 'Legacy native behaviour preserved by audit'
         return out
+
