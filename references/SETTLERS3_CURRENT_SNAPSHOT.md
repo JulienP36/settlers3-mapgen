@@ -96,3 +96,15 @@ Focused polish from the DEV_7 user review: Shift/AZERTY shortcut fix, sun/moon t
 - Nearest opponent cue: `→ [opponent color] Pn`.
 - Top-three massifs/lakes/rivers use compact `# + medal` labels.
 - Stats schema v5; 61 tests PASS; real SAV 768/10P chart smoke PASS.
+
+
+## v1.7 DEV_10 — socle Stats/Graphs
+
+- Révision DEV_10_R2 : tooltips persistants pendant le mouvement et sémantique détaillée par segment ; densités `/1000` affichées une par ligne.
+- TODO conservé : tri des inventaires debug par quantité/ID/nom + IDs connus absents ; reset A/B individuel/global.
+- Stats schema v6.
+- Page Stats orientée debug : tous les Terrain IDs et Object IDs présents sont listés exhaustivement.
+- Densités `/1000` normalisées par support pertinent.
+- Tooltips génériques interactifs côté Graphiques.
+- Slots A/B identifiables directement sur leurs boutons via LED verte + label court.
+- Couplage Graphiques ↔ Map explicitement reporté à une itération ultérieure de v1.7 si utile ; pas requis pour fermer le socle.

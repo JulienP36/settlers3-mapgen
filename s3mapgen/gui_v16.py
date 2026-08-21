@@ -234,8 +234,11 @@ class App(V15StableApp):
         self.history_combo.grid(row=0,column=1,sticky='ew',padx=(6,3))
         ttk.Button(self.session_box,text='Charger',command=self._load_history).grid(row=0,column=2,padx=3)
         ttk.Button(self.session_box,text='Vider cache',command=self._clear_history).grid(row=0,column=3,padx=3)
-        ttk.Button(self.session_box,text='Définir A',command=lambda:self._set_compare_slot('A')).grid(row=0,column=4,padx=3)
-        ttk.Button(self.session_box,text='Définir B',command=lambda:self._set_compare_slot('B')).grid(row=0,column=5,padx=3)
+        self._compare_led_off=_selector_icon(self,'#7b8088','dot',14);self._compare_led_on=_selector_icon(self,'#34a853','dot',14)
+        self.compare_a_button=ttk.Button(self.session_box,text='Définir A',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('A'))
+        self.compare_a_button.grid(row=0,column=4,padx=3)
+        self.compare_b_button=ttk.Button(self.session_box,text='Définir B',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('B'))
+        self.compare_b_button.grid(row=0,column=5,padx=3)
         ttk.Button(self.session_box,text='Basculer A/B',command=self._toggle_compare).grid(row=0,column=6,padx=3)
         self.compare_var=tk.StringVar(value='A: —   |   B: —');ttk.Label(self.session_box,textvariable=self.compare_var,anchor='w').grid(row=1,column=0,columnspan=7,sticky='ew',pady=(3,0))
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
@@ -282,7 +285,8 @@ class App(V15StableApp):
         ttk.Button(controls,text='Exporter PNG',command=self._export_stats_chart).grid(row=0,column=4,padx=3)
         self.stats_chart_canvas=tk.Canvas(frame,highlightthickness=0,bg='#212225');self.stats_chart_canvas.grid(row=1,column=0,sticky='nsew')
         self.stats_chart_canvas.bind('<Configure>',lambda e:self._refresh_stats_chart(),add='+')
-        self._stats_chart_photo=None
+        self.stats_chart_canvas.bind('<Motion>',self._chart_tooltip_motion,add='+');self.stats_chart_canvas.bind('<Leave>',lambda e:self._hide_chart_tooltip(),add='+')
+        self._stats_chart_photo=None;self._stats_chart_regions=[];self._chart_tooltip=None;self._chart_tooltip_label=None
         self._refresh_stats_chart_labels()
 
     def _refresh_stats_chart_labels(self):
@@ -329,10 +333,38 @@ class App(V15StableApp):
             c.create_text(20,20,text='—',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'));return
         try:
             w=max(420,int(c.winfo_width()));h=max(280,int(c.winfo_height()));lang=self.prefs.get('language','fr');dark=self.prefs.get('theme','dark')=='dark'
-            im=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h,compare_stats=self._compare_stats_pair())
+            im,self._stats_chart_regions=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h,compare_stats=self._compare_stats_pair(),return_regions=True)
             self._stats_chart_photo=ImageTk.PhotoImage(im);c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
         except Exception as exc:
             c.create_text(20,20,text=f'Chart error: {exc}',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'))
+
+    def _hide_chart_tooltip(self):
+        if getattr(self,'_chart_tooltip',None) is not None:
+            try:self._chart_tooltip.destroy()
+            except tk.TclError:pass
+            self._chart_tooltip=None
+            self._chart_tooltip_label=None
+
+    def _chart_tooltip_motion(self,event):
+        hit=None
+        for region in reversed(getattr(self,'_stats_chart_regions',[])):
+            x0,y0,x1,y1=region.get('bbox',(0,0,0,0))
+            if x0<=event.x<=x1 and y0<=event.y<=y1:
+                hit=region;break
+        if hit is None:
+            self._hide_chart_tooltip();return
+        unit=hit.get('unit','');text=f"{hit.get('label','')}\n{hit.get('value','')}"+(f" {unit}" if unit else '')
+        dark=self.prefs.get('theme','dark')=='dark';bg='#202124' if dark else '#fffdf5';fg='#f1f3f4' if dark else '#202124'
+        # Keep one tooltip window alive while the mouse moves across chart regions.
+        # Recreating the Toplevel on every <Motion> caused visible flicker/disappearance.
+        tip=getattr(self,'_chart_tooltip',None);label=getattr(self,'_chart_tooltip_label',None)
+        if tip is None or label is None:
+            tip=tk.Toplevel(self);tip.overrideredirect(True);tip.attributes('-topmost',True)
+            label=tk.Label(tip,text=text,justify='left',background=bg,foreground=fg,relief='solid',borderwidth=1,padx=7,pady=5,font=('Segoe UI',9));label.pack()
+            self._chart_tooltip=tip;self._chart_tooltip_label=label
+        else:
+            label.configure(text=text,background=bg,foreground=fg)
+        tip.geometry(f"+{self.stats_chart_canvas.winfo_rootx()+event.x+14}+{self.stats_chart_canvas.winfo_rooty()+event.y+12}")
 
     def _export_stats_json(self):
         stats=self._ensure_stats_cache()
@@ -461,7 +493,7 @@ class App(V15StableApp):
         self._refresh_stats_chart_labels()
         if getattr(self,'current',None) and getattr(self,'stats',None):
             st=self._ensure_stats_cache();self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(st,lang=lang))
-        self._refresh_stats_chart()
+        self._refresh_stats_chart();self._refresh_compare_buttons()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
         for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else 'Reset')
         self._update_view_controls();self._clear_inspector()
@@ -675,7 +707,17 @@ class App(V15StableApp):
     def _output_label(self,out):
         if out is None:return '—'
         m=out.state.metadata;return f"{m.get('seed','import')}/{m.get('mode_key',m.get('mode','?'))}/{len(out.state.starts) or m.get('players',0)}P"
-    def _refresh_compare_label(self):self.compare_var.set(f"A: {self._output_label(self._compare_slots['A'])}   |   B: {self._output_label(self._compare_slots['B'])}");self._refresh_stats_chart()
+    def _refresh_compare_buttons(self):
+        lang=self.prefs.get('language','fr')
+        for slot,button in (('A',getattr(self,'compare_a_button',None)),('B',getattr(self,'compare_b_button',None))):
+            if button is None:continue
+            out=self._compare_slots.get(slot)
+            if out is None:
+                button.configure(text=(f'Définir {slot}' if lang=='fr' else f'Set {slot}'),image=self._compare_led_off)
+            else:
+                button.configure(text=f"{slot} · {self._output_label(out)}",image=self._compare_led_on)
+    def _refresh_compare_label(self):
+        self.compare_var.set(f"A: {self._output_label(self._compare_slots['A'])}   |   B: {self._output_label(self._compare_slots['B'])}");self._refresh_compare_buttons();self._refresh_stats_chart()
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']
         if a is None or b is None:self.status.set('Définir A et B avant la bascule');return

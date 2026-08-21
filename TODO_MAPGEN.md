@@ -47,13 +47,28 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] stock total exploitable Building Stones ;
 - [x] distribution des états 115..127 ;
 - [x] graphes des ressources minières : stock réel (cases disponibles dans le modèle ; graphe dédié à enrichir) ;
-- [ ] densités par 1000 cellules de land ;
+- [x] densités normalisées par 1000 cellules avec dénominateur pertinent selon la donnée (terre/eau/montagne) — DEV_10 ;
 - [x] ratios land/ocean, biomes, eau intérieure, forêts, ressources — socle ;
 - [~] blobs / massifs / lacs / rivières / clusters : moteur de composantes avancé DEV_4, analyses/distributions à enrichir ;
 - [x] distances inter-starts + voisin le plus proche ;
 - [x] percentiles utiles — relief, quantités minières et distances ;
 - [x] suivi Terrain24 / Terrain22 / Terrain28 via les comptes Terrain ID ;
 - [ ] autres métriques et graphes pertinents tant que lisibles/exploitables.
+
+
+## DEV_10 — socle Stats / Graphiques avant RC
+
+- [x] Page Statistiques assumée comme outil de **debug technique** : inventaire exhaustif de tous les Terrain IDs et Object IDs présents, sans limite Top 12.
+- [x] Densités normalisées `/1000` avec support pertinent : terre pour arbres/pierres/agriculture, eau pour poissons, montagne pour minerais.
+- [x] Export CSV enrichi avec les densités normalisées ; JSON schema v6.
+- [x] Tooltips interactifs génériques sur les segments/barres des graphes, y compris A/B.
+- [x] Tooltips : fenêtre persistante pendant le mouvement + sémantique par segment (libre/sous neige, mer/lacs, roche/neige, rayons, minerais, A/B) — DEV_10_R2.
+- [x] Slots de comparaison A/B : état visible directement sur les boutons avec LED verte + identification courte de la map définie.
+- [ ] Futur A/B : permettre de vider/réinitialiser séparément A, B, ou les deux ; les boutons LED/labels pourront remplacer le texte redondant sous l’historique.
+- [ ] Futur inventaires debug : tri commutable par quantité / ID / nom et option pour afficher les IDs connus mais absents de la map.
+- [ ] Futur : étendre le debug à d’autres familles runtime quand identifiées (settlers/colons, marchandises, planches, rondins, pierres taillées, outils, armes, bâtiments, etc.) sans inventer les IDs.
+- [ ] Futur : refonte UI légère de la section Comparaison, sans changer son fonctionnement de base.
+- [ ] Futur : synchronisation optionnelle/désactivable Graphiques ↔ vue Map, hors périmètre du socle v1.7 initial.
 
 ## Calibration multi-tailles — après UI + Stats
 
@@ -116,7 +131,7 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 
 ## Après DEV_5 — Stats / UI à poursuivre
 
-- [ ] Recalibrer les distances de ressources autour des starts : conserver les rayons DEV_4 comme exploration mais étudier une lecture gameplay autour de ~50/60 HEX (claim rapide probable) et ~100 HEX (sécurité stratégique, notamment minerais).
+- [x] Recalibrer les distances de ressources autour des starts : lecture gameplay 0–50 HEX + 50–100 HEX implémentée et validée.
 - [x] Permettre d'ajouter aux slots A/B des cartes importées `.SAV`, `.EDM` et `.MAP` ; DEV_6 conserve explicitement leur sémantique d'import lors des bascules.
 - [ ] Couleurs A/B personnalisables.
 - [ ] Vue Hauteurs : remplacer à terme le simple dégradé blanc/gris par un rendu de type carte topographique / courbes ou classes d'altitude.
@@ -138,7 +153,7 @@ Après validation du cycle Continental : préparer **v2.0** avec premier exécut
 - [x] Stock minier proche : deux barres/joueur (≤50 ; 50–100), couleurs minerai conservées.
 - [x] Massifs/lacs/rivières : plus grand = plus foncé.
 - [x] A/B : couleurs sémantiques pour Terre, Stock pierre, Stock poisson.
-- [ ] Tooltips interactifs détaillés sur les barres/segments (architecture généralisable à tous les graphes).
+- [x] Tooltips interactifs génériques sur les barres/segments des Graphiques — DEV_10.
 - [ ] Synchronisation **optionnelle/désactivable** graphe ↔ vue map ; exemple Agriculture→Cultures, distances→vue relationnelle avec flèches.
 - [ ] Ajouter les maps importées à l'historique session et rendre la taille de l'historique configurable (base actuelle 8).
 - [ ] Revoir netteté/résolution des exports PNG graphes et vue map.

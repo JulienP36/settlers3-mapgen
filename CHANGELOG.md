@@ -152,3 +152,10 @@
 - Scrollbars sur les onglets texte.
 - Export SAV non inventé : copie inchangée seulement si la source importée est déjà un SAV.
 - TODO actualisé avec la généralisation future de la morphologie Upgraded.
+
+## v1.7 DEV_10
+- Stats/debug: exhaustive Terrain/Object ID inventories.
+- Stats schema v6 with normalized /1000 densities using relevant support denominators.
+- Generic interactive chart tooltips, including A/B.
+- A/B slot buttons now expose a visible set-state (green LED + short map identity).
+- Documentation/TODO cleanup before RC preparation.

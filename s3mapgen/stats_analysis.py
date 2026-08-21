@@ -365,7 +365,7 @@ def analyze_map(state) -> dict[str, Any]:
     }
 
     result = {
-        'schema_version': 5,
+        'schema_version': 6,
         'source': source,
         'general': {
             'side': int(state.side), 'cells': n, 'players': len(state.starts) or int(state.metadata.get('players', 0) or 0),
@@ -405,6 +405,17 @@ def analyze_map(state) -> dict[str, Any]:
             'wheat': int(((O >= 85) & (O <= 93)).sum()),
             'vine': int(((O >= 94) & (O <= 102)).sum()),
             'rice': int(((O >= 103) & (O <= 110)).sum()),
+        },
+        # Normalized debug metrics. Each denominator matches the gameplay support
+        # of the measured resource instead of blindly using total map cells.
+        'densities': {
+            'adult_trees_per_1000_land': round(1000.0 * tree_adults / land_n, 4) if land_n else 0.0,
+            'palms_per_1000_land': round(1000.0 * object_families['palm'] / land_n, 4) if land_n else 0.0,
+            'saplings_per_1000_land': round(1000.0 * object_families['saplings'] / land_n, 4) if land_n else 0.0,
+            'building_stone_stock_per_1000_land': round(1000.0 * stone_stock / land_n, 4) if land_n else 0.0,
+            'fish_stock_per_1000_water': round(1000.0 * (int(fish_qty.sum()) if fish_qty.size else 0) / int(water.sum()), 4) if water.any() else 0.0,
+            'mineral_stock_per_1000_mountain': round(1000.0 * sum(v['stock'] for v in minerals.values()) / support_n, 4) if support_n else 0.0,
+            'agriculture_cells_per_1000_land': round(1000.0 * (int(((O >= 85) & (O <= 110)).sum())) / land_n, 4) if land_n else 0.0,
         },
         'height': {'distribution': _percentiles(H.ravel()), 'land_distribution': _percentiles(H[land])},
         'hydrology': {
@@ -455,6 +466,7 @@ def stats_csv(stats: dict[str, Any]) -> str:
     for key, value in stats['vegetation']['families'].items(): w.writerow(['vegetation', 'count', key, value])
     w.writerow(['vegetation', 'count', 'saplings', stats['vegetation']['saplings']])
     for key, value in stats['agriculture'].items(): w.writerow(['agriculture', 'cells', key, value])
+    for key, value in stats.get('densities', {}).items(): w.writerow(['density', 'per_1000', key, value])
     for player in stats.get('players', {}).get('local_resources', []):
         for radius, metrics in player['radii'].items():
             prefix=f"P{player['player']}_r{radius}"
@@ -485,6 +497,25 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
     lines.append('RESSOURCES FORESTIÈRES & PIERRES' if fr else 'FORESTRY RESOURCES & STONES'); lines.append('-' * 72)
     lines.append((f"Arbres adultes : {v['adult_wood_trees']:,} | Palmiers : {v['families']['palm']:,} | Pousses d’arbre : {v['saplings']:,}" if fr else f"Adult trees: {v['adult_wood_trees']:,} | Palms: {v['families']['palm']:,} | Tree saplings: {v['saplings']:,}"))
     lines.append((f"Pierres de construction : {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} épuisées) | stock {bs['stock_total']:,}" if fr else f"Building stones: {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} exhausted) | stock {bs['stock_total']:,}"))
+    d1000=stats.get('densities', {})
+    if d1000:
+        lines.append(''); lines.append('DENSITÉS NORMALISÉES / 1000' if fr else 'NORMALIZED DENSITIES / 1000'); lines.append('-' * 72)
+        if fr:
+            lines.append(f"Arbres adultes : {d1000.get('adult_trees_per_1000_land',0):.2f} / 1000 terre")
+            lines.append(f"Palmiers : {d1000.get('palms_per_1000_land',0):.2f} / 1000 terre")
+            lines.append(f"Pousses : {d1000.get('saplings_per_1000_land',0):.2f} / 1000 terre")
+            lines.append(f"Pierre stock : {d1000.get('building_stone_stock_per_1000_land',0):.2f} / 1000 terre")
+            lines.append(f"Poisson stock : {d1000.get('fish_stock_per_1000_water',0):.2f} / 1000 eau")
+            lines.append(f"Minerai stock : {d1000.get('mineral_stock_per_1000_mountain',0):.2f} / 1000 montagne")
+            lines.append(f"Agriculture : {d1000.get('agriculture_cells_per_1000_land',0):.2f} / 1000 terre")
+        else:
+            lines.append(f"Adult trees: {d1000.get('adult_trees_per_1000_land',0):.2f} / 1000 land")
+            lines.append(f"Palms: {d1000.get('palms_per_1000_land',0):.2f} / 1000 land")
+            lines.append(f"Saplings: {d1000.get('saplings_per_1000_land',0):.2f} / 1000 land")
+            lines.append(f"Stone stock: {d1000.get('building_stone_stock_per_1000_land',0):.2f} / 1000 land")
+            lines.append(f"Fish stock: {d1000.get('fish_stock_per_1000_water',0):.2f} / 1000 water")
+            lines.append(f"Mining stock: {d1000.get('mineral_stock_per_1000_mountain',0):.2f} / 1000 mountain")
+            lines.append(f"Agriculture: {d1000.get('agriculture_cells_per_1000_land',0):.2f} / 1000 land")
     lines.append('')
     lines.append('HYDROLOGIE / RELIEF' if fr else 'HYDROLOGY / HEIGHT'); lines.append('-' * 72)
     lines.append((f"Eaux intérieures : {hy['inland_water_components']} composantes | plus grande {hy['largest_inland_water']:,} cases | rivières {hy['river_components']} composantes" if fr else f"Inland waters: {hy['inland_water_components']} components | largest {hy['largest_inland_water']:,} cells | rivers {hy['river_components']} components"))
@@ -512,10 +543,10 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
                     lines.append(f"P{row['player']}: arbres {m.get('adult_trees',0):,} | pousses {m.get('saplings',0):,} | pierre {m.get('building_stone_stock',0):,} | poisson {m.get('fish_stock',0):,} | minerai {ore:,}")
                 else:
                     lines.append(f"P{row['player']}: trees {m.get('adult_trees',0):,} | saplings {m.get('saplings',0):,} | stone {m.get('building_stone_stock',0):,} | fish {m.get('fish_stock',0):,} | ore {ore:,}")
-    lines.append(''); lines.append('TOP TERRAINS' if fr else 'TOP TERRAIN IDS'); lines.append('-' * 72)
-    for row in stats['terrain']['ids'][:12]:
+    lines.append(''); lines.append('DEBUG — TOUS LES TERRAIN IDs PRÉSENTS' if fr else 'DEBUG — ALL PRESENT TERRAIN IDs'); lines.append('-' * 72)
+    for row in stats['terrain']['ids']:
         lines.append(f"{row['id']:>3}  {row['name_fr' if fr else 'name_en']:<28} {row['cells']:>9,}  {row['pct_map']:>7.3f} %")
-    lines.append(''); lines.append('TOP OBJETS' if fr else 'TOP OBJECT IDS'); lines.append('-' * 72)
-    for row in stats['objects']['ids'][:12]:
+    lines.append(''); lines.append('DEBUG — TOUS LES OBJECT IDs PRÉSENTS' if fr else 'DEBUG — ALL PRESENT OBJECT IDs'); lines.append('-' * 72)
+    for row in stats['objects']['ids']:
         lines.append(f"{row['id']:>3}  {row['name_fr' if fr else 'name_en']:<28} {row['count']:>9,}")
     return '\n'.join(lines)

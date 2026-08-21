@@ -4,7 +4,7 @@ import numpy as np
 
 from s3mapgen.model import MapState
 from s3mapgen.stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
-from s3mapgen.stats_charts import render_stats_chart, CHART_KEYS
+from s3mapgen.stats_charts import render_stats_chart, CHART_KEYS, build_ab_metrics
 
 
 def sample_state():
@@ -66,7 +66,7 @@ def test_start_distance_distribution_and_claims():
 
 def test_exports_roundtrip():
     s=analyze_map(sample_state())
-    assert json.loads(stats_json(s))['schema_version'] == 5
+    assert json.loads(stats_json(s))['schema_version'] == 6
     csv_text=stats_csv(s)
     assert 'terrain_family' in csv_text and 'building_stone' in csv_text and 'saplings' in csv_text
 
@@ -188,13 +188,13 @@ def test_dev6_ab_rows_are_compact_and_semantically_segmented():
     assert len(rows)==8
     assert len(by_label['Terre'][3])==1 and len(by_label['Terre'][4])==1
     assert len(by_label['Eau'][3])==2
-    assert sum(v for v,_ in by_label['Eau'][3]) == by_label['Eau'][1]
+    assert sum(seg[0] for seg in by_label['Eau'][3]) == by_label['Eau'][1]
     assert len(by_label['Montagne'][3])==2
-    assert sum(v for v,_ in by_label['Montagne'][3]) == by_label['Montagne'][1]
+    assert sum(seg[0] for seg in by_label['Montagne'][3]) == by_label['Montagne'][1]
     assert len(by_label['Stock minier'][3])==5
-    assert sum(v for v,_ in by_label['Stock minier'][3]) == by_label['Stock minier'][1]
+    assert sum(seg[0] for seg in by_label['Stock minier'][3]) == by_label['Stock minier'][1]
     assert len(by_label['Ressources forestières'][3])==3
-    assert sum(v for v,_ in by_label['Ressources forestières'][3]) == by_label['Ressources forestières'][1]
+    assert sum(seg[0] for seg in by_label['Ressources forestières'][3]) == by_label['Ressources forestières'][1]
 
 
 def test_dev6_compare_toggle_preserves_import_semantics_in_source():
@@ -224,7 +224,7 @@ def test_dev7_ab_simple_metrics_have_semantic_colors():
     rows={row[0]:row for row in build_ab_metrics(a,b,fr=True)}
     for label in ('Terre','Stock pierre','Stock poisson'):
         assert rows[label][3] and rows[label][4]
-        assert sum(v for v,_ in rows[label][3]) == rows[label][1]
+        assert sum(seg[0] for seg in rows[label][3]) == rows[label][1]
 
 def test_dev7_shortcut_catalog_contains_theme_toggle():
     from s3mapgen.preferences import DEFAULT_SHORTCUTS
@@ -261,3 +261,56 @@ def test_dev9_podium_top3_replaces_numeric_rank_label():
     for i,g in enumerate(groups[:3]): g['medal_rank']=i+1
     # Rendering owns the replacement; the chart builder marks exactly the top three.
     assert [g.get('medal_rank') for g in groups] == [1,2,3,None]
+
+
+def test_dev10_normalized_densities_and_full_debug_ids():
+    s = analyze_map(sample_state())
+    assert s['schema_version'] == 6
+    d = s['densities']
+    assert 'adult_trees_per_1000_land' in d
+    assert 'building_stone_stock_per_1000_land' in d
+    assert 'fish_stock_per_1000_water' in d
+    assert 'mineral_stock_per_1000_mountain' in d
+    report = format_stats_report(s, lang='fr')
+    assert 'DENSITÉS NORMALISÉES / 1000' in report
+    assert 'DEBUG — TOUS LES TERRAIN IDs PRÉSENTS' in report
+    assert 'DEBUG — TOUS LES OBJECT IDs PRÉSENTS' in report
+    # The debug inventory is exhaustive, not capped to a top-N list.
+    for row in s['terrain']['ids']:
+        assert f"{row['id']:>3}" in report
+    for row in s['objects']['ids']:
+        assert f"{row['id']:>3}" in report
+
+
+def test_dev10_chart_tooltip_regions_are_generic():
+    s = analyze_map(sample_state())
+    im, regions = render_stats_chart(s, 'terrain_families', lang='fr', dark=True, width=640, height=420, return_regions=True)
+    assert im.size == (640, 420)
+    assert regions
+    assert all('bbox' in r and 'label' in r and 'value' in r for r in regions)
+    a, b = s, analyze_map(sample_state())
+    im2, regions2 = render_stats_chart(a, 'ab_summary', lang='fr', dark=True, width=640, height=420, compare_stats=(a, b), return_regions=True)
+    assert im2.size == (640, 420)
+    assert regions2
+
+
+def test_dev10_r2_tooltips_distinguish_semantic_segments():
+    s = analyze_map(sample_state())
+    _im, regions = render_stats_chart(s, 'mineral_stock', lang='fr', dark=True, width=640, height=420, return_regions=True)
+    labels = {r['label'] for r in regions}
+    assert any('Libre' in label for label in labels)
+    # sample_state may not contain a positive snow-covered mineral segment; verify the A/B semantic model too.
+    rows = {row[0]: row for row in build_ab_metrics(s, s, fr=True)}
+    assert any(len(seg) >= 3 for seg in rows['Eau'][3])
+    assert {seg[2] for seg in rows['Eau'][3]} == {'Mer', 'Lacs'}
+    assert {seg[2] for seg in rows['Montagne'][3]} == {'Roche', 'Neige'}
+    assert {seg[2] for seg in rows['Stock minier'][3]} == {'Charbon', 'Fer', 'Or', 'Gemmes', 'Soufre'}
+
+
+def test_dev10_r2_density_report_one_metric_per_line():
+    s = analyze_map(sample_state())
+    report = format_stats_report(s, lang='fr')
+    block = report.split('DENSITÉS NORMALISÉES / 1000', 1)[1].split('HYDROLOGIE / RELIEF', 1)[0]
+    lines = [line for line in block.splitlines() if '/ 1000' in line]
+    assert len(lines) == 7
+    assert all(' | ' not in line for line in lines)
