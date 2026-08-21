@@ -25,3 +25,16 @@ L'historique v1.6 est documenté rétroactivement avec `RC_n` afin d'éviter une
 ## Références de workflow
 
 Le workflow projet global est défini dans `PROJECT_WORKFLOW.md`. Le point de reprise courant est `references/SETTLERS3_CURRENT_SNAPSHOT.md`. Ces deux fichiers doivent être consultés avant une nouvelle session de développement.
+
+
+## v1.7 STABLE
+- RC_1 validated and promoted without feature changes.
+- GitHub Release policy: publish STABLE only.
+- v1.7 historical DEV/RC notes are archived under `references/release_notes/v1_7_history/`.
+
+## Current development
+
+- Latest published STABLE: `v1.7`.
+- Active development line: `v1.8 DEV`.
+- v1.9 is planned as a data-archaeology transition; v1.10 as the next generator-focused line.
+- Do not force a `v2.0` milestone until a genuinely structural evolution justifies it.

@@ -24,6 +24,10 @@ VIEW_LABELS={
  'en':{'global':'Global','heightmap':'Elevation','resources':'Resources','territories':'Territories','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
+WINDOW_TITLES={
+ 'fr':'Settlers III MapGen v1.8 DEV_1 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_1 — generation engine v1.5',
+}
 
 HEATMAP_LABELS={
  'fr':{'trees':'Arbres','building_stones':'Pierres de construction','fish':'Poissons','coal':'Charbon','iron':'Fer','gold':'Or','gems':'Gemmes','sulfur':'Soufre'},
@@ -67,6 +71,7 @@ TEXTS={
  'Paramètres':{'en':'Settings'},'Validations':{'en':'Validations'},'Pipeline':{'en':'Pipeline'},'Métadonnées':{'en':'Metadata'},'Statistiques':{'en':'Statistics'},'Graphiques':{'en':'Charts'},'Exporter JSON':{'en':'Export JSON'},'Exporter CSV':{'en':'Export CSV'},'Exporter PNG':{'en':'Export PNG'},'Ressource Heatmap':{'en':'Heatmap resource'},'Filtre carte thermique':{'en':'Heatmap filter'},
  'Recentrer':{'en':'Reset view'},'Copier seed':{'en':'Copy seed'},'Langue':{'en':'Language'},'Aide':{'en':'Help'},'Historique session':{'en':'Session history'},
  'Charger':{'en':'Load'},'Vider cache':{'en':'Clear cache'},'Définir A':{'en':'Set A'},'Définir B':{'en':'Set B'},'Basculer A/B':{'en':'Toggle A/B'},
+ 'Vider A':{'en':'Clear A'},'Vider B':{'en':'Clear B'},'Vider A+B':{'en':'Clear A+B'},
  'Raccourcis':{'en':'Shortcuts'},'Appliquer':{'en':'Apply'},'Valeurs par défaut':{'en':'Defaults'},'Réinitialiser':{'en':'Reset'},
  'Session / Comparaison':{'en':'Session / Comparison'},'Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…':{'en':'Format: Ctrl+G, Ctrl+Shift+C, Alt+1, F1…'},
 }
@@ -186,14 +191,13 @@ class ColorMenuSelect(ttk.Menubutton):
         except tk.TclError:pass
 
 class App(V15StableApp):
-    """v1.6 UI/tooling shell running the unchanged validated v1.5 generator."""
+    """v1.8 UI/tooling shell running the unchanged validated v1.5 generator."""
     def __init__(self):
         self.session_cache=SessionGenerationCache(max_entries=8)
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail=''
         super().__init__()
-        self.title('Settlers III MapGen v1.7 DEV_9 — moteur v1.5')
         self._apply_language();self._bind_shortcuts()
 
     def _build(self):
@@ -240,7 +244,14 @@ class App(V15StableApp):
         self.compare_b_button=ttk.Button(self.session_box,text='Définir B',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('B'))
         self.compare_b_button.grid(row=0,column=5,padx=3)
         ttk.Button(self.session_box,text='Basculer A/B',command=self._toggle_compare).grid(row=0,column=6,padx=3)
-        self.compare_var=tk.StringVar(value='A: —   |   B: —');ttk.Label(self.session_box,textvariable=self.compare_var,anchor='w').grid(row=1,column=0,columnspan=7,sticky='ew',pady=(3,0))
+        # v1.8 DEV_1: the active A/B identity already lives on the LED buttons, so the
+        # old duplicate text line is replaced by explicit reset controls.
+        self.clear_a_button=ttk.Button(self.session_box,text='Vider A',command=lambda:self._clear_compare_slot('A'))
+        self.clear_a_button.grid(row=1,column=4,padx=3,pady=(4,0))
+        self.clear_b_button=ttk.Button(self.session_box,text='Vider B',command=lambda:self._clear_compare_slot('B'))
+        self.clear_b_button.grid(row=1,column=5,padx=3,pady=(4,0))
+        self.clear_ab_button=ttk.Button(self.session_box,text='Vider A+B',command=self._clear_compare_slots)
+        self.clear_ab_button.grid(row=1,column=6,padx=3,pady=(4,0))
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
         self._build_stats_charts_tab()
         self._shortcut_settings_tab()
@@ -476,6 +487,7 @@ class App(V15StableApp):
     def _apply_language(self):
         if not hasattr(self,'lang_var'):return
         lang=self.prefs.get('language','fr');vk=self._view_key();hk=self._heatmap_key();mk=self._mode_key();ak=self._arch_key()
+        self.title(WINDOW_TITLES[lang])
         for w,source in getattr(self,'_i18n_widgets',[]):
             try:w.configure(text=source if lang=='fr' else TEXTS[source].get('en',source))
             except tk.TclError:pass
@@ -718,8 +730,24 @@ class App(V15StableApp):
                 button.configure(text=(f'Définir {slot}' if lang=='fr' else f'Set {slot}'),image=self._compare_led_off)
             else:
                 button.configure(text=f"{slot} · {self._output_label(out)}",image=self._compare_led_on)
+        for slot,button in (('A',getattr(self,'clear_a_button',None)),('B',getattr(self,'clear_b_button',None))):
+            if button is not None:button.configure(state='normal' if self._compare_slots.get(slot) is not None else 'disabled')
+        both=getattr(self,'clear_ab_button',None)
+        if both is not None:both.configure(state='normal' if any(self._compare_slots.values()) else 'disabled')
     def _refresh_compare_label(self):
-        self.compare_var.set(f"A: {self._output_label(self._compare_slots['A'])}   |   B: {self._output_label(self._compare_slots['B'])}");self._refresh_compare_buttons();self._refresh_stats_chart()
+        # Compatibility helper kept for existing callers; identity is now shown only on the LED buttons.
+        self._refresh_compare_buttons();self._refresh_stats_chart()
+    def _clear_compare_slot(self,slot):
+        if slot not in self._compare_slots:return
+        self._compare_slots[slot]=None
+        if self._compare_active==slot:self._compare_active=None
+        self._refresh_compare_label()
+        lang=self.prefs.get('language','fr')
+        self.status.set((f'Comparaison {slot} vidée' if lang=='fr' else f'Comparison {slot} cleared'))
+    def _clear_compare_slots(self):
+        self._compare_slots={'A':None,'B':None};self._compare_active=None
+        self._refresh_compare_label()
+        self.status.set('Comparaisons A/B vidées' if self.prefs.get('language','fr')=='fr' else 'A/B comparisons cleared')
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']
         if a is None or b is None:self.status.set('Définir A et B avant la bascule');return

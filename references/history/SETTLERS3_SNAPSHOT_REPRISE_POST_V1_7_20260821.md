@@ -1,8 +1,6 @@
-# Settlers III MapGen — CURRENT SNAPSHOT
+# Settlers III MapGen — Snapshot de reprise post-v1.7
 
-> **LIVING RECOVERY SNAPSHOT — v1.8 development.**
->
-> Last refreshed: **2026-08-21 — v1.8 DEV_1**
+> Checkpoint de continuité créé le 2026-08-21 après publication de v1.7 STABLE et avant démarrage de v1.8.
 
 ## État release / Git
 
@@ -197,16 +195,6 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 6. Vérifier tests + hashes protégés avant packaging.
 7. DEV exact → `dev` via `sync_dev_from_zip.ps1` après validation utilisateur ; ne pas faire de synchronisation GitHub partielle.
 
-## v1.8 DEV_1 — current work
-
-- Base: v1.7 STABLE published/tagged and validated.
-- Window title is now fully FR/EN localized.
-- A/B redundant summary line removed; LED buttons remain the source of slot identity.
-- Explicit Clear A / Clear B / Clear A+B controls added.
-- v1.5/v1.6 release notes/manifests archived under `references/release_notes/`.
-- Terrain/Object archaeology registries added to `references/`.
-- No generation-engine changes.
-
 ## Prochaine action recommandée
 
-Valider **v1.8 DEV_1** sur Windows. Après validation, synchroniser le ZIP exact vers `dev` via `sync_dev_from_zip.ps1`, puis poursuivre la roadmap v1.8, probablement historique/config puis Batch Generation selon les retours utilisateur.
+Démarrer **v1.8 DEV_1** depuis une base v1.7 STABLE propre, avec une petite passe post-release : i18n/titre + A/B léger + préparation historique/config, puis avancer vers Batch Generation selon les priorités réelles et les nouvelles idées éventuelles.

@@ -1,3 +1,25 @@
+# v1.8 DEV_1 — 2026-08-21
+
+- Start of the v1.8 Workflow / Accessibility / Production line.
+- Full FR/EN window-title localization.
+- A/B comparison reset controls (A, B, A+B) and removal of redundant summary text.
+- Post-v1.7 recovery/archaeology references integrated.
+- Release-note archive cleanup for v1.5/v1.6.
+- No generator-engine changes.
+
+## v1.7 STABLE — 2026-08-21
+- Promoted RC_1 after user validation on Windows.
+- User smoke validation: GUI operational, exports operational, exported EDM reloads correctly, and in-game View Map works without regression.
+- No feature changes from RC_1; release promotion and documentation/archive hygiene only.
+- Archived v1.7 DEV/RC notes under `references/release_notes/v1_7_history/`.
+
+## v1.7 RC_1 — 2026-08-21
+- Feature freeze after user validation of DEV_11_R2.
+- Global release review completed; no functional blocker found.
+- Fixed stale GUI window title (`DEV_9` → `v1.7 RC_1`).
+- Refreshed README, release validation and current snapshot for the real v1.7 RC phase.
+- No generation-engine change.
+
 ## v1.7 DEV_11 — 2026-08-21
 - Final planned feature DEV before v1.7 RC.
 - Corrected Terrain ID24 classification: Grass now includes and visually segments Green Grass ID16 + Dry Grass ID24.

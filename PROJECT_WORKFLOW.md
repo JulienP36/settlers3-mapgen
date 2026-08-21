@@ -59,3 +59,19 @@ Check these hashes after significant tooling/UI/Stats work.
 
 ## Release path
 See `VERSIONING.md` for the full release checklist. STABLE publication is intentionally conservative: validate RC, update docs/tests, package, verify source state, promote to `main`, tag, then publish GitHub Release.
+
+## Post-v1.7 discoverability / publication workflow
+The project remains primarily a personal tool, but public releases should be discoverable by Settlers III players who are actively looking for this kind of utility. Treat discoverability as release hygiene, not as an SEO/marketing campaign.
+
+After v1.7 STABLE:
+1. Review the GitHub repository **About** description and keep it short, explicit and keyword-natural.
+2. Add useful repository topics such as `settlers-iii`, `settlers3`, `map-generator`, `procedural-generation`, `reverse-engineering`, `python` and other format-specific topics only when they genuinely fit.
+3. Preserve the French README while adding an accessible English entry point/summary (or a clearly linked `README_EN.md`). Naturally include useful search terminology such as `Settlers III map generator`, `Settlers 3 procedural map generator`, `Siedler III Kartengenerator`, `.EDM`, `.MAP` and `.SAV`; never keyword-stuff.
+4. Continue publishing **STABLE versions as proper GitHub Releases** with a version tag, downloadable package and readable release notes. DEV/RC remain non-release checkpoints.
+5. Community outreach (Discord/wiki/map sites) is optional and only if the project owner later chooses to present the tool publicly; do not make it a prerequisite for development or releases.
+## v1.8 accessibility / public-facing rules
+- Public-facing README material must transparently mention the substantial use of ChatGPT/OpenAI in implementation assistance, especially backend, analysis and reverse-engineering tooling, while keeping project direction/validation accurately attributed to the project owner.
+- Prioritize a self-contained Windows `.exe` during v1.8 so external users do not need to install Python/pip/dependencies.
+- Evolve the GitHub-Releases updater for packaged executable updates; preserve user settings and verify release integrity.
+- **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.
+

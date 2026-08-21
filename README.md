@@ -2,6 +2,8 @@
 
 > Générateur procédural expérimental pour **The Settlers III**, construit à partir de reverse-engineering des formats `.EDM`, `.MAP` et `.SAV`, d'analyses du générateur natif et de nombreuses validations dans l'éditeur et en jeu.
 
+> **Note de développement / transparence :** ce projet est conçu, dirigé, testé et validé humainement, avec un usage important de **ChatGPT / OpenAI comme assistance d’implémentation**, notamment pour le backend, l’analyse technique et les outils de reverse-engineering. Cette assistance fait partie explicitement du processus de développement du projet.
+
 ## Présentation du projet
 
 **Settlers III MapGen** a pour objectif de créer, analyser et à terme éditer des cartes Settlers III avec une génération procédurale reproductible et contrôlable.
@@ -18,9 +20,9 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.6 STABLE / moteur v1.5 stable
+## État actuel — v1.8 DEV_1 / moteur v1.5 stable
 
-**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.6 regroupe les ajouts UI/outillage post-v1.5 et ajoute les deux derniers TODO prioritaires avant la grosse passe Statistiques.
+**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
@@ -42,7 +44,7 @@ Le contour SAV n'est plus une ellipse approximative : les coordonnées de dépar
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 
-La **v1.6 STABLE** est le checkpoint UI/outillage validé. La priorité passe désormais à la **grosse passe Statistiques**, puis à la calibration multi-tailles Continental.
+La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** ouvre maintenant la passe Workflow / accessibilité / production (Batch Generation, exports, historique/configuration, langues, packaging `.exe`, updater et découvrabilité). Une v1.9 de transition est prévue pour l'archéologie/data mapping avant le retour profond au générateur en v1.10.
 
 ## Modes de génération
 
