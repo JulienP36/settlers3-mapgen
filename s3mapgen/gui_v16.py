@@ -25,8 +25,61 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_1 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_1 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_2_R7 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_2_R7 — generation engine v1.5',
+}
+
+FEEDBACK_TEXT={
+ 'fr':{
+  'ready':'Prêt — {mode} / {archetype} / modificateurs : {modifiers} / {side}×{side} / {players} joueurs.',
+  'size_reserved':'{side}×{side} : max {max_players} joueurs. Sélection prête, génération pas encore calibrée.',
+  'mode_reserved':'Mode « {mode} » réservé, non implémenté.',
+  'arch_reserved':'Archétype « {archetype} » réservé, non implémenté.',
+  'generating':'Génération de {archetype} — {mode} — modificateurs : {modifiers} — {side}×{side} — {players} joueurs — seed {seed}…',
+  'generated':'Carte générée — {archetype} / {mode} / modificateurs : {modifiers} / {side}×{side} / {players} joueurs / seed {seed}.',
+  'cache_hit':'Résultat réutilisé depuis le cache — seed {seed}.',
+  'heatmap_locked':'Le filtre est disponible lorsque la vue « Carte thermique » est sélectionnée.',
+  'history_loaded':'Carte chargée depuis l’historique.',
+  'history_cleared':'Caches de session vidés.',
+  'shortcut_applied':'Raccourcis appliqués.',
+  'shortcut_restored':'Raccourcis restaurés aux valeurs par défaut.',
+  'seed_copied':'Seed copié : {seed}',
+  'export_done':'Export terminé.',
+  'history_empty':'Aucune carte disponible dans le cache de session.',
+  'compare_toggled':'Carte basculée vers {map}.',
+  'theme_changed':'Thème changé : {theme}.',
+  'view_reset':'Vue recentrée.',
+  'seed_randomized':'Nouveau seed aléatoire : {seed}',
+  'graph_exported':'Export graphique terminé : {format} — {file}',
+  'opacity_locked':'L’opacité est disponible uniquement avec une vue de type couche.',
+  'modifier_none':'Aucun modificateur actif.',
+  'batch_reserved':'Génération par lot : emplacement réservé pour la fonctionnalité Batch de v1.8.',
+ },
+ 'en':{
+  'ready':'Ready — {mode} / {archetype} / modifiers: {modifiers} / {side}×{side} / {players} players.',
+  'size_reserved':'{side}×{side}: max {max_players} players. Selection ready; generation is not calibrated yet.',
+  'mode_reserved':'Mode “{mode}” is reserved and not implemented.',
+  'arch_reserved':'Archetype “{archetype}” is reserved and not implemented.',
+  'generating':'Generating {archetype} — {mode} — modifiers: {modifiers} — {side}×{side} — {players} players — seed {seed}…',
+  'generated':'Map generated — {archetype} / {mode} / modifiers: {modifiers} / {side}×{side} / {players} players / seed {seed}.',
+  'cache_hit':'Result reused from cache — seed {seed}.',
+  'heatmap_locked':'The filter is available when the “Heatmap” view is selected.',
+  'history_loaded':'Map loaded from session history.',
+  'history_cleared':'Session caches cleared.',
+  'shortcut_applied':'Shortcuts applied.',
+  'shortcut_restored':'Shortcuts restored to defaults.',
+  'seed_copied':'Seed copied: {seed}',
+  'export_done':'Export complete.',
+  'history_empty':'No map is available in the session cache.',
+  'compare_toggled':'Map switched to {map}.',
+  'theme_changed':'Theme changed: {theme}.',
+  'view_reset':'View recentered.',
+  'seed_randomized':'New random seed: {seed}',
+  'graph_exported':'Chart export complete: {format} — {file}',
+  'opacity_locked':'Opacity is available only with an overlay-type view.',
+  'modifier_none':'No modifier is active.',
+  'batch_reserved':'Batch generation: space reserved for the v1.8 Batch feature.',
+ },
 }
 
 HEATMAP_LABELS={
@@ -63,8 +116,8 @@ COMMAND_LABELS={
 THEME_LABELS={'fr':{'dark':'Sombre','light':'Clair'},'en':{'dark':'Dark','light':'Light'}}
 PROJECTION_LABELS={'fr':{'square':'Carrée','parallelogram':'Parallélogramme'},'en':{'square':'Square','parallelogram':'Parallelogram'}}
 TEXTS={
- 'Mode':{'en':'Mode'},'Archétype':{'en':'Archetype'},'Taille':{'en':'Size'},'Joueurs':{'en':'Players'},'Seed':{'en':'Seed'},'Zoom':{'en':'Zoom'},
- 'Générer':{'en':'Generate'},'Importer…':{'en':'Import…'},'Exporter…':{'en':'Export…'},'Aperçu PNG':{'en':'PNG Preview'},'Vue':{'en':'View'},
+ 'Mode':{'en':'Mode'},'Archétype':{'en':'Archetype'},'Modificateurs':{'en':'Modifiers'},'Taille':{'en':'Size'},'Joueurs':{'en':'Players'},'Seed':{'en':'Seed'},'Zoom':{'en':'Zoom'},
+ 'Générer':{'en':'Generate'},'Générer lot…':{'en':'Generate batch…'},'Importer…':{'en':'Import…'},'Exporter…':{'en':'Export…'},'Aperçu PNG':{'en':'PNG Preview'},'Vue':{'en':'View'},
  'Affichage':{'en':'Display'},'Thème':{'en':'Theme'},'Opacité couche':{'en':'Layer opacity'},'0 % = map globale · 100 % = couche seule':{'en':'0 % = global map · 100 % = overlay only'},
  'Projection':{'en':'Projection'},'Le parallélogramme modifie uniquement le rendu, jamais les données.':{'en':'Parallelogram changes rendering only, never map data.'},
  'Sensibilité molette':{'en':'Mouse-wheel sensitivity'},'Navigation':{'en':'Navigation'},'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':{'en':'Mouse wheel: zoom\nLeft click + drag: move map\nZoom refresh is delayed to reduce recalculation.'},
@@ -123,6 +176,10 @@ def _selector_icon(master, color, kind='dot', size=18):
         d.line((size//2,size-3,size//2,4),fill='#5a4716',width=2);d.ellipse((3,4,9,8),fill=c,outline='#111111');d.ellipse((9,7,15,11),fill=c,outline='#111111');d.ellipse((4,10,10,14),fill=c,outline='#111111')
     elif kind=='heatmap':
         d.ellipse((2,2,size-3,size-3),fill=c,outline='#111111');d.ellipse((5,5,size-6,size-6),outline='#ffd9d9',width=2);d.ellipse((8,8,10,10),fill='#ffffff')
+    elif kind=='cross':
+        # Deterministic delete mark with a dark outline for both application themes.
+        d.line((3,3,size-4,size-4),fill='#111111',width=5);d.line((size-4,3,3,size-4),fill='#111111',width=5)
+        d.line((3,3,size-4,size-4),fill=c,width=3);d.line((size-4,3,3,size-4),fill=c,width=3)
     elif kind=='flag_fr':
         # French tricolour, drawn as pixels so it stays colored on every Tk build.
         x0,y0,x1,y1=2,4,size-3,size-5;third=max(1,(x1-x0+1)//3)
@@ -196,68 +253,345 @@ class App(V15StableApp):
         self.session_cache=SessionGenerationCache(max_entries=8)
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
-        self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail=''
+        self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         super().__init__()
-        self._apply_language();self._bind_shortcuts()
+        self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
 
     def _build(self):
         super()._build();top=self.winfo_children()[0]
-        # Replace the native view combobox with an image-capable menu selector.
-        # Windows/Tk renders colored-circle emoji as monochrome in comboboxes.
-        old_view=self._find_combo_for_var(self.view)
-        view_grid=dict(old_view.grid_info()) if old_view else {'row':1,'column':5}
-        if old_view: old_view.grid_remove()
-        for k in ('in','rowspan','columnspan'): view_grid.pop(k,None)
-        self._view_combo=ColorMenuSelect(top,self.view,width=20,command=self._view_changed)
-        self._view_combo.grid(**view_grid)
-        self.heatmap_title=ttk.Label(top,text='Filtre carte thermique',compound='left');self.heatmap_title.grid(row=0,column=12,sticky='w',padx=(8,0))
+
+        # R6 rebuilds the header as three independent functional regions.  Keep the
+        # validated generation variables and hidden progress/status plumbing, but
+        # discard the historical widget-by-widget grid inherited from v1.3.
+        self._legacy_status_label=None
+        for w in list(top.winfo_children()):
+            if w is self.progress:
+                w.grid_remove();continue
+            try:
+                if str(w.cget('textvariable'))==str(self.status):
+                    self._legacy_status_label=w;w.grid_remove();continue
+            except tk.TclError:pass
+            w.destroy()
+
+        # The inherited v1.3 header gave column 11 an elastic weight.  Once its
+        # widgets are removed, that stale column would still absorb half the free
+        # width and prevent the global region from reaching the right edge.
+        for c in range(18):top.columnconfigure(c,weight=0,minsize=0)
+
+        self._header_shell=ttk.Frame(top)
+        self._header_shell.grid(row=0,column=0,sticky='ew')
+        top.columnconfigure(0,weight=1)
+        self.generation_panel=ttk.Frame(self._header_shell)
+        self.global_panel=ttk.Frame(self._header_shell)
+
+        def selector_group(parent,label):
+            group=ttk.Frame(parent)
+            ttk.Label(group,text=label).pack(anchor='w',pady=(0,2))
+            return group
+
+        # Generation row 1: selectors and their own independent action bar.
+        primary_row=ttk.Frame(self.generation_panel);primary_row.pack(anchor='w',fill='x')
+        mode_group=selector_group(primary_row,'Mode');mode_group.pack(side='left',padx=(0,5))
+        self.mode_combo=ttk.Combobox(mode_group,textvariable=self.mode,values=[MODES[k].label for k in MODE_ORDER],state='readonly',width=20)
+        self.mode_combo.pack();self.mode_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
+        arch_group=selector_group(primary_row,'Archétype');arch_group.pack(side='left',padx=(0,5))
+        self.arch_combo=ttk.Combobox(arch_group,textvariable=self.arch,values=[ARCHETYPES[k].label for k in ARCHETYPE_ORDER],state='readonly',width=18)
+        self.arch_combo.pack();self.arch_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
+        modifier_group=selector_group(primary_row,'Modificateurs');modifier_group.pack(side='left',padx=(0,7))
+        self.modifier_label=modifier_group.winfo_children()[0]
+        self.modifier_none=tk.BooleanVar(value=True);self.modifier_text=tk.StringVar(value='Aucun')
+        self.modifier_button=ttk.Menubutton(modifier_group,textvariable=self.modifier_text,width=14,style='ImageSelect.TMenubutton')
+        self.modifier_menu=tk.Menu(self.modifier_button,tearoff=False);self.modifier_button.configure(menu=self.modifier_menu)
+        self.modifier_menu.add_checkbutton(label='Aucun',variable=self.modifier_none,command=self._modifier_none_selected)
+        self.modifier_button.pack()
+        primary_actions=ttk.Frame(primary_row);primary_actions.pack(side='left',fill='y')
+        self.generate_button=ttk.Button(primary_actions,text='Générer',command=self.generate)
+        self.generate_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
+        self.batch_generate_button=ttk.Button(primary_actions,text='Générer lot…',command=lambda:self._feedback('batch_reserved','info'))
+        self.batch_generate_button.pack(side='left',anchor='s',padx=(0,0),pady=(19,0))
+
+        # Generation row 2: dependent parameters followed by two local button bars.
+        # Their spacing no longer depends on the selector columns above.
+        secondary_row=ttk.Frame(self.generation_panel);secondary_row.pack(anchor='w',fill='x',pady=(5,0))
+        size_group=selector_group(secondary_row,'Taille');size_group.pack(side='left',padx=(0,5))
+        self.size_combo=ttk.Combobox(size_group,textvariable=self.size,values=[str(x) for x in NATIVE_LIMITS],state='readonly',width=8)
+        self.size_combo.pack();self.size_combo.bind('<<ComboboxSelected>>',lambda e:self._size_changed())
+        players_group=selector_group(secondary_row,'Joueurs');players_group.pack(side='left',padx=(0,5))
+        self.players_spin=ttk.Spinbox(players_group,from_=2,to=20,textvariable=self.players,width=8);self.players_spin.pack()
+        seed_group=selector_group(secondary_row,'Seed');seed_group.pack(side='left',padx=(0,7))
+        self.seed_entry=ttk.Entry(seed_group,textvariable=self.seed,width=14);self.seed_entry.pack()
+        seed_actions=ttk.Frame(secondary_row);seed_actions.pack(side='left',fill='y',padx=(0,7))
+        self.random_seed_button=ttk.Button(seed_actions,text='🎲',width=3,command=self.random_seed)
+        self.random_seed_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
+        self.copy_seed_button=ttk.Button(seed_actions,text='Copier seed',command=self._copy_seed)
+        self.copy_seed_button.pack(side='left',anchor='s',pady=(19,0))
+        self.file_actions=ttk.Frame(secondary_row);self.file_actions.pack(side='left',fill='y')
+        self.import_button=ttk.Button(self.file_actions,text='Importer…',command=self.import_file)
+        self.import_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
+        self.export_btn=ttk.Button(self.file_actions,text='Exporter…',command=self.export,state='disabled')
+        self.export_btn.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
+        self.preview_button=ttk.Button(self.file_actions,text='Aperçu PNG',command=self.save_preview)
+        self.preview_button.pack(side='left',anchor='s',pady=(19,0))
+
+        # Global controls have their own layout and never occupy generation columns.
+        self.language_label=ttk.Label(self.global_panel,text='Langue')
+        self.lang_var=tk.StringVar(value=LANGUAGE_LABELS[self.prefs.get('language','fr')])
+        self.lang_combo=ColorMenuSelect(self.global_panel,self.lang_var,width=11,command=self._language_changed)
+        self.lang_combo.set_items([('fr',LANGUAGE_LABELS['fr'],'#0055a4','flag_fr'),('en',LANGUAGE_LABELS['en'],'#21468b','flag_en')])
+        self.help_button=ttk.Button(self.global_panel,text='Aide',command=self._show_help)
+        self._theme_button=ttk.Button(self.global_panel,command=self._toggle_theme,width=3)
+        self._refresh_theme_button_icon()
+
+        # Session/Comparison is the middle region in wide mode and becomes one
+        # coherent full-width block below the header only in compact mode.
+        self.session_box=ttk.LabelFrame(self._header_shell,text='Session / Comparaison',padding=(6,4))
+        self.session_history_label=ttk.Label(self.session_box,text='Historique session');self.session_history_label.grid(row=0,column=0,sticky='w')
+        self.history_var=tk.StringVar(value='');self.history_combo=ttk.Combobox(self.session_box,textvariable=self.history_var,state='readonly',width=27)
+        self.history_load_button=ttk.Button(self.session_box,text='Charger',command=self._load_history)
+        self.history_clear_button=ttk.Button(self.session_box,text='Vider cache',command=self._clear_history)
+        self._compare_led_off=_selector_icon(self,'#7b8088','dot',14);self._compare_led_on=_selector_icon(self,'#34a853','dot',14)
+        self._delete_icon_off=_selector_icon(self.session_box,'#7b8088','cross',14)
+        self._delete_icon_on=_selector_icon(self.session_box,'#e04444','cross',14)
+        self.compare_a_button=ttk.Button(self.session_box,text='Définir A',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('A'))
+        self.compare_b_button=ttk.Button(self.session_box,text='Définir B',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('B'))
+        self.compare_toggle_button=ttk.Button(self.session_box,text='Basculer A/B',command=self._toggle_compare)
+        self.clear_a_button=ttk.Button(self.session_box,text='',image=self._delete_icon_off,command=lambda:self._clear_compare_slot('A'))
+        self.clear_b_button=ttk.Button(self.session_box,text='',image=self._delete_icon_off,command=lambda:self._clear_compare_slot('B'))
+        self.clear_ab_button=ttk.Button(self.session_box,text='Vider A+B',command=self._clear_compare_slots)
+        self.session_box.bind('<Configure>',self._apply_session_layout,add='+')
+        self._apply_session_layout()
+
+        self.inspector_var=tk.StringVar(value='Inspecteur : —')
+        self._inspector_label=ttk.Label(top,textvariable=self.inspector_var,anchor='w')
+        self._inspector_label.grid(row=1,column=0,sticky='ew',pady=(3,1))
+
+        # Raster selector resources used by the independent viewer toolbar.
         self.heatmap_var=tk.StringVar(value='Arbres')
-        self.heatmap_combo=ColorMenuSelect(top,self.heatmap_var,width=26,command=self._heatmap_changed)
-        self.heatmap_combo.grid(row=1,column=12,padx=(8,3))
         self._lock_closed_icon=_selector_icon(self,'#d84a3a','lock_closed',18)
         self._lock_open_icon=_selector_icon(self,'#2ca85a','lock_open',18)
-        # Give translated native comboboxes enough room without abbreviating labels.
-        self.mode_combo.configure(width=max(int(self.mode_combo.cget('width')),20))
-        self.arch_combo.configure(width=max(int(self.arch_combo.cget('width')),18))
-        ttk.Button(top,text='Recentrer',command=self._reset_view).grid(row=1,column=13,padx=3)
-        ttk.Button(top,text='Copier seed',command=self._copy_seed).grid(row=1,column=14,padx=3)
-        ttk.Label(top,text='Langue').grid(row=0,column=15,sticky='w',padx=(8,0))
-        self.lang_var=tk.StringVar(value=LANGUAGE_LABELS[self.prefs.get('language','fr')])
-        self.lang_combo=ColorMenuSelect(top,self.lang_var,width=11,command=self._language_changed)
-        self.lang_combo.set_items([('fr',LANGUAGE_LABELS['fr'],'#0055a4','flag_fr'),('en',LANGUAGE_LABELS['en'],'#21468b','flag_en')])
-        self.lang_combo.grid(row=1,column=15,padx=(8,3))
-        ttk.Button(top,text='Aide',command=self._show_help).grid(row=1,column=16,padx=3)
-        self._theme_button=ttk.Button(top,command=self._toggle_theme,width=3)
-        self._theme_button.grid(row=1,column=17,padx=(5,3))
-        self._refresh_theme_button_icon()
-        self.inspector_var=tk.StringVar(value='Inspecteur : —')
-        ttk.Label(top,textvariable=self.inspector_var,anchor='w').grid(row=4,column=0,columnspan=18,sticky='ew',pady=(3,1))
-        self.session_box=ttk.LabelFrame(top,text='Session / Comparaison',padding=(6,4));self.session_box.grid(row=5,column=0,columnspan=18,sticky='ew',pady=(5,2));self.session_box.columnconfigure(1,weight=1)
-        ttk.Label(self.session_box,text='Historique session').grid(row=0,column=0,sticky='w')
-        self.history_var=tk.StringVar(value='');self.history_combo=ttk.Combobox(self.session_box,textvariable=self.history_var,state='readonly',width=52)
-        self.history_combo.grid(row=0,column=1,sticky='ew',padx=(6,3))
-        ttk.Button(self.session_box,text='Charger',command=self._load_history).grid(row=0,column=2,padx=3)
-        ttk.Button(self.session_box,text='Vider cache',command=self._clear_history).grid(row=0,column=3,padx=3)
-        self._compare_led_off=_selector_icon(self,'#7b8088','dot',14);self._compare_led_on=_selector_icon(self,'#34a853','dot',14)
-        self.compare_a_button=ttk.Button(self.session_box,text='Définir A',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('A'))
-        self.compare_a_button.grid(row=0,column=4,padx=3)
-        self.compare_b_button=ttk.Button(self.session_box,text='Définir B',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('B'))
-        self.compare_b_button.grid(row=0,column=5,padx=3)
-        ttk.Button(self.session_box,text='Basculer A/B',command=self._toggle_compare).grid(row=0,column=6,padx=3)
-        # v1.8 DEV_1: the active A/B identity already lives on the LED buttons, so the
-        # old duplicate text line is replaced by explicit reset controls.
-        self.clear_a_button=ttk.Button(self.session_box,text='Vider A',command=lambda:self._clear_compare_slot('A'))
-        self.clear_a_button.grid(row=1,column=4,padx=3,pady=(4,0))
-        self.clear_b_button=ttk.Button(self.session_box,text='Vider B',command=lambda:self._clear_compare_slot('B'))
-        self.clear_b_button.grid(row=1,column=5,padx=3,pady=(4,0))
-        self.clear_ab_button=ttk.Button(self.session_box,text='Vider A+B',command=self._clear_compare_slots)
-        self.clear_ab_button.grid(row=1,column=6,padx=3,pady=(4,0))
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
         self._build_stats_charts_tab()
         self._shortcut_settings_tab()
         self._reorder_analysis_tabs()
         self._theme_combo=self._find_combo_for_var(self.theme_var);self._projection_combo=self._find_combo_for_var(self.projection_var)
-        self._capture_translatable_widgets()
+        self._build_viewer_toolbar(top)
+        self._capture_translatable_widgets();self._install_status_feedback(top)
+        # Keep the ready message synchronized when the player spinbox changes.
+        self.players.trace_add('write',lambda *_:self.after_idle(self._selection_changed))
+        if hasattr(self,'opacity_scale'):
+            self.opacity_scale.bind('<Button-1>',self._opacity_locked_hint,add='+')
+
+    def _build_viewer_toolbar(self,top):
+        """Build map-specific controls independently from the application header."""
+        left=self.canvas.master
+        self.viewer_toolbar=ttk.Frame(left,padding=(4,3))
+        self.viewer_toolbar.pack(fill='x',before=self.canvas,pady=(0,3))
+        self.viewer_toolbar.columnconfigure(1,weight=1)
+        self._viewer_migrated_widgets=set()
+
+        self.viewer_view_label=ttk.Label(self.viewer_toolbar,text='Vue')
+        self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
+        self._view_combo=ColorMenuSelect(self.viewer_toolbar,self.view,width=16,command=self._view_changed)
+        self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
+
+        self.heatmap_title=ttk.Label(self.viewer_toolbar,text='Filtre carte thermique',compound='left')
+        self.heatmap_title.grid(row=0,column=2,sticky='w',padx=(2,4))
+        self.heatmap_combo=ColorMenuSelect(self.viewer_toolbar,self.heatmap_var,width=21,command=self._heatmap_changed)
+        self.heatmap_combo.grid(row=0,column=3,padx=(0,6))
+
+        self.viewer_recenter_button=ttk.Button(self.viewer_toolbar,text='Recentrer',command=self._reset_view)
+        self.viewer_recenter_button.grid(row=0,column=4,padx=(0,8))
+        self.viewer_zoom_label=ttk.Label(self.viewer_toolbar,text='Zoom')
+        self.viewer_zoom_label.grid(row=0,column=5,sticky='w',padx=(0,4))
+        self.zoom_scale=ttk.Scale(self.viewer_toolbar,from_=0.5,to=4.0,variable=self.zoom_var,command=lambda v:self._zoom_changed())
+        self.zoom_scale.grid(row=0,column=6,sticky='ew');self.viewer_toolbar.columnconfigure(6,weight=1,minsize=90)
+        self._bind_scale_jump(self.zoom_scale,self.zoom_var,.5,4.0,self._zoom_changed)
+        self.viewer_toolbar.bind('<Configure>',self._apply_viewer_toolbar_layout,add='+')
+
+    def _apply_viewer_toolbar_layout(self,event=None):
+        """Reflow viewer-specific tools independently from the global header."""
+        if not hasattr(self,'viewer_toolbar'):return
+        try:width=int(self.viewer_toolbar.winfo_width())
+        except tk.TclError:return
+        compact=width<720
+        mode='compact' if compact else 'wide'
+        if getattr(self,'_viewer_toolbar_mode',None)==mode:return
+        self._viewer_toolbar_mode=mode
+        widgets=(self.viewer_view_label,self._view_combo,self.heatmap_title,self.heatmap_combo,self.viewer_recenter_button,self.viewer_zoom_label,self.zoom_scale)
+        for w in widgets:
+            try:w.grid_forget()
+            except tk.TclError:pass
+        for c in range(7):self.viewer_toolbar.columnconfigure(c,weight=0,minsize=0)
+        if compact:
+            self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
+            self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
+            self.viewer_recenter_button.grid(row=0,column=2,padx=(0,4))
+            self.heatmap_title.grid(row=1,column=0,sticky='w',padx=(0,4),pady=(3,0))
+            self.heatmap_combo.grid(row=1,column=1,sticky='ew',padx=(0,6),pady=(3,0))
+            self.viewer_zoom_label.grid(row=1,column=2,sticky='w',padx=(0,4),pady=(3,0))
+            self.zoom_scale.grid(row=1,column=3,sticky='ew',pady=(3,0))
+            self.viewer_toolbar.columnconfigure(1,weight=0);self.viewer_toolbar.columnconfigure(3,weight=1,minsize=80)
+        else:
+            self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
+            self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
+            self.heatmap_title.grid(row=0,column=2,sticky='w',padx=(2,4))
+            self.heatmap_combo.grid(row=0,column=3,padx=(0,6))
+            self.viewer_recenter_button.grid(row=0,column=4,padx=(0,8))
+            self.viewer_zoom_label.grid(row=0,column=5,sticky='w',padx=(0,4))
+            self.zoom_scale.grid(row=0,column=6,sticky='ew')
+            self.viewer_toolbar.columnconfigure(1,weight=0);self.viewer_toolbar.columnconfigure(6,weight=1,minsize=90)
+
+    def _apply_initial_window_geometry(self):
+        """Choose a useful initial size from the actual screen without assuming 1440p."""
+        try:
+            sw=max(900,int(self.winfo_screenwidth()));sh=max(700,int(self.winfo_screenheight()))
+            w=min(1740,max(980,int(sw*0.90)));h=min(980,max(680,int(sh*0.86)))
+            self.geometry(f'{w}x{h}');self.minsize(900,650)
+        except tk.TclError:pass
+
+    def _install_status_feedback(self,top):
+        """Turn the historical status label into a small user-feedback strip."""
+        self.status_display=tk.StringVar(value='')
+        self.status_strip=ttk.Frame(top,padding=(4,2))
+        self.status_strip.grid(row=2,column=0,sticky='ew',pady=(2,2))
+        self.status_icon=ttk.Label(self.status_strip,text='●',width=2,anchor='center')
+        self.status_icon.pack(side='left')
+        self.status_label=ttk.Label(self.status_strip,textvariable=self.status_display,anchor='w')
+        self.status_label.pack(side='left',fill='x',expand=True)
+        self.status.trace_add('write',lambda *_:self._sync_status_display())
+        # The historical header Progressbar is obsolete: progress now lives in the map overlay.
+        # Never remap it during responsive reflow (it caused the persistent pale strip seen on Windows).
+        try:self.progress.grid_remove()
+        except tk.TclError:pass
+        if hasattr(self,'heatmap_title'):
+            self.heatmap_title.bind('<Enter>',lambda e:self._heatmap_locked_hint(),add='+')
+        self._sync_status_display();self._apply_responsive_layout()
+
+    def _status_symbol(self):
+        return {'ready':'●','info':'ℹ','busy':'◉','success':'✓','warning':'⚠','error':'✕'}.get(self._status_kind,'●')
+
+    def _sync_status_display(self):
+        if not hasattr(self,'status_display'):return
+        self.status_display.set(str(self.status.get() or ''))
+        if hasattr(self,'status_icon'):self.status_icon.configure(text=self._status_symbol())
+
+    def _feedback(self,key,kind='info',**values):
+        lang=self.prefs.get('language','fr');template=FEEDBACK_TEXT.get(lang,FEEDBACK_TEXT['fr']).get(key,key)
+        self._feedback_key=key;self._feedback_values=dict(values);self._status_kind=kind;self.status.set(template.format(**values));getattr(self,'_sync_status_display',lambda:None)()
+
+    def _retranslate_feedback(self):
+        if self._feedback_key in FEEDBACK_TEXT.get(self.prefs.get('language','fr'),{}):
+            kind=self._status_kind;self._feedback(self._feedback_key,kind,**self._feedback_values)
+        else:self._sync_status_display()
+
+    def _schedule_responsive_layout(self,event=None):
+        if event is not None and event.widget is not self:return
+        if self._layout_after:
+            try:self.after_cancel(self._layout_after)
+            except tk.TclError:pass
+        self._layout_after=self.after(80,self._apply_responsive_layout)
+
+    def _apply_responsive_layout(self):
+        """Reflow whole functional regions without mixing their internal controls."""
+        if not hasattr(self,'_header_shell'):return
+        self._layout_after=None
+        try:width=int(self.winfo_width())
+        except tk.TclError:return
+        # R6 showed that 1600 px left the rightmost theme action clipped for a few
+        # frames before reflow.  Keep the 1920 target wide, but switch earlier.
+        compact=width<1750
+        mode='compact' if compact else 'wide'
+        if mode==self._responsive_mode:return
+        self._responsive_mode=mode;shell=self._header_shell
+
+        # Only selector widths adapt.  Text buttons retain their natural requested
+        # width so translations are never clipped.
+        try:
+            self.mode_combo.configure(width=15 if compact else 20)
+            self.arch_combo.configure(width=13 if compact else 18)
+            self.modifier_button.configure(width=9 if compact else 14)
+            self.lang_combo.configure(width=9 if compact else 11)
+        except tk.TclError:pass
+
+        for w in (self.generation_panel,self.session_box,self.global_panel):w.grid_forget()
+        for c in range(5):shell.columnconfigure(c,weight=0,minsize=0)
+        for r in range(2):shell.rowconfigure(r,weight=0,minsize=0)
+
+        if compact:
+            # Generation and global controls remain visibly separate at the 900 px
+            # minimum; Session moves as a complete block below them.
+            self.generation_panel.grid(row=0,column=0,sticky='nw')
+            self.global_panel.grid(row=0,column=1,sticky='ne',padx=(10,0))
+            self.session_box.grid(row=1,column=0,columnspan=2,sticky='ew',pady=(5,0))
+            shell.columnconfigure(0,weight=1)
+        else:
+            # Fixed functional regions with elastic gutters keep Session genuinely
+            # central instead of stretching it into a full-width second band.
+            self.generation_panel.grid(row=0,column=0,sticky='nw')
+            self.session_box.grid(row=0,column=2,sticky='n',padx=(10,10))
+            self.global_panel.grid(row=0,column=4,sticky='ne')
+            shell.columnconfigure(1,weight=1);shell.columnconfigure(3,weight=1)
+
+        self._layout_global_controls(compact)
+        shell.update_idletasks()
+        self._session_layout_mode=None;self._apply_session_layout()
+
+    def _layout_global_controls(self,compact):
+        """Lay out the global region locally, never inside generation columns."""
+        for w in (self.language_label,self.lang_combo,self.help_button,self._theme_button):w.grid_forget()
+        for c in range(3):self.global_panel.columnconfigure(c,weight=0,minsize=0)
+        self.language_label.grid(row=0,column=0,columnspan=3,sticky='w',pady=(0,2))
+        self.lang_combo.grid(row=1,column=0,columnspan=3 if compact else 1,sticky='ew',padx=(0,4))
+        if compact:
+            self.help_button.grid(row=2,column=0,columnspan=2,sticky='ew',pady=(5,0),padx=(0,4))
+            self._theme_button.grid(row=2,column=2,pady=(5,0))
+        else:
+            self.help_button.grid(row=1,column=1,padx=(0,4))
+            self._theme_button.grid(row=1,column=2)
+
+    def _apply_session_layout(self,event=None):
+        """Keep full A/B identities when space allows and compact only near minimum."""
+        if not hasattr(self,'session_box'):return
+        try:width=int(event.width) if event is not None else int(self.session_box.winfo_width())
+        except (AttributeError,tk.TclError,TypeError,ValueError):width=1
+        compact=self._responsive_mode=='compact' and width<900
+        mode='compact_ab' if compact else 'natural_ab'
+        if getattr(self,'_session_layout_mode',None)==mode:return
+        self._session_layout_mode=mode
+        widgets=(self.history_combo,self.history_load_button,self.history_clear_button,self.compare_a_button,self.compare_b_button,self.compare_toggle_button,self.clear_a_button,self.clear_b_button,self.clear_ab_button)
+        for w in widgets:
+            try:w.grid_forget()
+            except tk.TclError:pass
+        for c in range(8):self.session_box.columnconfigure(c,weight=0,minsize=0)
+        self.history_combo.configure(width=27)
+        self.history_combo.grid(row=0,column=1,columnspan=3,sticky='ew',padx=(6,6))
+        self.session_box.columnconfigure(1,weight=1,minsize=210)
+
+        # Full identity in roomy layouts; a bounded width only at the real minimum.
+        self.compare_a_button.configure(width=8 if compact else 0)
+        self.compare_a_button.grid(row=0,column=4,padx=(3,1))
+        self.clear_a_button.configure(width=3)
+        self.clear_a_button.grid(row=0,column=5,padx=(1,4))
+        self.compare_b_button.configure(width=8 if compact else 0)
+        self.compare_b_button.grid(row=0,column=6,padx=(3,1))
+        self.clear_b_button.configure(width=3)
+        self.clear_b_button.grid(row=0,column=7,padx=(1,0))
+
+        # History/cache and global A/B actions remain grouped on row 2.
+        self.history_clear_button.configure(width=10 if compact else 0)
+        self.history_load_button.configure(width=9 if compact else 0)
+        self.compare_toggle_button.configure(width=12 if compact else 0)
+        self.clear_ab_button.configure(width=10 if compact else 0)
+        self.history_clear_button.grid(row=1,column=1,padx=(6,2),pady=(4,0),sticky='w')
+        self.history_load_button.grid(row=1,column=2,padx=2,pady=(4,0),sticky='w')
+        self.compare_toggle_button.grid(row=1,column=3,padx=2,pady=(4,0),sticky='w')
+        self.clear_ab_button.grid(row=1,column=4,columnspan=2,padx=(3,2),pady=(4,0),sticky='w')
+
+    def _heatmap_locked_hint(self):
+        if self._view_key()!='heatmap':self._feedback('heatmap_locked','info')
+
+    def _opacity_locked_hint(self,event=None):
+        if self._view_key()=='global':self._feedback('opacity_locked','info');return 'break'
 
     def _reorder_analysis_tabs(self):
         """Keep Statistics + Charts together, then Settings + Shortcuts."""
@@ -383,13 +717,13 @@ class App(V15StableApp):
         stats=self._ensure_stats_cache()
         if not stats:return
         path=filedialog.asksaveasfilename(defaultextension='.json',filetypes=[('JSON','*.json')],initialfile='map_stats.json')
-        if path:Path(path).write_text(stats_json(stats),encoding='utf-8')
+        if path:Path(path).write_text(stats_json(stats),encoding='utf-8');self._feedback('graph_exported','success',format='JSON',file=Path(path).name)
 
     def _export_stats_csv(self):
         stats=self._ensure_stats_cache()
         if not stats:return
         path=filedialog.asksaveasfilename(defaultextension='.csv',filetypes=[('CSV','*.csv')],initialfile='map_stats.csv')
-        if path:Path(path).write_text(stats_csv(stats),encoding='utf-8-sig')
+        if path:Path(path).write_text(stats_csv(stats),encoding='utf-8-sig');self._feedback('graph_exported','success',format='CSV',file=Path(path).name)
 
     def _export_stats_chart(self):
         stats=self._ensure_stats_cache()
@@ -397,7 +731,7 @@ class App(V15StableApp):
         path=filedialog.asksaveasfilename(defaultextension='.png',filetypes=[('PNG','*.png')],initialfile=f"stats_{self._stats_chart_key()}.png")
         if not path:return
         w=max(900,int(self.stats_chart_canvas.winfo_width()));h=max(520,int(self.stats_chart_canvas.winfo_height()))
-        im=render_stats_chart(stats,self._stats_chart_key(),lang=self.prefs.get('language','fr'),dark=self.prefs.get('theme','dark')=='dark',width=w,height=h,compare_stats=self._compare_stats_pair());im.save(path)
+        im=render_stats_chart(stats,self._stats_chart_key(),lang=self.prefs.get('language','fr'),dark=self.prefs.get('theme','dark')=='dark',width=w,height=h,compare_stats=self._compare_stats_pair());im.save(path);self._feedback('graph_exported','success',format='PNG',file=Path(path).name)
 
     def _populate_current(self,imported=False):
         # These panels are reports, not editors. Temporarily unlock them only while refreshing.
@@ -472,6 +806,18 @@ class App(V15StableApp):
                 if label==value:return key
         return next((k for k,v in ARCHETYPES.items() if v.label==value),'continental')
 
+    def _modifier_keys(self):
+        # v1.8 DEV_2_R4 reserves the future multi-select architecture.  The only
+        # currently valid state is no modifier, represented by an empty tuple.
+        return ()
+    def _modifier_summary(self):
+        return 'Aucun' if self.prefs.get('language','fr')=='fr' else 'None'
+    def _modifier_none_selected(self):
+        # “None” is exclusive by definition and cannot be unchecked while it is
+        # the sole available entry.
+        self.modifier_none.set(True);self.modifier_text.set(self._modifier_summary())
+        self._selection_changed();self._feedback('modifier_none','info')
+
     def _view_key(self):
         value=self.view.get()
         for labels in VIEW_LABELS.values():
@@ -494,11 +840,17 @@ class App(V15StableApp):
         for tab,source in getattr(self,'_i18n_tabs',[]):self.nb.tab(tab,text=source if lang=='fr' else TEXTS[source].get('en',source))
         if self._view_combo:
             self._view_combo.set_items([(k,VIEW_LABELS[lang][k],VIEW_ICON_COLORS[k],k) for k in VIEW_LABELS[lang]])
+            self._view_combo.configure(width=max(12,max(len(v) for v in VIEW_LABELS[lang].values())+1))
         self.view.set(VIEW_LABELS[lang][vk]);self._view_combo._sync_icon()
         self.heatmap_combo.set_items([(k,HEATMAP_LABELS[lang][k],HEATMAP_ICON_COLORS[k],'dot') for k in HEATMAP_LABELS[lang]])
+        self.heatmap_combo.configure(width=max(14,min(22,max(len(v) for v in HEATMAP_LABELS[lang].values())+1)))
         self.heatmap_var.set(HEATMAP_LABELS[lang][hk]);self.heatmap_combo._sync_icon()
         self.mode_combo.configure(values=[MODE_LABELS[lang][k] for k in MODE_ORDER]);self.mode.set(MODE_LABELS[lang][mk])
         self.arch_combo.configure(values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER]);self.arch.set(ARCHETYPE_LABELS[lang][ak])
+        if hasattr(self,'modifier_text'):
+            self.modifier_text.set(self._modifier_summary())
+            try:self.modifier_menu.entryconfigure(0,label='Aucun' if lang=='fr' else 'None')
+            except tk.TclError:pass
         if self._theme_combo:self._theme_combo.configure(values=list(THEME_LABELS[lang].values()))
         self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']])
         if self._projection_combo:self._projection_combo.configure(values=list(PROJECTION_LABELS[lang].values()))
@@ -510,15 +862,16 @@ class App(V15StableApp):
         self._refresh_stats_chart();self._refresh_compare_buttons()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
         for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else 'Reset')
-        self._update_view_controls();self._clear_inspector()
+        if hasattr(self,'history_combo'):self._refresh_history()
+        self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
         self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._invalidate_preview();self._refresh_preview(True)
     def _apply_theme(self):
         super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self)
         field='#303134' if dark else '#ffffff';fg='#e8eaed' if dark else '#202124';muted='#7f858d' if dark else '#8a8f98';panel='#292a2d' if dark else '#e5e5e5'
         self._ui_theme_colors={'field':field,'fg':fg,'muted':muted,'panel':panel,'bar_bg':'#3c4043' if dark else '#dddddd','bar_fg':'#35a853','dark':dark}
-        style.configure('ImageSelect.TMenubutton',background=field,foreground=fg)
-        style.map('ImageSelect.TMenubutton',background=[('active',panel),('pressed',panel)],foreground=[('active',fg),('pressed',fg)])
+        style.configure('ImageSelect.TMenubutton',background=field,foreground=fg,relief='raised')
+        style.map('ImageSelect.TMenubutton',background=[('active',panel),('pressed',panel),('disabled',field)],foreground=[('active',fg),('pressed',fg),('disabled',muted)])
         style.configure('Locked.TCombobox',fieldbackground=field,background=field,foreground=muted,selectforeground=muted)
         style.map('Locked.TCombobox',fieldbackground=[('disabled',field)],background=[('disabled',field)],foreground=[('disabled',muted)])
         # Option DB helps comboboxes created after the theme switch; direct popdown
@@ -528,6 +881,9 @@ class App(V15StableApp):
         self._style_combobox_popdowns(field,fg,panel)
         for selector in (getattr(self,'_view_combo',None),getattr(self,'heatmap_combo',None),getattr(self,'lang_combo',None)):
             if isinstance(selector,ColorMenuSelect):selector.set_menu_theme(field,fg,panel,fg)
+        if hasattr(self,'modifier_menu'):
+            try:self.modifier_menu.configure(background=field,foreground=fg,activebackground=panel,activeforeground=fg)
+            except tk.TclError:pass
         if self._task_dialog is not None and hasattr(self,'_task_dialog_progress'):
             try:self._task_dialog_progress.configure(bg=self._ui_theme_colors['bar_bg'])
             except tk.TclError:pass
@@ -621,7 +977,7 @@ class App(V15StableApp):
         except tk.TclError:pass
 
     def _task_begin(self,label,value=5):
-        self.status.set(label)
+        self._status_kind='busy';self.status.set(label);getattr(self,'_sync_status_display',lambda:None)()
         try:self.progress.grid_remove()
         except (AttributeError,tk.TclError):pass
         self._close_task_dialog()
@@ -639,7 +995,7 @@ class App(V15StableApp):
         self._layout_task_overlay();self._draw_task_progress(value,self._task_overlay_detail);self.update_idletasks()
 
     def _task_progress(self,value,label=None):
-        if label:self.status.set(label)
+        # Fast-changing stage detail belongs in the progress bar/overlay, not in the human status strip.
         if self._task_overlay is not None:self._draw_task_progress(max(0,min(99,value)),label if label else None)
         self.update_idletasks()
 
@@ -656,13 +1012,15 @@ class App(V15StableApp):
             self._task_overlay=None
 
     def _task_done(self,label=None):
+        self._status_kind='success'
         if label:self.status.set(label)
+        self._sync_status_display()
         if self._task_overlay is not None:
             self._draw_task_progress(100,label if label else None);self.update_idletasks()
         self._close_task_dialog()
 
     def _task_error(self,label='Erreur'):
-        self.status.set(label);self._close_task_dialog();self.update_idletasks()
+        self._status_kind='error';self.status.set(label);getattr(self,'_sync_status_display',lambda:None)();self._close_task_dialog();self.update_idletasks()
 
     def _save_prefs(self):
         save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
@@ -670,7 +1028,7 @@ class App(V15StableApp):
     def _theme_changed(self):
         self.prefs['theme']=self._theme_key();self._save_prefs();self._apply_theme()
     def _toggle_theme(self):
-        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';self.theme_var.set(THEME_LABELS[self.prefs.get('language','fr')][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart()
+        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
     def _projection_changed(self):
         self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True)
 
@@ -682,13 +1040,33 @@ class App(V15StableApp):
             if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text=('Filtre carte thermique' if lang=='fr' else 'Heatmap filter'),image=self._lock_closed_icon if locked else self._lock_open_icon)
     def _view_changed(self):self._invalidate_preview();self._update_view_controls();self._refresh_preview(True)
     def _heatmap_changed(self):self._invalidate_preview();self._refresh_preview(True)
-    def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._invalidate_preview();self._refresh_preview(True)
+    def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._invalidate_preview();self._refresh_preview(True);self._feedback('view_reset','info')
+    def random_seed(self):
+        super().random_seed();self._feedback('seed_randomized','info',seed=str(self.seed.get()))
     def _copy_seed(self):
-        value=str(self.seed.get());self.clipboard_clear();self.clipboard_append(value);self.status.set(f'Seed copié : {value}' if self.prefs.get('language')=='fr' else f'Seed copied: {value}')
+        value=str(self.seed.get());self.clipboard_clear();self.clipboard_append(value);self._feedback('seed_copied','success',seed=value)
+
+    def _selection_changed(self):
+        s=int(self.size.get());mkey=self._mode_key();akey=self._arch_key();m=MODES[mkey];a=ARCHETYPES[akey];lang=self.prefs.get('language','fr')
+        mode=MODE_LABELS[lang][mkey];arch=ARCHETYPE_LABELS[lang][akey];modifiers=self._modifier_summary()
+        if s!=768:self._feedback('size_reserved','warning',side=s,max_players=NATIVE_LIMITS[s])
+        elif not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
+        elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
+        else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
+
+    def _progress_stage(self,stage,detail,index):
+        # Detailed generator stages can change too quickly to be readable as status messages.
+        value=min(95,5+index*4);text=f'{stage} {detail}'.strip()
+        if self._task_overlay is not None:self._draw_task_progress(value,text)
+        else:
+            self.progress['value']=value
+        self.update_idletasks()
 
     def _cache_key(self):
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=(),engine_revision='v1.5-stable')
-    def _history_label(self,key):return f'{key.seed} · {key.side} · {key.players}P · {key.mode} · {key.archetype}'
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v1.5-stable')
+    def _history_label(self,key):
+        mods=('aucun' if self.prefs.get('language','fr')=='fr' else 'none') if not key.modifiers else '+'.join(key.modifiers)
+        return f'{key.seed} · {key.side} · {key.players}P · {key.mode} · {key.archetype} · {mods}'
     def _refresh_history(self):
         self._history_lookup={self._history_label(k):k for k,_ in self.session_cache.entries()};vals=list(self._history_lookup);self.history_combo.configure(values=vals)
         if vals and self.history_var.get() not in vals:self.history_var.set(vals[0])
@@ -696,22 +1074,26 @@ class App(V15StableApp):
         try:
             side=int(self.size.get())
             if side!=768:raise NotImplementedError(f'La génération {side}×{side} est réservée mais pas encore calibrée. Max joueurs={NATIVE_LIMITS[side]}.')
-            key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None
+            key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
+            mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
             if cached is not None:
-                self.current=cached;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self.status.set('Cache hit — résultat réutilisé immédiatement');return
-            self._task_begin('Génération…',2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
-            self.session_cache.put(key,self.current);self._refresh_history();self._task_progress(97,'Finalisation de l’aperçu…');self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._task_done(self.status.get())
+                self.current=cached;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
+            msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
+            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
+            self.session_cache.put(key,self.current);self._refresh_history();self._task_progress(97,'Finalisation de l’aperçu…' if lang=='fr' else 'Finalizing preview…');self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
         except Exception as e:
-            import traceback;self._task_error();messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
+            import traceback;self._task_error('Erreur de génération' if self.prefs.get('language','fr')=='fr' else 'Generation error');messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
     def _load_history(self):
         key=self._history_lookup.get(self.history_var.get());out=self.session_cache.get(key) if key else None
         if out is not None:
             need_stats=self.session_stats_cache.get(out.state) is None
             if need_stats:self._task_begin('Chargement de l’historique…' if self.prefs.get('language','fr')=='fr' else 'Loading history…',10)
             self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
-            if need_stats:self._task_done('Historique chargé' if self.prefs.get('language','fr')=='fr' else 'History loaded')
-            else:self.status.set('Historique chargé' if self.prefs.get('language','fr')=='fr' else 'History loaded')
-    def _clear_history(self):self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('');self.status.set('Caches de session vidés')
+            if need_stats:self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['history_loaded'])
+            else:self._feedback('history_loaded','success')
+        else:self._feedback('history_empty','warning')
+    def _clear_history(self):self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('');self._feedback('history_cleared','success')
     def _set_compare_slot(self,slot):
         if not self.current:return
         need_stats=self.session_stats_cache.get(self.current.state) is None
@@ -731,9 +1113,16 @@ class App(V15StableApp):
             else:
                 button.configure(text=f"{slot} · {self._output_label(out)}",image=self._compare_led_on)
         for slot,button in (('A',getattr(self,'clear_a_button',None)),('B',getattr(self,'clear_b_button',None))):
-            if button is not None:button.configure(state='normal' if self._compare_slots.get(slot) is not None else 'disabled')
+            if button is not None:
+                active=self._compare_slots.get(slot) is not None
+                button.configure(state='normal' if active else 'disabled',image=self._delete_icon_on if active else self._delete_icon_off)
         both=getattr(self,'clear_ab_button',None)
         if both is not None:both.configure(state='normal' if any(self._compare_slots.values()) else 'disabled')
+        # Slot identity text changes the natural button width.  Re-evaluate the
+        # local Session layout after Tk has recomputed the requested dimensions.
+        self._session_layout_mode=None
+        try:self.after_idle(self._apply_session_layout)
+        except tk.TclError:pass
     def _refresh_compare_label(self):
         # Compatibility helper kept for existing callers; identity is now shown only on the LED buttons.
         self._refresh_compare_buttons();self._refresh_stats_chart()
@@ -743,15 +1132,16 @@ class App(V15StableApp):
         if self._compare_active==slot:self._compare_active=None
         self._refresh_compare_label()
         lang=self.prefs.get('language','fr')
-        self.status.set((f'Comparaison {slot} vidée' if lang=='fr' else f'Comparison {slot} cleared'))
+        self._feedback_key=None;self._status_kind='success';self.status.set((f'Comparaison {slot} vidée' if lang=='fr' else f'Comparison {slot} cleared'));getattr(self,'_sync_status_display',lambda:None)()
     def _clear_compare_slots(self):
         self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._refresh_compare_label()
-        self.status.set('Comparaisons A/B vidées' if self.prefs.get('language','fr')=='fr' else 'A/B comparisons cleared')
+        self._feedback_key=None;self._status_kind='success';self.status.set('Comparaisons A/B vidées' if self.prefs.get('language','fr')=='fr' else 'A/B comparisons cleared');getattr(self,'_sync_status_display',lambda:None)()
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']
-        if a is None or b is None:self.status.set('Définir A et B avant la bascule');return
-        self._compare_active='B' if self._compare_active!='B' else 'A';self.current=self._compare_slots[self._compare_active];imported=bool(self.current.state.metadata.get('source_format'));self._populate_current(imported=imported);self._invalidate_preview();self._refresh_preview(False);self.status.set(f'Comparaison {self._compare_active}')
+        if a is None or b is None:
+            self._feedback_key=None;self._status_kind='warning';self.status.set('Définissez A et B avant la bascule.' if self.prefs.get('language','fr')=='fr' else 'Set both A and B before toggling.');getattr(self,'_sync_status_display',lambda:None)();return
+        self._compare_active='B' if self._compare_active!='B' else 'A';self.current=self._compare_slots[self._compare_active];imported=bool(self.current.state.metadata.get('source_format'));self._populate_current(imported=imported);self._invalidate_preview();self._refresh_preview(False);self._feedback('compare_toggled','info',map=f'{self._compare_active} · {self._output_label(self.current)}')
 
     def _render_options(self):
         view=self._view_key();return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key()}
@@ -817,12 +1207,12 @@ class App(V15StableApp):
         dups=sorted({v for v in norm if norm.count(v)>1})
         if dups:messagebox.showerror('Raccourcis','Conflit détecté : '+', '.join(dups));return
         if any(self._tk_sequence(v) is None for v in vals.values()):messagebox.showerror('Raccourcis','Format de raccourci invalide.');return
-        self.prefs['shortcuts']=vals;self._save_prefs();self._bind_shortcuts();self.status.set('Raccourcis appliqués')
+        self.prefs['shortcuts']=vals;self._save_prefs();self._bind_shortcuts();self._feedback('shortcut_applied','success')
     def _reset_one_shortcut(self,cmd):
         self.shortcut_vars[cmd].set(DEFAULT_SHORTCUTS[cmd]);self._apply_shortcut_settings()
     def _reset_shortcut_settings(self):
         for k,v in DEFAULT_SHORTCUTS.items():self.shortcut_vars[k].set(v)
-        self.prefs['shortcuts']=dict(DEFAULT_SHORTCUTS);self._save_prefs();self._bind_shortcuts();self.status.set('Raccourcis restaurés')
+        self.prefs['shortcuts']=dict(DEFAULT_SHORTCUTS);self._save_prefs();self._bind_shortcuts();self._feedback('shortcut_restored','success')
     def _show_help(self):
         sc=self.prefs.get('shortcuts',DEFAULT_SHORTCUTS);lang=self.prefs.get('language','fr');lines=[]
         for cmd in DEFAULT_SHORTCUTS:lines.append(f"{COMMAND_LABELS[lang][cmd]} : {sc.get(cmd,DEFAULT_SHORTCUTS[cmd])}")
@@ -842,7 +1232,7 @@ class App(V15StableApp):
             self._task_progress(62,'Export SAV/aperçu…')
             if self.import_source and self.import_source.suffix.lower()=='.sav':sv=folder/(base+'.sav');shutil.copy2(self.import_source,sv);made.append(sv.name+' (copie SAV inchangée)')
             else:made.append('SAV non exporté : writer SAV volontairement non implémenté/validé.')
-            png=folder/(base+'_preview.png');render(st,png,**self._render_options());made.append(png.name);self._task_done('Export terminé');messagebox.showinfo('Export','\n'.join(made))
+            png=folder/(base+'_preview.png');render(st,png,**self._render_options());made.append(png.name);self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['export_done']);messagebox.showinfo('Export','\n'.join(made))
         except Exception as e:self._task_error('Erreur export');messagebox.showerror('Export',f'{e}')
 
 def main():App().mainloop()

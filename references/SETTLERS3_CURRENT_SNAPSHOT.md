@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-21 — v1.8 DEV_1**
+> Last refreshed: **2026-08-22 — v1.8 DEV_2_R7**
 
 ## État release / Git
 
@@ -14,6 +14,18 @@
 - SHA-256 ZIP final : `593A86CEE2926344D1C2675C23D5F99E2A5058C0DCC50A1A4A4D9EA077DC94E5`.
 - Updater actuel détecte correctement v1.7 comme dernière STABLE.
 - v1.7 = socle Stats/Graphs ; moteur de génération v1.5 validé/protégé inchangé.
+
+
+## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
+
+- DEV_1 validée et synchronisée exactement vers `dev` au commit `57d9569`.
+- Responsive UI v1 : taille initiale adaptée à l’écran ; cible principale 1920×1080, reflow compact sous ~1500 px de largeur, minimum 900×650. Les groupes de contrôles supérieurs passent sur plusieurs lignes plutôt que de devenir minuscules ou hors écran. Les proportions carte/panneaux restent inchangées.
+- La zone historique `status` reçoit enfin une mission formelle : communication courte, lisible et semi-persistante entre le programme et l’utilisateur.
+- Les détails rapides du pipeline restent dans la barre/overlay de progression ; ils ne remplacent plus en rafale le message humain de statut.
+- Pendant génération : le statut décrit map/mode/archétype/taille/joueurs/seed ; la progression affiche les étapes techniques ; fin de génération = confirmation lisible.
+- Feedback branché notamment sur sélection/réservations, génération/cache, seed copié, historique, A/B, raccourcis, export et filtre Heatmap verrouillé.
+- Feedback FR/EN et retraduisible lors du changement de langue.
+- Status/Feedback v2 est explicitement futur : davantage de contexte, messages/temporisation/priorités raffinés, couleurs et jolies icônes ; ne pas transformer cette zone en log complet.
 
 ## v1.7 — état final fonctionnel
 
@@ -169,6 +181,7 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 - Comparaison multi-maps **3+** : fonctionnalité planifiée à très forte probabilité, pas simple idée. À faire plus tard comme vue d'analyse dédiée, plutôt que surcharger A/B.
 - Modifiers / Modificateurs : feature volontairement fun mais sérieuse permettant des variations contrôlées et parfois drastiques du générateur. Toujours prévue.
 - Synergie future importante : même seed + différents modifiers → génération batch → Stats → comparaison multi-map.
+- ENDGAME non versionné : lorsque le générateur/workbench sera pratiquement finalisé, envisager un éditeur de cartes avancé intégré capable de générer, importer, inspecter, modifier, valider et exporter. Architecture UI à décider seulement alors : fenêtre dédiée ou espace/mode Édition complet. Ne pas anticiper ce chantier dans la roadmap proche ou moyenne.
 - Rayons de ressources proches configurables : exactement 2 rayons, pas 3.
 - Graphiques futurs possibles : histogrammes de tailles de composants, profil radial des ressources, variantes de type donut ; radar = idée incertaine ; boxplots surtout pour futures comparaisons au corpus natif.
 - Massifs/Lacs/Rivières : garder le tooltip simple pour l'instant ; métriques géométriques plus poussées = TODO lointain/incertain.
@@ -197,16 +210,71 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 6. Vérifier tests + hashes protégés avant packaging.
 7. DEV exact → `dev` via `sync_dev_from_zip.ps1` après validation utilisateur ; ne pas faire de synchronisation GitHub partielle.
 
-## v1.8 DEV_1 — current work
+## v1.8 DEV_2 — current work
 
-- Base: v1.7 STABLE published/tagged and validated.
-- Window title is now fully FR/EN localized.
-- A/B redundant summary line removed; LED buttons remain the source of slot identity.
-- Explicit Clear A / Clear B / Clear A+B controls added.
-- v1.5/v1.6 release notes/manifests archived under `references/release_notes/`.
-- Terrain/Object archaeology registries added to `references/`.
-- No generation-engine changes.
+- Base : v1.8 DEV_1 validée et synchronisée exactement sur `dev` au commit `57d9569`.
+- Candidate courante : `v1.8 DEV_2_R7`, validée sous Windows après contrôle du GIF de redimensionnement avec et sans slots A/B définis.
+- Responsive UI v1 et Status/Feedback bar v1 sont implémentés ; aucun changement du moteur de génération.
+- R6 remplace la grille globale widget-par-widget par trois régions indépendantes : Génération, Session/Comparaison et contrôles globaux.
+- En mode large, Session/Comparaison occupe réellement le centre ; en compact, les blocs entiers se déplacent sans mélanger Langue/Aide/Thème aux paramètres de génération.
+- Les rangées Générer/Batch, seed et Importer/Exporter/Aperçu PNG utilisent des layouts locaux ; leurs espacements ne dépendent plus des colonnes de sélecteurs et les boutons fichiers conservent leur largeur naturelle traduite.
+- La zone de statut est désormais un feedback humain semi-persistant ; les étapes techniques rapides restent dans la progression.
+- Status v1 est FR/EN et relié aux actions principales. Une v2 future doit ajouter couleurs, jolies icônes et une hiérarchie/temporisation plus raffinée sans devenir un log.
+- R7 remet la zone Langue/Aide/Thème au véritable bord droit, déclenche le compact à 1750 px avant coupure et rend les boutons A/B naturels tant que Session dispose d'au moins 900 px.
+- Les suppressions individuelles A/B affichent une croix rouge déterministe lorsque le slot est rempli ; vide, la croix reste discrète et désactivée.
+- Validation automatisée R7 : 90 tests pytest PASS, 49 validations de génération PASS et checksum binaire PASS ; hashes protégés inchangés.
+- Validation humaine R7 : header responsive validé sur Windows ; mode large, bascule compacte, ancrage global à droite, largeur adaptative des boutons A/B, croix rouges actives et taille minimale conformes.
 
 ## Prochaine action recommandée
 
-Valider **v1.8 DEV_1** sur Windows. Après validation, synchroniser le ZIP exact vers `dev` via `sync_dev_from_zip.ps1`, puis poursuivre la roadmap v1.8, probablement historique/config puis Batch Generation selon les retours utilisateur.
+Synchroniser le ZIP exact de **v1.8 DEV_2_R7 validée** vers `dev` via `sync_dev_from_zip.ps1`, puis vérifier l'état Git conformément au workflow. Ne pas ouvrir la fonctionnalité suivante avant cette synchronisation propre.
+
+
+## v1.8 DEV_2_R2 checkpoint
+- Windows 1080p feedback caused a responsive R2: map-specific controls moved into a scalable viewer toolbar; 1080p explicitly selects compact layout.
+- Obsolete header Progressbar removed from layout (it caused a persistent pale/white strip after resize).
+- Status/Feedback v1 expanded with additional user actions; fast generator details remain in the map progress overlay.
+- Future UI TODO includes magnifier/precision cursor + optional inspector-near-cursor toggle and a more compact zoom control.
+
+## v1.8 DEV_2_R3 checkpoint
+- Header réorganisé par fonction, selon le retour visuel Windows de DEV_2_R2.
+- 1080p n'est plus forcé en mode compact uniquement à cause de sa hauteur : le layout large est conçu pour y tenir proprement.
+- Génération à gauche ; Session/Comparaison au centre lorsque la largeur le permet ; Langue/Aide/Thème à droite.
+- Copier seed reste rattaché visuellement à Seed.
+- Inspecteur reste visible dans la zone supérieure (placement encore temporaire à long terme).
+- Feedback reste une barre fine mais majeure, visible juste avant la zone Map/Data.
+- Viewer toolbar et progression validés en R2 restent inchangés.
+
+
+## v1.8 DEV_2_R4 checkpoint
+
+- Modificateurs réservé dans le header via menu à cases cochables ; `Aucun` seul actuellement.
+- Modificateurs intégré à la clé de cache, à l’historique et aux messages de génération/état.
+- Historique Session compacté ; Charger/Vider cache passent en seconde ligne quand le bloc est contraint.
+- Aide/Thème passent sous Langue en mode étroit.
+- Progression validée++ et gelée pour cette passe.
+
+## v1.8 DEV_2_R5_R5 checkpoint
+
+- Paint 3 utilisé comme référence du header ; minimum 900 px atteint sans chevauchement destructeur.
+- Test Windows utilisateur effectué sur 2560×1392, 1920×1020 et 902×682.
+- R5_R5 non retenue comme layout final : Session/Comparaison ne revenait pas au centre en mode large, Langue/Aide/Thème se mélangeait à la grille Génération au minimum et les boutons fichiers étaient tronqués.
+
+## v1.8 DEV_2_R6 checkpoint
+
+- Trois régions structurelles indépendantes au lieu d'une grille globale de widgets.
+- Mode large : Génération à gauche, Session/Comparaison réellement au centre, contrôles globaux à droite.
+- Mode compact : Génération et contrôles globaux restent séparés ; Session descend comme un bloc complet.
+- Les boutons d'action sont organisés dans des barres locales équidistantes et gardent leur largeur textuelle naturelle.
+- 86 tests pytest PASS ; 49 validations de génération PASS ; checksum binaire PASS ; hashes protégés inchangés.
+- Test visuel Windows/GIF effectué ; R6 non retenue comme version finale à cause du clipping pré-compact et de l'ancrage incomplet à droite.
+
+## v1.8 DEV_2_R7 checkpoint
+
+- Retour R6 : taille minimum jugée très bonne et structure générale presque finale.
+- Analyse frame par frame du GIF : thème coupé pendant les dernières frames du mode large ; ancien poids élastique de la colonne 11 empêchant la région globale d'atteindre le bord réel.
+- Ancien poids supprimé ; breakpoint compact relevé de 1600 à 1750 px.
+- Boutons A/B à largeur naturelle lorsque Session a la place, largeur bornée seulement sous 900 px en mode compact.
+- Suppression A/B : croix rouge raster active, croix grise désactivée lorsque le slot est vide.
+- 90 tests pytest PASS ; 49 validations de génération PASS ; checksum binaire PASS ; hashes protégés inchangés.
+- Validation Windows utilisateur terminée sur GIF de redimensionnement avec et sans A/B définis : aucun chevauchement ni contrôle coupé ; passage large/compact, ancrage à droite, boutons A/B et croix rouges validés.

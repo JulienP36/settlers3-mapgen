@@ -1,3 +1,29 @@
+## v1.8 DEV_2_R7 — 2026-08-22
+- Resets the inherited elastic header column left behind by the pre-R6 layout, allowing Language/Help/Theme to reach the actual right edge.
+- Raises the wide-to-compact breakpoint from 1600 to 1750 px after GIF review showed the theme button clipping immediately before reflow.
+- A/B identity buttons now use natural translated text width whenever Session has room and compact only near the real minimum.
+- Active individual A/B delete actions use a deterministic red cross icon; empty slots keep a disabled muted cross.
+- R6 three-region structure and minimum layout preserved; generation engine v1.5 unchanged.
+- Windows resize validation completed from the user-provided R7 GIF, both with empty and populated A/B slots: wide/compact transition, right anchoring, adaptive A/B widths, active red crosses and minimum layout validated.
+
+## v1.8 DEV_2_R6 — 2026-08-22
+- Replaces the widget-by-widget header grid with three independent functional regions: Generation, Session/Comparison and global controls.
+- Wide mode keeps Session/Comparison genuinely centered between Generation and Language/Help/Theme.
+- Compact mode moves whole regions only; global controls no longer mix with generation parameters.
+- Generation selectors and action rows use independent local layouts, so button spacing no longer depends on unrelated columns above.
+- Import/Export/PNG Preview buttons use their natural translated text width and are no longer clipped.
+- Viewer Zoom minimum behavior intentionally unchanged; generation engine v1.5 and protected assets unchanged.
+
+## v1.8 DEV_2_R5_R5 — 2026-08-22
+- Header/layout aligned to the Paint 3 reference; stable shared structure across widths.
+- Reserved `Générer lot…` / `Generate batch…` action slot for v1.8 Batch.
+- Session/Comparison compact A/B layout; compact mode fits the 900 px minimum runtime width.
+
+## v1.8 DEV_2
+- Responsive header/layout v1 for 1080p and smaller windows.
+- Formal Status/Feedback bar v1 with FR/EN user-facing messages.
+- Fast generator stages remain in progress UI instead of replacing readable status text.
+
 # v1.8 DEV_1 — 2026-08-21
 
 - Start of the v1.8 Workflow / Accessibility / Production line.
@@ -189,3 +215,26 @@
 - Generic interactive chart tooltips, including A/B.
 - A/B slot buttons now expose a visible set-state (green LED + short map identity).
 - Documentation/TODO cleanup before RC preparation.
+## v1.8 DEV_2_R3 — header layout refinement
+
+- Reorganizes the application header by function instead of historical grid position.
+- On normal 1080p-width windows, Generation stays left, Session/Comparison uses the center, and Language/Help/Theme stay right.
+- `Copier seed` / `Copy seed` stays next to the Seed controls.
+- Inspector remains visible in the upper application area rather than being hidden under the map viewer.
+- Feedback/status remains a prominent thin messenger strip immediately above the main map/data area.
+- Compact mode is now reserved for genuinely narrow windows instead of being forced solely by 1080p screen height.
+- Viewer toolbar/progress/feedback behavior from R2 is preserved.
+
+## v1.8 DEV_2_R2 — responsive/feedback follow-up
+- 1080p explicit compact target.
+- Viewer-specific toolbar for View / Heatmap filter / Recenter / Zoom, with its own reflow.
+- Removed the obsolete header Progressbar from layout to prevent the persistent pale strip after resize.
+- Expanded Status/Feedback v1 for A/B toggle, empty cache, theme button, recenter, random seed, graph/stat exports, opacity lock and player-count changes.
+- No generation-engine changes.
+## v1.8 DEV_2_R4 — header density + modifiers reservation
+
+- Reserved a future multi-select **Modifiers** control after Archetype; current value is None only.
+- Wired modifiers into generation cache/history/status semantics without touching generator v1.5.
+- Reduced Session history field width and reflowed Load/Clear cache actions on constrained widths.
+- Stacked Help/Theme below Language in compact mode.
+- Progress overlay unchanged and validated.

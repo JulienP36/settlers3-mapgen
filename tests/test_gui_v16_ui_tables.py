@@ -1,4 +1,4 @@
-from s3mapgen.gui_v16 import VIEW_LABELS, HEATMAP_LABELS, OBJECT_NAMES, WINDOW_TITLES
+from s3mapgen.gui_v16 import VIEW_LABELS, HEATMAP_LABELS, OBJECT_NAMES, WINDOW_TITLES, FEEDBACK_TEXT
 
 
 def test_view_and_heatmap_labels_are_localized_and_decorated():
@@ -22,9 +22,16 @@ def test_inspector_object_table_contains_known_ids():
     assert OBJECT_NAMES[127]=='Building Stone 13'
 
 
-def test_window_title_is_fully_localized_for_v18_dev1():
-    assert WINDOW_TITLES['fr'] == 'Settlers III MapGen v1.8 DEV_1 — moteur de génération v1.5'
-    assert WINDOW_TITLES['en'] == 'Settlers III MapGen v1.8 DEV_1 — generation engine v1.5'
+def test_window_title_is_fully_localized_for_v18_dev2():
+    assert WINDOW_TITLES['fr'] == 'Settlers III MapGen v1.8 DEV_2_R7 — moteur de génération v1.5'
+    assert WINDOW_TITLES['en'] == 'Settlers III MapGen v1.8 DEV_2_R7 — generation engine v1.5'
+
+
+def test_feedback_text_has_human_status_and_locked_control_hint_in_both_languages():
+    for lang in ('fr','en'):
+        assert '{seed}' in FEEDBACK_TEXT[lang]['generating']
+        assert '{seed}' in FEEDBACK_TEXT[lang]['generated']
+        assert 'heatmap' in FEEDBACK_TEXT[lang]['heatmap_locked'].lower() or 'thermique' in FEEDBACK_TEXT[lang]['heatmap_locked'].lower()
 
 
 def test_ab_clear_helpers_clear_slots_and_active_state():

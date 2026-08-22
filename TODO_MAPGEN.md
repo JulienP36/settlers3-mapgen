@@ -85,6 +85,19 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Futur comparaison corpus : boxplots / bandes de référence pour situer MapGen dans les distributions natives lorsque ce chantier de calibration sera ouvert.
 - [ ] Très lointain/incertain : détails géométriques supplémentaires dans les tooltips massifs/lacs/rivières (périmètre, bbox, compacité, allongement) seulement si l'usage le justifie.
 
+
+### Responsive / Status feedback
+
+- [x] **v1.8 DEV_2_R2 — Responsive UI v1** : première passe compacte testée sur petite surface ; outils Vue/Carte thermique/Recentrer/Zoom déplacés dans une barre contextuelle du viewer avec reflow indépendant ; ancienne Progressbar de header supprimée du layout ; préserver le splitter carte/panneaux.
+- [x] **v1.8 DEV_2_R2 — Status/Feedback v1** : formaliser la zone d’état comme feedback utilisateur lisible ; réserver les étapes rapides à la progression ; relier les principales interactions ; FR/EN. R2 ajoute notamment bascule A/B explicite, cache vide, bouton thème, recentrage, seed aléatoire, exports Stats/Graphiques, opacité indisponible et synchronisation du nombre de joueurs.
+- [x] **v1.8 DEV_2_R3 — Header fonctionnel** : réorganiser le haut par fonction (Génération à gauche, Session/Comparaison au centre quand la largeur le permet, Langue/Aide/Thème à droite), garder Copier seed près du Seed, Inspecteur visible en haut et Feedback comme messager principal ; réserver le mode compact aux fenêtres réellement étroites.
+- [x] **v1.8 DEV_2_R4 — Densité du header + emplacement Modificateurs** : réserver après Archétype un menu à cases cochables compatible multi-modificateurs (Aucun seul pour l’instant), intégrer ce paramètre au cache/historique/feedback ; réduire la largeur par défaut de l’historique, faire descendre Charger/Vider cache quand Session est contrainte, et empiler Aide/Thème sous Langue en mode étroit.
+- [x] **v1.8 DEV_2_R5_R5 — Paint 3, test Windows effectué** : structure stable et minimum 900 px obtenus, mais retour utilisateur non validant pour le header final : Session restait en bande inférieure au lieu d'occuper le centre en mode large, contrôles globaux mélangés aux paramètres en compact et boutons Importer/Exporter/Aperçu tronqués par des largeurs fixes.
+- [x] **v1.8 DEV_2_R6 — test Windows + GIF effectué** : trois régions et minimum jugés très proches du résultat final ; GIF de redimensionnement validant la structure générale, mais révélant le bouton Thème coupé juste avant le passage compact, la zone globale pas complètement ancrée à droite et les identités A/B encore tronquées par largeur fixe.
+- [x] **v1.8 DEV_2_R7 — validée sous Windows** : GIF de redimensionnement contrôlé avec et sans A/B définis ; ancrage réel à droite, passage compact à 1750 px sans coupure, boutons A/B adaptatifs, croix rouge active et taille minimale validés.
+- [ ] **Status/Feedback v2 — grosse révision UI future** : couleurs sémantiques, jolies icônes dessinées/validées sans génération d’image IA, meilleure hiérarchie/priorité/temporisation, davantage d’actions liées et explications de contrôles indisponibles. Garder la zone concise : ce n’est pas un journal/log.
+- [ ] **Responsive UI v2 / refonte UI future** : revoir plus profondément l’organisation, breakpoints, densité, éventuels panneaux repliables/scroll de secours après retour d’usage sur v1.
+
 ## v1.8 — Workflow, accessibilité & production (13 axes validés)
 
 - [ ] **Batch Generation** : 1 à 4 maps, paramètres indépendants, états visuels, historique + assignation A/B ; réutiliser le pipeline existant.
@@ -148,6 +161,14 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [ ] Constituer/analyser les références natives nécessaires.
 - [ ] **Small Islands / Petites îles** ensuite.
 
+## ENDGAME — Éditeur de cartes avancé intégré (long terme, non versionné)
+
+- [ ] Ne commencer ce chantier que lorsque le générateur/workbench actuel sera pratiquement finalisé, hors modifications mineures et éditeur intégré.
+- [ ] Faire évoluer MapGen vers une chaîne complète permettant de générer, importer, inspecter, modifier, valider et exporter des cartes Settlers III.
+- [ ] Dépasser progressivement les limites de l'éditeur officiel uniquement pour les données EDM/MAP/SAV réellement comprises, écrites correctement et validées dans l'éditeur ou en jeu.
+- [ ] Décider tardivement l'architecture UI selon l'application alors mature : fenêtre d'édition dédiée ou espace/mode Édition remplaçant la vue principale.
+- [ ] Ne pas préparer maintenant de placeholder, de refonte anticipée ou de numéro v2/v3/v4 ; ce but terminal ne doit pas ralentir la roadmap proche ou moyenne.
+
 ## À préserver
 
 - Archetype = macro-géographie.
@@ -178,7 +199,9 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 ## UI — après validation v1.6 / refonte majeure
 - Repenser complètement l'organisation générale de l'interface.
 - Étudier une section **Outils Map** sous la zone Validations / Pipeline / Métadonnées / Statistiques afin d'y regrouper les outils d'analyse de carte.
-- Ajouter une **loupe flottante près du curseur**, activable/désactivable par bouton et raccourci : zoom local de la zone survolée pour viser précisément les cellules/objets avec l'inspecteur.
+- Ajouter une **loupe flottante près du curseur**, activable/désactivable par bouton discret et raccourci : zoom local carré de la zone survolée pour viser précisément les cellules/objets ; prévoir un curseur d’inspection plus fin que le curseur de drag.
+- Ajouter un second toggle indépendant pour afficher les **informations de l’inspecteur près du curseur** (ou dans une petite zone contextuelle proche de la map après essai UX), sans imposer la loupe.
+- Repenser à terme le contrôle de zoom : barre plus compacte ou autre forme de contrôle ; DEV_2_R2 le rapproche déjà du viewer pour cohérence.
 - Faire une passe dédiée sur la police des labels joueurs P 1..P 20 avec propositions visuelles comparatives avant choix définitif.
 - Faire une passe complète de consolidation/nomenclature des tables d'IDs connues et les exposer proprement dans l'inspecteur.
 - À terme, envisager de sortir starts/territoires initiaux de la vue Global vers une vue dédiée afin d'épurer la carte globale.
