@@ -15,6 +15,7 @@
 - Updater actuel détecte correctement v1.7 comme dernière STABLE.
 - v1.7 = socle Stats/Graphs ; moteur de génération v1.5 validé/protégé inchangé.
 - v1.8 DEV_2_R7 validée sous Windows et synchronisée sur `dev` au commit `85e7bfb`.
+- Autorisation permanente du propriétaire : commits et pushs non destructifs autorisés sur `dev` sans confirmation ponctuelle, dans le périmètre et avec les exclusions définis par `PROJECT_WORKFLOW.md`.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
@@ -264,7 +265,9 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 
 ## Prochaine action recommandée
 
-Demander à l'utilisateur ses dernières notes du TODO local, les consolider avec `TODO_MAPGEN.md`, puis choisir la prochaine étape v1.8. Ne pas commencer l'audit seed/diversité avant le chantier générateur v1.10.
+Les dernières notes du TODO local ont été reçues et consolidées le 2026-08-22. Pour la suite proche de v1.8, privilégier d'abord un petit chantier cohérent autour des visualisations joueurs : palette exacte dans Territoires, puis conception/essai d'une Vue Départs dédiée utilisant les marqueurs natifs J1–J20. La capture de référence est archivée dans `references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png`.
+
+Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons. Un moteur de formes alternatif réellement distinct de Legacy/Upgraded reste une piste non versionnée à n'ouvrir qu'après v1.10 et la consolidation des objectifs natifs.
 
 
 ## v1.8 DEV_2_R2 checkpoint
@@ -326,7 +329,7 @@ Demander à l'utilisateur ses dernières notes du TODO local, les consolider ave
 - Annulation limitée aux éléments en attente afin de ne jamais interrompre le moteur v1.5.
 - 95 tests pytest PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
 - Validation fonctionnelle Windows utilisateur terminée ; R2 porte uniquement le polish final demandé.
-- Après validation et synchronisation `dev`, rappeler explicitement à l'utilisateur de transmettre ses dernières notes du TODO local.
+- Rappel effectué après validation et synchronisation `dev` ; notes locales reçues et consolidées le 2026-08-22.
 
 ## v1.8 DEV_3_R2 checkpoint
 
@@ -383,4 +386,4 @@ Demander à l'utilisateur ses dernières notes du TODO local, les consolider ave
 - Nombre de cartes appliqué dynamiquement ; bouton Appliquer supprimé.
 - 109 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
 - Validation Windows finale terminée ; DEV_3 synchronisée sur `dev`.
-- Prochain checkpoint : récupérer les dernières notes du TODO local utilisateur.
+- Notes locales utilisateur récupérées et consolidées dans `TODO_MAPGEN.md` ; prochain checkpoint à choisir dans la fin de v1.8.

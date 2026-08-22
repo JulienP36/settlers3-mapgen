@@ -25,6 +25,16 @@ Checkpoint `dev` frequently whenever a coherent unit of work is testable or when
 
 DEV/RC builds do not need tags or GitHub Releases. STABLE receives an annotated `vX.Y` tag and GitHub Release.
 
+## Standing authorization for `dev`
+
+The project owner authorizes Codex to create, modify, rename and delete project files, then make non-destructive commits and pushes to the public repository `JulienP36/settlers3-mapgen` on branch `dev`, without requesting confirmation for every routine checkpoint.
+
+This standing authorization covers source code, tests, documentation, TODOs, snapshots, DEV notes, technical references and visual material explicitly provided by the project owner. Unless the owner states otherwise, files and images supplied for integration into this project may be published in that public repository.
+
+After every functional change, run the relevant validations and verify protected assets before pushing.
+
+This standing authorization does **not** cover `main`, tags, GitHub Releases, force-pushes, history rewrites, repository or branch deletion, repository settings, secrets/credentials, personal data, license changes, or publication of external assets whose provenance or rights are uncertain. Those actions always require explicit authorization.
+
 ## Protected v1.5 baseline
 Do not alter these without an explicit generation-engine reason:
 - `s3mapgen/generator_v15.py` — `3bbc9180719ebfae2bc37b29d81025731dc821e861c7b0e66894f7460f296090`
@@ -74,4 +84,3 @@ After v1.7 STABLE:
 - Prioritize a self-contained Windows `.exe` during v1.8 so external users do not need to install Python/pip/dependencies.
 - Evolve the GitHub-Releases updater for packaged executable updates; preserve user settings and verify release integrity.
 - **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.
-

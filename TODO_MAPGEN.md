@@ -101,6 +101,8 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 ## v1.8 — Workflow, accessibilité & production (13 axes validés)
 
 - [x] **Batch Generation — DEV_3_R7 validée sous Windows** : fenêtre 1–4 cartes, paramètres indépendants, seeds communes/individuelles, exécution séquentielle, cache, annulation en attente, historique, miniatures/tooltip dynamiques, assignation A/B exclusive, progression/feedback et nombre de cartes dynamique. DEV_3 terminée et synchronisée sur `dev`.
+- [ ] **Vue Territoires — palette joueurs exacte** : remplacer les couleurs provisoires par la palette J1–J20 déjà déterminée et validée dans [`SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png`](references/SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png), en conservant une correspondance unique entre joueur, territoire et autres vues concernées.
+- [ ] **Vue Départs dédiée — refonte des marqueurs** : sortir les positions de départ de la vue Global afin de l'épurer et créer une vue dédiée. Utiliser les marqueurs natifs J1–J20 comme point central de chaque départ ; étudier, après essai visuel, une frontière de zone initiale composée de marqueurs espacés en cercle plutôt qu'un contour abstrait. La référence utilisateur est archivée dans [`SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png`](references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png) : ligne haute J1–J10, ligne basse J11–J20, affichage observé dans l'éditeur sur herbe verte. Ne pas interpréter le fond vert comme faisant partie du sprite. L'utilisateur pourra éventuellement retoucher lui-même ces marqueurs pour leur donner une touche personnelle/modernisée ; conserver séparément l'original de référence et la variante retouchée.
 - [ ] **Export maps multi-format** : popup, nom de base unique, cases EDM/MAP/SAV + option PNG de base ; conserver PNG vue courante séparé.
 - [ ] **Export Graphiques unifié** : étudier un bouton `Exporter…` multi-format (PNG/CSV/JSON selon contexte).
 - [x] **A/B polish léger — DEV_1** : reset A/B/A+B, suppression du résumé texte redondant, boutons LED conservés.
@@ -111,14 +113,16 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] **Premier vrai `.exe`** : packaging autonome sans Python/pip à installer.
 - [ ] **Icône application/exe** : infrastructure + placeholder simple ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
 - [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
-- [ ] **Sprites natifs pour les positions de départ dans les miniatures/aperçus** : identifier et importer les petits sprites exacts du jeu depuis des ressources légitimement disponibles, puis les utiliser comme marqueurs déterministes plus compacts et épurés que les contours actuels. Ne rien inventer et conserver un fallback tant que les assets/IDs ne sont pas validés.
+- [ ] **Registre de provenance des éléments visuels** : avant la passe d'iconographie, inventorier les icônes/images déjà utilisées ou proposées avec au minimum chemin, rôle, provenance exacte (Unicode/système, dessin du projet, fourni par l'utilisateur, ressource du jeu ou source externe), auteur/licence lorsque pertinent, éventuelles restrictions et remplaçabilité. Fournir ensuite cette liste à l'utilisateur afin qu'il puisse sélectionner ou fournir explicitement les icônes souhaitées.
+- [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée.
+- [ ] **Sprites natifs pour les positions de départ dans les miniatures/aperçus** : partir de la référence J1–J20 archivée, identifier et importer les petits sprites exacts du jeu depuis des ressources légitimement disponibles, puis les utiliser comme marqueurs déterministes plus compacts et épurés que les contours actuels. Ne rien inventer et conserver un fallback tant que les assets/IDs et leur transparence ne sont pas validés.
 - [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
 - [ ] **README transparence IA** : indiquer clairement conception/direction humaine + usage important de ChatGPT/OpenAI, notamment backend/analyse/reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
 
 ### Rappel de checkpoint DEV_3
 
-- [x] DEV_3 validée sous Windows et synchronisée sur `dev` ; demander maintenant à l'utilisateur ses dernières notes du TODO local avant de choisir la fonctionnalité suivante.
+- [x] DEV_3 validée sous Windows et synchronisée sur `dev` ; dernières notes du TODO local reçues et consolidées le 2026-08-22.
 
 ## v1.9 — Archéologie / Data Mapping (transition planifiée)
 
@@ -126,6 +130,9 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Compléter progressivement les registres `references/SETTLERS3_TERRAIN_IDS_REFERENCE.md` et `references/SETTLERS3_OBJECT_IDS_REFERENCE.md`.
 - [ ] Clarifier trous/réservés, familles/transitions et autres catégories SAV : settlers/colons, marchandises, outils, ressources transformées, bâtiments, etc., sans inventer.
 - [ ] Consolider les tables utilisées par Stats/Tooltips avant les modifications profondes du générateur.
+- [ ] **Couleur effective des joueurs dans les fichiers** : vérifier si EDM/MAP/SAV expose réellement l'identité ou la couleur affectée à chaque joueur ; si l'information est démontrée, l'utiliser dans les vues Territoires, Départs, Stats et autres visualisations pertinentes au lieu de déduire aveuglément la palette par numéro de slot.
+- [ ] **Interaction Graphiques → carte** : dans `Graphiques > Familles de terrain`, permettre au survol d'un biome/de sa série de mettre temporairement en surbrillance les cellules correspondantes dans la carte. Définir précisément le comportement lorsque plusieurs familles ou couches sont actives.
+- [ ] **Terrain IDs 18 et 19 — détails d'herbe provisoires** : observations actuelles consignées comme `Détail herbe 1` / `Grass detail 1` et `Détail herbe 2` / `Grass detail 2`. Ils semblent apparaître isolément et uniquement entourés d'herbe. En v1.9, tester leur placement contrôlé, notamment en groupes, vérifier les transitions/artefacts ou incompatibilités graphiques, observer leur comportement dans l'éditeur et en jeu, puis affiner leur nom et leur sémantique sans extrapolation.
 
 ## v1.10 — Retour générateur
 
@@ -147,7 +154,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Chaque map du lot possède un état visuel compact (attente / génération / terminée / erreur) et ses propres paramètres.
 - [ ] Permettre d’affecter directement un résultat du batch au slot **Comparaison A** ou **Comparaison B**.
 - [ ] Réutiliser le pipeline de génération existant ; ne pas créer un second moteur divergent.
-- [ ] **Comparaison multi-maps 3+ : fonctionnalité planifiée à très forte probabilité**, distincte de l’A/B actuelle. La repousser après une grosse passe sur le générateur afin qu’elle serve ensuite de banc d’analyse rapide pour les évolutions profondes.
+- [ ] **Comparaison multi-maps 3+ : fonctionnalité planifiée à très forte probabilité**, distincte de l’A/B actuelle. Permettre de scinder le viewer en 2, 3 ou 4 zones, chacune compatible avec le système de Vues existant. La repousser après une grosse passe sur le générateur afin qu’elle serve ensuite de banc d’analyse rapide pour les évolutions profondes.
 - [ ] Prévoir la multi-comparaison comme outil particulièrement utile pour comparer plusieurs variantes d’un même seed, plusieurs tailles/configurations, et plus tard plusieurs combinaisons de **Modifiers**.
 - [ ] **Modifiers / Modificateurs** : fonctionnalité future conservée explicitement dans la roadmap. Objectif : appliquer volontairement des modifications fortes/amusement aux règles ou proportions de génération (ex. eau, montagnes, ressources, végétation, etc.) sans transformer chaque variante en nouvel archétype. Les paramètres exacts et garde-fous seront définis lors du chantier dédié.
 
@@ -172,6 +179,12 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [ ] **Large Islands / Grandes îles**.
 - [ ] Constituer/analyser les références natives nécessaires.
 - [ ] **Small Islands / Petites îles** ensuite.
+
+## Futur génération — moteur alternatif expérimental (non versionné)
+
+- [ ] Conserver l'idée d'une famille de génération réellement différente de Legacy et Upgraded, pouvant explorer des algorithmes de formes plus variés ou s'inspirer de principes rencontrés dans d'autres jeux, sans copier leurs assets ni compromettre les modes validés.
+- [ ] Ne pas confondre ce chantier avec un simple **Archetype** (macro-géographie comme Continental/Large Islands/Small Islands), ni avec un **Modifier**. Décider seulement lors de la conception s'il mérite un nouveau Mode, un moteur expérimental isolé ou une autre architecture.
+- [ ] N'ouvrir cette piste qu'après l'audit/diversification v1.10 et la consolidation des objectifs natifs : Legacy et Upgraded doivent rester reproductibles, protégés et indépendants.
 
 ## ENDGAME — Éditeur de cartes avancé intégré (long terme, non versionné)
 
@@ -214,10 +227,10 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - Ajouter une **loupe flottante près du curseur**, activable/désactivable par bouton discret et raccourci : zoom local carré de la zone survolée pour viser précisément les cellules/objets ; prévoir un curseur d’inspection plus fin que le curseur de drag.
 - Ajouter un second toggle indépendant pour afficher les **informations de l’inspecteur près du curseur** (ou dans une petite zone contextuelle proche de la map après essai UX), sans imposer la loupe.
 - Repenser à terme le contrôle de zoom : barre plus compacte ou autre forme de contrôle ; DEV_2_R2 le rapproche déjà du viewer pour cohérence.
-- Faire une passe dédiée sur la police des labels joueurs P 1..P 20 avec propositions visuelles comparatives avant choix définitif.
+- Le label texte d'un joueur peut sortir de la carte lorsqu'un départ est très proche de la côte droite. Ne pas investir dans un correctif isolé avant l'essai de la Vue Départs et des marqueurs natifs J1–J20, qui devraient remplacer ou rendre optionnels ces labels.
 - Faire une passe complète de consolidation/nomenclature des tables d'IDs connues et les exposer proprement dans l'inspecteur.
-- À terme, envisager de sortir starts/territoires initiaux de la vue Global vers une vue dédiée afin d'épurer la carte globale.
 - Envisager une vue dédiée Forêts / Carrières pour l'analyse des arbres et Building Stones.
+- Étudier des **Vues composables** : permettre d'activer plusieurs couches compatibles au lieu d'une seule vue exclusive. Commencer par définir les compatibilités, l'ordre de rendu, la légende et les conflits ; ne pas promettre que toutes les vues pourront être cumulées.
 
 
 ## Après DEV_5 — Stats / UI à poursuivre
@@ -278,5 +291,6 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [ ] Ajouter des topics GitHub pertinents : `settlers-iii`, `settlers3`, `map-generator`, `procedural-generation`, `reverse-engineering`, `python`, puis uniquement les tags formats réellement utiles.
 - [ ] Garder le README français comme base, mais ajouter une entrée anglaise claire (résumé haut de README ou `README_EN.md` lié explicitement).
 - [ ] Faire apparaître naturellement les termes utiles à la recherche : `Settlers III map generator`, `Settlers 3 procedural map generator`, `Siedler III Kartengenerator`, `.EDM`, `.MAP`, `.SAV` — sans bourrage de mots-clés.
+- [ ] Ajouter au README plusieurs captures réelles et récentes du programme (génération, analyse/Stats, Graphiques et Batch), en évitant les builds périmées et toute image illustrative inventée.
 - [ ] Continuer les versions **STABLE** sous forme de vraies GitHub Releases avec tag + ZIP + release notes ; DEV/RC restent hors Releases.
 - [ ] Éventuel partage communauté Settlers III (Discord/wiki/sites de maps) uniquement plus tard et volontairement ; ce n'est pas une obligation du workflow.
