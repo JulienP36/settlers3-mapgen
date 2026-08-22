@@ -1,3 +1,63 @@
+## v1.8 DEV_3_R7 — 2026-08-22
+- Removes the redundant Batch map-count Apply button.
+- Applies valid 1–4 map counts immediately from spin arrows or keyboard input; focus/Enter clamps invalid committed values back into range.
+- Adds an 8-pixel gap between each progress-feedback bar and its mini-map region.
+- Narrows the mini-map container from 224×122 to 182×122 and the render constraint from 222×120 to 180×120, matching the validated parallelogram aspect without reducing the displayed parallelogram.
+- Square projection remains naturally centered and less width-constrained.
+- Windows validation completed: DEV_3 Batch Generation and all R1–R7 polish accepted by the user, then promoted to `dev`.
+- Archives a user-provided four-seed Batch screenshot as evidence for the v1.10 seed/RNG and morphological-diversity audit; no root-cause analysis or generator change is performed here.
+- Generation engine, protected profiles and native library unchanged.
+
+## v1.8 DEV_3_R6 — 2026-08-22
+- Enlarges the real Batch mini-map from 202×108 to 222×120 and its frameless container from 204×110 to 224×122.
+- Preserves the validated one-pixel internal gap between map and container.
+- Reduces the Batch row frame padding to one pixel around the mini-map container, letting the preview use the space up to the outer row border.
+- Keeps independent left padding on parameter controls and result actions so only the preview region reaches the edge.
+- Generation engine, protected profiles and native library unchanged.
+
+## v1.8 DEV_3_R5 — 2026-08-22
+- Tightens Batch mini-map containers from 210×116 to 204×110 while preserving the 202×108 rendered map maximum.
+- Reduces header, row, frame and footer spacing so the four result blocks remain compact without shrinking their readable controls.
+- Measures the completed Batch window's requested width and height before final placement instead of relying only on the historical 1120×650 default.
+- Opens at the full requested content size whenever the current screen permits, centers relative to the main application and clamps the window inside visible screen bounds.
+- Generation engine, protected profiles and native library unchanged.
+
+## v1.8 DEV_3_R4 — 2026-08-22
+- Enlarges each Batch mini-map area from 152×88 to 210×116 pixels and its rendered map from 144×80 to 202×108.
+- Removes the relief/highlight frame around mini-maps; transparent projected corners now reveal the current panel color directly.
+- Makes existing Batch mini-maps react immediately to Square/Parallelogram projection changes in the main Settings tab.
+- Rebuilds an already visible hover/click preview immediately when projection changes.
+- Replaces cursor-relative preview placement with deterministic mini-map anchoring: preferred adjacent side with screen-aware fallback and vertical clamping.
+- Records a future deterministic start-marker pass using validated native game sprites; no sprite is guessed or bundled in this candidate.
+- Generation engine, protected profiles and native library unchanged.
+
+## v1.8 DEV_3_R3 — 2026-08-22
+- Fixes Batch thumbnails that collapsed to 12×4 pixels when Tk switched Label dimensions from text units to image pixels; each result now has a fixed 152×88 preview area with a map up to 144×80.
+- Adds a dedicated common-seed dice button between the shared seed field and “Apply to all”; global and per-row dice actions remain unchanged.
+- Replaces the decorated large-preview window with a borderless map-only tooltip.
+- Click toggles a pinned tooltip; deliberate 700 ms hover shows a temporary tooltip.
+- Parallelogram preview alpha is preserved through a Windows transparent-color surface so only the projected map remains visible around its transparent corners.
+- Generation engine, protected profiles and native library unchanged.
+
+## v1.8 DEV_3_R2 — 2026-08-22
+- Polishes the Windows-validated Batch v1 workflow without changing the protected generation engine.
+- Every row now opens with the same current/default seed; global and per-row dice actions are both preserved, with an additional common-seed “Apply to all” action.
+- Adds deterministic mini previews rendered from each real generated map; click opens the large preview immediately and a 700 ms deliberate hover opens it without reacting to quick passes.
+- Reorders each result line to Show / Assign A / Assign B / colored progress-feedback bar.
+- Adds semantic Batch bar colors for running/success, cache, error and cancellation states.
+- Shows A/B occupancy LEDs on result actions and centrally prevents the same output from occupying both slots; reassignment moves the map and reports it explicitly.
+- The open Batch window is retranslated live when the main language changes, while keeping the entered configuration.
+- Adds a future focused deterministic/manual iconography pass to the roadmap.
+
+## v1.8 DEV_3_R1 — 2026-08-22
+- Replaces the reserved Batch button with a dedicated bilingual Batch Generation window.
+- Configures 1 to 4 maps independently: mode, archetype, modifiers placeholder, size, player count and seed.
+- Runs the existing protected v1.5 pipeline sequentially and reuses matching session-cache results.
+- Displays per-map waiting/running/success/error/cancelled states and progress without interrupting the active engine call.
+- Adds every successful result to session history; after completion, each result can be displayed or assigned directly to comparison slot A or B.
+- Pending maps can be cancelled after the current synchronous generation finishes; successful and failed maps remain available in the window.
+- Adds `.pytest_cache/` to Git exclusions; generation engine, protected profiles and native library unchanged.
+
 ## v1.8 DEV_2_R7 — 2026-08-22
 - Resets the inherited elastic header column left behind by the pre-R6 layout, allowing Language/Help/Theme to reach the actual right edge.
 - Raises the wide-to-compact breakpoint from 1600 to 1750 px after GIF review showed the theme button clipping immediately before reflow.

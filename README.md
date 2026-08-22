@@ -20,7 +20,7 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_2 / moteur v1.5 stable
+## État actuel — v1.8 DEV_3 / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
@@ -36,6 +36,7 @@ La GUI v1.6 comprend notamment :
 - FR/EN persistant ;
 - inspecteur exact de cellule ;
 - cache LRU de session (8 générations), historique et comparaison A/B légère ;
+- génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
 - raccourcis configurables/persistants avec détection de conflits et aide F1 ;
 - palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
 - **lecture des starts d'origine d'un SAV v11** et contour initial fondé sur le masque natif exact de 3500 cellules.

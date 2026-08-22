@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-22 — v1.8 DEV_2_R7**
+> Last refreshed: **2026-08-22 — v1.8 DEV_3_R7**
 
 ## État release / Git
 
@@ -14,6 +14,7 @@
 - SHA-256 ZIP final : `593A86CEE2926344D1C2675C23D5F99E2A5058C0DCC50A1A4A4D9EA077DC94E5`.
 - Updater actuel détecte correctement v1.7 comme dernière STABLE.
 - v1.7 = socle Stats/Graphs ; moteur de génération v1.5 validé/protégé inchangé.
+- v1.8 DEV_2_R7 validée sous Windows et synchronisée sur `dev` au commit `85e7bfb`.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
@@ -210,10 +211,10 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 6. Vérifier tests + hashes protégés avant packaging.
 7. DEV exact → `dev` via `sync_dev_from_zip.ps1` après validation utilisateur ; ne pas faire de synchronisation GitHub partielle.
 
-## v1.8 DEV_2 — current work
+## v1.8 DEV_3 — current work
 
-- Base : v1.8 DEV_1 validée et synchronisée exactement sur `dev` au commit `57d9569`.
-- Candidate courante : `v1.8 DEV_2_R7`, validée sous Windows après contrôle du GIF de redimensionnement avec et sans slots A/B définis.
+- Base : v1.8 DEV_2_R7 validée et synchronisée sur `dev` au commit `85e7bfb`.
+- État courant : `v1.8 DEV_3_R7`, Batch Generation validée sous Windows et synchronisée sur `dev` ; DEV_3 terminée.
 - Responsive UI v1 et Status/Feedback bar v1 sont implémentés ; aucun changement du moteur de génération.
 - R6 remplace la grille globale widget-par-widget par trois régions indépendantes : Génération, Session/Comparaison et contrôles globaux.
 - En mode large, Session/Comparaison occupe réellement le centre ; en compact, les blocs entiers se déplacent sans mélanger Langue/Aide/Thème aux paramètres de génération.
@@ -224,10 +225,46 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 - Les suppressions individuelles A/B affichent une croix rouge déterministe lorsque le slot est rempli ; vide, la croix reste discrète et désactivée.
 - Validation automatisée R7 : 90 tests pytest PASS, 49 validations de génération PASS et checksum binaire PASS ; hashes protégés inchangés.
 - Validation humaine R7 : header responsive validé sur Windows ; mode large, bascule compacte, ancrage global à droite, largeur adaptative des boutons A/B, croix rouges actives et taille minimale conformes.
+- DEV_3_R1 remplace le placeholder `Générer lot…` par une fenêtre Batch FR/EN dédiée à 1–4 cartes.
+- Chaque carte possède ses paramètres indépendants : mode, archétype, modificateurs réservés, taille, joueurs et seed ; seules les combinaisons actuellement implémentées/calibrées sont acceptées avant lancement.
+- La file réutilise séquentiellement le pipeline v1.5 et le cache de session ; états et progression restent séparés par carte.
+- Les résultats réussis rejoignent automatiquement l'historique et peuvent être affichés ou affectés à A/B après le lot.
+- L'annulation marque uniquement les cartes encore en attente après la génération courante ; le moteur protégé n'est jamais interrompu.
+- Validation automatisée DEV_3_R1 : 95 tests pytest PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Validation humaine DEV_3_R1 : toutes les fonctions Batch testées sous Windows sont validées ; seuls des détails de présentation et de confort ont motivé R2.
+- DEV_3_R2 ouvre les quatre lignes avec la même seed courante/par défaut et conserve les dés globaux et individuels ; une seed commune peut aussi être appliquée aux quatre lignes.
+- Chaque réussite reçoit une miniature déterministe issue des données réelles ; clic immédiat et survol volontaire de 700 ms ouvrent une grande vue.
+- La ligne résultat suit désormais Afficher / Affecter à A / Affecter à B / progression colorée contenant le feedback.
+- Les assignations affichent les pastilles A/B, empêchent une même carte d'occuper simultanément les deux slots et signalent explicitement son déplacement.
+- La fenêtre Batch ouverte se retraduit directement avec le changement de langue principal sans perdre les paramètres saisis.
+- Validation automatisée DEV_3_R2 : 100 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Retour Windows R2 : fonctionnement général de nouveau validé ; miniatures trop petites, dé manquant pour la seed commune et agrandissement demandé sous forme de tooltip sans chrome.
+- DEV_3_R3 réserve 152×88 pixels par miniature et affiche le rendu réel jusqu'à 144×80, ajoute un dé dédié à la seed commune et remplace la fenêtre d'agrandissement par un tooltip contenant seulement la carte.
+- Le clic épingle/désépingle le tooltip ; le survol de 700 ms reste temporaire. En projection parallélogramme, la couche transparente masque entièrement le rectangle autour de la carte sous Windows.
+- Validation automatisée DEV_3_R3 : 103 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Retour Windows R3 : fonctionnement jugé excellent ; miniatures encore légèrement petites/encadrées, projection non dynamique et placement du tooltip trop dépendant du pointeur.
+- DEV_3_R4 agrandit la zone miniature à 210×116 et le rendu à 202×108, sans relief ni cadre clair.
+- Les résultats Batch déjà générés, y compris le tooltip visible, se recalculent immédiatement lorsque la projection Carrée/Parallélogramme change dans les paramètres principaux.
+- Le tooltip est désormais ancré à la miniature : côté offrant le plus d'espace, puis position verticale contrainte à l'écran ; aucune coordonnée du pointeur ne détermine plus son placement.
+- TODO futur : importer/valider les sprites natifs exacts des positions de départ afin de produire des marqueurs plus petits et épurés dans les miniatures/aperçus, sans asset inventé.
+- Validation automatisée DEV_3_R4 : 105 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Validation humaine DEV_3_R4 : toutes les modifications fonctionnent parfaitement ; seuls un dernier resserrement des miniatures et une ouverture initiale non tronquée sont demandés.
+- DEV_3_R5 resserre le conteneur à 204×110 sans réduire le rendu maximum 202×108, ainsi que les marges verticales secondaires.
+- La fenêtre mesure désormais sa taille demandée après construction, utilise cette taille complète si l'écran le permet, se centre relativement à l'application principale et reste contrainte aux limites visibles.
+- Validation automatisée DEV_3_R5 : 106 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Validation humaine DEV_3_R5 : fonctionnement et géométrie initiale validés ; la demande de « resserrer » visait en réalité à agrandir carte et conteneur jusqu'au cadre extérieur.
+- DEV_3_R6 agrandit la carte miniature à 222×120 et son conteneur à 224×122 : 1 px interne conservé et environ 1 px jusqu'au cadre blanc extérieur.
+- Validation automatisée DEV_3_R6 : 107 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Validation humaine DEV_3_R6 : taille/hauteur validées ; zone trop large pour le parallélogramme, barre collée et bouton Appliquer du nombre de cartes jugé redondant.
+- DEV_3_R7 conserve le parallélogramme à 180×120 dans un conteneur 182×122, ajoute 8 px avant la miniature et centre naturellement la vue Carrée.
+- Le nombre de cartes 1–4 s'applique directement par flèches ou saisie clavier ; le bouton Appliquer est supprimé.
+- Validation automatisée DEV_3_R7 : 109 tests de régression PASS, 49 validations de génération PASS et checksum binaire PASS ; cinq hashes protégés inchangés et conformes au workflow.
+- Validation humaine DEV_3_R7 : espace barre/miniature, conteneur parallélogramme, centrage Carrée et nombre de cartes dynamique validés ; l'ensemble de DEV_3 est accepté.
+- Preuve v1.10 archivée : `references/SETTLERS3_V1_10_SEED_DIVERSITY_EVIDENCE_20260822.png`, seeds `69122063`, `958607757`, `1446058262`, `2085415098`. Le symptôme de macro-formes identiques/quasi identiques sous rotations ou symétries est confirmé visuellement, sans diagnostic de cause avant v1.10.
 
 ## Prochaine action recommandée
 
-Synchroniser le ZIP exact de **v1.8 DEV_2_R7 validée** vers `dev` via `sync_dev_from_zip.ps1`, puis vérifier l'état Git conformément au workflow. Ne pas ouvrir la fonctionnalité suivante avant cette synchronisation propre.
+Demander à l'utilisateur ses dernières notes du TODO local, les consolider avec `TODO_MAPGEN.md`, puis choisir la prochaine étape v1.8. Ne pas commencer l'audit seed/diversité avant le chantier générateur v1.10.
 
 
 ## v1.8 DEV_2_R2 checkpoint
@@ -278,3 +315,72 @@ Synchroniser le ZIP exact de **v1.8 DEV_2_R7 validée** vers `dev` via `sync_dev
 - Suppression A/B : croix rouge raster active, croix grise désactivée lorsque le slot est vide.
 - 90 tests pytest PASS ; 49 validations de génération PASS ; checksum binaire PASS ; hashes protégés inchangés.
 - Validation Windows utilisateur terminée sur GIF de redimensionnement avec et sans A/B définis : aucun chevauchement ni contrôle coupé ; passage large/compact, ancrage à droite, boutons A/B et croix rouges validés.
+
+## v1.8 DEV_3_R1 checkpoint
+
+- Première implémentation fonctionnelle de Batch Generation derrière le bouton réservé depuis DEV_2.
+- Fenêtre externe pour préserver le header validé et garder quatre configurations lisibles.
+- 1–4 cartes, paramètres indépendants, seeds aléatoires individuelles, exécution séquentielle.
+- États attente/génération/succès/cache/erreur/annulation et progression individuelle.
+- Résultats réussis ajoutés au cache/historique ; affichage et assignation A/B disponibles après le lot.
+- Annulation limitée aux éléments en attente afin de ne jamais interrompre le moteur v1.5.
+- 95 tests pytest PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation fonctionnelle Windows utilisateur terminée ; R2 porte uniquement le polish final demandé.
+- Après validation et synchronisation `dev`, rappeler explicitement à l'utilisateur de transmettre ses dernières notes du TODO local.
+
+## v1.8 DEV_3_R2 checkpoint
+
+- Quatre seeds initiales identiques, dérivées de la seed courante/par défaut ; dés globaux et individuels conservés ; application commune ajoutée.
+- Miniatures et agrandissements calculés uniquement depuis les vraies cartes générées.
+- Clic immédiat et survol temporisé 700 ms disponibles simultanément pour test Windows.
+- Ligne résultat réordonnée et progression/feedback fusionnés dans une barre sémantique colorée.
+- A/B exclusifs, pastilles d'occupation synchronisées et feedback de déplacement.
+- Retraduction directe de la fenêtre Batch ouverte.
+- 100 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation fonctionnelle Windows R2 obtenue ; trois détails visuels/confort reportés dans R3.
+
+## v1.8 DEV_3_R3 checkpoint
+
+- Miniature réelle corrigée : conteneur fixe 152×88, rendu maximum 144×80.
+- Dé de seed commune ajouté sans retirer aucun dé existant.
+- Agrandissement devenu un tooltip map-only, sans barre de titre ni bordure.
+- Clic épinglé/désépinglé et survol volontaire 700 ms temporaire.
+- Transparence du rendu parallélogramme conservée sur la surface Windows.
+- 103 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation fonctionnelle Windows R3 obtenue ; ajustements finaux de taille, projection et position reportés dans R4.
+
+## v1.8 DEV_3_R4 checkpoint
+
+- Miniatures sans cadre : zone 210×116, carte jusqu'à 202×108.
+- Projection Carrée/Parallélogramme synchronisée immédiatement avec les miniatures et le tooltip Batch ouvert.
+- Placement du tooltip adjacent à la miniature et indépendant du pointeur.
+- Futurs sprites natifs de départ consignés au TODO, sans ajout d'asset dans R4.
+- Audit seed/diversité morphologique consigné comme priorité majeure de v1.10.
+- 105 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation Windows R4 terminée ; derniers réglages de densité et taille initiale reportés dans R5.
+
+## v1.8 DEV_3_R5 checkpoint
+
+- Conteneur miniature 204×110, rendu maximum toujours 202×108.
+- Espacements verticaux légèrement resserrés.
+- Taille initiale calculée depuis le contenu réellement demandé.
+- Centrage relatif à la fenêtre principale et contrainte aux limites écran.
+- 106 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation Windows R5 terminée hors interprétation finale de la taille des miniatures.
+
+## v1.8 DEV_3_R6 checkpoint
+
+- Carte miniature 222×120 maximum dans un conteneur 224×122.
+- Environ 1 px entre carte/conteneur et conteneur/cadre extérieur.
+- Tous les comportements R5 préservés.
+- 107 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation Windows R6 terminée hors trois derniers détails d'espacement/commande.
+
+## v1.8 DEV_3_R7 checkpoint
+
+- Parallélogramme 180×120 dans un conteneur 182×122.
+- Marge de 8 px entre progression et miniature.
+- Nombre de cartes appliqué dynamiquement ; bouton Appliquer supprimé.
+- 109 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
+- Validation Windows finale terminée ; DEV_3 synchronisée sur `dev`.
+- Prochain checkpoint : récupérer les dernières notes du TODO local utilisateur.

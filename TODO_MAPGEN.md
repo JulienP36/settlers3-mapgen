@@ -100,7 +100,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 
 ## v1.8 — Workflow, accessibilité & production (13 axes validés)
 
-- [ ] **Batch Generation** : 1 à 4 maps, paramètres indépendants, états visuels, historique + assignation A/B ; réutiliser le pipeline existant.
+- [x] **Batch Generation — DEV_3_R7 validée sous Windows** : fenêtre 1–4 cartes, paramètres indépendants, seeds communes/individuelles, exécution séquentielle, cache, annulation en attente, historique, miniatures/tooltip dynamiques, assignation A/B exclusive, progression/feedback et nombre de cartes dynamique. DEV_3 terminée et synchronisée sur `dev`.
 - [ ] **Export maps multi-format** : popup, nom de base unique, cases EDM/MAP/SAV + option PNG de base ; conserver PNG vue courante séparé.
 - [ ] **Export Graphiques unifié** : étudier un bouton `Exporter…` multi-format (PNG/CSV/JSON selon contexte).
 - [x] **A/B polish léger — DEV_1** : reset A/B/A+B, suppression du résumé texte redondant, boutons LED conservés.
@@ -110,9 +110,15 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] **Historique session amélioré** : imports + batch dans l’historique, taille configurable, assignation A/B facile.
 - [ ] **Premier vrai `.exe`** : packaging autonome sans Python/pip à installer.
 - [ ] **Icône application/exe** : infrastructure + placeholder simple ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
+- [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
+- [ ] **Sprites natifs pour les positions de départ dans les miniatures/aperçus** : identifier et importer les petits sprites exacts du jeu depuis des ressources légitimement disponibles, puis les utiliser comme marqueurs déterministes plus compacts et épurés que les contours actuels. Ne rien inventer et conserver un fallback tant que les assets/IDs ne sont pas validés.
 - [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
 - [ ] **README transparence IA** : indiquer clairement conception/direction humaine + usage important de ChatGPT/OpenAI, notamment backend/analyse/reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
+
+### Rappel de checkpoint DEV_3
+
+- [x] DEV_3 validée sous Windows et synchronisée sur `dev` ; demander maintenant à l'utilisateur ses dernières notes du TODO local avant de choisir la fonctionnalité suivante.
 
 ## v1.9 — Archéologie / Data Mapping (transition planifiée)
 
@@ -123,6 +129,12 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 
 ## v1.10 — Retour générateur
 
+- [ ] **PRIORITÉ MAJEURE — audit seed et diversité morphologique Continental** : les miniatures Batch ont révélé que des seeds différentes peuvent produire des formes de carte visuellement identiques, parfois seulement réorientées. Ne pas conclure avant mesure.
+- [ ] **Preuve visuelle R7 à conserver pour l'audit** : [`SETTLERS3_V1_10_SEED_DIVERSITY_EVIDENCE_20260822.png`](references/SETTLERS3_V1_10_SEED_DIVERSITY_EVIDENCE_20260822.png), lot Legacy Continental 768×768 4P avec les seeds `69122063`, `958607757`, `1446058262` et `2085415098`. Le symptôme visuel est confirmé : silhouettes côtières et grandes structures de terrain paraissent identiques ou quasi identiques après rotations/symétries. La cause reste volontairement indéterminée avant v1.10.
+- [ ] **Étape 1 — intégrité des seeds/RNG** : vérifier que la seed complète pilote réellement toutes les étapes stochastiques pertinentes, qu'aucune réinitialisation, collision, réduction ou réutilisation involontaire ne limite l'espace des résultats, et distinguer clairement un résultat recalculé d'un résultat issu du cache.
+- [ ] **Étape 2 — détection objective des doublons** : générer un corpus multi-seeds puis comparer les masques macro-géographiques avec des signatures exactes et des mesures de similarité, en canonisant séparément rotations/orientations et symétries afin de repérer les mêmes formes transformées.
+- [ ] **Étape 3 — diversité réelle du générateur** : si les seeds fonctionnent correctement, mesurer combien de familles de formes réellement distinctes sont produites et déterminer si la calibration sur les cartes de référence a excessivement contraint la macro-morphologie.
+- [ ] **Objectif central v1.10 si diversité insuffisante** : élargir fortement la variété des silhouettes, masses continentales, orientations et organisations macro-géographiques tout en conservant les règles validées, la jouabilité et les proportions natives. Éviter une simple collection de gabarits tournés ou symétrisés.
 - [ ] Continental multi-tailles : 384 → 448 → 512 → 576 → 640 → 704 → 768.
 - [ ] Utiliser le socle Stats/Graphs pour calibration et debug.
 - [ ] Évaluer ensuite le début d’autres archétypes selon les résultats ; ne pas figer la roadmap post-v1.10 à l’avance.

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import random
 import shutil
 from pathlib import Path
 import tkinter as tk
@@ -25,8 +26,8 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_2_R7 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_2_R7 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_3_R7 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_3_R7 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -53,7 +54,8 @@ FEEDBACK_TEXT={
   'graph_exported':'Export graphique terminé : {format} — {file}',
   'opacity_locked':'L’opacité est disponible uniquement avec une vue de type couche.',
   'modifier_none':'Aucun modificateur actif.',
-  'batch_reserved':'Génération par lot : emplacement réservé pour la fonctionnalité Batch de v1.8.',
+  'batch_opened':'Génération par lot prête — configurez de 1 à 4 cartes.',
+  'batch_done':'Lot terminé — {success} réussie(s), {failed} erreur(s), {cancelled} annulée(s).',
  },
  'en':{
   'ready':'Ready — {mode} / {archetype} / modifiers: {modifiers} / {side}×{side} / {players} players.',
@@ -78,7 +80,41 @@ FEEDBACK_TEXT={
   'graph_exported':'Chart export complete: {format} — {file}',
   'opacity_locked':'Opacity is available only with an overlay-type view.',
   'modifier_none':'No modifier is active.',
-  'batch_reserved':'Batch generation: space reserved for the v1.8 Batch feature.',
+  'batch_opened':'Batch generation ready — configure 1 to 4 maps.',
+  'batch_done':'Batch complete — {success} succeeded, {failed} failed, {cancelled} cancelled.',
+ },
+}
+
+BATCH_TEXT={
+ 'fr':{
+  'title':'Génération par lot','count':'Nombre de cartes','randomize':'Nouvelles seeds','apply_seed':'Appliquer à toutes',
+  'map':'Carte {index}','mode':'Mode','archetype':'Archétype','modifiers':'Modificateurs','size':'Taille',
+  'players':'Joueurs','seed':'Seed','status':'État','waiting':'En attente','generating':'Génération…',
+  'cached':'Réutilisée depuis le cache','success':'Terminée','failed':'Erreur : {error}','cancelled':'Annulée',
+  'start':'Générer le lot','cancel':'Annuler les cartes en attente','close':'Fermer','set_a':'Affecter à A',
+  'set_b':'Affecter à B','show':'Afficher','none':'Aucun','invalid_title':'Paramètres du lot invalides',
+  'invalid_row':'Carte {index} : {error}','unsupported_size':'seule la taille 768×768 est actuellement générable',
+  'unsupported_mode':'mode non implémenté','unsupported_archetype':'archétype non implémenté',
+  'invalid_players':'nombre de joueurs invalide (2 à {maximum})','invalid_seed':'seed entière requise',
+  'running':'Lot en cours : carte {current}/{total}','cancel_pending':'Annulation demandée après la carte en cours.',
+  'finished':'Lot terminé : {success} réussie(s), {failed} erreur(s), {cancelled} annulée(s).',
+  'assigned':'Carte {index} affectée à {slot}.','moved':'Carte {index} déplacée de {other} vers {slot}.','already_assigned':'Carte {index} déjà affectée à {slot}.',
+  'preview_hint':'Cliquez ou laissez la souris 700 ms pour agrandir.','close_preview':'Fermer l’aperçu','close_running':'Le lot est en cours ; les cartes en attente seront annulées.',
+ },
+ 'en':{
+  'title':'Batch generation','count':'Number of maps','randomize':'New seeds','apply_seed':'Apply to all',
+  'map':'Map {index}','mode':'Mode','archetype':'Archetype','modifiers':'Modifiers','size':'Size',
+  'players':'Players','seed':'Seed','status':'Status','waiting':'Waiting','generating':'Generating…',
+  'cached':'Reused from cache','success':'Complete','failed':'Error: {error}','cancelled':'Cancelled',
+  'start':'Generate batch','cancel':'Cancel pending maps','close':'Close','set_a':'Assign to A',
+  'set_b':'Assign to B','show':'Show','none':'None','invalid_title':'Invalid batch parameters',
+  'invalid_row':'Map {index}: {error}','unsupported_size':'only 768×768 generation is currently available',
+  'unsupported_mode':'mode is not implemented','unsupported_archetype':'archetype is not implemented',
+  'invalid_players':'invalid player count (2 to {maximum})','invalid_seed':'an integer seed is required',
+  'running':'Batch running: map {current}/{total}','cancel_pending':'Cancellation requested after the current map.',
+  'finished':'Batch complete: {success} succeeded, {failed} failed, {cancelled} cancelled.',
+  'assigned':'Map {index} assigned to {slot}.','moved':'Map {index} moved from {other} to {slot}.','already_assigned':'Map {index} is already assigned to {slot}.',
+  'preview_hint':'Click or hover for 700 ms to enlarge.','close_preview':'Close preview','close_running':'The batch is running; pending maps will be cancelled.',
  },
 }
 
@@ -254,6 +290,8 @@ class App(V15StableApp):
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
+        self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
+        self._batch_preview_window=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_hover_after=None;self._batch_i18n={}
         super().__init__()
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
 
@@ -307,7 +345,7 @@ class App(V15StableApp):
         primary_actions=ttk.Frame(primary_row);primary_actions.pack(side='left',fill='y')
         self.generate_button=ttk.Button(primary_actions,text='Générer',command=self.generate)
         self.generate_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
-        self.batch_generate_button=ttk.Button(primary_actions,text='Générer lot…',command=lambda:self._feedback('batch_reserved','info'))
+        self.batch_generate_button=ttk.Button(primary_actions,text='Générer lot…',command=self._open_batch_window)
         self.batch_generate_button.pack(side='left',anchor='s',padx=(0,0),pady=(19,0))
 
         # Generation row 2: dependent parameters followed by two local button bars.
@@ -865,7 +903,7 @@ class App(V15StableApp):
         if hasattr(self,'history_combo'):self._refresh_history()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
-        self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._invalidate_preview();self._refresh_preview(True)
+        self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._retranslate_batch_window();self._invalidate_preview();self._refresh_preview(True)
     def _apply_theme(self):
         super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self)
         field='#303134' if dark else '#ffffff';fg='#e8eaed' if dark else '#202124';muted='#7f858d' if dark else '#8a8f98';panel='#292a2d' if dark else '#e5e5e5'
@@ -897,6 +935,10 @@ class App(V15StableApp):
         if hasattr(self,'heatmap_combo'):self._update_view_controls()
         if hasattr(self,'stats_chart_canvas'):
             self.stats_chart_canvas.configure(bg=panel);self._refresh_stats_chart()
+        for row in getattr(self,'_batch_rows',[]):
+            try:row['thumbnail_host'].configure(bg=panel);row['thumbnail'].configure(bg=panel)
+            except (KeyError,tk.TclError):pass
+            self._batch_draw_progress(row)
 
     def _style_combobox_popdowns(self,field,fg,panel):
         for combo in self._walk(self):
@@ -1030,7 +1072,7 @@ class App(V15StableApp):
     def _toggle_theme(self):
         self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
     def _projection_changed(self):
-        self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True)
+        self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True);self._refresh_batch_previews()
 
     def _update_view_controls(self):
         view=self._view_key();lang=self.prefs.get('language','fr')
@@ -1057,7 +1099,16 @@ class App(V15StableApp):
     def _progress_stage(self,stage,detail,index):
         # Detailed generator stages can change too quickly to be readable as status messages.
         value=min(95,5+index*4);text=f'{stage} {detail}'.strip()
-        if self._task_overlay is not None:self._draw_task_progress(value,text)
+        if self._batch_running and self._batch_active_row is not None:
+            row=self._batch_active_row
+            try:
+                self._batch_update_progress(row,value,text)
+                # Process the Batch cancel button while the current synchronous
+                # generator call is running.  Cancellation deliberately affects
+                # only queued maps; the protected engine is never interrupted.
+                self.update()
+            except tk.TclError:pass
+        elif self._task_overlay is not None:self._draw_task_progress(value,text)
         else:
             self.progress['value']=value
         self.update_idletasks()
@@ -1070,6 +1121,359 @@ class App(V15StableApp):
     def _refresh_history(self):
         self._history_lookup={self._history_label(k):k for k,_ in self.session_cache.entries()};vals=list(self._history_lookup);self.history_combo.configure(values=vals)
         if vals and self.history_var.get() not in vals:self.history_var.set(vals[0])
+
+    # ---------- v1.8 DEV_3: Batch Generation v1 ----------
+    def _batch_text(self,key,**values):
+        text=BATCH_TEXT[self.prefs.get('language','fr')][key]
+        return text.format(**values) if values else text
+
+    @staticmethod
+    def _batch_label_key(value,label_tables,fallback):
+        for labels in label_tables.values():
+            for key,label in labels.items():
+                if label==value:return key
+        return fallback
+
+    def _open_batch_window(self):
+        if self._batch_window is not None:
+            try:self._batch_window.deiconify();self._batch_window.lift();self._batch_window.focus_force();return
+            except tk.TclError:self._batch_window=None
+        lang=self.prefs.get('language','fr');bt=BATCH_TEXT[lang]
+        win=tk.Toplevel(self);self._batch_window=win
+        win.title(bt['title']);win.transient(self);win.geometry('1120x650');win.minsize(900,560)
+        win.protocol('WM_DELETE_WINDOW',self._close_batch_window)
+        shell=ttk.Frame(win,padding=12);shell.pack(fill='both',expand=True)
+
+        header=ttk.Frame(shell);header.pack(fill='x',pady=(0,6))
+        self._batch_i18n={'shell':shell}
+        self._batch_i18n['count_label']=ttk.Label(header,text=bt['count']);self._batch_i18n['count_label'].pack(side='left')
+        self._batch_count_var=tk.StringVar(value='4')
+        self._batch_count_spin=ttk.Spinbox(header,from_=1,to=4,textvariable=self._batch_count_var,width=4,command=self._batch_update_row_visibility)
+        self._batch_count_spin.pack(side='left',padx=(7,8));self._batch_count_spin.bind('<KeyRelease>',self._batch_count_typed);self._batch_count_spin.bind('<Return>',self._batch_commit_count);self._batch_count_spin.bind('<FocusOut>',self._batch_commit_count)
+        self._batch_randomize_button=ttk.Button(header,text=bt['randomize'],command=self._batch_randomize_seeds)
+        self._batch_randomize_button.pack(side='left',padx=(0,12))
+        self._batch_common_seed_var=tk.StringVar(value=str(self._default_batch_seed()))
+        self._batch_common_seed_entry=ttk.Entry(header,textvariable=self._batch_common_seed_var,width=13);self._batch_common_seed_entry.pack(side='left')
+        self._batch_common_seed_random=ttk.Button(header,text='🎲',width=3,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0))
+        self._batch_apply_seed_button=ttk.Button(header,text=bt['apply_seed'],command=self._batch_apply_seed_all);self._batch_apply_seed_button.pack(side='left',padx=(4,0))
+        self._batch_i18n['hint_label']=ttk.Label(header,text=('1–4 cartes · paramètres indépendants · génération séquentielle' if lang=='fr' else '1–4 maps · independent parameters · sequential generation'));self._batch_i18n['hint_label'].pack(side='right')
+
+        rows_host=ttk.Frame(shell);rows_host.pack(fill='both',expand=True)
+        rows_host.columnconfigure(0,weight=1)
+        self._batch_rows=[]
+        current_mode=self._mode_key();current_arch=self._arch_key();current_size=str(self.size.get());current_players=str(self.players.get())
+        first_seed=self._default_batch_seed();self._batch_common_seed_var.set(str(first_seed))
+        for index in range(1,5):
+            frame=ttk.Labelframe(rows_host,text=bt['map'].format(index=index),padding=(1,1))
+            frame.grid(row=index-1,column=0,sticky='ew',pady=(0,4));frame.columnconfigure(0,weight=1)
+            controls=ttk.Frame(frame);controls.grid(row=0,column=0,sticky='ew',padx=(7,0),pady=(3,0))
+            row={'index':index,'frame':frame,'result':None,'state':'waiting','cached':False,'error':'','progress_value':0};input_widgets=[];row['group_labels']={}
+
+            def group(key):
+                box=ttk.Frame(controls);box.pack(side='left',padx=(0,7));label=ttk.Label(box,text=bt[key]);label.pack(anchor='w',pady=(0,2));row['group_labels'][key]=label;return box
+
+            box=group('mode');row['mode_var']=tk.StringVar(value=MODE_LABELS[lang][current_mode])
+            row['mode']=ttk.Combobox(box,textvariable=row['mode_var'],values=[MODE_LABELS[lang][k] for k in MODE_ORDER],state='readonly',width=19);row['mode'].pack();input_widgets.append((row['mode'],'readonly'))
+            box=group('archetype');row['arch_var']=tk.StringVar(value=ARCHETYPE_LABELS[lang][current_arch])
+            row['arch']=ttk.Combobox(box,textvariable=row['arch_var'],values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER],state='readonly',width=17);row['arch'].pack();input_widgets.append((row['arch'],'readonly'))
+            box=group('modifiers');row['modifier_var']=tk.StringVar(value=bt['none'])
+            row['modifier']=ttk.Combobox(box,textvariable=row['modifier_var'],values=[bt['none']],state='readonly',width=13);row['modifier'].pack();input_widgets.append((row['modifier'],'readonly'))
+            box=group('size');row['size_var']=tk.StringVar(value=current_size)
+            row['size']=ttk.Combobox(box,textvariable=row['size_var'],values=[str(x) for x in NATIVE_LIMITS],state='readonly',width=7);row['size'].pack();input_widgets.append((row['size'],'readonly'))
+            box=group('players');row['players_var']=tk.StringVar(value=current_players)
+            row['players']=ttk.Spinbox(box,from_=2,to=NATIVE_LIMITS.get(int(current_size),20),textvariable=row['players_var'],width=7);row['players'].pack();input_widgets.append((row['players'],'normal'))
+            box=group('seed');row['seed_var']=tk.StringVar(value=str(first_seed))
+            seed_line=ttk.Frame(box);seed_line.pack(fill='x');row['seed']=ttk.Entry(seed_line,textvariable=row['seed_var'],width=14);row['seed'].pack(side='left');input_widgets.append((row['seed'],'normal'))
+            row['random']=ttk.Button(seed_line,text='🎲',width=3,command=lambda r=row:self._batch_randomize_row(r));row['random'].pack(side='left',padx=(4,0));input_widgets.append((row['random'],'normal'))
+            row['size'].bind('<<ComboboxSelected>>',lambda e,r=row:self._batch_row_size_changed(r))
+
+            mini_bg=getattr(self,'_ui_theme_colors',{}).get('panel','#292a2d')
+            row['thumbnail_host']=tk.Frame(frame,width=182,height=122,bg=mini_bg,bd=0,highlightthickness=0);row['thumbnail_host'].grid(row=0,column=1,rowspan=2,sticky='e');row['thumbnail_host'].grid_propagate(False)
+            row['thumbnail']=tk.Label(row['thumbnail_host'],text=str(index),bg=mini_bg,bd=0,highlightthickness=0,cursor='hand2');row['thumbnail'].place(relx=.5,rely=.5,anchor='center')
+            row['thumbnail'].bind('<Button-1>',lambda e,r=row:self._batch_toggle_large_preview(r));row['thumbnail'].bind('<Enter>',lambda e,r=row:self._batch_schedule_hover_preview(r));row['thumbnail'].bind('<Leave>',self._batch_thumbnail_leave)
+            result_line=ttk.Frame(frame);result_line.grid(row=1,column=0,sticky='ew',padx=(7,8),pady=(7,3));result_line.columnconfigure(3,weight=1)
+            row['status_var']=tk.StringVar(value=bt['waiting'])
+            row['show']=ttk.Button(result_line,text=bt['show'],state='disabled',command=lambda r=row:self._batch_show_result(r));row['show'].grid(row=0,column=0,padx=(0,4))
+            row['set_a']=ttk.Button(result_line,text=bt['set_a'],image=self._compare_led_off,compound='left',state='disabled',command=lambda r=row:self._batch_assign_result(r,'A'));row['set_a'].grid(row=0,column=1,padx=2)
+            row['set_b']=ttk.Button(result_line,text=bt['set_b'],image=self._compare_led_off,compound='left',state='disabled',command=lambda r=row:self._batch_assign_result(r,'B'));row['set_b'].grid(row=0,column=2,padx=(2,7))
+            row['progress']=tk.Canvas(result_line,height=26,highlightthickness=0,bd=0);row['progress'].grid(row=0,column=3,sticky='ew');row['progress'].bind('<Configure>',lambda e,r=row:self._batch_draw_progress(r))
+            row['input_widgets']=input_widgets;self._batch_rows.append(row)
+            self._batch_draw_progress(row)
+
+        footer=ttk.Frame(shell);footer.pack(fill='x',pady=(2,0))
+        self._batch_summary_var=tk.StringVar(value=bt['waiting']);self._batch_i18n['summary_label']=ttk.Label(footer,textvariable=self._batch_summary_var,anchor='w');self._batch_i18n['summary_label'].pack(side='left',fill='x',expand=True)
+        self._batch_start_button=ttk.Button(footer,text=bt['start'],command=self._start_batch);self._batch_start_button.pack(side='right',padx=(5,0))
+        self._batch_cancel_button=ttk.Button(footer,text=bt['cancel'],command=self._cancel_batch,state='disabled');self._batch_cancel_button.pack(side='right',padx=(5,0))
+        self._batch_close_button=ttk.Button(footer,text=bt['close'],command=self._close_batch_window);self._batch_close_button.pack(side='right')
+        self._batch_update_row_visibility();self._fit_batch_window_initial();self._feedback('batch_opened','info')
+
+    def _fit_batch_window_initial(self):
+        win=self._batch_window
+        if win is None:return
+        try:
+            win.update_idletasks();screen_w=win.winfo_screenwidth();screen_h=win.winfo_screenheight();max_w=max(900,screen_w-64);max_h=max(560,screen_h-96)
+            wanted_w=max(1120,win.winfo_reqwidth());wanted_h=max(650,win.winfo_reqheight());width=min(wanted_w,max_w);height=min(wanted_h,max_h)
+            self.update_idletasks();x=self.winfo_rootx()+(self.winfo_width()-width)//2;y=self.winfo_rooty()+(self.winfo_height()-height)//2
+            x=max(8,min(x,screen_w-width-8));y=max(8,min(y,screen_h-height-48));win.minsize(min(900,width),min(560,height));win.geometry(f'{width}x{height}+{x}+{y}')
+        except tk.TclError:pass
+
+    def _default_batch_seed(self):
+        try:return int(self.seed.get())
+        except (TypeError,ValueError):return random.randint(1,2_147_483_647)
+
+    def _batch_apply_seed_all(self):
+        value=self._batch_common_seed_var.get().strip()
+        try:int(value)
+        except (TypeError,ValueError):
+            messagebox.showerror(self._batch_text('invalid_title'),self._batch_text('invalid_seed'),parent=self._batch_window);return
+        for row in self._batch_rows:row['seed_var'].set(value)
+
+    def _batch_randomize_common_seed(self):
+        self._batch_common_seed_var.set(str(random.randint(1,2_147_483_647)))
+
+    def _batch_update_progress(self,row,value,text=None,state=None):
+        row['progress_value']=max(0,min(100,float(value)))
+        if text is not None:row['status_var'].set(str(text))
+        if state is not None:row['state']=state
+        self._batch_draw_progress(row)
+
+    def _batch_draw_progress(self,row):
+        canvas=row.get('progress')
+        if canvas is None:return
+        try:
+            canvas.update_idletasks();w=max(1,canvas.winfo_width());h=max(1,canvas.winfo_height());canvas.delete('all')
+            colors=getattr(self,'_ui_theme_colors',{});bg=colors.get('bar_bg','#3c4043');state=row.get('state','waiting')
+            fill={'running':colors.get('bar_fg','#35a853'),'success':'#35a853','cached':'#2879d0','failed':'#d84a3a','cancelled':'#7f858d'}.get(state,colors.get('muted','#7f858d'))
+            value=float(row.get('progress_value',0));canvas.configure(bg=bg)
+            if value>0:canvas.create_rectangle(0,0,max(1,round(w*value/100)),h,fill=fill,outline='')
+            shown=self._fit_progress_detail(row.get('status_var').get() if row.get('status_var') else '',max(40,w-18))
+            canvas.create_text(w//2,h//2,text=shown,fill=colors.get('fg','#e8eaed'),anchor='center')
+        except tk.TclError:pass
+
+    def _batch_render_thumbnail(self,row):
+        out=row.get('result')
+        if out is None:return
+        image=render(out.state,labels=False,view='global',overlay_alpha=100,projection=self.prefs.get('projection','square'),heatmap_resource='trees')
+        row['preview_image']=image
+        thumb=image.copy();thumb.thumbnail((180,120),Image.Resampling.NEAREST)
+        row['thumbnail_photo']=ImageTk.PhotoImage(thumb);row['thumbnail'].configure(image=row['thumbnail_photo'],text='')
+
+    def _refresh_batch_previews(self):
+        if not getattr(self,'_batch_rows',None):return
+        visible_row=self._batch_preview_row;visible=self._batch_preview_window is not None;pinned=self._batch_preview_pinned
+        self._batch_hide_preview_tooltip()
+        for row in self._batch_rows:
+            if row.get('result') is not None:self._batch_render_thumbnail(row)
+        if visible and visible_row is not None and visible_row.get('result') is not None:self._batch_show_preview_tooltip(visible_row,pinned)
+
+    def _batch_schedule_hover_preview(self,row):
+        self._batch_cancel_hover_preview()
+        if row.get('result') is not None and not self._batch_preview_pinned:self._batch_hover_after=self.after(700,lambda:self._batch_show_preview_tooltip(row,False))
+
+    def _batch_cancel_hover_preview(self,event=None):
+        if self._batch_hover_after is not None:
+            try:self.after_cancel(self._batch_hover_after)
+            except tk.TclError:pass
+            self._batch_hover_after=None
+
+    def _batch_thumbnail_leave(self,event=None):
+        self._batch_cancel_hover_preview()
+        if not self._batch_preview_pinned:self._batch_hide_preview_tooltip()
+
+    def _batch_toggle_large_preview(self,row):
+        if self._batch_preview_pinned and self._batch_preview_row is row:
+            self._batch_hide_preview_tooltip();return
+        self._batch_show_preview_tooltip(row,True)
+
+    def _batch_show_preview_tooltip(self,row,pinned=False):
+        self._batch_cancel_hover_preview()
+        if row.get('result') is None:return
+        image=row.get('preview_image')
+        if image is None:
+            self._batch_render_thumbnail(row);image=row.get('preview_image')
+        self._batch_hide_preview_tooltip();screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();anchor=row['thumbnail_host'];anchor.update_idletasks()
+        ax=anchor.winfo_rootx();ay=anchor.winfo_rooty();aw=anchor.winfo_width();ah=anchor.winfo_height();margin=14
+        left_space=max(0,ax-margin-8);right_space=max(0,screen_w-(ax+aw)-margin-8);place_left=left_space>=right_space
+        side_space=left_space if place_left else right_space
+        if side_space<360:place_left=not place_left;side_space=left_space if place_left else right_space
+        max_w=max(280,min(900,side_space));max_h=min(700,max(280,screen_h-96))
+        factor=min(max_w/image.width,max_h/image.height,1.0);size=(max(1,int(image.width*factor)),max(1,int(image.height*factor)));shown=image.resize(size,Image.Resampling.NEAREST)
+        chroma='#ff00ff';win=tk.Toplevel(self._batch_window or self);self._batch_preview_window=win;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned)
+        win.overrideredirect(True);win.configure(bg=chroma);win.attributes('-topmost',True)
+        try:win.wm_attributes('-transparentcolor',chroma)
+        except tk.TclError:pass
+        self._batch_preview_photo=ImageTk.PhotoImage(shown);label=tk.Label(win,image=self._batch_preview_photo,bg=chroma,bd=0,highlightthickness=0,cursor='hand2');label.pack()
+        x=(ax-size[0]-margin) if place_left else (ax+aw+margin);x=max(8,min(x,screen_w-size[0]-8))
+        y=ay+(ah-size[1])//2;y=max(8,min(y,screen_h-size[1]-48))
+        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}');label.bind('<Button-1>',lambda e:self._batch_hide_preview_tooltip());win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
+
+    def _batch_hide_preview_tooltip(self):
+        if self._batch_preview_window is not None:
+            try:self._batch_preview_window.destroy()
+            except tk.TclError:pass
+        self._batch_preview_window=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False
+
+    def _retranslate_batch_window(self):
+        win=getattr(self,'_batch_window',None)
+        if win is None:return
+        try:
+            lang=self.prefs.get('language','fr');bt=BATCH_TEXT[lang];win.title(bt['title'])
+            self._batch_i18n['count_label'].configure(text=bt['count']);self._batch_randomize_button.configure(text=bt['randomize']);self._batch_apply_seed_button.configure(text=bt['apply_seed'])
+            self._batch_i18n['hint_label'].configure(text='1–4 cartes · paramètres indépendants · génération séquentielle' if lang=='fr' else '1–4 maps · independent parameters · sequential generation')
+            for row in self._batch_rows:
+                mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
+                row['frame'].configure(text=bt['map'].format(index=row['index']))
+                for key,label in row['group_labels'].items():label.configure(text=bt[key])
+                row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
+                row['arch'].configure(values=[ARCHETYPE_LABELS[lang][key] for key in ARCHETYPE_ORDER]);row['arch_var'].set(ARCHETYPE_LABELS[lang][arch])
+                row['modifier'].configure(values=[bt['none']]);row['modifier_var'].set(bt['none']);row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
+                state=row.get('state','waiting');key='cached' if row.get('cached') else ('success' if state=='success' else state)
+                if key=='failed':text=bt['failed'].format(error=row.get('error',''))
+                elif key in bt:text=bt[key]
+                else:text=bt['waiting']
+                row['status_var'].set(text);self._batch_draw_progress(row)
+            self._batch_start_button.configure(text=bt['start']);self._batch_cancel_button.configure(text=bt['cancel']);self._batch_close_button.configure(text=bt['close'])
+        except tk.TclError:pass
+
+    def _batch_update_row_visibility(self):
+        if self._batch_running:return
+        try:count=max(1,min(4,int(self._batch_count_var.get())))
+        except (TypeError,ValueError,tk.TclError):return
+        for i,row in enumerate(self._batch_rows):
+            if i<count:row['frame'].grid()
+            else:row['frame'].grid_remove()
+
+    def _batch_count_typed(self,event=None):
+        try:count=int(self._batch_count_var.get())
+        except (TypeError,ValueError,tk.TclError):return
+        if 1<=count<=4:self._batch_update_row_visibility()
+
+    def _batch_commit_count(self,event=None):
+        try:count=int(self._batch_count_var.get())
+        except (TypeError,ValueError,tk.TclError):count=1
+        self._batch_count_var.set(str(max(1,min(4,count))));self._batch_update_row_visibility()
+
+    def _batch_row_size_changed(self,row):
+        try:side=int(row['size_var'].get());maximum=NATIVE_LIMITS[side];row['players'].configure(to=maximum)
+        except (TypeError,ValueError,KeyError):return
+        try:
+            if int(row['players_var'].get())>maximum:row['players_var'].set(str(maximum))
+        except (TypeError,ValueError):pass
+
+    def _batch_randomize_row(self,row):row['seed_var'].set(str(random.randint(1,2_147_483_647)))
+    def _batch_randomize_seeds(self):
+        try:count=max(1,min(4,int(self._batch_count_var.get())))
+        except (TypeError,ValueError):count=1
+        for row in self._batch_rows[:count]:self._batch_randomize_row(row)
+
+    def _batch_collect_requests(self):
+        lang=self.prefs.get('language','fr');errors=[];requests=[]
+        try:count=max(1,min(4,int(self._batch_count_var.get())))
+        except (TypeError,ValueError):count=1
+        for row in self._batch_rows[:count]:
+            error=None
+            try:side=int(row['size_var'].get())
+            except (TypeError,ValueError):side=0
+            mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy')
+            archetype=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
+            try:players=int(row['players_var'].get())
+            except (TypeError,ValueError):players=0
+            try:seed=int(row['seed_var'].get())
+            except (TypeError,ValueError):seed=None
+            if side!=768:error=BATCH_TEXT[lang]['unsupported_size']
+            elif not MODES[mode].implemented:error=BATCH_TEXT[lang]['unsupported_mode']
+            elif not ARCHETYPES[archetype].implemented:error=BATCH_TEXT[lang]['unsupported_archetype']
+            elif not 2<=players<=NATIVE_LIMITS[side]:error=BATCH_TEXT[lang]['invalid_players'].format(maximum=NATIVE_LIMITS[side])
+            elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
+            if error:
+                errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
+            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision='v1.5-stable')
+            requests.append({'row':row,'key':key})
+        if errors:raise ValueError('\n'.join(errors))
+        return requests
+
+    def _batch_set_running_controls(self,running):
+        state='disabled' if running else 'normal';self.batch_generate_button.configure(state=state)
+        self._batch_count_spin.configure(state=state);self._batch_randomize_button.configure(state=state)
+        self._batch_common_seed_entry.configure(state=state);self._batch_common_seed_random.configure(state=state);self._batch_apply_seed_button.configure(state=state)
+        self._batch_start_button.configure(state=state);self._batch_cancel_button.configure(state='normal' if running else 'disabled')
+        for row in self._batch_rows:
+            for widget,normal_state in row['input_widgets']:widget.configure(state='disabled' if running else normal_state)
+
+    def _start_batch(self):
+        if self._batch_running:return
+        try:requests=self._batch_collect_requests()
+        except ValueError as exc:
+            messagebox.showerror(self._batch_text('invalid_title'),str(exc),parent=self._batch_window);return
+        self._batch_queue=list(requests);self._batch_active_count=len(requests);self._batch_running=True;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None
+        for request in requests:
+            row=request['row'];row['result']=None;row['cached']=False;row['error']='';row.pop('preview_image',None);row.pop('thumbnail_photo',None);row['thumbnail'].configure(image='',text=str(row['index']))
+            self._batch_update_progress(row,0,self._batch_text('waiting'),'waiting')
+            row['show'].configure(state='disabled');row['set_a'].configure(state='disabled');row['set_b'].configure(state='disabled')
+        self._batch_set_running_controls(True);self._batch_summary_var.set(self._batch_text('running',current=1,total=len(requests)))
+        self.after(20,self._batch_run_next)
+
+    def _batch_run_next(self):
+        if not self._batch_running:return
+        if self._batch_cancel_requested:
+            while self._batch_queue:
+                request=self._batch_queue.pop(0);row=request['row'];self._batch_update_progress(row,100,self._batch_text('cancelled'),'cancelled')
+            self._finish_batch();return
+        if not self._batch_queue:self._finish_batch();return
+        request=self._batch_queue.pop(0);row=request['row'];key=request['key'];self._batch_active_row=row
+        total=self._batch_active_count
+        done=sum(1 for r in self._batch_rows[:total] if r['state'] in ('success','cached','failed','cancelled'))
+        self._batch_summary_var.set(self._batch_text('running',current=min(total,done+1),total=total))
+        self._batch_update_progress(row,2,self._batch_text('generating'),'running')
+        try:
+            out=self.session_cache.get(key);cached=out is not None
+            if out is None:out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype)
+            self.session_cache.put(key,out);row['result']=out;row['cached']=cached;self._batch_last_success=out
+            self._batch_update_progress(row,100,self._batch_text('cached' if cached else 'success'),'cached' if cached else 'success');self._batch_render_thumbnail(row)
+        except Exception as exc:
+            row['error']=str(exc);self._batch_update_progress(row,100,self._batch_text('failed',error=str(exc)),'failed')
+        finally:
+            self._batch_active_row=None;self._refresh_history();self.after(30,self._batch_run_next)
+
+    def _cancel_batch(self):
+        if not self._batch_running:return
+        self._batch_cancel_requested=True;self._batch_cancel_button.configure(state='disabled');self._batch_summary_var.set(self._batch_text('cancel_pending'))
+
+    def _finish_batch(self):
+        active=self._batch_rows[:self._batch_active_count]
+        success=sum(row['state'] in ('success','cached') for row in active);failed=sum(row['state']=='failed' for row in active);cancelled=sum(row['state']=='cancelled' for row in active)
+        self._batch_running=False;self._batch_active_row=None;self._batch_set_running_controls(False);self._batch_summary_var.set(self._batch_text('finished',success=success,failed=failed,cancelled=cancelled))
+        for row in active:
+            enabled='normal' if row['state'] in ('success','cached') and row.get('result') is not None else 'disabled'
+            row['show'].configure(state=enabled);row['set_a'].configure(state=enabled);row['set_b'].configure(state=enabled)
+        self._refresh_history();self._refresh_batch_assignment_buttons()
+        if self._batch_last_success is not None:
+            self.current=self._batch_last_success;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+        self._feedback('batch_done','success' if failed==0 else 'warning',success=success,failed=failed,cancelled=cancelled)
+
+    def _batch_show_result(self,row):
+        out=row.get('result')
+        if out is None:return
+        self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+
+    def _batch_assign_result(self,row,slot):
+        out=row.get('result')
+        if out is None:return
+        action,other=self._set_compare_output(slot,out)
+        key='moved' if action=='moved' else ('already_assigned' if action=='already' else 'assigned')
+        values={'index':row['index'],'slot':slot}
+        if other:values['other']=other
+        self._batch_summary_var.set(self._batch_text(key,**values))
+
+    def _close_batch_window(self):
+        if self._batch_running:
+            self._cancel_batch();self._batch_summary_var.set(self._batch_text('close_running'));return
+        if self._batch_window is not None:
+            try:self._batch_window.destroy()
+            except tk.TclError:pass
+        self._batch_cancel_hover_preview();self._batch_hide_preview_tooltip()
+        self._batch_window=None;self._batch_rows=[];self.batch_generate_button.configure(state='normal')
+
     def generate(self):
         try:
             side=int(self.size.get())
@@ -1096,10 +1500,21 @@ class App(V15StableApp):
     def _clear_history(self):self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('');self._feedback('history_cleared','success')
     def _set_compare_slot(self,slot):
         if not self.current:return
-        need_stats=self.session_stats_cache.get(self.current.state) is None
+        self._set_compare_output(slot,self.current)
+    def _set_compare_output(self,slot,out):
+        if out is None:return 'ignored',None
+        if self._compare_slots.get(slot) is out:
+            self._compare_active=slot;self._refresh_compare_label();lang=self.prefs.get('language','fr')
+            self._feedback_key=None;self._status_kind='info';self.status.set((f'Cette carte est déjà affectée à {slot}.' if lang=='fr' else f'This map is already assigned to {slot}.'));getattr(self,'_sync_status_display',lambda:None)();return 'already',None
+        other='B' if slot=='A' else 'A';moved=self._compare_slots.get(other) is out
+        if moved:self._compare_slots[other]=None
+        need_stats=self.session_stats_cache.get(out.state) is None
         if need_stats:self._task_begin((f'Préparation comparaison {slot}…' if self.prefs.get('language','fr')=='fr' else f'Preparing comparison {slot}…'),10)
-        self._compare_slots[slot]=self.current;self._compare_active=slot;self._stats_for_output(self.current);self._refresh_compare_label();self._refresh_stats_chart()
-        if need_stats:self._task_done((f'Comparaison {slot} prête' if self.prefs.get('language','fr')=='fr' else f'Comparison {slot} ready'))
+        self._compare_slots[slot]=out;self._compare_active=slot;self._stats_for_output(out);self._refresh_compare_label();self._refresh_stats_chart()
+        lang=self.prefs.get('language','fr');message=((f'Carte déplacée de {other} vers {slot}.' if lang=='fr' else f'Map moved from {other} to {slot}.') if moved else (f'Comparaison {slot} prête.' if lang=='fr' else f'Comparison {slot} ready.'))
+        if need_stats:self._task_done(message)
+        else:self._feedback_key=None;self._status_kind='success';self.status.set(message);getattr(self,'_sync_status_display',lambda:None)()
+        return ('moved' if moved else 'assigned'),(other if moved else None)
     def _output_label(self,out):
         if out is None:return '—'
         m=out.state.metadata;return f"{m.get('seed','import')}/{m.get('mode_key',m.get('mode','?'))}/{len(out.state.starts) or m.get('players',0)}P"
@@ -1123,6 +1538,16 @@ class App(V15StableApp):
         self._session_layout_mode=None
         try:self.after_idle(self._apply_session_layout)
         except tk.TclError:pass
+        self._refresh_batch_assignment_buttons()
+
+    def _refresh_batch_assignment_buttons(self):
+        for row in getattr(self,'_batch_rows',[]):
+            out=row.get('result')
+            for slot,key in (('A','set_a'),('B','set_b')):
+                button=row.get(key)
+                if button is not None:
+                    try:button.configure(image=self._compare_led_on if out is not None and self._compare_slots.get(slot) is out else self._compare_led_off)
+                    except tk.TclError:pass
     def _refresh_compare_label(self):
         # Compatibility helper kept for existing callers; identity is now shown only on the LED buttons.
         self._refresh_compare_buttons();self._refresh_stats_chart()

@@ -28,7 +28,7 @@ def test_compact_global_controls_remain_in_their_own_panel():
     assert "self.help_button.grid(row=2,column=0" in TEXT
     assert "self._theme_button.grid(row=2,column=2" in TEXT
 
-def test_batch_slot_is_reserved_in_paint3_header():
+def test_batch_slot_opens_the_dev3_window_from_the_paint3_header():
     assert "self.batch_generate_button=ttk.Button" in TEXT
     assert "Générer lot…" in TEXT
-    assert "batch_reserved" in TEXT
+    assert "command=self._open_batch_window" in TEXT
