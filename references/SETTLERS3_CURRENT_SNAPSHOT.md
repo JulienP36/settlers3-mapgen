@@ -22,7 +22,7 @@
 - DEV_4 PERF+ R1 validée sous Windows et intégrée à `dev` : cache raster en calques, invalidations ciblées et écritures de sliders différées. Aucune régression ni baisse de performances observable ; R6 reste le checkpoint historique de repli.
 - DEV_5_R3 est validée sous Windows : centres d’export cartes et Graphiques multi-format, option Vue actuelle non redondante, bas de fenêtres et survols corrigés, modalité Windows stricte et formats indisponibles grisés/barrés. La hauteur initiale est calculée depuis le contenu ; toute extension future devra ajouter une contrainte écran et un scroll de secours si nécessaire.
 - DEV_5_R3 est publiée sur `dev` au commit `75c9f345ccd41fba986805cc9150fc2d800f3025`.
-- DEV_6_R1 est validée sous Windows : interface FR/EN/DE/ES dynamique et persistante, couvrant fenêtre principale, Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. Limite connue non bloquante : le rapport texte de l’onglet Statistiques ne change de langue qu’après rechargement de la carte ; correction reportée à la future amélioration de cet onglet. Moteur, formats et rendu inchangés.
+- DEV_6_R1 est validée sous Windows et publiée sur `dev` au commit `68eef2d` : interface FR/EN/DE/ES dynamique et persistante, couvrant fenêtre principale, Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. Limite connue non bloquante : le rapport texte de l’onglet Statistiques ne change de langue qu’après rechargement de la carte ; correction reportée à la future amélioration de cet onglet. Moteur, formats et rendu inchangés.
 - Politique linguistique : FR/EN sont les références relues et considérées comme correctes. DE/ES ont été traduits automatiquement et seulement partiellement revus ; le README doit conserver cet avertissement, valable aussi pour toute future langue jusqu’à validation humaine compétente.
 
 
@@ -291,7 +291,7 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 
 ## Prochaine action recommandée
 
-Promouvoir exactement DEV_6_R1 validée et sa documentation de transparence linguistique sur `dev`, sans toucher à `main`, puis choisir le périmètre compact de DEV_7 parmi les axes v1.8 restants.
+Choisir le périmètre compact de DEV_7 parmi les axes v1.8 restants. Candidat recommandé à discuter : Historique de session v2, afin de consolider imports, Batch, cache et affectations A/B avant le chantier de packaging exécutable.
 
 Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons.
 
