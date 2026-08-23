@@ -11,7 +11,7 @@ from .modes import MODES, MODE_ORDER
 from .archetypes import ARCHETYPES, ARCHETYPE_ORDER
 from .gui_v15 import App as V15StableApp
 from .binary import export_with_scaffold
-from .preview import render, HEATMAP_RESOURCES
+from .preview import render, compose_start_markers, HEATMAP_RESOURCES
 from .preferences import save_settings, DEFAULT_SHORTCUTS
 from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD
 from .session_cache import GenerationCacheKey, SessionGenerationCache, SessionStatsCache
@@ -27,8 +27,8 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_4_R4 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_4_R4 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_4_R5 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_4_R5 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -152,11 +152,16 @@ COMMAND_LABELS={
 
 THEME_LABELS={'fr':{'dark':'Sombre','light':'Clair'},'en':{'dark':'Dark','light':'Light'}}
 PROJECTION_LABELS={'fr':{'square':'Carrée','parallelogram':'Parallélogramme'},'en':{'square':'Square','parallelogram':'Parallelogram'}}
+PREVIEW_START_MARKER_LABELS={
+ 'fr':{'hidden':'Masqués','small':'Petits','normal':'Normaux'},
+ 'en':{'hidden':'Hidden','small':'Small','normal':'Normal'},
+}
 TEXTS={
  'Mode':{'en':'Mode'},'Archétype':{'en':'Archetype'},'Modificateurs':{'en':'Modifiers'},'Taille':{'en':'Size'},'Joueurs':{'en':'Players'},'Seed':{'en':'Seed'},'Zoom':{'en':'Zoom'},
  'Générer':{'en':'Generate'},'Générer lot…':{'en':'Generate batch…'},'Importer…':{'en':'Import…'},'Exporter…':{'en':'Export…'},'Aperçu PNG':{'en':'PNG Preview'},'Vue':{'en':'View'},
  'Affichage':{'en':'Display'},'Thème':{'en':'Theme'},'Opacité couche':{'en':'Layer opacity'},'0 % = map globale · 100 % = couche seule':{'en':'0 % = global map · 100 % = overlay only'},
  'Projection':{'en':'Projection'},'Le parallélogramme modifie uniquement le rendu, jamais les données.':{'en':'Parallelogram changes rendering only, never map data.'},
+ 'Marqueurs dans les aperçus':{'en':'Markers in previews'},'Ce réglage affecte les miniatures et le grand aperçu du lot.':{'en':'This setting affects batch thumbnails and the large preview.'},
  'Sensibilité molette':{'en':'Mouse-wheel sensitivity'},'Navigation':{'en':'Navigation'},'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':{'en':'Mouse wheel: zoom\nLeft click + drag: move map\nZoom refresh is delayed to reduce recalculation.'},
  'Paramètres':{'en':'Settings'},'Validations':{'en':'Validations'},'Pipeline':{'en':'Pipeline'},'Métadonnées':{'en':'Metadata'},'Statistiques':{'en':'Statistics'},'Graphiques':{'en':'Charts'},'Exporter JSON':{'en':'Export JSON'},'Exporter CSV':{'en':'Export CSV'},'Exporter PNG':{'en':'Export PNG'},'Ressource Heatmap':{'en':'Heatmap resource'},'Filtre carte thermique':{'en':'Heatmap filter'},
  'Recentrer':{'en':'Reset view'},'Copier seed':{'en':'Copy seed'},'Langue':{'en':'Language'},'Aide':{'en':'Help'},'Historique session':{'en':'Session history'},
@@ -295,9 +300,40 @@ class App(V15StableApp):
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
-        self._batch_preview_window=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_hover_after=None;self._batch_i18n={}
+        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_hover_after=None;self._batch_i18n={}
         super().__init__()
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
+
+    def _settings_tab(self):
+        """Build v1.8 display settings, including preview-only start markers."""
+        f=ttk.Frame(self.nb,padding=14);self.nb.add(f,text='Paramètres');f.columnconfigure(1,weight=1)
+        ttk.Label(f,text='Affichage',style='Section.TLabel').grid(row=0,column=0,columnspan=3,sticky='w',pady=(0,10))
+        ttk.Label(f,text='Thème').grid(row=1,column=0,sticky='w',pady=6)
+        lang=self.prefs.get('language','fr')
+        self.theme_var=tk.StringVar(value=THEME_LABELS[lang][self.prefs['theme']])
+        c=ttk.Combobox(f,textvariable=self.theme_var,values=list(THEME_LABELS[lang].values()),state='readonly');c.grid(row=1,column=1,sticky='ew');c.bind('<<ComboboxSelected>>',lambda e:self._theme_changed())
+        ttk.Label(f,text='Opacité couche').grid(row=2,column=0,sticky='w',pady=(14,6))
+        self.opacity_var=tk.DoubleVar(value=float(self.prefs['overlay_alpha']))
+        self.opacity_scale=ttk.Scale(f,from_=0,to=100,variable=self.opacity_var,command=lambda v:self._opacity_changed());self.opacity_scale.grid(row=2,column=1,sticky='ew')
+        self.opacity_label=ttk.Label(f,text=f"{int(self.opacity_var.get())} %",width=7);self.opacity_label.grid(row=2,column=2,padx=(8,0))
+        ttk.Label(f,text='0 % = map globale · 100 % = couche seule',style='Hint.TLabel').grid(row=3,column=1,columnspan=2,sticky='w')
+        ttk.Label(f,text='Projection').grid(row=4,column=0,sticky='w',pady=(14,6))
+        self.projection_var=tk.StringVar(value=PROJECTION_LABELS[lang][self.prefs['projection']])
+        c=ttk.Combobox(f,textvariable=self.projection_var,values=list(PROJECTION_LABELS[lang].values()),state='readonly');c.grid(row=4,column=1,sticky='ew');c.bind('<<ComboboxSelected>>',lambda e:self._projection_changed())
+        ttk.Label(f,text='Le parallélogramme modifie uniquement le rendu, jamais les données.',style='Hint.TLabel',wraplength=360).grid(row=5,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Marqueurs dans les aperçus').grid(row=6,column=0,sticky='w',pady=(14,6))
+        marker_key=self.prefs.get('preview_start_markers','small')
+        self.preview_marker_var=tk.StringVar(value=PREVIEW_START_MARKER_LABELS[lang][marker_key])
+        self.preview_marker_combo=ttk.Combobox(f,textvariable=self.preview_marker_var,values=list(PREVIEW_START_MARKER_LABELS[lang].values()),state='readonly')
+        self.preview_marker_combo.grid(row=6,column=1,sticky='ew');self.preview_marker_combo.bind('<<ComboboxSelected>>',lambda e:self._preview_marker_changed())
+        ttk.Label(f,text='Ce réglage affecte les miniatures et le grand aperçu du lot.',style='Hint.TLabel',wraplength=360).grid(row=7,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Sensibilité molette').grid(row=8,column=0,sticky='w',pady=(14,6))
+        self.wheel_var=tk.DoubleVar(value=float(self.prefs['wheel_zoom']))
+        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=8,column=1,sticky='ew')
+        self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=8,column=2,padx=(8,0))
+        ttk.Separator(f).grid(row=9,column=0,columnspan=3,sticky='ew',pady=16)
+        ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=10,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=11,column=0,columnspan=3,sticky='w',pady=(6,0))
 
     def _build(self):
         super()._build();top=self.winfo_children()[0]
@@ -834,6 +870,12 @@ class App(V15StableApp):
             for key,label in labels.items():
                 if label==value:return key
         return self.prefs.get('projection','square')
+    def _preview_marker_key(self):
+        value=self.preview_marker_var.get() if hasattr(self,'preview_marker_var') else ''
+        for labels in PREVIEW_START_MARKER_LABELS.values():
+            for key,label in labels.items():
+                if label==value:return key
+        return self.prefs.get('preview_start_markers','small')
 
     def _mode_key(self):
         value=self.mode.get()
@@ -897,6 +939,9 @@ class App(V15StableApp):
         self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']])
         if self._projection_combo:self._projection_combo.configure(values=list(PROJECTION_LABELS[lang].values()))
         self.projection_var.set(PROJECTION_LABELS[lang][self.prefs['projection']])
+        if hasattr(self,'preview_marker_combo'):
+            self.preview_marker_combo.configure(values=list(PREVIEW_START_MARKER_LABELS[lang].values()))
+            self.preview_marker_var.set(PREVIEW_START_MARKER_LABELS[lang][self.prefs.get('preview_start_markers','small')])
         self.lang_var.set(LANGUAGE_LABELS[lang]);self.lang_combo._sync_icon()
         self._refresh_stats_chart_labels()
         if getattr(self,'current',None) and getattr(self,'stats',None):
@@ -1069,7 +1114,7 @@ class App(V15StableApp):
         self._status_kind='error';self.status.set(label);getattr(self,'_sync_status_display',lambda:None)();self._close_task_dialog();self.update_idletasks()
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _theme_changed(self):
         self.prefs['theme']=self._theme_key();self._save_prefs();self._apply_theme()
@@ -1077,6 +1122,8 @@ class App(V15StableApp):
         self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
     def _projection_changed(self):
         self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True);self._refresh_batch_previews()
+    def _preview_marker_changed(self):
+        self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_batch_previews()
 
     def _update_view_controls(self):
         view=self._view_key();lang=self.prefs.get('language','fr')
@@ -1257,18 +1304,27 @@ class App(V15StableApp):
     def _batch_render_thumbnail(self,row):
         out=row.get('result')
         if out is None:return
-        image=render(out.state,labels=False,view='global',overlay_alpha=100,projection=self.prefs.get('projection','square'),heatmap_resource='trees',start_markers=True,start_marker_scale=2)
-        row['preview_image']=image
+        projection=self.prefs.get('projection','square');base_key=(id(out.state),projection)
+        if row.get('preview_base_key')!=base_key:
+            row['preview_base_image']=render(out.state,labels=False,view='global',overlay_alpha=100,projection=projection,heatmap_resource='trees',start_markers=False)
+            row['preview_base_key']=base_key
+        image=self._batch_compose_preview(row)
         thumb=image.copy();thumb.thumbnail((180,120),Image.Resampling.NEAREST)
         row['thumbnail_photo']=ImageTk.PhotoImage(thumb);row['thumbnail'].configure(image=row['thumbnail_photo'],text='')
 
+    def _batch_compose_preview(self,row):
+        base=row.get('preview_base_image');out=row.get('result')
+        if base is None or out is None:return None
+        marker_mode=self.prefs.get('preview_start_markers','small')
+        if marker_mode=='hidden':return base
+        return compose_start_markers(base,out.state,projection=self.prefs.get('projection','square'),scale=2 if marker_mode=='normal' else 1)
+
     def _refresh_batch_previews(self):
         if not getattr(self,'_batch_rows',None):return
-        visible_row=self._batch_preview_row;visible=self._batch_preview_window is not None;pinned=self._batch_preview_pinned
-        self._batch_hide_preview_tooltip()
+        visible_row=self._batch_preview_row;visible=self._batch_preview_window is not None
         for row in self._batch_rows:
             if row.get('result') is not None:self._batch_render_thumbnail(row)
-        if visible and visible_row is not None and visible_row.get('result') is not None:self._batch_show_preview_tooltip(visible_row,pinned)
+        if visible and visible_row is not None and visible_row.get('result') is not None:self._batch_refresh_preview_tooltip(visible_row)
 
     def _batch_schedule_hover_preview(self,row):
         self._batch_cancel_hover_preview()
@@ -1292,30 +1348,42 @@ class App(V15StableApp):
     def _batch_show_preview_tooltip(self,row,pinned=False):
         self._batch_cancel_hover_preview()
         if row.get('result') is None:return
-        image=row.get('preview_image')
-        if image is None:
-            self._batch_render_thumbnail(row);image=row.get('preview_image')
-        self._batch_hide_preview_tooltip();screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();anchor=row['thumbnail_host'];anchor.update_idletasks()
+        if row.get('preview_base_image') is None:self._batch_render_thumbnail(row)
+        image=self._batch_compose_preview(row)
+        self._batch_hide_preview_tooltip();shown,size,x,y=self._batch_preview_geometry(row,image)
+        chroma='#ff00ff';win=tk.Toplevel(self._batch_window or self);self._batch_preview_window=win;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned)
+        win.overrideredirect(True);win.configure(bg=chroma);win.attributes('-topmost',True)
+        try:win.wm_attributes('-transparentcolor',chroma)
+        except tk.TclError:pass
+        self._batch_preview_photo=ImageTk.PhotoImage(shown);label=tk.Label(win,image=self._batch_preview_photo,bg=chroma,bd=0,highlightthickness=0,cursor='hand2');self._batch_preview_label=label;label.pack()
+        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}');label.bind('<Button-1>',lambda e:self._batch_hide_preview_tooltip());win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
+
+    def _batch_preview_geometry(self,row,image):
+        screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();anchor=row['thumbnail_host'];anchor.update_idletasks()
         ax=anchor.winfo_rootx();ay=anchor.winfo_rooty();aw=anchor.winfo_width();ah=anchor.winfo_height();margin=14
         left_space=max(0,ax-margin-8);right_space=max(0,screen_w-(ax+aw)-margin-8);place_left=left_space>=right_space
         side_space=left_space if place_left else right_space
         if side_space<360:place_left=not place_left;side_space=left_space if place_left else right_space
         max_w=max(280,min(900,side_space));max_h=min(700,max(280,screen_h-96))
         factor=min(max_w/image.width,max_h/image.height,1.0);size=(max(1,int(image.width*factor)),max(1,int(image.height*factor)));shown=image.resize(size,Image.Resampling.NEAREST)
-        chroma='#ff00ff';win=tk.Toplevel(self._batch_window or self);self._batch_preview_window=win;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned)
-        win.overrideredirect(True);win.configure(bg=chroma);win.attributes('-topmost',True)
-        try:win.wm_attributes('-transparentcolor',chroma)
-        except tk.TclError:pass
-        self._batch_preview_photo=ImageTk.PhotoImage(shown);label=tk.Label(win,image=self._batch_preview_photo,bg=chroma,bd=0,highlightthickness=0,cursor='hand2');label.pack()
         x=(ax-size[0]-margin) if place_left else (ax+aw+margin);x=max(8,min(x,screen_w-size[0]-8))
         y=ay+(ah-size[1])//2;y=max(8,min(y,screen_h-size[1]-48))
-        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}');label.bind('<Button-1>',lambda e:self._batch_hide_preview_tooltip());win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
+        return shown,size,x,y
+
+    def _batch_refresh_preview_tooltip(self,row):
+        win=self._batch_preview_window;label=self._batch_preview_label
+        if win is None or label is None or self._batch_preview_row is not row:return
+        try:
+            image=self._batch_compose_preview(row);shown,size,x,y=self._batch_preview_geometry(row,image)
+            photo=ImageTk.PhotoImage(shown);label.configure(image=photo);self._batch_preview_photo=photo
+            win.geometry(f'{size[0]}x{size[1]}+{x}+{y}')
+        except tk.TclError:pass
 
     def _batch_hide_preview_tooltip(self):
         if self._batch_preview_window is not None:
             try:self._batch_preview_window.destroy()
             except tk.TclError:pass
-        self._batch_preview_window=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False
+        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False
 
     def _retranslate_batch_window(self):
         win=getattr(self,'_batch_window',None)

@@ -165,7 +165,7 @@ def test_r4_projection_change_refreshes_batch_thumbnails_and_open_tooltip():
     assert "self._refresh_batch_previews()" in projection
     refresh=SRC[SRC.index("def _refresh_batch_previews"):SRC.index("def _batch_schedule_hover_preview")]
     assert "self._batch_render_thumbnail(row)" in refresh
-    assert "self._batch_show_preview_tooltip(visible_row,pinned)" in refresh
+    assert "self._batch_refresh_preview_tooltip(visible_row)" in refresh
 
 
 def test_r4_tooltip_position_is_anchored_to_the_minimap_not_the_pointer():

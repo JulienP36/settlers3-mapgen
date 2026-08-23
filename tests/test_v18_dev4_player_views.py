@@ -24,8 +24,11 @@ def test_starts_view_uses_the_opacity_slider_while_global_remains_locked():
 
 
 def test_dev4_candidate_title_is_explicit():
-    assert all('DEV_4_R4' in title for title in WINDOW_TITLES.values())
+    assert all('DEV_4_R5' in title for title in WINDOW_TITLES.values())
 
 
 def test_batch_previews_use_compact_start_sprites_without_start_boundaries():
-    assert "start_markers=True,start_marker_scale=2" in SRC
+    assert "start_markers=False" in SRC
+    assert "compose_start_markers(base,out.state" in SRC
+    assert "scale=2 if marker_mode=='normal' else 1" in SRC
+    assert "self.prefs.get('preview_start_markers','small')" in SRC

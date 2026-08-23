@@ -118,7 +118,8 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée. La modernisation manuelle éventuelle des marqueurs J1–J20 est explicitement reportée à cette passe.
 - [x] **Sprites J1–J20 dans Départs et Batch — DEV_4_R4 validée sous Windows** : extraction, transparence, netteté, correspondance joueurs, centrage et opacité validés. Départs emploie 210 marqueurs minimaux 1×1 / 2×2 sur la frontière, plus le marqueur central validé. Batch conserve seulement le marqueur central compact.
 - [x] **Territoires EDM/MAP — DEV_4_R4 validée sous Windows** : Territoires est placé juste après Départs. Pour SAV, conserver les claims runtime réels. Pour EDM/MAP et états générés sans claims, reconstruire une couche initiale depuis le masque natif exact de 3500 cellules autour de chaque start ; ne jamais présenter cette couche comme une information lue dans le fichier. Chevauchements : départ HEX6 le plus proche, puis plus petit numéro de joueur en cas d'égalité.
-- [ ] **Réglage des marqueurs Batch** : tester une taille encore plus petite ; décider après essai entre un réglage global dans Paramètres et un contrôle local dans la fenêtre Batch. Prévoir au minimum une option d'affichage/masquage et, seulement si utile, quelques tailles discrètes plutôt qu'un réglage trop fin.
+- [x] **Réglage des marqueurs Batch — DEV_4_R5 validée sous Windows** : réglage global persistant dans Paramètres, choix `Masqués / Petits / Normaux`, valeur par défaut `Petits`, actualisation immédiate des miniatures et du grand aperçu. Pilote de rendu par couches validé : base sans marqueurs conservée par résultat/projection, recomposition limitée aux sprites et remplacement atomique du tooltip sans clignotement.
+- [ ] **Interaction grand aperçu Batch — DEV_4_R6** : un aperçu épinglé se déplace par glisser-déposer, un clic sur son image ne le ferme plus, cliquer une autre miniature remplace la carte à la même position, et recliquer la miniature source ferme l'aperçu. Conserver `Échap`, le placement initial automatique, les limites d'écran et le survol temporaire existant.
 - [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
 - [ ] **README transparence IA** : indiquer clairement conception/direction humaine + usage important de ChatGPT/OpenAI, notamment backend/analyse/reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
@@ -149,6 +150,18 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Utiliser le socle Stats/Graphs pour calibration et debug.
 - [ ] Évaluer ensuite le début d’autres archétypes selon les résultats ; ne pas figer la roadmap post-v1.10 à l’avance.
 - [ ] Ne pas réserver `v2.0` au simple multi-size : garder ce saut pour une évolution structurelle réellement majeure.
+
+## Optimisations diverses — expérimentation après DEV_4 / cible possible v1.11
+
+- [ ] **DEV_4 PERF+ expérimental et réversible** : après clôture de DEV_4, créer une candidate séparée à partir du dernier checkpoint validé. Conserver uniquement les optimisations qui fonctionnent immédiatement, passent toutes les validations et ne demandent aucun réglage UX ou architectural prolongé ; sinon abandonner entièrement cette candidate et reporter le chantier.
+- [x] **Pilote local dans DEV_4_R5** : Batch conserve une base raster sans marqueurs et compose uniquement les sprites `Masqués / Petits / Normaux`; l'égalité pixel par pixel avec le rendu direct est couverte en Carrée et Parallélogramme. Ne pas considérer ce succès local comme validation automatique de la généralisation PERF+.
+- [ ] Supprimer les invalidations raster inutiles : un changement de langue ne doit modifier que les textes/rapports/graphiques concernés ; un changement de thème ne doit pas recalculer les pixels déterministes de la carte lorsque leur contenu ne dépend pas du thème.
+- [ ] Étudier un cache de rendu borné et sélectif : carte globale colorisée, couches de vue, sprites de départ et projection finale, avec politique LRU et budget mémoire explicites.
+- [ ] Lors d'un changement Carrée/Parallélogramme, réutiliser si possible la carte carrée déjà colorisée et n'effectuer que la transformation géométrique nécessaire.
+- [ ] Regrouper les événements rapides et les écritures de paramètres : conserver le retour visuel dynamique, mais différer légèrement la sauvegarde JSON et ignorer les recalculs devenus obsolètes.
+- [ ] Ne tester le calcul raster en arrière-plan que si les optimisations simples restent insuffisantes ; Tkinter et la création des images d'interface doivent rester sur le thread principal.
+- [ ] Mesurer avant/après sur cartes 768×768, Batch 4 cartes, Carrée/Parallélogramme, vues et sliders ; vérifier temps de réponse, mémoire maximale, absence de fuite et reproductibilité visuelle exacte.
+- [ ] Si un fine tuning important est nécessaire, reporter l'ensemble vers une passe dédiée autour de v1.11, notamment avant ou avec les Vues cumulables et interactions Graphiques → carte.
 
 ## v1.8 / workflow de génération — planifié après v1.7
 

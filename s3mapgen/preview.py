@@ -265,6 +265,20 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
         X,Y=_project_point(x,y,source_height)
         im.paste(marker,_centered_marker_origin(marker,X,Y),marker)
 
+def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+    """Draw only the start-marker layer on an already rendered map image."""
+    scale=max(1,int(scale))
+    if projection=='parallelogram':
+        _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity)
+    else:
+        _draw_square_start_markers(im,state,scale,include_boundaries,opacity)
+
+def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->Image.Image:
+    """Return a copy of a marker-free raster with the start layer composed over it."""
+    image=base.copy()
+    _draw_start_marker_layer(image,state,projection,scale,include_boundaries,opacity)
+    return image
+
 def project_parallelogram(im):
     src=im.convert('RGBA');w,h=src.size;px=np.asarray(src);expanded=np.repeat(np.repeat(px,2,axis=0),2,axis=1);canvas=np.zeros((2*h,2*w+(h-1),4),dtype=np.uint8)
     for y in range(h):
@@ -277,11 +291,8 @@ def render(state, output=None, scale=1, labels=True, view='global', overlay_alph
     draw_start_markers=(labels and view=='starts') or bool(start_markers)
     draw_start_boundaries=labels and view=='starts'
     marker_opacity=overlay_alpha if draw_start_boundaries else 100
-    marker_scale=max(1,int(start_marker_scale))
-    if draw_start_markers and projection=='square':_draw_square_start_markers(im,state,marker_scale,draw_start_boundaries,marker_opacity)
-    if projection=='parallelogram':
-        source_height=im.height;im=project_parallelogram(im)
-        if draw_start_markers:_draw_projected_start_markers(im,state,source_height,marker_scale,draw_start_boundaries,marker_opacity)
+    if projection=='parallelogram':im=project_parallelogram(im)
+    if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im

@@ -1,3 +1,13 @@
+## v1.8 DEV_4_R5 — 2026-08-23
+- Adds a persistent `Hidden / Small / Normal` display setting for start markers in Batch thumbnails and their enlarged previews.
+- Defaults to Small; Normal preserves the R4 compact-marker scale and Hidden removes only preview markers.
+- Keeps one marker-free base raster per completed Batch result/projection and composes only the lightweight start layer when the setting changes.
+- Refreshes every completed Batch thumbnail immediately and swaps the image of an already visible hover/click preview without destroying its tooltip.
+- Confirms pixel-for-pixel equivalence between direct and layered marker rendering in Square and Parallelogram.
+- Keeps the validated Starts view, its central marker, 210-marker boundary, opacity behavior and Territories rendering unchanged.
+- Layer composition benchmark on the 768 reference: about 0.08–0.09 ms Square and 0.57–0.64 ms Parallelogram, excluding Tk display resizing; generation engine, protected profiles and native library unchanged.
+- Windows validation completed: all three marker modes, immediate thumbnails and non-blinking pinned preview accepted by the user.
+
 ## v1.8 DEV_4_R4 — 2026-08-23
 - Adds a dedicated localized Starts view and removes all start labels/initial-territory overlays from the Global view.
 - Keeps the exact native 3500-cell initial-territory mask and 210-cell HEX6 boundary in the Starts view only.

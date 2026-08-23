@@ -1,7 +1,7 @@
 import numpy as np
 from s3mapgen.model import MapState
 from s3mapgen.constants import GRASS
-from s3mapgen.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, _synthetic_initial_claims, initial_territory_cells, initial_territory_boundary, render
+from s3mapgen.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, _synthetic_initial_claims, compose_start_markers, initial_territory_cells, initial_territory_boundary, render
 
 def _state(side=128):
     s=MapState.empty(side);s.terrain[:]=GRASS;s.height[:]=np.arange(side,dtype=np.uint8)[:,None];s.resources[8:12,8:12]=0x1f;s.claim[4:20,4:20]=0;return s
@@ -100,6 +100,17 @@ def test_start_marker_is_geometrically_centered_on_start_in_batch_mode():
     ys,xs=np.where(np.any(clean!=marked,axis=2))
     assert (xs.min(),ys.min(),xs.max()+1,ys.max()+1)==(55,52,73,76)
     assert _centered_marker_origin(PLAYER_START_MARKERS[0].resize((18,24)),64,64)==(55,52)
+
+def test_cached_marker_free_base_composes_to_the_exact_direct_render():
+    s=_state();s.starts=[(64,64)]
+    for projection in ('square','parallelogram'):
+        base=render(s,labels=False,view='global',projection=projection)
+        untouched=np.asarray(base).copy()
+        for scale in (1,2):
+            layered=np.asarray(compose_start_markers(base,s,projection=projection,scale=scale))
+            direct=np.asarray(render(s,labels=False,view='global',projection=projection,start_markers=True,start_marker_scale=scale))
+            assert np.array_equal(layered,direct)
+            assert np.array_equal(np.asarray(base),untouched)
 
 def test_sprite_boundary_uses_all_210_cells_of_the_exact_native_outline():
     square=_ordered_boundary_offsets(False)

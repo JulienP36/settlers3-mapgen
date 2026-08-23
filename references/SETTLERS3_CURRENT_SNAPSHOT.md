@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-23 — v1.8 DEV_4_R4 validée sous Windows**
+> Last refreshed: **2026-08-23 — v1.8 DEV_4_R5 validée sous Windows**
 
 ## État release / Git
 
@@ -16,7 +16,9 @@
 - v1.7 = socle Stats/Graphs ; moteur de génération v1.5 validé/protégé inchangé.
 - v1.8 DEV_2_R7 validée sous Windows et synchronisée sur `dev` au commit `85e7bfb`.
 - Autorisation permanente du propriétaire : commits et pushs non destructifs autorisés sur `dev` sans confirmation ponctuelle, dans le périmètre et avec les exclusions définis par `PROJECT_WORKFLOW.md`.
-- Dernier checkpoint documentaire publié sur `dev` avant promotion : `a43f2d1` — consolidation roadmap + autorisation permanente. DEV_4_R4 est validée et autorisée pour promotion non destructive sur `dev`.
+- DEV_4_R4 validée et publiée sur `dev` au commit `e036582`.
+- DEV_4_R5 est validée et autorisée pour promotion non destructive sur `dev` : réglage persistant `Masqués / Petits / Normaux`, base raster sans marqueurs réutilisée et tooltip actualisé sans destruction.
+- DEV_4_R6 est réservée au déplacement de l'aperçu Batch épinglé et au remplacement d'une carte ouverte sans changer sa position.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
