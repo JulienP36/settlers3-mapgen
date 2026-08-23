@@ -11,7 +11,7 @@ from .modes import MODES, MODE_ORDER
 from .archetypes import ARCHETYPES, ARCHETYPE_ORDER
 from .gui_v15 import App as V15StableApp
 from .binary import export_with_scaffold
-from .preview import render, compose_start_markers, HEATMAP_RESOURCES
+from .preview import render, render_square_base, compose_rendered_map, compose_start_markers, project_parallelogram, HEATMAP_RESOURCES
 from .preferences import save_settings, DEFAULT_SHORTCUTS
 from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD
 from .session_cache import GenerationCacheKey, SessionGenerationCache, SessionStatsCache
@@ -27,8 +27,8 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_4_R6 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_4_R6 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_4 PERF+ R1 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_4 PERF+ R1 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -298,6 +298,7 @@ class App(V15StableApp):
         self.session_cache=SessionGenerationCache(max_entries=8)
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
+        self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._prefs_save_after=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
         self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_hover_after=None;self._batch_i18n={}
@@ -952,7 +953,7 @@ class App(V15StableApp):
         if hasattr(self,'history_combo'):self._refresh_history()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
-        self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._retranslate_batch_window();self._invalidate_preview();self._refresh_preview(True)
+        self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
     def _apply_theme(self):
         super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self)
         field='#303134' if dark else '#ffffff';fg='#e8eaed' if dark else '#202124';muted='#7f858d' if dark else '#8a8f98';panel='#292a2d' if dark else '#e5e5e5'
@@ -1116,14 +1117,39 @@ class App(V15StableApp):
     def _save_prefs(self):
         save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
+    def _schedule_prefs_save(self):
+        if self._prefs_save_after is not None:
+            try:self.after_cancel(self._prefs_save_after)
+            except tk.TclError:pass
+        self._prefs_save_after=self.after(200,self._flush_scheduled_prefs)
+
+    def _flush_scheduled_prefs(self):
+        self._prefs_save_after=None;self._save_prefs()
+
+    def destroy(self):
+        if self._prefs_save_after is not None:
+            try:self.after_cancel(self._prefs_save_after)
+            except tk.TclError:pass
+            self._prefs_save_after=None;self._save_prefs()
+        super().destroy()
+
     def _theme_changed(self):
         self.prefs['theme']=self._theme_key();self._save_prefs();self._apply_theme()
     def _toggle_theme(self):
-        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._invalidate_preview();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
+        self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
     def _projection_changed(self):
-        self.prefs['projection']=self._projection_key();self._save_prefs();self._invalidate_preview();self._refresh_preview(True);self._refresh_batch_previews()
+        self.prefs['projection']=self._projection_key();self._save_prefs();self._refresh_preview(True);self._refresh_batch_previews()
     def _preview_marker_changed(self):
         self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_batch_previews()
+
+    def _opacity_changed(self):
+        self.opacity_label.configure(text=f'{int(self.opacity_var.get())} %');self.prefs['overlay_alpha']=int(self.opacity_var.get());self._schedule_prefs_save()
+        if self._view_key()=='starts':self._invalidate_preview_composite()
+        else:self._invalidate_preview()
+        self._schedule_preview()
+
+    def _wheel_changed(self):
+        self.wheel_label.configure(text=f'×{self.wheel_var.get():.2f}');self.prefs['wheel_zoom']=float(self.wheel_var.get());self._schedule_prefs_save()
 
     def _update_view_controls(self):
         view=self._view_key();lang=self.prefs.get('language','fr')
@@ -1131,9 +1157,9 @@ class App(V15StableApp):
         if hasattr(self,'heatmap_combo'):
             locked=view!='heatmap';self.heatmap_combo.set_enabled(not locked)
             if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text=('Filtre carte thermique' if lang=='fr' else 'Heatmap filter'),image=self._lock_closed_icon if locked else self._lock_open_icon)
-    def _view_changed(self):self._invalidate_preview();self._update_view_controls();self._refresh_preview(True)
-    def _heatmap_changed(self):self._invalidate_preview();self._refresh_preview(True)
-    def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._invalidate_preview();self._refresh_preview(True);self._feedback('view_reset','info')
+    def _view_changed(self):self._update_view_controls();self._refresh_preview(True)
+    def _heatmap_changed(self):self._refresh_preview(True)
+    def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._refresh_preview(True);self._feedback('view_reset','info')
     def random_seed(self):
         super().random_seed();self._feedback('seed_randomized','info',seed=str(self.seed.get()))
     def _copy_seed(self):
@@ -1304,10 +1330,16 @@ class App(V15StableApp):
     def _batch_render_thumbnail(self,row):
         out=row.get('result')
         if out is None:return
-        projection=self.prefs.get('projection','square');base_key=(id(out.state),projection)
-        if row.get('preview_base_key')!=base_key:
-            row['preview_base_image']=render(out.state,labels=False,view='global',overlay_alpha=100,projection=projection,heatmap_resource='trees',start_markers=False)
-            row['preview_base_key']=base_key
+        state_key=id(out.state);projection=self.prefs.get('projection','square')
+        if row.get('preview_square_base_key')!=state_key:
+            row['preview_square_base_image']=render_square_base(out.state,view='global',overlay_alpha=100,heatmap_resource='trees')
+            row['preview_square_base_key']=state_key;row['preview_projected_base_image']=None;row['preview_projected_base_key']=None
+        if projection=='parallelogram':
+            if row.get('preview_projected_base_key')!=state_key:
+                row['preview_projected_base_image']=project_parallelogram(row['preview_square_base_image']);row['preview_projected_base_key']=state_key
+            row['preview_base_image']=row['preview_projected_base_image']
+        else:row['preview_base_image']=row['preview_square_base_image']
+        row['preview_base_key']=(state_key,projection)
         image=self._batch_compose_preview(row)
         thumb=image.copy();thumb.thumbnail((180,120),Image.Resampling.NEAREST)
         row['thumbnail_photo']=ImageTk.PhotoImage(thumb);row['thumbnail'].configure(image=row['thumbnail_photo'],text='')
@@ -1687,11 +1719,28 @@ class App(V15StableApp):
 
     def _render_options(self):
         view=self._view_key();return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key()}
+    def _invalidate_preview(self):
+        """Discard both the colorized square layer and its projected composites."""
+        self._preview_base=None;self._preview_key=None;self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={}
+    def _invalidate_preview_composite(self):
+        """Keep the costly colorized layer and discard only cheap decorations."""
+        self._preview_base=None;self._preview_key=None;self._preview_projection_cache={}
     def _refresh_preview(self,reset_pan=False):
         self._zoom_after=None
         if not self.current:return
-        self._update_view_controls();opts=self._render_options();key=(id(self.current.state),opts['view'],opts['overlay_alpha'],opts['projection'],opts['heatmap_resource'])
-        if key!=self._preview_key:self._preview_base=render(self.current.state,labels=True,**opts);self._preview_key=key
+        self._update_view_controls();opts=self._render_options();state=self.current.state
+        # Global and Starts share the same marker-free terrain raster.  Starts
+        # opacity affects only its sprite layer, so changing it never recolors
+        # the map.  Other overlays bake their opacity into the square layer.
+        layer_view='global' if opts['view'] in ('global','starts') else opts['view']
+        layer_alpha=100 if layer_view=='global' else opts['overlay_alpha']
+        layer_key=(id(state),layer_view,layer_alpha,opts['heatmap_resource'])
+        if layer_key!=self._preview_layer_key:
+            self._preview_layer_base=render_square_base(state,layer_view,layer_alpha,opts['heatmap_resource']);self._preview_layer_key=layer_key;self._preview_projection_cache={}
+        composite_key=(opts['projection'],opts['view'],opts['overlay_alpha'])
+        if composite_key not in self._preview_projection_cache:
+            self._preview_projection_cache[composite_key]=compose_rendered_map(self._preview_layer_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'])
+        self._preview_base=self._preview_projection_cache[composite_key];self._preview_key=(layer_key,composite_key)
         im=self._preview_base;cw=max(100,self.canvas.winfo_width());ch=max(100,self.canvas.winfo_height());factor=max(.05,min((cw-10)/im.width,(ch-10)/im.height)*self.zoom);new=(max(1,int(im.width*factor)),max(1,int(im.height*factor)))
         oldx=0 if reset_pan else self.canvas.xview()[0];oldy=0 if reset_pan else self.canvas.yview()[0];shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);self.canvas.delete('all');sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2);self.canvas.create_image(x,y,image=self.photo,anchor='nw');self.canvas.configure(scrollregion=(0,0,sw,sh));self.canvas.xview_moveto(oldx);self.canvas.yview_moveto(oldy)
         self._display_origin=(x,y);self._display_factor=new[0]/im.width;self._display_base_size=im.size

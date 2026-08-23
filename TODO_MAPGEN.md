@@ -153,14 +153,14 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 
 ## Optimisations diverses — expérimentation après DEV_4 / cible possible v1.11
 
-- [ ] **DEV_4 PERF+ expérimental et réversible** : après clôture de DEV_4, créer une candidate séparée à partir du dernier checkpoint validé. Conserver uniquement les optimisations qui fonctionnent immédiatement, passent toutes les validations et ne demandent aucun réglage UX ou architectural prolongé ; sinon abandonner entièrement cette candidate et reporter le chantier.
+- [x] **DEV_4 PERF+ R1 validée sous Windows** : candidate séparée construite depuis DEV_4_R6, conservée après validation sans régression ni baisse de performances observable. Parité pixel, validations internes et interactions dynamiques confirmées ; R6 reste le checkpoint historique de repli.
 - [x] **Pilote local dans DEV_4_R5** : Batch conserve une base raster sans marqueurs et compose uniquement les sprites `Masqués / Petits / Normaux`; l'égalité pixel par pixel avec le rendu direct est couverte en Carrée et Parallélogramme. Ne pas considérer ce succès local comme validation automatique de la généralisation PERF+.
-- [ ] Supprimer les invalidations raster inutiles : un changement de langue ne doit modifier que les textes/rapports/graphiques concernés ; un changement de thème ne doit pas recalculer les pixels déterministes de la carte lorsque leur contenu ne dépend pas du thème.
-- [ ] Étudier un cache de rendu borné et sélectif : carte globale colorisée, couches de vue, sprites de départ et projection finale, avec politique LRU et budget mémoire explicites.
-- [ ] Lors d'un changement Carrée/Parallélogramme, réutiliser si possible la carte carrée déjà colorisée et n'effectuer que la transformation géométrique nécessaire.
-- [ ] Regrouper les événements rapides et les écritures de paramètres : conserver le retour visuel dynamique, mais différer légèrement la sauvegarde JSON et ignorer les recalculs devenus obsolètes.
+- [x] Invalidations raster inutiles supprimées pour langue, thème et projection dans PERF+ R1, validée sous Windows.
+- [x] Cache de rendu borné et sélectif validé : calque carré de la vue courante et ses composites, plus une base carrée et une projetée par résultat Batch. Mesure brute maximale pour quatre résultats Batch : environ 60,7 Mio hors copies Tk et miniatures.
+- [x] Carrée/Parallélogramme : projection dérivée de la carte carrée déjà colorisée et deux variantes réutilisées une fois créées.
+- [x] Écritures rapides : sauvegardes JSON des sliders Opacité et Zoom molette différées de 200 ms, avec flush à la fermeture ; autres réglages discrets immédiats.
 - [ ] Ne tester le calcul raster en arrière-plan que si les optimisations simples restent insuffisantes ; Tkinter et la création des images d'interface doivent rester sur le thread principal.
-- [ ] Mesurer avant/après sur cartes 768×768, Batch 4 cartes, Carrée/Parallélogramme, vues et sliders ; vérifier temps de réponse, mémoire maximale, absence de fuite et reproductibilité visuelle exacte.
+- [x] Mesures PERF+ R1 sur la référence 768×768 : projection mise en cache ~7,6× plus rapide ; recomposition d'opacité Départs ~24× plus rapide ; parité pixel exacte dans les deux projections. Test Windows validé sans régression ni croissance problématique observée.
 - [ ] Si un fine tuning important est nécessaire, reporter l'ensemble vers une passe dédiée autour de v1.11, notamment avant ou avec les Vues cumulables et interactions Graphiques → carte.
 
 ## v1.8 / workflow de génération — planifié après v1.7

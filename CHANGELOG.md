@@ -1,3 +1,15 @@
+## v1.8 DEV_4 PERF+ R1 — 2026-08-23
+- Builds a separate, reversible performance candidate from the Windows-validated DEV_4_R6 checkpoint.
+- Splits deterministic map rendering into a reusable marker-free square raster followed by lightweight projection and start-marker composition.
+- Reuses the same Global square raster when switching between Global and Starts; Starts opacity now invalidates only its sprite composite.
+- Keeps at most the current main-view square layer and its projection composites, plus one square and one parallelogram base per completed Batch result.
+- Stops invalidating deterministic map pixels for language, theme and projection changes; the visible result still refreshes immediately.
+- Debounces rapid opacity and wheel-zoom preference writes by 200 ms and flushes the latest values on application close.
+- Preserves exact rendering: split and direct render paths are pixel-identical for Global, Starts and Territories in Square and Parallelogram.
+- Reference 768 benchmark: cached projection about 7.6× faster and cached Starts-opacity composition about 24× faster than full rerendering on this environment.
+- No threads, engine changes, rendering approximation or interaction changes.
+- Windows validation completed: no regression or performance loss observed, with a possible responsiveness improvement; PERF+ R1 is accepted and retained.
+
 ## v1.8 DEV_4_R6 — 2026-08-23
 - Makes pinned Batch previews draggable directly from the rendered map while keeping temporary hover previews non-interactive.
 - Removes click-to-close from the large preview itself; clicking the same source mini-map again remains the primary close action, with Escape as fallback.

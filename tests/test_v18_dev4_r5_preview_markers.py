@@ -23,8 +23,9 @@ def test_preview_marker_change_is_persisted_and_refreshes_open_batch_previews():
 
 def test_batch_marker_modes_map_to_hidden_small_and_normal_without_touching_starts_view():
     batch=SRC[SRC.index('def _batch_render_thumbnail'):SRC.index('def _refresh_batch_previews')]
-    assert "row.get('preview_base_key')!=base_key" in batch
-    assert "start_markers=False" in batch
+    assert "row.get('preview_square_base_key')!=state_key" in batch
+    assert "row.get('preview_projected_base_key')!=state_key" in batch
+    assert "render_square_base(out.state,view='global'" in batch
     compose=SRC[SRC.index('def _batch_compose_preview'):SRC.index('def _refresh_batch_previews')]
     assert "if marker_mode=='hidden':return base" in compose
     assert "compose_start_markers(base,out.state" in compose

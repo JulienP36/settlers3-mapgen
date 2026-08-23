@@ -20,12 +20,14 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_4_R6 validée / moteur v1.5 stable
+## État actuel — v1.8 DEV_4 PERF+ R1 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
+
+DEV_4 PERF+ R1 a été validée sous Windows sans régression ni baisse de performances observable. Elle optimise seulement le rendu dynamique en réutilisant des calques raster bornés ; elle ne modifie ni le résultat visuel, ni les interactions, ni le moteur. DEV_4_R6 reste le checkpoint historique de repli immédiatement antérieur.
 
 La GUI v1.6 comprend notamment :
 

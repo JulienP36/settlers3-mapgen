@@ -89,7 +89,7 @@ def test_r2_opens_every_row_with_the_same_default_seed_and_keeps_both_dice_level
 
 
 def test_r2_uses_real_map_previews_with_click_and_delayed_hover():
-    assert "render(out.state,labels=False,view='global'" in SRC
+    assert "render_square_base(out.state,view='global'" in SRC
     assert "'<Button-1>'" in SRC
     assert "self.after(700" in SRC
     assert "Image.Resampling.NEAREST" in SRC

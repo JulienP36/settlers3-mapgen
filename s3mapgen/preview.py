@@ -285,14 +285,23 @@ def project_parallelogram(im):
         shift=h-1-y;canvas[2*y:2*y+2,shift:shift+2*w]=expanded[2*y:2*y+2]
     return Image.fromarray(canvas,'RGBA')
 
-def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=False, start_marker_scale=1):
+def render_square_base(state,view='global',overlay_alpha=100,heatmap_resource='trees')->Image.Image:
+    """Colorize one map/view into its reusable, marker-free square raster."""
     base=_global_rgb(state);rgb=base.copy() if view in ('global','starts') else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
-    im=Image.fromarray(rgb,'RGB')
+    return Image.fromarray(rgb,'RGB')
+
+def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=False,start_marker_scale=1)->Image.Image:
+    """Project and decorate a cached square raster without mutating that base."""
+    im=project_parallelogram(base) if projection=='parallelogram' else base.copy()
     draw_start_markers=(labels and view=='starts') or bool(start_markers)
     draw_start_boundaries=labels and view=='starts'
     marker_opacity=overlay_alpha if draw_start_boundaries else 100
-    if projection=='parallelogram':im=project_parallelogram(im)
     if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
+    return im
+
+def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=False, start_marker_scale=1):
+    base=render_square_base(state,view,overlay_alpha,heatmap_resource)
+    im=compose_rendered_map(base,state,labels,view,overlay_alpha,projection,start_markers,start_marker_scale)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im
