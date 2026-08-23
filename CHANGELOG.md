@@ -1,3 +1,14 @@
+## v1.8 DEV_4_R6 — 2026-08-23
+- Makes pinned Batch previews draggable directly from the rendered map while keeping temporary hover previews non-interactive.
+- Removes click-to-close from the large preview itself; clicking the same source mini-map again remains the primary close action, with Escape as fallback.
+- Replaces an already pinned preview with another mini-map at the exact same top-left position instead of re-anchoring it.
+- Preserves the current tooltip position during live marker/projection refreshes and clamps all manual movement inside the visible screen.
+- Double-buffers projection changes and pinned row replacements: the complete new transparent surface is shown above the old one before the old surface is destroyed.
+- Keeps same-projection marker changes on the lighter in-place image swap path.
+- Keeps the validated R5 marker-layer cache and atomic image replacement unchanged.
+- Generation engine, protected profiles and native library unchanged.
+- Windows validation completed: dragging, closing, same-position replacement, screen clamping and projection double-buffering accepted by the user.
+
 ## v1.8 DEV_4_R5 — 2026-08-23
 - Adds a persistent `Hidden / Small / Normal` display setting for start markers in Batch thumbnails and their enlarged previews.
 - Defaults to Small; Normal preserves the R4 compact-marker scale and Hidden removes only preview markers.

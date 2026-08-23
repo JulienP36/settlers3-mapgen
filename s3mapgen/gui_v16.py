@@ -27,8 +27,8 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_4_R5 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_4_R5 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_4_R6 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_4_R6 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -300,7 +300,7 @@ class App(V15StableApp):
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
-        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_hover_after=None;self._batch_i18n={}
+        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_hover_after=None;self._batch_i18n={}
         super().__init__()
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
 
@@ -1350,13 +1350,30 @@ class App(V15StableApp):
         if row.get('result') is None:return
         if row.get('preview_base_image') is None:self._batch_render_thumbnail(row)
         image=self._batch_compose_preview(row)
-        self._batch_hide_preview_tooltip();shown,size,x,y=self._batch_preview_geometry(row,image)
-        chroma='#ff00ff';win=tk.Toplevel(self._batch_window or self);self._batch_preview_window=win;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned)
+        old_win=self._batch_preview_window;preserved=None
+        if old_win is not None and self._batch_preview_pinned:
+            try:preserved=(old_win.winfo_x(),old_win.winfo_y())
+            except tk.TclError:pass
+        shown,size,x,y=self._batch_preview_geometry(row,image)
+        if preserved is not None:x,y=self._batch_clamp_preview_position(preserved[0],preserved[1],size)
+        win,label,photo=self._batch_build_preview_surface(shown,size,x,y,pinned)
+        self._batch_preview_window=win;self._batch_preview_label=label;self._batch_preview_photo=photo;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned);self._batch_preview_projection=self.prefs.get('projection','square')
+        win.deiconify();win.lift();win.update_idletasks()
+        if old_win is not None and old_win is not win:
+            try:old_win.destroy()
+            except tk.TclError:pass
+
+    def _batch_build_preview_surface(self,shown,size,x,y,pinned):
+        chroma='#ff00ff';win=tk.Toplevel(self._batch_window or self);win.withdraw()
         win.overrideredirect(True);win.configure(bg=chroma);win.attributes('-topmost',True)
         try:win.wm_attributes('-transparentcolor',chroma)
         except tk.TclError:pass
-        self._batch_preview_photo=ImageTk.PhotoImage(shown);label=tk.Label(win,image=self._batch_preview_photo,bg=chroma,bd=0,highlightthickness=0,cursor='hand2');self._batch_preview_label=label;label.pack()
-        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}');label.bind('<Button-1>',lambda e:self._batch_hide_preview_tooltip());win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
+        photo=ImageTk.PhotoImage(shown,master=win);label=tk.Label(win,image=photo,bg=chroma,bd=0,highlightthickness=0,cursor='fleur' if pinned else 'arrow');label.pack()
+        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}')
+        if pinned:
+            label.bind('<ButtonPress-1>',self._batch_preview_drag_start);label.bind('<B1-Motion>',self._batch_preview_drag_move);label.bind('<ButtonRelease-1>',self._batch_preview_drag_end)
+        win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
+        win.update_idletasks();return win,label,photo
 
     def _batch_preview_geometry(self,row,image):
         screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();anchor=row['thumbnail_host'];anchor.update_idletasks()
@@ -1370,11 +1387,39 @@ class App(V15StableApp):
         y=ay+(ah-size[1])//2;y=max(8,min(y,screen_h-size[1]-48))
         return shown,size,x,y
 
+    def _batch_clamp_preview_position(self,x,y,size):
+        screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight()
+        return max(8,min(int(x),screen_w-size[0]-8)),max(8,min(int(y),screen_h-size[1]-48))
+
+    def _batch_preview_drag_start(self,event):
+        win=self._batch_preview_window
+        if win is None or not self._batch_preview_pinned:return 'break'
+        try:self._batch_preview_drag_origin=(event.x_root,event.y_root,win.winfo_x(),win.winfo_y())
+        except tk.TclError:self._batch_preview_drag_origin=None
+        return 'break'
+
+    def _batch_preview_drag_move(self,event):
+        win=self._batch_preview_window;origin=self._batch_preview_drag_origin
+        if win is None or origin is None or not self._batch_preview_pinned:return 'break'
+        try:
+            size=(win.winfo_width(),win.winfo_height());x,y=self._batch_clamp_preview_position(origin[2]+event.x_root-origin[0],origin[3]+event.y_root-origin[1],size)
+            win.geometry(f'+{x}+{y}')
+        except tk.TclError:pass
+        return 'break'
+
+    def _batch_preview_drag_end(self,event=None):
+        self._batch_preview_drag_origin=None;return 'break'
+
     def _batch_refresh_preview_tooltip(self,row):
         win=self._batch_preview_window;label=self._batch_preview_label
         if win is None or label is None or self._batch_preview_row is not row:return
         try:
-            image=self._batch_compose_preview(row);shown,size,x,y=self._batch_preview_geometry(row,image)
+            current=(win.winfo_x(),win.winfo_y());image=self._batch_compose_preview(row);shown,size,_,_=self._batch_preview_geometry(row,image);x,y=self._batch_clamp_preview_position(current[0],current[1],size)
+            projection=self.prefs.get('projection','square')
+            if projection!=self._batch_preview_projection:
+                new_win,new_label,new_photo=self._batch_build_preview_surface(shown,size,x,y,self._batch_preview_pinned)
+                self._batch_preview_window=new_win;self._batch_preview_label=new_label;self._batch_preview_photo=new_photo;self._batch_preview_projection=projection
+                new_win.deiconify();new_win.lift();new_win.update_idletasks();win.destroy();return
             photo=ImageTk.PhotoImage(shown);label.configure(image=photo);self._batch_preview_photo=photo
             win.geometry(f'{size[0]}x{size[1]}+{x}+{y}')
         except tk.TclError:pass
@@ -1383,7 +1428,7 @@ class App(V15StableApp):
         if self._batch_preview_window is not None:
             try:self._batch_preview_window.destroy()
             except tk.TclError:pass
-        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False
+        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None
 
     def _retranslate_batch_window(self):
         win=getattr(self,'_batch_window',None)

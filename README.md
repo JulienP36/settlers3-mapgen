@@ -20,7 +20,7 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_4_R5 validée / moteur v1.5 stable
+## État actuel — v1.8 DEV_4_R6 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
