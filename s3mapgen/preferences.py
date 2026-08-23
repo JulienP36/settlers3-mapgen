@@ -52,7 +52,7 @@ def load_settings() -> dict:
     cfg['preview_start_markers'] = cfg.get('preview_start_markers') if cfg.get('preview_start_markers') in ('hidden', 'small', 'normal') else 'small'
     cfg['overlay_alpha'] = max(0, min(100, int(cfg.get('overlay_alpha', 75))))
     cfg['wheel_zoom'] = max(1.02, min(1.30, float(cfg.get('wheel_zoom', 1.10))))
-    cfg['language'] = cfg.get('language') if cfg.get('language') in ('fr', 'en') else 'fr'
+    cfg['language'] = cfg.get('language') if cfg.get('language') in ('fr', 'en', 'de', 'es') else 'fr'
     cfg['shortcuts'] = _clean_shortcuts(cfg.get('shortcuts'))
     return cfg
 

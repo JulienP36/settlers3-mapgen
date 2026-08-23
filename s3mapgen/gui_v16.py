@@ -26,10 +26,12 @@ VIEW_LABELS={
  'fr':{'global':'Global','starts':'Départs','territories':'Territoires','heightmap':'Élévation','resources':'Ressources','paths':'Chemins','crops':'Cultures','heatmap':'Carte thermique'},
  'en':{'global':'Global','starts':'Starts','territories':'Territories','heightmap':'Elevation','resources':'Resources','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
 }
-LANGUAGE_LABELS={'fr':'Français','en':'English'}
+LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_5_R3 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_5_R3 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_6_R1 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_6_R1 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_6_R1 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_6_R1 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -185,6 +187,87 @@ EXPORT_TEXT={
  },
 }
 
+# DEV_6: complete four-language catalog.  French remains the source text used
+# while constructing widgets; every other language resolves through the same
+# stable semantic keys, with English as the explicit safety fallback.
+VIEW_LABELS.update({
+ 'de':{'global':'Global','starts':'Startpositionen','territories':'Territorien','heightmap':'Höhen','resources':'Ressourcen','paths':'Wege','crops':'Anbau','heatmap':'Heatmap'},
+ 'es':{'global':'Global','starts':'Inicios','territories':'Territorios','heightmap':'Elevación','resources':'Recursos','paths':'Caminos','crops':'Cultivos','heatmap':'Mapa de calor'},
+})
+HEATMAP_LABELS.update({
+ 'de':{'trees':'Bäume','building_stones':'Bausteine','fish':'Fische','coal':'Kohle','iron':'Eisen','gold':'Gold','gems':'Edelsteine','sulfur':'Schwefel'},
+ 'es':{'trees':'Árboles','building_stones':'Piedras de construcción','fish':'Peces','coal':'Carbón','iron':'Hierro','gold':'Oro','gems':'Gemas','sulfur':'Azufre'},
+})
+MODE_LABELS.update({
+ 'de':{'legacy':'Klassisch (Legacy)','upgraded':'Verbessert (Upgraded)','custom':'Benutzerdefiniert'},
+ 'es':{'legacy':'Clásico (Legacy)','upgraded':'Mejorado (Upgraded)','custom':'Personalizado'},
+})
+ARCHETYPE_LABELS.update({
+ 'de':{'continental':'Kontinental','large_islands':'Große Inseln','small_islands':'Kleine Inseln'},
+ 'es':{'continental':'Continental','large_islands':'Islas grandes','small_islands':'Islas pequeñas'},
+})
+COMMAND_LABELS.update({
+ 'de':{'generate':'Generieren','import':'Importieren','export':'Exportieren','reset_view':'Ansicht zentrieren','copy_seed':'Seed kopieren','toggle_ab':'A/B wechseln','toggle_theme':'Design wechseln','help':'Hilfe'},
+ 'es':{'generate':'Generar','import':'Importar','export':'Exportar','reset_view':'Centrar vista','copy_seed':'Copiar seed','toggle_ab':'Alternar A/B','toggle_theme':'Cambiar tema','help':'Ayuda'},
+})
+THEME_LABELS.update({'de':{'dark':'Dunkel','light':'Hell'},'es':{'dark':'Oscuro','light':'Claro'}})
+PROJECTION_LABELS.update({'de':{'square':'Quadratisch','parallelogram':'Parallelogramm'},'es':{'square':'Cuadrada','parallelogram':'Paralelogramo'}})
+PREVIEW_START_MARKER_LABELS.update({
+ 'de':{'hidden':'Ausgeblendet','small':'Klein','normal':'Normal'},
+ 'es':{'hidden':'Ocultos','small':'Pequeños','normal':'Normales'},
+})
+
+_TEXTS_DE_ES={
+ 'Mode':('Modus','Modo'),'Archétype':('Archetyp','Arquetipo'),'Modificateurs':('Modifikatoren','Modificadores'),'Taille':('Größe','Tamaño'),'Joueurs':('Spieler','Jugadores'),'Seed':('Seed','Seed'),'Zoom':('Zoom','Zoom'),
+ 'Générer':('Generieren','Generar'),'Générer lot…':('Stapel generieren…','Generar lote…'),'Importer…':('Importieren…','Importar…'),'Exporter…':('Exportieren…','Exportar…'),'Aperçu PNG':('PNG-Vorschau','Vista previa PNG'),'Vue':('Ansicht','Vista'),
+ 'Affichage':('Anzeige','Visualización'),'Thème':('Design','Tema'),'Opacité couche':('Ebenendeckkraft','Opacidad de capa'),'0 % = map globale · 100 % = couche seule':('0 % = globale Karte · 100 % = nur Ebene','0 % = mapa global · 100 % = solo capa'),
+ 'Projection':('Projektion','Proyección'),'Le parallélogramme modifie uniquement le rendu, jamais les données.':('Das Parallelogramm ändert nur die Darstellung, niemals die Daten.','El paralelogramo solo cambia la visualización, nunca los datos.'),
+ 'Marqueurs dans les aperçus':('Marker in Vorschauen','Marcadores en vistas previas'),'Ce réglage affecte les miniatures et le grand aperçu du lot.':('Diese Einstellung betrifft Miniaturen und die große Stapelvorschau.','Este ajuste afecta a las miniaturas y a la vista previa grande del lote.'),
+ 'Sensibilité molette':('Mausrad-Empfindlichkeit','Sensibilidad de la rueda'),'Navigation':('Navigation','Navegación'),'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':('Mausrad: zoomen\nLinksklick + Ziehen: Karte verschieben\nDer Zoom wird verzögert, um Neuberechnungen zu begrenzen.','Rueda: zoom\nClic izquierdo + arrastrar: mover el mapa\nEl zoom se retrasa para limitar los recálculos.'),
+ 'Paramètres':('Einstellungen','Ajustes'),'Validations':('Prüfungen','Validaciones'),'Pipeline':('Pipeline','Proceso'),'Métadonnées':('Metadaten','Metadatos'),'Statistiques':('Statistiken','Estadísticas'),'Graphiques':('Diagramme','Gráficos'),'Exporter JSON':('JSON exportieren','Exportar JSON'),'Exporter CSV':('CSV exportieren','Exportar CSV'),'Exporter PNG':('PNG exportieren','Exportar PNG'),'Ressource Heatmap':('Heatmap-Ressource','Recurso del mapa de calor'),'Filtre carte thermique':('Heatmap-Filter','Filtro del mapa de calor'),
+ 'Recentrer':('Zentrieren','Centrar'),'Copier seed':('Seed kopieren','Copiar seed'),'Langue':('Sprache','Idioma'),'Aide':('Hilfe','Ayuda'),'Historique session':('Sitzungsverlauf','Historial de sesión'),
+ 'Charger':('Laden','Cargar'),'Vider cache':('Cache leeren','Vaciar caché'),'Définir A':('A festlegen','Definir A'),'Définir B':('B festlegen','Definir B'),'Basculer A/B':('A/B wechseln','Alternar A/B'),
+ 'Vider A':('A leeren','Vaciar A'),'Vider B':('B leeren','Vaciar B'),'Vider A+B':('A+B leeren','Vaciar A+B'),
+ 'Raccourcis':('Tastenkürzel','Atajos'),'Appliquer':('Übernehmen','Aplicar'),'Valeurs par défaut':('Standardwerte','Valores predeterminados'),'Réinitialiser':('Zurücksetzen','Restablecer'),
+ 'Session / Comparaison':('Sitzung / Vergleich','Sesión / Comparación'),'Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…':('Format: Strg+G, Strg+Umschalt+C, Alt+1, F1…','Formato: Ctrl+G, Ctrl+Mayús+C, Alt+1, F1…'),
+}
+for _source,(_de,_es) in _TEXTS_DE_ES.items():
+    TEXTS[_source].update({'de':_de,'es':_es})
+
+FEEDBACK_TEXT.update({
+ 'de':{
+  'ready':'Bereit — {mode} / {archetype} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler.','size_reserved':'{side}×{side}: max. {max_players} Spieler. Auswahl bereit; Generierung noch nicht kalibriert.','mode_reserved':'Modus „{mode}“ ist reserviert und nicht implementiert.','arch_reserved':'Archetyp „{archetype}“ ist reserviert und nicht implementiert.','generating':'Generiere {archetype} — {mode} — Modifikatoren: {modifiers} — {side}×{side} — {players} Spieler — Seed {seed}…','generated':'Karte generiert — {archetype} / {mode} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler / Seed {seed}.','cache_hit':'Ergebnis aus dem Cache wiederverwendet — Seed {seed}.','heatmap_locked':'Der Filter ist in der Ansicht „Heatmap“ verfügbar.','history_loaded':'Karte aus dem Sitzungsverlauf geladen.','history_cleared':'Sitzungs-Caches geleert.','shortcut_applied':'Tastenkürzel übernommen.','shortcut_restored':'Tastenkürzel auf Standardwerte zurückgesetzt.','seed_copied':'Seed kopiert: {seed}','export_done':'Export abgeschlossen.','history_empty':'Keine Karte im Sitzungs-Cache verfügbar.','compare_toggled':'Karte zu {map} gewechselt.','theme_changed':'Design geändert: {theme}.','view_reset':'Ansicht zentriert.','seed_randomized':'Neuer zufälliger Seed: {seed}','graph_exported':'Diagrammexport abgeschlossen: {format} — {file}','opacity_locked':'Die Deckkraft ist in der globalen Ansicht nicht verfügbar.','modifier_none':'Kein Modifikator aktiv.','batch_opened':'Stapelgenerierung bereit — 1 bis 4 Karten konfigurieren.','batch_done':'Stapel abgeschlossen — {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.',
+ },
+ 'es':{
+  'ready':'Listo — {mode} / {archetype} / modificadores: {modifiers} / {side}×{side} / {players} jugadores.','size_reserved':'{side}×{side}: máx. {max_players} jugadores. Selección lista; generación aún no calibrada.','mode_reserved':'El modo «{mode}» está reservado y no implementado.','arch_reserved':'El arquetipo «{archetype}» está reservado y no implementado.','generating':'Generando {archetype} — {mode} — modificadores: {modifiers} — {side}×{side} — {players} jugadores — seed {seed}…','generated':'Mapa generado — {archetype} / {mode} / modificadores: {modifiers} / {side}×{side} / {players} jugadores / seed {seed}.','cache_hit':'Resultado reutilizado desde la caché — seed {seed}.','heatmap_locked':'El filtro está disponible en la vista «Mapa de calor».','history_loaded':'Mapa cargado desde el historial de sesión.','history_cleared':'Cachés de sesión vaciadas.','shortcut_applied':'Atajos aplicados.','shortcut_restored':'Atajos restablecidos a sus valores predeterminados.','seed_copied':'Seed copiada: {seed}','export_done':'Exportación terminada.','history_empty':'No hay mapas disponibles en la caché de sesión.','compare_toggled':'Mapa cambiado a {map}.','theme_changed':'Tema cambiado: {theme}.','view_reset':'Vista centrada.','seed_randomized':'Nueva seed aleatoria: {seed}','graph_exported':'Exportación del gráfico terminada: {format} — {file}','opacity_locked':'La opacidad no está disponible en la vista Global.','modifier_none':'No hay modificadores activos.','batch_opened':'Generación por lotes lista — configura de 1 a 4 mapas.','batch_done':'Lote terminado — {success} correctos, {failed} fallidos, {cancelled} cancelados.',
+ },
+})
+
+BATCH_TEXT.update({
+ 'de':{
+  'title':'Stapelgenerierung','count':'Anzahl Karten','randomize':'Neue Seeds','apply_seed':'Auf alle anwenden','map':'Karte {index}','mode':'Modus','archetype':'Archetyp','modifiers':'Modifikatoren','size':'Größe','players':'Spieler','seed':'Seed','status':'Status','waiting':'Wartend','generating':'Generierung…','cached':'Aus Cache wiederverwendet','success':'Abgeschlossen','failed':'Fehler: {error}','cancelled':'Abgebrochen','start':'Stapel generieren','cancel':'Wartende Karten abbrechen','close':'Schließen','set_a':'A zuweisen','set_b':'B zuweisen','show':'Anzeigen','none':'Keine','invalid_title':'Ungültige Stapelparameter','invalid_row':'Karte {index}: {error}','unsupported_size':'derzeit kann nur 768×768 generiert werden','unsupported_mode':'Modus ist nicht implementiert','unsupported_archetype':'Archetyp ist nicht implementiert','invalid_players':'ungültige Spielerzahl (2 bis {maximum})','invalid_seed':'ganzzahliger Seed erforderlich','running':'Stapel läuft: Karte {current}/{total}','cancel_pending':'Abbruch nach der aktuellen Karte angefordert.','finished':'Stapel abgeschlossen: {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.','assigned':'Karte {index} wurde {slot} zugewiesen.','moved':'Karte {index} wurde von {other} nach {slot} verschoben.','already_assigned':'Karte {index} ist bereits {slot} zugewiesen.','preview_hint':'Klicken oder 700 ms verweilen zum Vergrößern.','close_preview':'Vorschau schließen','close_running':'Der Stapel läuft; wartende Karten werden abgebrochen.',
+ },
+ 'es':{
+  'title':'Generación por lotes','count':'Número de mapas','randomize':'Nuevas seeds','apply_seed':'Aplicar a todos','map':'Mapa {index}','mode':'Modo','archetype':'Arquetipo','modifiers':'Modificadores','size':'Tamaño','players':'Jugadores','seed':'Seed','status':'Estado','waiting':'En espera','generating':'Generando…','cached':'Reutilizado desde la caché','success':'Terminado','failed':'Error: {error}','cancelled':'Cancelado','start':'Generar lote','cancel':'Cancelar mapas pendientes','close':'Cerrar','set_a':'Asignar a A','set_b':'Asignar a B','show':'Mostrar','none':'Ninguno','invalid_title':'Parámetros del lote no válidos','invalid_row':'Mapa {index}: {error}','unsupported_size':'actualmente solo se puede generar 768×768','unsupported_mode':'el modo no está implementado','unsupported_archetype':'el arquetipo no está implementado','invalid_players':'número de jugadores no válido (2 a {maximum})','invalid_seed':'se requiere una seed entera','running':'Lote en curso: mapa {current}/{total}','cancel_pending':'Cancelación solicitada después del mapa actual.','finished':'Lote terminado: {success} correctos, {failed} fallidos, {cancelled} cancelados.','assigned':'Mapa {index} asignado a {slot}.','moved':'Mapa {index} movido de {other} a {slot}.','already_assigned':'El mapa {index} ya está asignado a {slot}.','preview_hint':'Haz clic o mantén el cursor 700 ms para ampliar.','close_preview':'Cerrar vista previa','close_running':'El lote está en curso; se cancelarán los mapas pendientes.',
+ },
+})
+
+EXPORT_TEXT.update({
+ 'de':{
+  'map_title':'Karte exportieren','stats_title':'Statistiken und Diagramm exportieren','folder':'Ordner','browse':'Durchsuchen…','basename':'Basisname','formats':'Formate','files':'Geplante Dateien','none':'Mindestens ein Format auswählen.','cancel':'Abbrechen','export':'Exportieren','overwrite_title':'Vorhandene Dateien','overwrite':'Diese Dateien sind bereits vorhanden:\n\n{files}\n\nErsetzen?','invalid_name':'Der Basisname ist leer oder ungültig.','invalid_folder':'Einen gültigen Ausgabeordner auswählen.','done':'Export abgeschlossen:\n\n{files}','edm':'Editor-Karte (.EDM)','map':'Spielbare Karte (.MAP)','sav':'Unveränderte Quell-SAV (.SAV)','png_global':'Globale Karte, aktive Projektion (.PNG)','png_current':'Aktuelle Ansicht mit Ebenen (.PNG)','json':'Vollständige Statistiken (.JSON)','csv':'Vollständige Statistiken (.CSV)','png':'Aktuell angezeigtes Diagramm (.PNG)','binary_unavailable':'EDM/MAP nicht verfügbar: kein validiertes Scaffold für diese Größe.','sav_unavailable':'SAV nicht verfügbar: nur eine unveränderte Kopie einer importierten SAV ist erlaubt.','sav_exact':'Die SAV wird Byte für Byte kopiert; es wird kein SAV-Writer verwendet.','current_unavailable':'Aktuelle Ansicht nicht verfügbar: mit Global wäre sie identisch mit dem globalen PNG.','safe_name':'Mit Windows inkompatible Zeichen werden durch „_“ ersetzt.',
+ },
+ 'es':{
+  'map_title':'Exportar mapa','stats_title':'Exportar estadísticas y gráfico','folder':'Carpeta','browse':'Examinar…','basename':'Nombre base','formats':'Formatos','files':'Archivos previstos','none':'Selecciona al menos un formato.','cancel':'Cancelar','export':'Exportar','overwrite_title':'Archivos existentes','overwrite':'Estos archivos ya existen:\n\n{files}\n\n¿Reemplazarlos?','invalid_name':'El nombre base está vacío o no es válido.','invalid_folder':'Selecciona una carpeta de salida válida.','done':'Exportación terminada:\n\n{files}','edm':'Mapa del editor (.EDM)','map':'Mapa jugable (.MAP)','sav':'SAV de origen sin cambios (.SAV)','png_global':'Mapa global, proyección activa (.PNG)','png_current':'Vista actual con sus capas (.PNG)','json':'Estadísticas completas (.JSON)','csv':'Estadísticas completas (.CSV)','png':'Gráfico mostrado actualmente (.PNG)','binary_unavailable':'EDM/MAP no disponibles: no existe un scaffold validado para este tamaño.','sav_unavailable':'SAV no disponible: solo se permite una copia sin cambios de un SAV importado.','sav_exact':'El SAV se copia byte por byte; no se utiliza ningún writer SAV.','current_unavailable':'Vista actual no disponible: con Global sería idéntica al PNG Global.','safe_name':'Los caracteres incompatibles con Windows se sustituyen por «_».',
+ },
+})
+
+NONE_LABELS={'fr':'Aucun','en':'None','de':'Keine','es':'Ninguno'}
+LOWER_NONE_LABELS={'fr':'aucun','en':'none','de':'keine','es':'ninguno'}
+BATCH_HINTS={'fr':'1–4 cartes · paramètres indépendants · génération séquentielle','en':'1–4 maps · independent parameters · sequential generation','de':'1–4 Karten · unabhängige Parameter · sequenzielle Generierung','es':'1–4 mapas · parámetros independientes · generación secuencial'}
+
+def _lang_text(lang,fr,en,de,es):
+    return {'fr':fr,'en':en,'de':de,'es':es}.get(lang,en)
+
 MINERAL_NAMES={0x10:'Coal',0x20:'Iron',0x30:'Gold',0x40:'Gemstones',0x50:'Sulfur'}
 TERRAIN_NAMES={16:'Grass',22:'Agricultural runtime',24:'Yellow Grass',28:'Worked/Path runtime',32:'Rocky',34:'Rocky detail',35:'Rock/Snow transition',48:'Shore',128:'Snow',129:'Snow transition',96:'River 1',97:'River 2',98:'River 3',99:'River 4'}
 
@@ -249,6 +332,12 @@ def _selector_icon(master, color, kind='dot', size=18):
         d.line((x0,y0,x1,y1),fill='#ffffff',width=4);d.line((x0,y1,x1,y0),fill='#ffffff',width=4)
         d.line((x0,y0,x1,y1),fill='#cf142b',width=2);d.line((x0,y1,x1,y0),fill='#cf142b',width=2)
         cy=(y0+y1)//2;cx=(x0+x1)//2;d.rectangle((x0,cy-2,x1,cy+2),fill='#ffffff');d.rectangle((cx-2,y0,cx+2,y1),fill='#ffffff');d.rectangle((x0,cy-1,x1,cy+1),fill='#cf142b');d.rectangle((cx-1,y0,cx+1,y1),fill='#cf142b')
+    elif kind=='flag_de':
+        x0,y0,x1,y1=2,4,size-3,size-5;third=max(1,(y1-y0+1)//3)
+        d.rectangle((x0,y0,x1,y0+third-1),fill='#000000');d.rectangle((x0,y0+third,x1,y0+2*third-1),fill='#dd0000');d.rectangle((x0,y0+2*third,x1,y1),fill='#ffce00');d.rectangle((x0,y0,x1,y1),outline='#111111')
+    elif kind=='flag_es':
+        x0,y0,x1,y1=2,4,size-3,size-5;quarter=max(1,(y1-y0+1)//4)
+        d.rectangle((x0,y0,x1,y0+quarter-1),fill='#aa151b');d.rectangle((x0,y0+quarter,x1,y1-quarter),fill='#f1bf00');d.rectangle((x0,y1-quarter+1,x1,y1),fill='#aa151b');d.rectangle((x0,y0,x1,y1),outline='#111111')
     elif kind=='lock_closed':
         d.rounded_rectangle((4,8,size-4,size-3),radius=2,fill=c,outline='#111111');d.arc((5,2,size-5,11),180,360,fill=c,width=3);d.ellipse((8,11,10,13),fill='#ffffff')
     elif kind=='lock_open':
@@ -431,7 +520,10 @@ class App(V15StableApp):
         self.language_label=ttk.Label(self.global_panel,text='Langue')
         self.lang_var=tk.StringVar(value=LANGUAGE_LABELS[self.prefs.get('language','fr')])
         self.lang_combo=ColorMenuSelect(self.global_panel,self.lang_var,width=11,command=self._language_changed)
-        self.lang_combo.set_items([('fr',LANGUAGE_LABELS['fr'],'#0055a4','flag_fr'),('en',LANGUAGE_LABELS['en'],'#21468b','flag_en')])
+        self.lang_combo.set_items([
+            ('fr',LANGUAGE_LABELS['fr'],'#0055a4','flag_fr'),('en',LANGUAGE_LABELS['en'],'#21468b','flag_en'),
+            ('de',LANGUAGE_LABELS['de'],'#000000','flag_de'),('es',LANGUAGE_LABELS['es'],'#aa151b','flag_es'),
+        ])
         self.help_button=ttk.Button(self.global_panel,text='Aide',command=self._show_help)
         self._theme_button=ttk.Button(self.global_panel,command=self._toggle_theme,width=3)
         self._refresh_theme_button_icon()
@@ -703,10 +795,10 @@ class App(V15StableApp):
         if dark:
             c=(245,195,55,255);d.ellipse((6,6,14,14),fill=c)
             for x1,y1,x2,y2 in ((10,1,10,4),(10,16,10,19),(1,10,4,10),(16,10,19,10),(3,3,5,5),(15,15,17,17),(15,3,17,5),(3,15,5,17)):d.line((x1,y1,x2,y2),fill=c,width=2)
-            tip='Passer au thème clair' if self.prefs.get('language','fr')=='fr' else 'Switch to light theme'
+            tip=_lang_text(self.prefs.get('language','fr'),'Passer au thème clair','Switch to light theme','Zum hellen Design wechseln','Cambiar al tema claro')
         else:
             c=(75,95,145,255);d.ellipse((4,3,16,17),fill=c);d.ellipse((8,1,18,13),fill=(0,0,0,0))
-            tip='Passer au thème sombre' if self.prefs.get('language','fr')=='fr' else 'Switch to dark theme'
+            tip=_lang_text(self.prefs.get('language','fr'),'Passer au thème sombre','Switch to dark theme','Zum dunklen Design wechseln','Cambiar al tema oscuro')
         self._theme_button_icon=ImageTk.PhotoImage(im);self._theme_button.configure(image=self._theme_button_icon,text='',takefocus=False)
         try:self._theme_button.configure(cursor='hand2')
         except tk.TclError:pass
@@ -746,7 +838,7 @@ class App(V15StableApp):
         state=self.current.state
         stats=self.session_stats_cache.get(state)
         if stats is None:
-            if getattr(self,'_task_overlay',None) is not None:self._task_progress(82,'Calcul des statistiques…' if self.prefs.get('language','fr')=='fr' else 'Computing statistics…')
+            if getattr(self,'_task_overlay',None) is not None:self._task_progress(82,_lang_text(self.prefs.get('language','fr'),'Calcul des statistiques…','Computing statistics…','Statistiken werden berechnet…','Calculando estadísticas…'))
             stats=analyze_map(state)
             self.session_stats_cache.put(state,stats)
         return stats
@@ -977,7 +1069,7 @@ class App(V15StableApp):
         # currently valid state is no modifier, represented by an empty tuple.
         return ()
     def _modifier_summary(self):
-        return 'Aucun' if self.prefs.get('language','fr')=='fr' else 'None'
+        return NONE_LABELS.get(self.prefs.get('language','fr'),NONE_LABELS['en'])
     def _modifier_none_selected(self):
         # “None” is exclusive by definition and cannot be unchecked while it is
         # the sole available entry.
@@ -1001,9 +1093,9 @@ class App(V15StableApp):
         lang=self.prefs.get('language','fr');vk=self._view_key();hk=self._heatmap_key();mk=self._mode_key();ak=self._arch_key()
         self.title(WINDOW_TITLES[lang])
         for w,source in getattr(self,'_i18n_widgets',[]):
-            try:w.configure(text=source if lang=='fr' else TEXTS[source].get('en',source))
+            try:w.configure(text=source if lang=='fr' else TEXTS[source].get(lang,TEXTS[source].get('en',source)))
             except tk.TclError:pass
-        for tab,source in getattr(self,'_i18n_tabs',[]):self.nb.tab(tab,text=source if lang=='fr' else TEXTS[source].get('en',source))
+        for tab,source in getattr(self,'_i18n_tabs',[]):self.nb.tab(tab,text=source if lang=='fr' else TEXTS[source].get(lang,TEXTS[source].get('en',source)))
         if self._view_combo:
             self._view_combo.set_items([(k,VIEW_LABELS[lang][k],VIEW_ICON_COLORS[k],k) for k in VIEW_LABELS[lang]])
             self._view_combo.configure(width=max(12,max(len(v) for v in VIEW_LABELS[lang].values())+1))
@@ -1015,7 +1107,7 @@ class App(V15StableApp):
         self.arch_combo.configure(values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER]);self.arch.set(ARCHETYPE_LABELS[lang][ak])
         if hasattr(self,'modifier_text'):
             self.modifier_text.set(self._modifier_summary())
-            try:self.modifier_menu.entryconfigure(0,label='Aucun' if lang=='fr' else 'None')
+            try:self.modifier_menu.entryconfigure(0,label=NONE_LABELS.get(lang,NONE_LABELS['en']))
             except tk.TclError:pass
         if self._theme_combo:self._theme_combo.configure(values=list(THEME_LABELS[lang].values()))
         self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']])
@@ -1030,11 +1122,11 @@ class App(V15StableApp):
             st=self._ensure_stats_cache();self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(st,lang=lang))
         self._refresh_stats_chart();self._refresh_compare_buttons()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
-        for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else 'Reset')
+        for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else TEXTS['Réinitialiser'].get(lang,TEXTS['Réinitialiser']['en']))
         if hasattr(self,'history_combo'):self._refresh_history()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
-        self.prefs['language']='en' if self.lang_var.get()=='English' else 'fr';self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
+        selected=self.lang_var.get();self.prefs['language']=next((key for key,label in LANGUAGE_LABELS.items() if label==selected),'en');self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
     def _apply_theme(self):
         super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self)
         field='#303134' if dark else '#ffffff';fg='#e8eaed' if dark else '#202124';muted='#7f858d' if dark else '#8a8f98';panel='#292a2d' if dark else '#e5e5e5'
@@ -1158,12 +1250,12 @@ class App(V15StableApp):
         panel=colors.get('panel','#292a2d');fg=colors.get('fg','#e8eaed')
         overlay=tk.Frame(self.canvas,bg=panel,bd=1,relief='solid',highlightthickness=0)
         self._task_overlay=overlay
-        title=label.strip() if label else ('Génération…' if self.prefs.get('language','fr')=='fr' else 'Generating…')
+        title=label.strip() if label else _lang_text(self.prefs.get('language','fr'),'Génération…','Generating…','Generierung…','Generando…')
         self._task_overlay_title=tk.Label(overlay,text=title,bg=panel,fg=fg,anchor='center',justify='center')
         self._task_overlay_title.pack(fill='x',padx=14,pady=(11,7))
         self._task_overlay_progress=tk.Canvas(overlay,height=24,bg=colors.get('bar_bg','#3c4043'),highlightthickness=0,bd=0)
         self._task_overlay_progress.pack(fill='x',expand=True,padx=14,pady=(0,12))
-        self._task_overlay_value=max(0,min(100,float(value)));self._task_overlay_detail='Initialisation…' if self.prefs.get('language','fr')=='fr' else 'Initializing…'
+        self._task_overlay_value=max(0,min(100,float(value)));self._task_overlay_detail=_lang_text(self.prefs.get('language','fr'),'Initialisation…','Initializing…','Initialisierung…','Inicializando…')
         self.canvas.bind('<Configure>',self._layout_task_overlay,add='+')
         self._layout_task_overlay();self._draw_task_progress(value,self._task_overlay_detail);self.update_idletasks()
 
@@ -1237,7 +1329,7 @@ class App(V15StableApp):
         if hasattr(self,'opacity_scale'):self.opacity_scale.configure(state='disabled' if view=='global' else 'normal')
         if hasattr(self,'heatmap_combo'):
             locked=view!='heatmap';self.heatmap_combo.set_enabled(not locked)
-            if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text=('Filtre carte thermique' if lang=='fr' else 'Heatmap filter'),image=self._lock_closed_icon if locked else self._lock_open_icon)
+            if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text='Filtre carte thermique' if lang=='fr' else TEXTS['Filtre carte thermique'].get(lang,TEXTS['Filtre carte thermique']['en']),image=self._lock_closed_icon if locked else self._lock_open_icon)
     def _view_changed(self):self._update_view_controls();self._refresh_preview(True)
     def _heatmap_changed(self):self._refresh_preview(True)
     def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._refresh_preview(True);self._feedback('view_reset','info')
@@ -1274,7 +1366,7 @@ class App(V15StableApp):
     def _cache_key(self):
         return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v1.5-stable')
     def _history_label(self,key):
-        mods=('aucun' if self.prefs.get('language','fr')=='fr' else 'none') if not key.modifiers else '+'.join(key.modifiers)
+        mods=LOWER_NONE_LABELS.get(self.prefs.get('language','fr'),LOWER_NONE_LABELS['en']) if not key.modifiers else '+'.join(key.modifiers)
         return f'{key.seed} · {key.side} · {key.players}P · {key.mode} · {key.archetype} · {mods}'
     def _refresh_history(self):
         self._history_lookup={self._history_label(k):k for k,_ in self.session_cache.entries()};vals=list(self._history_lookup);self.history_combo.configure(values=vals)
@@ -1314,7 +1406,7 @@ class App(V15StableApp):
         self._batch_common_seed_entry=ttk.Entry(header,textvariable=self._batch_common_seed_var,width=13);self._batch_common_seed_entry.pack(side='left')
         self._batch_common_seed_random=ttk.Button(header,text='🎲',width=3,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0))
         self._batch_apply_seed_button=ttk.Button(header,text=bt['apply_seed'],command=self._batch_apply_seed_all);self._batch_apply_seed_button.pack(side='left',padx=(4,0))
-        self._batch_i18n['hint_label']=ttk.Label(header,text=('1–4 cartes · paramètres indépendants · génération séquentielle' if lang=='fr' else '1–4 maps · independent parameters · sequential generation'));self._batch_i18n['hint_label'].pack(side='right')
+        self._batch_i18n['hint_label']=ttk.Label(header,text=BATCH_HINTS.get(lang,BATCH_HINTS['en']));self._batch_i18n['hint_label'].pack(side='right')
 
         rows_host=ttk.Frame(shell);rows_host.pack(fill='both',expand=True)
         rows_host.columnconfigure(0,weight=1)
@@ -1549,7 +1641,7 @@ class App(V15StableApp):
         try:
             lang=self.prefs.get('language','fr');bt=BATCH_TEXT[lang];win.title(bt['title'])
             self._batch_i18n['count_label'].configure(text=bt['count']);self._batch_randomize_button.configure(text=bt['randomize']);self._batch_apply_seed_button.configure(text=bt['apply_seed'])
-            self._batch_i18n['hint_label'].configure(text='1–4 cartes · paramètres indépendants · génération séquentielle' if lang=='fr' else '1–4 maps · independent parameters · sequential generation')
+            self._batch_i18n['hint_label'].configure(text=BATCH_HINTS.get(lang,BATCH_HINTS['en']))
             for row in self._batch_rows:
                 mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
                 row['frame'].configure(text=bt['map'].format(index=row['index']))
@@ -1707,22 +1799,22 @@ class App(V15StableApp):
     def generate(self):
         try:
             side=int(self.size.get())
-            if side!=768:raise NotImplementedError(f'La génération {side}×{side} est réservée mais pas encore calibrée. Max joueurs={NATIVE_LIMITS[side]}.')
+            if side!=768:raise NotImplementedError(_lang_text(self.prefs.get('language','fr'),f'La génération {side}×{side} est réservée mais pas encore calibrée. Max joueurs={NATIVE_LIMITS[side]}.',f'{side}×{side} generation is reserved but not calibrated yet. Max players={NATIVE_LIMITS[side]}.',f'Die Generierung in {side}×{side} ist reserviert, aber noch nicht kalibriert. Max. Spieler={NATIVE_LIMITS[side]}.',f'La generación {side}×{side} está reservada, pero aún no está calibrada. Máx. jugadores={NATIVE_LIMITS[side]}.'))
             key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
             mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
             if cached is not None:
                 self.current=cached;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
             self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
-            self.session_cache.put(key,self.current);self._refresh_history();self._task_progress(97,'Finalisation de l’aperçu…' if lang=='fr' else 'Finalizing preview…');self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            self.session_cache.put(key,self.current);self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
         except Exception as e:
-            import traceback;self._task_error('Erreur de génération' if self.prefs.get('language','fr')=='fr' else 'Generation error');messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
+            import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
     def _load_history(self):
         key=self._history_lookup.get(self.history_var.get());out=self.session_cache.get(key) if key else None
         if out is not None:
             need_stats=self.session_stats_cache.get(out.state) is None
-            if need_stats:self._task_begin('Chargement de l’historique…' if self.prefs.get('language','fr')=='fr' else 'Loading history…',10)
+            if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),'Chargement de l’historique…','Loading history…','Verlauf wird geladen…','Cargando historial…'),10)
             self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
             if need_stats:self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['history_loaded'])
             else:self._feedback('history_loaded','success')
@@ -1735,13 +1827,13 @@ class App(V15StableApp):
         if out is None:return 'ignored',None
         if self._compare_slots.get(slot) is out:
             self._compare_active=slot;self._refresh_compare_label();lang=self.prefs.get('language','fr')
-            self._feedback_key=None;self._status_kind='info';self.status.set((f'Cette carte est déjà affectée à {slot}.' if lang=='fr' else f'This map is already assigned to {slot}.'));getattr(self,'_sync_status_display',lambda:None)();return 'already',None
+            self._feedback_key=None;self._status_kind='info';self.status.set(_lang_text(lang,f'Cette carte est déjà affectée à {slot}.',f'This map is already assigned to {slot}.',f'Diese Karte ist bereits {slot} zugewiesen.',f'Este mapa ya está asignado a {slot}.'));getattr(self,'_sync_status_display',lambda:None)();return 'already',None
         other='B' if slot=='A' else 'A';moved=self._compare_slots.get(other) is out
         if moved:self._compare_slots[other]=None
         need_stats=self.session_stats_cache.get(out.state) is None
-        if need_stats:self._task_begin((f'Préparation comparaison {slot}…' if self.prefs.get('language','fr')=='fr' else f'Preparing comparison {slot}…'),10)
+        if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),f'Préparation comparaison {slot}…',f'Preparing comparison {slot}…',f'Vergleich {slot} wird vorbereitet…',f'Preparando comparación {slot}…'),10)
         self._compare_slots[slot]=out;self._compare_active=slot;self._stats_for_output(out);self._refresh_compare_label();self._refresh_stats_chart()
-        lang=self.prefs.get('language','fr');message=((f'Carte déplacée de {other} vers {slot}.' if lang=='fr' else f'Map moved from {other} to {slot}.') if moved else (f'Comparaison {slot} prête.' if lang=='fr' else f'Comparison {slot} ready.'))
+        lang=self.prefs.get('language','fr');message=(_lang_text(lang,f'Carte déplacée de {other} vers {slot}.',f'Map moved from {other} to {slot}.',f'Karte von {other} nach {slot} verschoben.',f'Mapa movido de {other} a {slot}.') if moved else _lang_text(lang,f'Comparaison {slot} prête.',f'Comparison {slot} ready.',f'Vergleich {slot} ist bereit.',f'Comparación {slot} lista.'))
         if need_stats:self._task_done(message)
         else:self._feedback_key=None;self._status_kind='success';self.status.set(message);getattr(self,'_sync_status_display',lambda:None)()
         return ('moved' if moved else 'assigned'),(other if moved else None)
@@ -1754,7 +1846,7 @@ class App(V15StableApp):
             if button is None:continue
             out=self._compare_slots.get(slot)
             if out is None:
-                button.configure(text=(f'Définir {slot}' if lang=='fr' else f'Set {slot}'),image=self._compare_led_off)
+                button.configure(text=_lang_text(lang,f'Définir {slot}',f'Set {slot}',f'{slot} festlegen',f'Definir {slot}'),image=self._compare_led_off)
             else:
                 button.configure(text=f"{slot} · {self._output_label(out)}",image=self._compare_led_on)
         for slot,button in (('A',getattr(self,'clear_a_button',None)),('B',getattr(self,'clear_b_button',None))):
@@ -1787,15 +1879,15 @@ class App(V15StableApp):
         if self._compare_active==slot:self._compare_active=None
         self._refresh_compare_label()
         lang=self.prefs.get('language','fr')
-        self._feedback_key=None;self._status_kind='success';self.status.set((f'Comparaison {slot} vidée' if lang=='fr' else f'Comparison {slot} cleared'));getattr(self,'_sync_status_display',lambda:None)()
+        self._feedback_key=None;self._status_kind='success';self.status.set(_lang_text(lang,f'Comparaison {slot} vidée',f'Comparison {slot} cleared',f'Vergleich {slot} geleert',f'Comparación {slot} vaciada'));getattr(self,'_sync_status_display',lambda:None)()
     def _clear_compare_slots(self):
         self._compare_slots={'A':None,'B':None};self._compare_active=None
         self._refresh_compare_label()
-        self._feedback_key=None;self._status_kind='success';self.status.set('Comparaisons A/B vidées' if self.prefs.get('language','fr')=='fr' else 'A/B comparisons cleared');getattr(self,'_sync_status_display',lambda:None)()
+        self._feedback_key=None;self._status_kind='success';self.status.set(_lang_text(self.prefs.get('language','fr'),'Comparaisons A/B vidées','A/B comparisons cleared','A/B-Vergleiche geleert','Comparaciones A/B vaciadas'));getattr(self,'_sync_status_display',lambda:None)()
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']
         if a is None or b is None:
-            self._feedback_key=None;self._status_kind='warning';self.status.set('Définissez A et B avant la bascule.' if self.prefs.get('language','fr')=='fr' else 'Set both A and B before toggling.');getattr(self,'_sync_status_display',lambda:None)();return
+            self._feedback_key=None;self._status_kind='warning';self.status.set(_lang_text(self.prefs.get('language','fr'),'Définissez A et B avant la bascule.','Set both A and B before toggling.','Legen Sie vor dem Wechsel A und B fest.','Define A y B antes de alternar.'));getattr(self,'_sync_status_display',lambda:None)();return
         self._compare_active='B' if self._compare_active!='B' else 'A';self.current=self._compare_slots[self._compare_active];imported=bool(self.current.state.metadata.get('source_format'));self._populate_current(imported=imported);self._invalidate_preview();self._refresh_preview(False);self._feedback('compare_toggled','info',map=f'{self._compare_active} · {self._output_label(self.current)}')
 
     def _render_options(self):
@@ -1845,10 +1937,10 @@ class App(V15StableApp):
         if cell is None:return self._clear_inspector()
         x,y=cell;st=self.current.state;t=int(st.terrain[y,x]);o=int(st.objects[y,x]);r=int(st.resources[y,x]);h=int(st.height[y,x]);a=int(st.accessibility[y,x]);c=int(st.claim[y,x]);claim='—' if c==255 else f'P{c+1}'
         oname=OBJECT_NAMES.get(o,'—' if o==0 else '?');lang=self.prefs.get('language','fr')
-        if lang=='fr':self.inspector_var.set(f'x={x}  y={y}  Terrain={t} ({TERRAIN_NAMES.get(t,"?")})  Objet={o} ({oname})  Ressource={self._resource_text(t,r)}  Hauteur={h}  Accès={a}  Territoire={claim}')
-        else:self.inspector_var.set(f'x={x}  y={y}  Terrain={t} ({TERRAIN_NAMES.get(t,"?")})  Object={o} ({oname})  Resource={self._resource_text(t,r)}  Height={h}  Access={a}  Claim={claim}')
+        labels={'fr':('Terrain','Objet','Ressource','Hauteur','Accès','Territoire'),'en':('Terrain','Object','Resource','Height','Access','Claim'),'de':('Gelände','Objekt','Ressource','Höhe','Zugang','Territorium'),'es':('Terreno','Objeto','Recurso','Altura','Acceso','Territorio')}.get(lang,('Terrain','Object','Resource','Height','Access','Claim'))
+        self.inspector_var.set(f'x={x}  y={y}  {labels[0]}={t} ({TERRAIN_NAMES.get(t,"?")})  {labels[1]}={o} ({oname})  {labels[2]}={self._resource_text(t,r)}  {labels[3]}={h}  {labels[4]}={a}  {labels[5]}={claim}')
     def _clear_inspector(self):
-        if hasattr(self,'inspector_var'):self.inspector_var.set('Inspecteur : —' if self.prefs.get('language','fr')=='fr' else 'Inspector: —')
+        if hasattr(self,'inspector_var'):self.inspector_var.set(_lang_text(self.prefs.get('language','fr'),'Inspecteur : —','Inspector: —','Inspektor: —','Inspector: —'))
 
     @staticmethod
     def _tk_sequence(shortcut):
@@ -1875,10 +1967,11 @@ class App(V15StableApp):
                 self.bind_all(seq,lambda e,fn=actions[cmd]:(fn(),'break')[1]);self._bound_shortcuts.append(seq)
     def _apply_shortcut_settings(self):
         vals={k:v.get().strip() for k,v in self.shortcut_vars.items()};norm=[v.lower().replace(' ','') for v in vals.values()]
-        if any(not v for v in vals.values()):messagebox.showerror('Raccourcis','Un raccourci ne peut pas être vide.');return
+        lang=self.prefs.get('language','fr');title=_lang_text(lang,'Raccourcis','Shortcuts','Tastenkürzel','Atajos')
+        if any(not v for v in vals.values()):messagebox.showerror(title,_lang_text(lang,'Un raccourci ne peut pas être vide.','A shortcut cannot be empty.','Ein Tastenkürzel darf nicht leer sein.','Un atajo no puede estar vacío.'));return
         dups=sorted({v for v in norm if norm.count(v)>1})
-        if dups:messagebox.showerror('Raccourcis','Conflit détecté : '+', '.join(dups));return
-        if any(self._tk_sequence(v) is None for v in vals.values()):messagebox.showerror('Raccourcis','Format de raccourci invalide.');return
+        if dups:messagebox.showerror(title,_lang_text(lang,'Conflit détecté : ','Conflict detected: ','Konflikt erkannt: ','Conflicto detectado: ')+', '.join(dups));return
+        if any(self._tk_sequence(v) is None for v in vals.values()):messagebox.showerror(title,_lang_text(lang,'Format de raccourci invalide.','Invalid shortcut format.','Ungültiges Tastenkürzelformat.','Formato de atajo no válido.'));return
         self.prefs['shortcuts']=vals;self._save_prefs();self._bind_shortcuts();self._feedback('shortcut_applied','success')
     def _reset_one_shortcut(self,cmd):
         self.shortcut_vars[cmd].set(DEFAULT_SHORTCUTS[cmd]);self._apply_shortcut_settings()
@@ -1888,8 +1981,8 @@ class App(V15StableApp):
     def _show_help(self):
         sc=self.prefs.get('shortcuts',DEFAULT_SHORTCUTS);lang=self.prefs.get('language','fr');lines=[]
         for cmd in DEFAULT_SHORTCUTS:lines.append(f"{COMMAND_LABELS[lang][cmd]} : {sc.get(cmd,DEFAULT_SHORTCUTS[cmd])}")
-        extra='\n\nMolette : zoom\nClic gauche + glisser : déplacer\nCache : 8 générations, mémoire de session uniquement.\nA/B : conserve vue, zoom, projection et overlay.' if lang=='fr' else '\n\nWheel: zoom\nLeft drag: pan\nCache: 8 generations, session memory only.\nA/B preserves view, zoom, projection and overlay.'
-        messagebox.showinfo('Aide / Help','\n'.join(lines)+extra)
+        extra=_lang_text(lang,'\n\nMolette : zoom\nClic gauche + glisser : déplacer\nCache : 8 générations, mémoire de session uniquement.\nA/B : conserve vue, zoom, projection et couche.','\n\nWheel: zoom\nLeft drag: pan\nCache: 8 generations, session memory only.\nA/B preserves view, zoom, projection and overlay.','\n\nMausrad: Zoom\nLinksklick + Ziehen: Karte verschieben\nCache: 8 Generierungen, nur im Sitzungsspeicher.\nA/B behält Ansicht, Zoom, Projektion und Ebene bei.','\n\nRueda: zoom\nClic izquierdo + arrastrar: mover el mapa\nCaché: 8 generaciones, solo en memoria de sesión.\nA/B conserva vista, zoom, proyección y capa.')
+        messagebox.showinfo(_lang_text(lang,'Aide','Help','Hilfe','Ayuda'),'\n'.join(lines)+extra)
 
     def export(self):
         self._open_map_export_center()
@@ -1945,7 +2038,7 @@ class App(V15StableApp):
                 if 'png_global' in paths:render(state,paths['png_global'],labels=False,view='global',overlay_alpha=100,projection=projection);done+=1;self._task_progress(5+85*done/total,paths['png_global'].name)
                 if 'png_current' in paths:render(state,paths['png_current'],labels=True,**self._render_options());done+=1;self._task_progress(5+85*done/total,paths['png_current'].name)
                 names='\n'.join(path.name for path in paths.values());self._task_done(FEEDBACK_TEXT[lang]['export_done']);messagebox.showinfo(text['map_title'],text['done'].format(files=names),parent=self)
-            except Exception as error:self._task_error('Erreur export' if lang=='fr' else 'Export error');messagebox.showerror(text['map_title'],str(error),parent=self)
+            except Exception as error:self._task_error(_lang_text(lang,'Erreur export','Export error','Exportfehler','Error de exportación'));messagebox.showerror(text['map_title'],str(error),parent=self)
         export_button.configure(command=perform)
         for var in (folder,basename,*formats.values()):var.trace_add('write',refresh)
         refresh();self._place_export_center(w);self._activate_export_modal(w)

@@ -20,14 +20,14 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_5_R3 validée / moteur v1.5 stable
+## État actuel — v1.8 DEV_6_R1 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_4 PERF+ R1 a été validée sous Windows sans régression ni baisse de performances observable. DEV_5_R3 affine les centres d’export bilingues : option Vue actuelle non redondante, géométrie basse et survols corrigés, modalité Windows stricte et formats indisponibles grisés/barrés. Cette passe est validée sous Windows ; le moteur et les formats binaires validés sont inchangés.
+DEV_6_R1 étend l’interface dynamique à quatre langues persistantes — français, anglais, allemand et espagnol — y compris Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. La passe est validée sous Windows, avec une limite non bloquante documentée : le rapport texte Statistiques se retraduit après rechargement de la carte. Le moteur et les formats binaires validés sont inchangés.
 
 La GUI v1.6 comprend notamment :
 
@@ -35,7 +35,7 @@ La GUI v1.6 comprend notamment :
 - import EDM / MAP / SAV et export EDM+MAP 768 ;
 - vues Global / Départs / Territoires / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
-- FR/EN persistant ;
+- FR/EN/DE/ES persistants avec bascule dynamique et repli anglais de sécurité ;
 - inspecteur exact de cellule ;
 - cache LRU de session (8 générations), historique et comparaison A/B légère ;
 - génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
@@ -44,6 +44,10 @@ La GUI v1.6 comprend notamment :
 - raccourcis configurables/persistants avec détection de conflits et aide F1 ;
 - palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
 - **lecture des starts d'origine d'un SAV v11** et contour initial fondé sur le masque natif exact de 3500 cellules.
+
+### Qualité des traductions
+
+Les interfaces **française et anglaise** sont les versions linguistiques de référence, relues et considérées comme correctes. Les traductions **allemande et espagnole** ont été produites automatiquement puis seulement partiellement revues ; elles peuvent donc contenir des formulations imparfaites ou un vocabulaire à affiner. Cette règle s’appliquera également aux futures langues tant qu’une relecture humaine compétente ne les aura pas validées. Les corrections proposées par des locuteurs sont les bienvenues.
 
 Le contour SAV n'est plus une ellipse approximative : les coordonnées de départ sont lues dans le bloc joueur du SAV et le masque initial canonique a été reconstruit à partir de 145 régions natives identiques. DEV_4_R4 place un marqueur minimal sans chevauchement sur chacune des 210 cellules de cette frontière. Territoires affiche les claims runtime réels d'un SAV ; pour un EDM/MAP, elle reconstitue uniquement à l'écran les zones initiales exactes de 3500 cellules autour des starts, sans prétendre lire cette information dans le fichier.
 

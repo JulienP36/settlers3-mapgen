@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-23 — v1.8 DEV_5_R3 validée sous Windows**
+> Last refreshed: **2026-08-23 — v1.8 DEV_6_R1 validée sous Windows**
 
 ## État release / Git
 
@@ -21,6 +21,9 @@
 - DEV_4_R6 validée et publiée sur `dev` au commit `0f3e5f6` : déplacement de l'aperçu Batch épinglé, remplacement à position constante et double tampon lors des changements de projection/miniature.
 - DEV_4 PERF+ R1 validée sous Windows et intégrée à `dev` : cache raster en calques, invalidations ciblées et écritures de sliders différées. Aucune régression ni baisse de performances observable ; R6 reste le checkpoint historique de repli.
 - DEV_5_R3 est validée sous Windows : centres d’export cartes et Graphiques multi-format, option Vue actuelle non redondante, bas de fenêtres et survols corrigés, modalité Windows stricte et formats indisponibles grisés/barrés. La hauteur initiale est calculée depuis le contenu ; toute extension future devra ajouter une contrainte écran et un scroll de secours si nécessaire.
+- DEV_5_R3 est publiée sur `dev` au commit `75c9f345ccd41fba986805cc9150fc2d800f3025`.
+- DEV_6_R1 est validée sous Windows : interface FR/EN/DE/ES dynamique et persistante, couvrant fenêtre principale, Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. Limite connue non bloquante : le rapport texte de l’onglet Statistiques ne change de langue qu’après rechargement de la carte ; correction reportée à la future amélioration de cet onglet. Moteur, formats et rendu inchangés.
+- Politique linguistique : FR/EN sont les références relues et considérées comme correctes. DE/ES ont été traduits automatiquement et seulement partiellement revus ; le README doit conserver cet avertissement, valable aussi pour toute future langue jusqu’à validation humaine compétente.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
@@ -288,9 +291,9 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 
 ## Prochaine action recommandée
 
-Validation Windows obtenue : finesse de la frontière sans chevauchement, ordre des vues, opacité, Territoires synthétique EDM/MAP et claims réels SAV acceptés. Promouvoir exactement R4 sur `dev` sans toucher à `main`.
+Promouvoir exactement DEV_6_R1 validée et sa documentation de transparence linguistique sur `dev`, sans toucher à `main`, puis choisir le périmètre compact de DEV_7 parmi les axes v1.8 restants.
 
-Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons. Un moteur de formes alternatif réellement distinct de Legacy/Upgraded reste une piste non versionnée à n'ouvrir qu'après v1.10 et la consolidation des objectifs natifs.
+Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons.
 
 
 ## v1.8 DEV_2_R2 checkpoint

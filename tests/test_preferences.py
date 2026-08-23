@@ -15,6 +15,13 @@ def test_default_overlay_opacity_is_75_percent():
     import s3mapgen.preferences as p
     assert p.DEFAULTS['overlay_alpha']==75
 
+def test_german_and_spanish_language_preferences_are_persistent(tmp_path, monkeypatch):
+    monkeypatch.setenv('APPDATA', str(tmp_path))
+    import s3mapgen.preferences as p;importlib.reload(p)
+    for language in ('de','es'):
+        p.save_settings({'language':language})
+        assert p.load_settings()['language']==language
+
 def test_preview_start_markers_default_to_small_and_invalid_values_are_cleaned(tmp_path, monkeypatch):
     monkeypatch.setenv('APPDATA', str(tmp_path))
     import s3mapgen.preferences as p;importlib.reload(p)

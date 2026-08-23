@@ -1,3 +1,14 @@
+## v1.8 DEV_6_R1 — 2026-08-23
+- Extends the persistent dynamic UI language selector from FR/EN to FR/EN/DE/ES with deterministic German and Spanish raster flags.
+- Localizes the main window, Batch generation, both Export Centers, settings, feedback, help, disabled states and fully localized window titles.
+- Localizes Statistics reports plus all chart titles, labels, legends, units and contextual tooltips in German and Spanish.
+- Keeps English as the explicit missing-entry safety fallback while preserving the selected language across restarts.
+- Documents French and English as reviewed reference languages; German and Spanish are automatic translations with only partial review and remain open to native-speaker corrections.
+- Records a non-blocking limitation: the existing Statistics text report is translated after a map reload rather than immediately when switching language.
+- Adds catalog parity, language persistence, report and complete chart-render regression coverage.
+- Generation engine, binary formats, map rendering and protected assets remain unchanged.
+- Windows validation completed; delayed Statistics text-report retranslation is accepted as a documented non-blocking limitation.
+
 ## v1.8 DEV_5_R3 — 2026-08-23
 - Keeps both Export Centers modal and disables the Windows parent at the native window level while either center is open, blocking external clicks, wheel input, keyboard input and shortcuts.
 - Restores and focuses the main window when the modal center closes.

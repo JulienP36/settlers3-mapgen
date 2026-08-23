@@ -73,7 +73,9 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Futur : étendre le debug à d’autres familles runtime quand identifiées (settlers/colons, marchandises, planches, rondins, pierres taillées, outils, armes, bâtiments, etc.) sans inventer les IDs.
 - [ ] Futur : refonte UI légère de la section Comparaison, sans changer son fonctionnement de base.
 - [ ] Futur : synchronisation optionnelle/désactivable Graphiques ↔ vue Map, hors périmètre du socle v1.7 initial.
-- [ ] Futur proche traduction : ajouter **allemand (DE)** et **espagnol (ES)** à l'interface ; inclure explicitement l'onglet Statistiques dans toutes les langues utilisateur.
+- [x] **v1.8 DEV_6_R1 validée sous Windows** : allemand (DE) et espagnol (ES) ajoutés à l’interface dynamique complète, y compris Statistiques, Graphiques, Batch, exports, aide, états et persistance.
+- [ ] **Rafraîchissement i18n de l’onglet Statistiques** : lorsqu’une carte est déjà chargée, le rapport texte ne se retraduit actuellement qu’après rechargement de la carte. Corriger ce rafraîchissement lors de la future amélioration de l’onglet Statistiques ; non bloquant pour DEV_6.
+- [ ] **Relecture linguistique communautaire** : FR/EN sont les références relues. DE/ES sont des traductions automatiques seulement partiellement revues ; conserver cet avertissement public et intégrer les corrections de locuteurs avant de les qualifier de validées. Appliquer la même règle à toute future langue.
 - [x] v1.8 DEV_1 : traduire intégralement le **titre de la fenêtre**, y compris le libellé du moteur.
 - [x] v1.8 DEV_5_R3 : centre d’export map multi-format validé sous Windows ; géométrie/thème corrigés, modalité Windows stricte et formats indisponibles grisés/barrés.
 - [x] v1.8 DEV_5_R3 : bouton Graphiques **Exporter…** unique et popup JSON/CSV/PNG validés sous Windows ; mêmes corrections de géométrie, thème et modalité.
@@ -110,7 +112,15 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] **Évolutivité future des centres d’export** : leur hauteur initiale est déjà calculée depuis le contenu réel. Si des formats supplémentaires sont ajoutés, préserver ce calcul puis contraindre la fenêtre à la hauteur visible de l’écran avec une zone défilable de secours lorsque le contenu ne peut plus tenir entièrement.
 - [x] **A/B polish léger — DEV_1** : reset A/B/A+B, suppression du résumé texte redondant, boutons LED conservés.
 - [x] **Titre de fenêtre entièrement i18n — DEV_1** : FR/EN.
-- [ ] **Langues programme** : allemand (DE) + espagnol (ES) ; communication externe reste surtout EN/FR, DE ponctuel possible.
+- [x] **Langues programme — DEV_6_R1 validée** : allemand (DE) + espagnol (ES) implémentés avec FR/EN, sélection par drapeaux, application dynamique et persistance. FR/EN sont les références relues ; DE/ES restent explicitement automatiques et partiellement revues. Communication externe surtout EN/FR, DE ponctuel possible.
+- [ ] **Packs de langue communautaires — version non fixée** : extraire à terme les textes du code vers des catalogues externes à identifiants sémantiques stables, puis charger les langues intégrées et personnalisées depuis un dossier utilisateur sans surveillance permanente.
+  - format de données uniquement, sans code exécutable : JSON versionné ou paquet `.s3lang` ; métadonnées `code`, nom natif, auteur, version, compatibilité et langue parente ;
+  - héritage par `extends` afin qu’une traduction, une variante régionale ou une langue fantaisie (LOLCAT, Shakespeare, etc.) puisse ne remplacer que les textes souhaités ; repli vers la langue parente puis l’anglais ;
+  - commandes utilisateur : ouvrir le dossier des langues, créer/exporter un modèle, vérifier un pack et recharger les langues ; apparition automatique des packs valides dans le sélecteur ;
+  - éditeur intégré envisageable : identifiant, références FR/EN, traduction, recherche, entrées manquantes, aperçu dynamique et export ;
+  - validation stricte : syntaxe, version, clés inconnues/manquantes, textes vides, Unicode, compatibilité programme et conservation exacte des variables `{seed}`, `{players}`, `{error}`, etc. ; un pack invalide ne doit jamais empêcher le démarrage ;
+  - icône facultative ; sinon badge neutre fondé sur le code de langue, plus adapté aux variantes et langues fictives qu’un drapeau obligatoire ;
+  - avant ce chantier, centraliser tous les événements de changement de langue et éliminer les derniers textes dispersés, notamment le rafraîchissement tardif du rapport Statistiques.
 - [ ] **Raccourcis v2** : capture/sélecteur de touches, plus d’actions, AZERTY/QWERTY, conflits/reset, JSON existant.
 - [ ] **Historique session amélioré** : imports + batch dans l’historique, taille configurable, assignation A/B facile.
 - [ ] **Premier vrai `.exe`** : packaging autonome sans Python/pip à installer.

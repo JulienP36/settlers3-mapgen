@@ -479,8 +479,54 @@ def stats_csv(stats: dict[str, Any]) -> str:
     return out.getvalue()
 
 
+def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
+    """Fully localized German/Spanish report without falling through to English."""
+    de=lang=='de';g=stats['general'];r=stats['resources'];v=stats['vegetation'];bs=stats['building_stones'];h=stats['height'].get('land_distribution',stats['height']['distribution']);hy=stats['hydrology'];p=stats['players'];ag=stats['agriculture'];d1000=stats.get('densities',{})
+    mineral_names={'de':{'coal':'Kohle','iron':'Eisen','gold':'Gold','gems':'Edelsteine','sulfur':'Schwefel'},'es':{'coal':'Carbón','iron':'Hierro','gold':'Oro','gems':'Gemas','sulfur':'Azufre'}}[lang]
+    lines=['ZUSAMMENFASSUNG' if de else 'RESUMEN','='*72]
+    lines.append(f"{g['side']}×{g['side']} — {g['cells']:,} "+('Zellen' if de else 'celdas'))
+    lines.append((f"Land {g['land_cells']:,} ({g['land_pct']:.2f} %) | Wasser {g['water_cells']:,} ({g['water_pct']:.2f} %) = Meer {g.get('ocean_cells',0):,} + Seen {g.get('inland_water_cells',0):,}" if de else f"Tierra {g['land_cells']:,} ({g['land_pct']:.2f} %) | Agua {g['water_cells']:,} ({g['water_pct']:.2f} %) = océano {g.get('ocean_cells',0):,} + lagos {g.get('inland_water_cells',0):,}"))
+    lines.append((f"Gebirge {g['mountain_cells']:,} ({g['mountain_pct_land']:.2f} % des Lands) | Wüste {g['desert_cells']:,} | Sumpf {g['swamp_cells']:,} | Schlamm {g['mud_cells']:,} | Fluss {g['river_cells']:,}" if de else f"Montaña {g['mountain_cells']:,} ({g['mountain_pct_land']:.2f} % de la tierra) | Desierto {g['desert_cells']:,} | Pantano {g['swamp_cells']:,} | Barro {g['mud_cells']:,} | Río {g['river_cells']:,}"))
+    lines+=['','RESSOURCEN' if de else 'RECURSOS','-'*72]
+    for key,data in r['minerals'].items():
+        name=mineral_names[key]
+        lines.append((f"{name:<12} {data['cells']:>8,} Zellen | Vorrat {data['stock']:>9,} | frei {data.get('open_stock',data['stock']):,} / unter Schnee {data.get('snow_covered_stock',0):,}" if de else f"{name:<12} {data['cells']:>8,} celdas | reserva {data['stock']:>9,} | libre {data.get('open_stock',data['stock']):,} / bajo nieve {data.get('snow_covered_stock',0):,}"))
+    lines.append((f"Belegung des Bergbaugebiets: {r['mining_occupied_cells']:,}/{r['mining_support_cells']:,} ({r['mining_support_occupancy_pct']:.2f} %)" if de else f"Ocupación del área minera: {r['mining_occupied_cells']:,}/{r['mining_support_cells']:,} ({r['mining_support_occupancy_pct']:.2f} %)"))
+    lines.append((f"Fische: {r['fish_cells']:,} Zellen | Vorrat {r['fish_stock']:,}" if de else f"Peces: {r['fish_cells']:,} celdas | reserva {r['fish_stock']:,}"))
+    lines+=['','FORSTRESSOURCEN & STEINE' if de else 'RECURSOS FORESTALES Y PIEDRAS','-'*72]
+    lines.append((f"Ausgewachsene Bäume: {v['adult_wood_trees']:,} | Palmen: {v['families']['palm']:,} | Setzlinge: {v['saplings']:,}" if de else f"Árboles adultos: {v['adult_wood_trees']:,} | Palmeras: {v['families']['palm']:,} | Retoños: {v['saplings']:,}"))
+    lines.append((f"Bausteine: {bs['anchors_total']:,} Haufen ({bs['anchors_exhausted_127']:,} erschöpft) | Vorrat {bs['stock_total']:,}" if de else f"Piedras de construcción: {bs['anchors_total']:,} pilas ({bs['anchors_exhausted_127']:,} agotadas) | reserva {bs['stock_total']:,}"))
+    if d1000:
+        lines+=['','NORMALISIERTE DICHTEN / 1000' if de else 'DENSIDADES NORMALIZADAS / 1000','-'*72]
+        density_rows=[('adult_trees_per_1000_land','Ausgewachsene Bäume','Árboles adultos','Land','tierra'),('palms_per_1000_land','Palmen','Palmeras','Land','tierra'),('saplings_per_1000_land','Setzlinge','Retoños','Land','tierra'),('building_stone_stock_per_1000_land','Steinvorrat','Reserva de piedra','Land','tierra'),('fish_stock_per_1000_water','Fischvorrat','Reserva de peces','Wasser','agua'),('mineral_stock_per_1000_mountain','Mineralvorrat','Reservas minerales','Gebirge','montaña'),('agriculture_cells_per_1000_land','Landwirtschaft','Agricultura','Land','tierra')]
+        for key,de_name,es_name,de_unit,es_unit in density_rows:lines.append(f"{de_name if de else es_name}: {d1000.get(key,0):.2f} / 1000 {de_unit if de else es_unit}")
+    lines+=['','HYDROLOGIE / HÖHE' if de else 'HIDROLOGÍA / ALTURA','-'*72]
+    lines.append((f"Binnengewässer: {hy['inland_water_components']} Komponenten | größte {hy['largest_inland_water']:,} Zellen | Flüsse {hy['river_components']} Komponenten" if de else f"Aguas interiores: {hy['inland_water_components']} componentes | mayor {hy['largest_inland_water']:,} celdas | ríos {hy['river_components']} componentes"))
+    lines.append((f"Landhöhen P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | Median {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}" if de else f"Alturas terrestres P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | mediana {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | máx {h['max']:.0f}"))
+    sp=stats.get('spatial',{})
+    if sp.get('mountains'):
+        ms=sp['mountains']['summary'];ds=sp['deserts']['summary'];ss=sp['swamps']['summary'];fs=sp['forests']['summary']
+        lines.append((f"Komponenten: Gebirge {ms['count']} (max {int(ms['size_distribution']['max']):,}) | Wüsten {ds['count']} | Sümpfe {ss['count']} | Wälder {fs['count']}" if de else f"Componentes: macizos {ms['count']} (máx {int(ms['size_distribution']['max']):,}) | desiertos {ds['count']} | pantanos {ss['count']} | bosques {fs['count']}"))
+    if any(ag.values()):
+        lines+=['','LANDWIRTSCHAFT' if de else 'AGRICULTURA','-'*72,(f"Weizen {ag['wheat']:,} | Weinreben {ag['vine']:,} | Reis {ag['rice']:,}" if de else f"Trigo {ag['wheat']:,} | Vid {ag['vine']:,} | Arroz {ag['rice']:,}")]
+    if p['starts']:
+        lines+=['','SPIELER / STARTPOSITIONEN' if de else 'JUGADORES / INICIOS','-'*72]
+        for row in p['nearest_start']:lines.append((f"P{row['player']}: nächster Gegner = {row['distance']} HEX" if de else f"P{row['player']}: oponente más cercano = {row['distance']} HEX"))
+        if p.get('local_resources'):
+            lines+=['','LOKALE RESSOURCEN — 0–50 / 50–100' if de else 'RECURSOS LOCALES — 0–50 / 50–100','-'*72]
+            for row in p['local_resources']:
+                m=row['radii'].get('50',{});ore=sum(v['stock'] for v in m.get('minerals',{}).values())
+                lines.append((f"P{row['player']}: Bäume {m.get('adult_trees',0):,} | Setzlinge {m.get('saplings',0):,} | Stein {m.get('building_stone_stock',0):,} | Fisch {m.get('fish_stock',0):,} | Mineral {ore:,}" if de else f"P{row['player']}: árboles {m.get('adult_trees',0):,} | retoños {m.get('saplings',0):,} | piedra {m.get('building_stone_stock',0):,} | peces {m.get('fish_stock',0):,} | mineral {ore:,}"))
+    lines+=['','DEBUG — ALLE VORHANDENEN GELÄNDE-IDs' if de else 'DEBUG — TODOS LOS IDs DE TERRENO PRESENTES','-'*72]
+    for row in stats['terrain']['ids']:lines.append(f"{row['id']:>3}  {('Gelände' if de else 'Terreno')+' '+str(row['id']):<28} {row['cells']:>9,}  {row['pct_map']:>7.3f} %")
+    lines+=['','DEBUG — ALLE VORHANDENEN OBJEKT-IDs' if de else 'DEBUG — TODOS LOS IDs DE OBJETO PRESENTES','-'*72]
+    for row in stats['objects']['ids']:lines.append(f"{row['id']:>3}  {('Objekt' if de else 'Objeto')+' '+str(row['id']):<28} {row['count']:>9,}")
+    return '\n'.join(lines)
+
+
 def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
-    fr = lang != 'en'
+    if lang in ('de','es'):return _format_stats_report_de_es(stats,lang)
+    fr = lang == 'fr'
     g = stats['general']; r = stats['resources']; v = stats['vegetation']; bs = stats['building_stones']; h = stats['height'].get('land_distribution', stats['height']['distribution']); hy = stats['hydrology']; p = stats['players']; ag = stats['agriculture']
     lines = []
     lines.append(('RÉSUMÉ' if fr else 'SUMMARY'))
