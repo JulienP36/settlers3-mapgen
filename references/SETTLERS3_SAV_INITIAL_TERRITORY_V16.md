@@ -30,14 +30,17 @@ Le masque exact est encodé dans `s3mapgen/preview.py` par 71 intervalles de lig
 
 ## Rendu
 
-- projection carrée : contour sur les vraies cellules ;
-- projection parallélogramme : le contour est projeté avec les pixels de la carte ;
-- labels joueurs restent non déformés ;
+- projection carrée : trajectoire du contour sur les vraies cellules ;
+- projection parallélogramme : même trajectoire projetée avec la carte ;
+- depuis v1.8 DEV_4_R4, exactement 210 marqueurs J1–J20 minimaux sans chevauchement, un par cellule de cette trajectoire exacte ;
+- opacité 0–100 % appliquée seulement aux marqueurs centraux et frontaliers, jamais au terrain sous-jacent ;
 - wrap-around de map géré par modulo pour les starts proches d'un bord.
 
 ## Séparation importante
 
-- **Vue Global** : contour du territoire **initial** autour du start d'origine ;
-- **Vue Territoires** : claims **runtime actuels** du SAV.
+- **Vue Global** : terrain épuré, sans start ni contour initial depuis v1.8 DEV_4_R1 ;
+- **Vue Départs** : contour du territoire **initial** autour du start d'origine + sprite joueur central ;
+- **Vue Territoires — SAV** : claims **runtime actuels** lus dans le fichier ;
+- **Vue Territoires — EDM/MAP** : reconstruction d'affichage du masque initial exact autour des starts, sans claim runtime prétendument lu dans le fichier.
 
 Les deux informations ne sont plus confondues.

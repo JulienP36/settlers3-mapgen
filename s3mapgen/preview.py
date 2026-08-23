@@ -1,9 +1,11 @@
 from __future__ import annotations
 from pathlib import Path
+import math
 import numpy as np
 from scipy import ndimage
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image,ImageDraw
 from .constants import *
+from .hexgrid import hex_distance
 from .model import MapState
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
@@ -11,8 +13,8 @@ PALETTE={GRASS:(72,148,69),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118)
 
 # Settlers III player-color palette validated for v1.6 STABLE.
 # Order follows player slots P1..P20; P1 is the canonical S3 red.  The palette
-# is intentionally centralized here so the global starts, claims and labels all
-# use exactly the same values.
+# is intentionally centralized here so Starts, Territories and Batch markers
+# all use exactly the same player-slot order.
 PLAYER_COLORS=(
     (205,30,16),   # P1 red
     (30,110,205),  # P2 blue
@@ -35,6 +37,37 @@ PLAYER_COLORS=(
     (205,180,135), # P19 beige
     (125,160,205), # P20 light blue
 )
+
+START_MARKER_SHEET=Path(__file__).resolve().parent.parent/'references'/'SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png'
+
+def _load_player_start_markers(path:Path=START_MARKER_SHEET)->tuple[Image.Image,...]:
+    """Extract the 20 user-provided native start markers without inventing pixels.
+
+    The reference has a flat editor-grass background. Connected components give
+    the exact two rows J1..J10 then J11..J20; the background becomes alpha.
+    """
+    try:
+        sheet=Image.open(path).convert('RGBA')
+    except OSError:
+        return ()
+    rgba=np.asarray(sheet);background=rgba[0,0,:3]
+    foreground=np.any(rgba[:,:,:3]!=background,axis=2)
+    labels,count=ndimage.label(foreground,structure=np.ones((3,3),dtype=np.uint8))
+    boxes=[]
+    for component in range(1,count+1):
+        ys,xs=np.where(labels==component)
+        if len(xs)<100:continue
+        boxes.append((int(ys.min()),int(xs.min()),int(ys.max()+1),int(xs.max()+1),component))
+    boxes.sort(key=lambda box:(box[0],box[1]))
+    if len(boxes)!=20:return ()
+    sprites=[]
+    for y0,x0,y1,x1,component in boxes:
+        crop=rgba[y0:y1,x0:x1].copy()
+        crop[:,:,3]=np.where(labels[y0:y1,x0:x1]==component,255,0).astype(np.uint8)
+        sprites.append(Image.fromarray(crop,'RGBA'))
+    return tuple(sprites)
+
+PLAYER_START_MARKERS=_load_player_start_markers()
 
 HEATMAP_RESOURCES={
     'trees':'Trees','building_stones':'Building Stones','fish':'Fish',
@@ -124,8 +157,12 @@ def _overlay_rgb(state:MapState,view:str,heatmap_resource:str='trees')->np.ndarr
         rgb[fam==0x10]=(0,0,0);rgb[fam==0x20]=(255,148,0);rgb[fam==0x30]=(255,255,0);rgb[fam==0x40]=(206,0,0);rgb[fam==0x50]=(196,178,92)
         fish=water&((R&0xF0)==0)&((R&0x0F)>0);rgb[fish]=(70,210,240)
     elif view=='territories':
-        rgb[:]=(65,65,65);palette=np.asarray(PLAYER_COLORS,np.uint8);claimed=C!=255
-        if claimed.any():rgb[claimed]=palette[C[claimed]%len(palette)]
+        rgb[:]=(65,65,65);palette=np.asarray(PLAYER_COLORS,np.uint8)
+        source_format=str(state.metadata.get('source_format','')).upper()
+        use_synthetic=source_format in ('EDM','MAP') or (not state.metadata.get('territories_available') and not np.any(C<len(palette)))
+        claims=_synthetic_initial_claims(state) if use_synthetic else C
+        claimed=claims<len(palette)
+        if claimed.any():rgb[claimed]=palette[claims[claimed]]
     elif view=='paths':
         # Paths view is intentionally restricted to runtime Terrain 28.
         # Terrain 22 is agricultural ground and belongs to the Crops view, not Paths.
@@ -144,46 +181,89 @@ def _blend(global_rgb,overlay_rgb,alpha):
     if a>=1:return overlay_rgb.copy()
     return np.rint(global_rgb.astype(np.float32)*(1-a)+overlay_rgb.astype(np.float32)*a).clip(0,255).astype(np.uint8)
 
-def _label_font(size=12):
-    try:return ImageFont.truetype('DejaVuSans-Bold.ttf',size)
-    except OSError:return ImageFont.load_default()
+def _synthetic_initial_claims(state:MapState)->np.ndarray:
+    """Reconstruct initial EDM/MAP territories from the exact native mask.
 
-def _pixel_label(text,color,size=12):
-    font=_label_font(size);probe=Image.new('1',(96,32),0);d=ImageDraw.Draw(probe);box=d.textbbox((0,0),text,font=font)
-    w=max(1,box[2]-box[0]);h=max(1,box[3]-box[1]);mask=Image.new('1',(w+6,h+6),0);ImageDraw.Draw(mask).text((3-box[0],3-box[1]),text,font=font,fill=1)
-    outline=Image.new('1',mask.size,0)
-    for ox,oy in ((-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,-1),(-1,1),(1,1)):
-        shifted=Image.new('1',mask.size,0);shifted.paste(mask,(ox,oy));outline=Image.fromarray(np.maximum(np.asarray(outline,dtype=np.uint8),np.asarray(shifted,dtype=np.uint8)).astype(np.uint8)*255).convert('1')
-    sprite=Image.new('RGB',mask.size,(0,0,0));sprite.paste(color,(0,0),mask);alpha=Image.fromarray(np.maximum(np.asarray(outline,dtype=np.uint8),np.asarray(mask,dtype=np.uint8)).astype(np.uint8)*255,'L');sprite.putalpha(alpha);return sprite
-
-def _paint_initial_territories(rgb:np.ndarray,state:MapState)->None:
-    """Paint the exact native initial-territory contour with a black halo.
-
-    The colored center still occupies the exact 210-cell native boundary. The
-    neighboring black cells are display-only and make pale player colors (P9
-    in particular) readable over any terrain without changing map data.
+    EDM/MAP imports do not expose SAV runtime claims.  This display-only layer
+    uses the confirmed 3500-cell initial mask around every real start.  If two
+    imported starts overlap, nearest HEX6 distance wins; ties keep the lower
+    player slot.  No field in the source map or MapState is modified.
     """
-    side=state.side
-    for i,start in enumerate(state.starts):
-        boundary=initial_territory_boundary(start,side)
-        halo=set()
-        for x,y in boundary:
-            for dx,dy in HEX6:
-                q=((x+dx)%side,(y+dy)%side)
-                if q not in boundary:halo.add(q)
-        for x,y in halo:rgb[y,x]=(0,0,0)
-        color=np.asarray(PLAYER_COLORS[i%len(PLAYER_COLORS)],np.uint8)
-        for x,y in boundary:rgb[y,x]=color
-
-def _draw_square_labels(im,state):
-    for i,(x,y) in enumerate(state.starts,1):
-        color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)];label=_pixel_label(f'P {i}',color,12);im.paste(label,((x+START_TERRITORY_RADIUS+2)%state.side,max(0,y-label.height//2)),label)
+    claims=np.full((state.side,state.side),255,dtype=np.uint8)
+    best=np.full((state.side,state.side),32767,dtype=np.int16)
+    for player,(sx,sy) in enumerate(state.starts[:len(PLAYER_COLORS)]):
+        for dx,dy in _CANONICAL_TERRITORY:
+            x,y=(sx+dx)%state.side,(sy+dy)%state.side
+            distance=hex_distance(0,0,dx,dy)
+            if distance<best[y,x]:
+                best[y,x]=distance;claims[y,x]=player
+    return claims
 
 def _project_point(x,y,source_height):return 2*x+(source_height-1-y),2*y
 
-def _draw_projected_labels(im,state,source_height):
-    for i,(x,y) in enumerate(state.starts,1):
-        color=PLAYER_COLORS[(i-1)%len(PLAYER_COLORS)];X,Y=_project_point(x,y,source_height);label=_pixel_label(f'P {i}',color,14);im.paste(label,(X+2*START_TERRITORY_RADIUS+4,Y-label.height//2),label)
+def _fallback_start_marker(player_index:int,projected:bool=False,scale:int=1)->Image.Image:
+    base=(36,48) if projected else (18,24);size=(base[0]*scale,base[1]*scale);w,h=size;color=PLAYER_COLORS[player_index%len(PLAYER_COLORS)]
+    marker=Image.new('RGBA',size,(0,0,0,0));draw=ImageDraw.Draw(marker)
+    draw.ellipse((1,1,w-2,w-2),fill=color,outline=(0,0,0,255),width=max(1,w//12))
+    draw.polygon(((w//2,h-1),(w//2-w//5,w-2),(w//2+w//5,w-2)),fill=color,outline=(0,0,0,255))
+    return marker
+
+BOUNDARY_START_MARKER_SIZE_SQUARE=(1,1)
+BOUNDARY_START_MARKER_SIZE_PROJECTED=(2,2)
+
+def _apply_marker_opacity(marker:Image.Image,opacity:int)->Image.Image:
+    opacity=max(0,min(100,int(opacity)))
+    if opacity>=100:return marker
+    marker=marker.copy();alpha=np.asarray(marker.getchannel('A'),dtype=np.uint16)
+    marker.putalpha(Image.fromarray(((alpha*opacity+50)//100).astype(np.uint8),'L'))
+    return marker
+
+def _start_marker(player_index:int,projected:bool=False,scale:int=1,opacity:int=100)->Image.Image:
+    if PLAYER_START_MARKERS:
+        marker=PLAYER_START_MARKERS[player_index%len(PLAYER_START_MARKERS)]
+        base=(marker.width,marker.height) if projected else (max(1,marker.width//2),max(1,marker.height//2))
+        target=(base[0]*scale,base[1]*scale)
+        if marker.size!=target:marker=marker.resize(target,Image.Resampling.NEAREST)
+        return _apply_marker_opacity(marker,opacity)
+    return _apply_marker_opacity(_fallback_start_marker(player_index,projected,scale),opacity)
+
+def _boundary_start_marker(player_index:int,projected:bool,opacity:int)->Image.Image:
+    marker=_start_marker(player_index,projected,1,opacity)
+    target=BOUNDARY_START_MARKER_SIZE_PROJECTED if projected else BOUNDARY_START_MARKER_SIZE_SQUARE
+    return marker if marker.size==target else marker.resize(target,Image.Resampling.NEAREST)
+
+def _centered_marker_origin(marker:Image.Image,x:int,y:int)->tuple[int,int]:
+    """Anchor a marker by its geometric centre, never by a corner or its foot."""
+    return int(x)-marker.width//2,int(y)-marker.height//2
+
+def _ordered_boundary_offsets(projected:bool)->tuple[tuple[int,int],...]:
+    """Return all 210 native boundary cells in deterministic visual order."""
+    def screen_point(offset):
+        x,y=offset
+        return (2*x-y,2*y) if projected else (x,y)
+    return tuple(sorted(_CANONICAL_BOUNDARY,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
+
+def _draw_square_start_markers(im:Image.Image,state:MapState,scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+    for i,(x,y) in enumerate(state.starts):
+        marker=_start_marker(i,False,scale,opacity)
+        if include_boundaries:
+            boundary_marker=_boundary_start_marker(i,False,opacity)
+            for dx,dy in _ordered_boundary_offsets(False):
+                bx,by=(x+dx)%state.side,(y+dy)%state.side
+                im.paste(boundary_marker,_centered_marker_origin(boundary_marker,bx,by),boundary_marker)
+        im.paste(marker,_centered_marker_origin(marker,x,y),marker)
+
+def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:int,scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+    for i,(x,y) in enumerate(state.starts):
+        marker=_start_marker(i,True,scale,opacity)
+        if include_boundaries:
+            boundary_marker=_boundary_start_marker(i,True,opacity)
+            for dx,dy in _ordered_boundary_offsets(True):
+                bx,by=(x+dx)%state.side,(y+dy)%state.side
+                X,Y=_project_point(bx,by,source_height)
+                im.paste(boundary_marker,_centered_marker_origin(boundary_marker,X,Y),boundary_marker)
+        X,Y=_project_point(x,y,source_height)
+        im.paste(marker,_centered_marker_origin(marker,X,Y),marker)
 
 def project_parallelogram(im):
     src=im.convert('RGBA');w,h=src.size;px=np.asarray(src);expanded=np.repeat(np.repeat(px,2,axis=0),2,axis=1);canvas=np.zeros((2*h,2*w+(h-1),4),dtype=np.uint8)
@@ -191,14 +271,17 @@ def project_parallelogram(im):
         shift=h-1-y;canvas[2*y:2*y+2,shift:shift+2*w]=expanded[2*y:2*y+2]
     return Image.fromarray(canvas,'RGBA')
 
-def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees'):
-    base=_global_rgb(state);rgb=base if view=='global' else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
-    if labels and view=='global':_paint_initial_territories(rgb,state)
+def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=False, start_marker_scale=1):
+    base=_global_rgb(state);rgb=base.copy() if view in ('global','starts') else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
     im=Image.fromarray(rgb,'RGB')
-    if labels and view=='global' and projection=='square':_draw_square_labels(im,state)
+    draw_start_markers=(labels and view=='starts') or bool(start_markers)
+    draw_start_boundaries=labels and view=='starts'
+    marker_opacity=overlay_alpha if draw_start_boundaries else 100
+    marker_scale=max(1,int(start_marker_scale))
+    if draw_start_markers and projection=='square':_draw_square_start_markers(im,state,marker_scale,draw_start_boundaries,marker_opacity)
     if projection=='parallelogram':
         source_height=im.height;im=project_parallelogram(im)
-        if labels and view=='global':_draw_projected_labels(im,state,source_height)
+        if draw_start_markers:_draw_projected_start_markers(im,state,source_height,marker_scale,draw_start_boundaries,marker_opacity)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im

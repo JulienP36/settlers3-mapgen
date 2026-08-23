@@ -101,8 +101,9 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 ## v1.8 — Workflow, accessibilité & production (13 axes validés)
 
 - [x] **Batch Generation — DEV_3_R7 validée sous Windows** : fenêtre 1–4 cartes, paramètres indépendants, seeds communes/individuelles, exécution séquentielle, cache, annulation en attente, historique, miniatures/tooltip dynamiques, assignation A/B exclusive, progression/feedback et nombre de cartes dynamique. DEV_3 terminée et synchronisée sur `dev`.
-- [ ] **Vue Territoires — palette joueurs exacte** : remplacer les couleurs provisoires par la palette J1–J20 déjà déterminée et validée dans [`SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png`](references/SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png), en conservant une correspondance unique entre joueur, territoire et autres vues concernées.
-- [ ] **Vue Départs dédiée — refonte des marqueurs** : sortir les positions de départ de la vue Global afin de l'épurer et créer une vue dédiée. Utiliser les marqueurs natifs J1–J20 comme point central de chaque départ ; étudier, après essai visuel, une frontière de zone initiale composée de marqueurs espacés en cercle plutôt qu'un contour abstrait. La référence utilisateur est archivée dans [`SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png`](references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png) : ligne haute J1–J10, ligne basse J11–J20, affichage observé dans l'éditeur sur herbe verte. Ne pas interpréter le fond vert comme faisant partie du sprite. L'utilisateur pourra éventuellement retoucher lui-même ces marqueurs pour leur donner une touche personnelle/modernisée ; conserver séparément l'original de référence et la variante retouchée.
+- [x] **Vue Territoires — palette joueurs exacte — DEV_4_R1 validée sous Windows** : claims 0..19 reliés strictement à la palette J1–J20 centralisée et validée dans [`SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png`](references/SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png) ; les valeurs inconnues ne sont plus recyclées par modulo.
+- [x] **Vue Départs dédiée — DEV_4_R4 validée sous Windows** : Global épurée, Carrée/Parallélogramme, centrage et opacité validés. La frontière conserve exactement 210 marqueurs à la taille minimale sans chevauchement, 1×1 Carrée / 2×2 Parallélogramme. Cet aspect devient la référence ; R3 reste seulement un repli historique.
+- [ ] **Label joueur de la Vue Départs — passe de conception dédiée** : réintroduire plus tard une identification J1–J20 après brainstorming de sa forme, de son ancrage, de sa position et de ses collisions, afin d'aboutir à un rendu fini plutôt qu'à un simple retour de l'ancien texte.
 - [ ] **Export maps multi-format** : popup, nom de base unique, cases EDM/MAP/SAV + option PNG de base ; conserver PNG vue courante séparé.
 - [ ] **Export Graphiques unifié** : étudier un bouton `Exporter…` multi-format (PNG/CSV/JSON selon contexte).
 - [x] **A/B polish léger — DEV_1** : reset A/B/A+B, suppression du résumé texte redondant, boutons LED conservés.
@@ -113,9 +114,11 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] **Premier vrai `.exe`** : packaging autonome sans Python/pip à installer.
 - [ ] **Icône application/exe** : infrastructure + placeholder simple ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
 - [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
-- [ ] **Registre de provenance des éléments visuels** : avant la passe d'iconographie, inventorier les icônes/images déjà utilisées ou proposées avec au minimum chemin, rôle, provenance exacte (Unicode/système, dessin du projet, fourni par l'utilisateur, ressource du jeu ou source externe), auteur/licence lorsque pertinent, éventuelles restrictions et remplaçabilité. Fournir ensuite cette liste à l'utilisateur afin qu'il puisse sélectionner ou fournir explicitement les icônes souhaitées.
-- [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée.
-- [ ] **Sprites natifs pour les positions de départ dans les miniatures/aperçus** : partir de la référence J1–J20 archivée, identifier et importer les petits sprites exacts du jeu depuis des ressources légitimement disponibles, puis les utiliser comme marqueurs déterministes plus compacts et épurés que les contours actuels. Ne rien inventer et conserver un fallback tant que les assets/IDs et leur transparence ne sont pas validés.
+- [~] **Registre de provenance des éléments visuels** : registre initial créé dans `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md` pour les références et assets actuellement utilisés ; le compléter avant chaque future intégration graphique externe.
+- [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée. La modernisation manuelle éventuelle des marqueurs J1–J20 est explicitement reportée à cette passe.
+- [x] **Sprites J1–J20 dans Départs et Batch — DEV_4_R4 validée sous Windows** : extraction, transparence, netteté, correspondance joueurs, centrage et opacité validés. Départs emploie 210 marqueurs minimaux 1×1 / 2×2 sur la frontière, plus le marqueur central validé. Batch conserve seulement le marqueur central compact.
+- [x] **Territoires EDM/MAP — DEV_4_R4 validée sous Windows** : Territoires est placé juste après Départs. Pour SAV, conserver les claims runtime réels. Pour EDM/MAP et états générés sans claims, reconstruire une couche initiale depuis le masque natif exact de 3500 cellules autour de chaque start ; ne jamais présenter cette couche comme une information lue dans le fichier. Chevauchements : départ HEX6 le plus proche, puis plus petit numéro de joueur en cas d'égalité.
+- [ ] **Réglage des marqueurs Batch** : tester une taille encore plus petite ; décider après essai entre un réglage global dans Paramètres et un contrôle local dans la fenêtre Batch. Prévoir au minimum une option d'affichage/masquage et, seulement si utile, quelques tailles discrètes plutôt qu'un réglage trop fin.
 - [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
 - [ ] **README transparence IA** : indiquer clairement conception/direction humaine + usage important de ChatGPT/OpenAI, notamment backend/analyse/reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
@@ -217,7 +220,7 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] Overlay de chargement centré dans la zone carte, responsive, détail technique dans la barre, validé en clair/sombre.
 - [x] Nettoyage de release effectué avant figement STABLE.
 - [ ] Later: dedicated Forests / Quarries view.
-- [ ] Later: move original SAV initial-territory outlines to a dedicated view if desired.
+- [x] DEV_4_R4 validated on Windows: dedicated Starts view uses 210 non-overlapping minimal markers and adjustable opacity; Territories follows Starts and reconstructs exact initial regions for EDM/MAP while preserving real SAV runtime claims.
 - [ ] Later: Amazon beehives only after IDs/runtime semantics are identified.
 - [ ] Later: broader exact ID naming pass.
 
@@ -230,7 +233,8 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - Le label texte d'un joueur peut sortir de la carte lorsqu'un départ est très proche de la côte droite. Ne pas investir dans un correctif isolé avant l'essai de la Vue Départs et des marqueurs natifs J1–J20, qui devraient remplacer ou rendre optionnels ces labels.
 - Faire une passe complète de consolidation/nomenclature des tables d'IDs connues et les exposer proprement dans l'inspecteur.
 - Envisager une vue dédiée Forêts / Carrières pour l'analyse des arbres et Building Stones.
-- Étudier des **Vues composables** : permettre d'activer plusieurs couches compatibles au lieu d'une seule vue exclusive. Commencer par définir les compatibilités, l'ordre de rendu, la légende et les conflits ; ne pas promettre que toutes les vues pourront être cumulées.
+- Étudier des **Vues composables** : permettre d'activer plusieurs couches compatibles au lieu d'une seule vue exclusive. `Global` / `Aucune` remettrait les autres couches à zéro. Définir avant implémentation les compatibilités, l'ordre de rendu, la légende et les conflits ; ne pas promettre que toutes les vues pourront être cumulées.
+- Repenser complètement la liste Vue avec les Graphiques. Chaque graphique pertinent pourra proposer un bouton-poussoir **Pilotage de la vue** : activé, il impose/verrouille sa couche cartographique associée et remplace temporairement la sélection manuelle ; désactivé, il restitue l'état précédent. Brainstorm requis sur le nom final, la visibilité du mode piloté, le comportement lors d'un changement de graphique et son interaction avec les vues composables.
 
 
 ## Après DEV_5 — Stats / UI à poursuivre
@@ -258,7 +262,7 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] Massifs/lacs/rivières : plus grand = plus foncé.
 - [x] A/B : couleurs sémantiques pour Terre, Stock pierre, Stock poisson.
 - [x] Tooltips interactifs génériques sur les barres/segments des Graphiques — DEV_10.
-- [ ] Synchronisation **optionnelle/désactivable** graphe ↔ vue map ; exemple Agriculture→Cultures, distances→vue relationnelle avec flèches.
+- [ ] **Pilotage de la vue** optionnel/désactivable depuis un graphique ; exemples Agriculture→Cultures, familles de terrain→surbrillance du biome survolé, distances→vue relationnelle avec flèches. Concevoir avec la future composition des vues avant de coder.
 - [ ] Ajouter les maps importées à l'historique session et rendre la taille de l'historique configurable (base actuelle 8).
 - [ ] Revoir netteté/résolution des exports PNG graphes et vue map.
 

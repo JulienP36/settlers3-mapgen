@@ -5,6 +5,8 @@ from s3mapgen.gui_v16 import (
 
 
 def test_french_view_terms_are_localized():
+    assert VIEW_LABELS['fr']['starts']=='Départs'
+    assert VIEW_LABELS['en']['starts']=='Starts'
     assert VIEW_LABELS['fr']['heightmap']=='Élévation'
     assert VIEW_LABELS['fr']['heatmap']=='Carte thermique'
     assert ARCHETYPE_LABELS['fr']['large_islands']=='Grandes îles'

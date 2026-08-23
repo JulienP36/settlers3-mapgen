@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-22 — v1.8 DEV_3_R7**
+> Last refreshed: **2026-08-23 — v1.8 DEV_4_R4 validée sous Windows**
 
 ## État release / Git
 
@@ -16,6 +16,7 @@
 - v1.7 = socle Stats/Graphs ; moteur de génération v1.5 validé/protégé inchangé.
 - v1.8 DEV_2_R7 validée sous Windows et synchronisée sur `dev` au commit `85e7bfb`.
 - Autorisation permanente du propriétaire : commits et pushs non destructifs autorisés sur `dev` sans confirmation ponctuelle, dans le périmètre et avec les exclusions définis par `PROJECT_WORKFLOW.md`.
+- Dernier checkpoint documentaire publié sur `dev` avant promotion : `a43f2d1` — consolidation roadmap + autorisation permanente. DEV_4_R4 est validée et autorisée pour promotion non destructive sur `dev`.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
@@ -263,9 +264,25 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 - Validation humaine DEV_3_R7 : espace barre/miniature, conteneur parallélogramme, centrage Carrée et nombre de cartes dynamique validés ; l'ensemble de DEV_3 est accepté.
 - Preuve v1.10 archivée : `references/SETTLERS3_V1_10_SEED_DIVERSITY_EVIDENCE_20260822.png`, seeds `69122063`, `958607757`, `1446058262`, `2085415098`. Le symptôme de macro-formes identiques/quasi identiques sous rotations ou symétries est confirmé visuellement, sans diagnostic de cause avant v1.10.
 
+## v1.8 DEV_4_R4 — Visualisations joueurs v4 validée
+
+- Base exacte : `dev` après le checkpoint documentaire `a43f2d1` ; aucun changement de génération.
+- Global ne contient plus ni contour initial ni label/position de départ.
+- Nouvelle Vue Départs FR/EN validée fonctionnellement en R1 : terrain global et masque initial natif exact, sans pollution de Global.
+- Les vingt sprites 36×48 sont extraits automatiquement de `SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png` ; le fond herbe uniforme devient transparent sans interpolation.
+- R2 a centré géométriquement chaque sprite sur sa coordonnée dans Départs et Batch ; ce centrage est validé sous Windows.
+- R3 est conservée comme repli visuel. R4 réduit ses 210 marqueurs frontaliers à la taille minimale sans chevauchement : 1×1 Carrée / 2×2 Parallélogramme. Le marqueur central conserve sa taille validée 18×24 / 36×48.
+- L'opacité devient disponible dans Départs et affecte seulement la couche de sprites : 100 % complet, 0 % identique à Global. Global reste verrouillée à 100 %.
+- Batch conserve uniquement ses marqueurs centraux compacts, sans frontière initiale. Un TODO séparé prévoit l'essai d'une taille réduite et d'un réglage/masquage dans Paramètres ou Batch.
+- La liste place désormais Territoires immédiatement après Départs.
+- Territoires SAV conserve strictement les claims runtime 0..19. Territoires EDM/MAP et états générés sans claims reconstruisent seulement à l'écran le masque initial exact de 3500 cellules autour de chaque start ; les chevauchements vont au départ HEX6 le plus proche, puis au joueur le plus petit en cas d'égalité.
+- La retouche/modernisation manuelle éventuelle des marqueurs est reportée à la future refonte Pixel Art.
+- Les labels ne sont pas réintroduits en R2 : une passe ultérieure devra concevoir leur forme, position, ancrage et gestion des collisions.
+- La refonte future Vues ↔ Graphiques est consignée sous le nom de travail `Pilotage de la vue`, conjointement avec l'étude des vues composables.
+
 ## Prochaine action recommandée
 
-Les dernières notes du TODO local ont été reçues et consolidées le 2026-08-22. Pour la suite proche de v1.8, privilégier d'abord un petit chantier cohérent autour des visualisations joueurs : palette exacte dans Territoires, puis conception/essai d'une Vue Départs dédiée utilisant les marqueurs natifs J1–J20. La capture de référence est archivée dans `references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png`.
+Validation Windows obtenue : finesse de la frontière sans chevauchement, ordre des vues, opacité, Territoires synthétique EDM/MAP et claims réels SAV acceptés. Promouvoir exactement R4 sur `dev` sans toucher à `main`.
 
 Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons. Un moteur de formes alternatif réellement distinct de Legacy/Upgraded reste une piste non versionnée à n'ouvrir qu'après v1.10 et la consolidation des objectifs natifs.
 
@@ -387,3 +404,12 @@ Conserver séparément : extraction éventuelle de la couleur effective des joue
 - 109 tests de régression PASS ; 49 validations moteur PASS ; checksum binaire PASS ; cinq hashes protégés inchangés.
 - Validation Windows finale terminée ; DEV_3 synchronisée sur `dev`.
 - Notes locales utilisateur récupérées et consolidées dans `TODO_MAPGEN.md` ; prochain checkpoint à choisir dans la fin de v1.8.
+
+## v1.8 DEV_4_R4 checkpoint
+
+- R1 validée fonctionnellement sous Windows : Global épurée, Départs dédiée, Territoires J1–J20, sprites nets/transparents, FR/EN, thèmes et zoom.
+- R2 validée : centrage géométrique dans Départs et Batch.
+- R3 : 210 marqueurs 3×4 / 6×8 et opacité Départs fonctionnelle ; conserver comme repli.
+- R4 validée sous Windows : 210 marqueurs sans chevauchement 1×1 / 2×2 ; Territoires placé après Départs et synthétisé depuis le masque natif exact pour EDM/MAP.
+- Labels reportés à une passe de conception ; retouche manuelle reportée à la refonte Pixel Art.
+- Validation automatisée R4 : 121 tests PASS ; vrais rendus EDM Départs/Territoires contrôlés en Parallélogramme ; 49 validations moteur et checksum binaire PASS ; cinq hashes protégés inchangés.

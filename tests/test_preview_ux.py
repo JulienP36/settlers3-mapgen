@@ -1,7 +1,7 @@
 import numpy as np
 from s3mapgen.model import MapState
 from s3mapgen.constants import GRASS
-from s3mapgen.preview import PLAYER_COLORS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, initial_territory_cells, initial_territory_boundary, render
+from s3mapgen.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, _synthetic_initial_claims, initial_territory_cells, initial_territory_boundary, render
 
 def _state(side=128):
     s=MapState.empty(side);s.terrain[:]=GRASS;s.height[:]=np.arange(side,dtype=np.uint8)[:,None];s.resources[8:12,8:12]=0x1f;s.claim[4:20,4:20]=0;return s
@@ -26,9 +26,13 @@ def test_initial_territory_wraps_without_losing_cells():
 def test_player_marker_palette_supports_twenty_players():
     assert len(PLAYER_COLORS)==20 and len(set(PLAYER_COLORS))==20
 
-def test_global_outline_uses_player_color_on_exact_boundary():
-    s=_state();s.starts=[(64,64)];a=np.asarray(render(s,labels=True,projection='square'));color=np.asarray(PLAYER_COLORS[0],dtype=np.uint8)
-    x,y=next(iter(initial_territory_boundary((64,64),128)));assert np.array_equal(a[y,x,:3],color)
+def test_global_is_clean_and_starts_view_adds_sprite_boundary():
+    s=_state();s.starts=[(64,64)]
+    clean=np.asarray(render(s,labels=True,view='global',projection='square'))
+    baseline=np.asarray(render(s,labels=False,view='global',projection='square'))
+    assert np.array_equal(clean,baseline)
+    starts=np.asarray(render(s,labels=True,view='starts',projection='square'))
+    assert not np.array_equal(starts,baseline)
 
 def test_crops_view_uses_distinct_wheat_vine_rice_colors():
     s=_state(32)
@@ -68,9 +72,66 @@ def test_player_9_is_near_white_and_distinct():
     assert min(PLAYER_COLORS[8]) >= 225
     assert len(set(PLAYER_COLORS)) == 20
 
-def test_initial_territory_colored_center_survives_black_halo():
+def test_start_marker_reference_extracts_twenty_ordered_native_sprites():
+    assert len(PLAYER_START_MARKERS)==20
+    assert {marker.size for marker in PLAYER_START_MARKERS}=={(36,48)}
+    assert all(marker.mode=='RGBA' and marker.getchannel('A').getbbox() for marker in PLAYER_START_MARKERS)
+
+def test_global_batch_marker_mode_adds_centers_without_initial_boundaries():
     s=_state();s.starts=[(64,64)]
-    a=np.asarray(render(s,labels=True,projection='square'))[:,:,:3]
-    boundary=initial_territory_boundary((64,64),128)
-    x,y=next(iter(boundary))
-    assert tuple(a[y,x])==PLAYER_COLORS[0]
+    clean=np.asarray(render(s,labels=False,view='global'))[:,:,:3]
+    marked=np.asarray(render(s,labels=False,view='global',start_markers=True,start_marker_scale=2))[:,:,:3]
+    assert not np.array_equal(clean[20:70,40:90],marked[20:70,40:90])
+    x,y=next(iter(initial_territory_boundary((64,64),128)))
+    assert tuple(marked[y,x])==tuple(clean[y,x])
+
+def test_territories_use_exact_player_palette_without_wrapping_unknown_claims():
+    s=_state(32);s.claim[:]=255
+    for player in range(20):s.claim[player,player]=player
+    s.claim[20,20]=20
+    rgb=np.asarray(render(s,view='territories',overlay_alpha=100,labels=False))[:,:,:3]
+    for player,color in enumerate(PLAYER_COLORS):assert tuple(rgb[player,player])==color
+    assert tuple(rgb[20,20])==(65,65,65)
+
+def test_start_marker_is_geometrically_centered_on_start_in_batch_mode():
+    s=_state();s.starts=[(64,64)]
+    clean=np.asarray(render(s,labels=False,view='global'))[:,:,:3]
+    marked=np.asarray(render(s,labels=False,view='global',start_markers=True))[:,:,:3]
+    ys,xs=np.where(np.any(clean!=marked,axis=2))
+    assert (xs.min(),ys.min(),xs.max()+1,ys.max()+1)==(55,52,73,76)
+    assert _centered_marker_origin(PLAYER_START_MARKERS[0].resize((18,24)),64,64)==(55,52)
+
+def test_sprite_boundary_uses_all_210_cells_of_the_exact_native_outline():
+    square=_ordered_boundary_offsets(False)
+    projected=_ordered_boundary_offsets(True)
+    canonical={(x-64,y-64) for x,y in initial_territory_boundary((64,64),128)}
+    assert len(square)==len(set(square))==210
+    assert len(projected)==len(set(projected))==210
+    assert set(square)==canonical and set(projected)==canonical
+    assert BOUNDARY_START_MARKER_SIZE_SQUARE==(1,1)
+    assert BOUNDARY_START_MARKER_SIZE_PROJECTED==(2,2)
+
+def test_starts_opacity_fades_only_markers_from_full_to_invisible():
+    s=_state();s.starts=[(64,64)]
+    global_view=np.asarray(render(s,labels=True,view='global',projection='square'))
+    hidden=np.asarray(render(s,labels=True,view='starts',overlay_alpha=0,projection='square'))
+    half=np.asarray(render(s,labels=True,view='starts',overlay_alpha=50,projection='square'))
+    full=np.asarray(render(s,labels=True,view='starts',overlay_alpha=100,projection='square'))
+    assert np.array_equal(hidden,global_view)
+    assert not np.array_equal(half,hidden)
+    assert not np.array_equal(half,full)
+
+def test_edm_and_map_territories_are_synthesized_from_exact_native_start_mask():
+    for source_format in ('EDM','MAP'):
+        s=_state();s.claim[:]=255;s.starts=[(64,64)];s.metadata.update(source_format=source_format,territories_available=False)
+        claims=_synthetic_initial_claims(s)
+        assert int((claims==0).sum())==3500
+        assert set(map(tuple,np.argwhere(claims==0)))==set((y,x) for x,y in initial_territory_cells((64,64),128))
+        rgb=np.asarray(render(s,view='territories',overlay_alpha=100,labels=False))[:,:,:3]
+        assert int(np.all(rgb==np.asarray(PLAYER_COLORS[0]),axis=2).sum())==3500
+
+def test_sav_territories_keep_runtime_claims_instead_of_synthetic_radius():
+    s=_state();s.claim[:]=255;s.claim[5,6]=1;s.starts=[(64,64)];s.metadata.update(source_format='SAV',territories_available=True)
+    rgb=np.asarray(render(s,view='territories',overlay_alpha=100,labels=False))[:,:,:3]
+    assert tuple(rgb[5,6])==PLAYER_COLORS[1]
+    assert tuple(rgb[64,64])==(65,65,65)

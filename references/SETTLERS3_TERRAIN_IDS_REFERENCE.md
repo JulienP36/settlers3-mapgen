@@ -27,8 +27,8 @@ Baseline: **MapGen v1.7 STABLE**.
 | 15 | Inconnu | Inconnu | À identifier |
 | 16 | Herbe | Grass | Connu |
 | 17 | Transition roche 1 | Rock transition 1 | Connu |
-| 18 | Inconnu | Inconnu | À identifier |
-| 19 | Inconnu | Inconnu | À identifier |
+| 18 | Détail herbe 1 | Grass detail 1 | Observé — nom provisoire |
+| 19 | Détail herbe 2 | Grass detail 2 | Observé — nom provisoire |
 | 20 | Transition herbe/désert | Grass/desert transition | Connu |
 | 21 | Transition herbe/marais | Grass/swamp transition | Connu |
 | 22 | Agriculture runtime | Runtime agriculture | Connu |

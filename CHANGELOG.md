@@ -1,3 +1,21 @@
+## v1.8 DEV_4_R4 — 2026-08-23
+- Adds a dedicated localized Starts view and removes all start labels/initial-territory overlays from the Global view.
+- Keeps the exact native 3500-cell initial-territory mask and 210-cell HEX6 boundary in the Starts view only.
+- Extracts J1–J20 start sprites deterministically from the user-provided editor reference, removes only its flat grass background and preserves nearest-neighbour pixel rendering.
+- Refines the exact 210-marker Starts outline to the smallest non-overlapping raster sizes: 1×1 in Square and 2×2 in Parallelogram; R3 remains the visual fallback.
+- Anchors central, boundary and compact Batch markers on their geometric center instead of their lower edge.
+- Enables the opacity slider in Starts and applies it only to its central/boundary sprite layer, from fully visible at 100% to absent at 0%; the terrain remains unchanged.
+- Uses compact center sprites in Batch mini-maps and their enlarged previews without adding the initial-territory boundary there.
+- Makes Territories claims use the centralized validated J1–J20 palette with strict claim IDs 0..19; unknown values no longer wrap to another player color.
+- Moves Territories immediately after Starts in the localized View list.
+- Keeps SAV Territories tied to real runtime claims, while EDM/MAP and claim-less generated states reconstruct display-only initial territories from the exact confirmed 3500-cell native mask around each real start.
+- Resolves synthetic initial-territory overlaps by nearest HEX6 distance, then lower player slot on ties; source map data remains untouched.
+- Records the later label-design pass and the broader composable Views / chart-driven View Control interaction as separate UX work.
+- Records a later Batch setting study for smaller, adjustable or disabled compact start markers.
+- Postpones any manual modernization of the marker sprites to the future hand-made Pixel Art redesign.
+- Windows validation completed: non-overlapping Starts borders, View ordering, opacity and EDM/MAP/SAV Territories behavior accepted by the user.
+- Generation engine, protected profiles and native library unchanged.
+
 ## v1.8 DEV_3_R7 — 2026-08-22
 - Removes the redundant Batch map-count Apply button.
 - Applies valid 1–4 map counts immediately from spin arrows or keyboard input; focus/Enter clamps invalid committed values back into range.

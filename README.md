@@ -20,7 +20,7 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_3 / moteur v1.5 stable
+## État actuel — v1.8 DEV_4_R4 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
@@ -31,17 +31,18 @@ La GUI v1.6 comprend notamment :
 
 - génération Legacy / Upgraded Continental 768×768 via le moteur v1.5 ;
 - import EDM / MAP / SAV et export EDM+MAP 768 ;
-- vues Global / Élévation / Ressources / Territoires / Chemins / Cultures / Carte thermique ;
+- vues Global / Départs / Territoires / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
 - FR/EN persistant ;
 - inspecteur exact de cellule ;
 - cache LRU de session (8 générations), historique et comparaison A/B légère ;
 - génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
+- vue Global épurée, Vue Départs dédiée avec 210 petits marqueurs sur le contour initial exact et opacité réglable ; miniatures Batch avec marqueurs compacts ;
 - raccourcis configurables/persistants avec détection de conflits et aide F1 ;
 - palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
 - **lecture des starts d'origine d'un SAV v11** et contour initial fondé sur le masque natif exact de 3500 cellules.
 
-Le contour SAV n'est plus une ellipse approximative : les coordonnées de départ sont lues dans le bloc joueur du SAV et le masque initial canonique a été reconstruit à partir de 145 régions natives identiques. La vue Territoires continue, elle, d'afficher les claims runtime actuels.
+Le contour SAV n'est plus une ellipse approximative : les coordonnées de départ sont lues dans le bloc joueur du SAV et le masque initial canonique a été reconstruit à partir de 145 régions natives identiques. DEV_4_R4 place un marqueur minimal sans chevauchement sur chacune des 210 cellules de cette frontière. Territoires affiche les claims runtime réels d'un SAV ; pour un EDM/MAP, elle reconstitue uniquement à l'écran les zones initiales exactes de 3500 cellules autour des starts, sans prétendre lire cette information dans le fichier.
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 

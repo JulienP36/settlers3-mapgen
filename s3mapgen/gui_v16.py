@@ -18,16 +18,17 @@ from .session_cache import GenerationCacheKey, SessionGenerationCache, SessionSt
 from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
 
-VIEWS.update({'Chemins':'paths','Cultures':'crops','Heatmap':'heatmap'})
+VIEWS.clear()
+VIEWS.update({'Global':'global','Départs':'starts','Territoires':'territories','Élévation':'heightmap','Ressources':'resources','Chemins':'paths','Cultures':'crops','Carte thermique':'heatmap'})
 
 VIEW_LABELS={
- 'fr':{'global':'Global','heightmap':'Élévation','resources':'Ressources','territories':'Territoires','paths':'Chemins','crops':'Cultures','heatmap':'Carte thermique'},
- 'en':{'global':'Global','heightmap':'Elevation','resources':'Resources','territories':'Territories','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
+ 'fr':{'global':'Global','starts':'Départs','territories':'Territoires','heightmap':'Élévation','resources':'Ressources','paths':'Chemins','crops':'Cultures','heatmap':'Carte thermique'},
+ 'en':{'global':'Global','starts':'Starts','territories':'Territories','heightmap':'Elevation','resources':'Resources','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_3_R7 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_3_R7 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_4_R4 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_4_R4 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -52,7 +53,7 @@ FEEDBACK_TEXT={
   'view_reset':'Vue recentrée.',
   'seed_randomized':'Nouveau seed aléatoire : {seed}',
   'graph_exported':'Export graphique terminé : {format} — {file}',
-  'opacity_locked':'L’opacité est disponible uniquement avec une vue de type couche.',
+  'opacity_locked':'L’opacité n’est pas disponible dans la vue Global.',
   'modifier_none':'Aucun modificateur actif.',
   'batch_opened':'Génération par lot prête — configurez de 1 à 4 cartes.',
   'batch_done':'Lot terminé — {success} réussie(s), {failed} erreur(s), {cancelled} annulée(s).',
@@ -78,7 +79,7 @@ FEEDBACK_TEXT={
   'view_reset':'View recentered.',
   'seed_randomized':'New random seed: {seed}',
   'graph_exported':'Chart export complete: {format} — {file}',
-  'opacity_locked':'Opacity is available only with an overlay-type view.',
+  'opacity_locked':'Opacity is not available in the Global view.',
   'modifier_none':'No modifier is active.',
   'batch_opened':'Batch generation ready — configure 1 to 4 maps.',
   'batch_done':'Batch complete — {success} succeeded, {failed} failed, {cancelled} cancelled.',
@@ -127,7 +128,7 @@ HEATMAP_LABELS={
 # glyphs by some Windows/Tk combinations, so the selectors now use tiny images
 # drawn by Pillow and attached to Tk menu entries.
 VIEW_ICON_COLORS={
- 'global':'#2698e8','heightmap':'#8f55d6','resources':'#ff9418','territories':'#31a354',
+ 'global':'#2698e8','starts':'#cd1e10','heightmap':'#8f55d6','resources':'#ff9418','territories':'#31a354',
  'paths':'#9a6438','crops':'#e4c83d','heatmap':'#d83737',
 }
 HEATMAP_ICON_COLORS={
@@ -200,6 +201,9 @@ def _selector_icon(master, color, kind='dot', size=18):
     if kind=='global':
         d.ellipse((2,2,size-3,size-3),fill=c,outline='#111111',width=1)
         d.arc((5,4,size-6,size-4),80,280,fill='#d7f2ff',width=1);d.line((3,size//2,size-4,size//2),fill='#d7f2ff',width=1)
+    elif kind=='starts':
+        d.ellipse((3,2,size-4,size-5),fill=c,outline='#111111',width=1);d.ellipse((7,6,size-8,size-9),fill='#fff2df')
+        d.polygon(((size//2,size-2),(size//2-3,size-7),(size//2+3,size-7)),fill=c,outline='#111111')
     elif kind=='heightmap':
         d.polygon([(2,size-3),(size//2,2),(size-3,size-3)],fill=c,outline='#111111');d.line((size//2,4,size//2-3,9),fill='#f2eaff',width=2)
     elif kind=='resources':
@@ -1253,7 +1257,7 @@ class App(V15StableApp):
     def _batch_render_thumbnail(self,row):
         out=row.get('result')
         if out is None:return
-        image=render(out.state,labels=False,view='global',overlay_alpha=100,projection=self.prefs.get('projection','square'),heatmap_resource='trees')
+        image=render(out.state,labels=False,view='global',overlay_alpha=100,projection=self.prefs.get('projection','square'),heatmap_resource='trees',start_markers=True,start_marker_scale=2)
         row['preview_image']=image
         thumb=image.copy();thumb.thumbnail((180,120),Image.Resampling.NEAREST)
         row['thumbnail_photo']=ImageTk.PhotoImage(thumb);row['thumbnail'].configure(image=row['thumbnail_photo'],text='')
