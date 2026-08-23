@@ -1,3 +1,29 @@
+## v1.8 DEV_5_R3 — 2026-08-23
+- Keeps both Export Centers modal and disables the Windows parent at the native window level while either center is open, blocking external clicks, wheel input, keyboard input and shortcuts.
+- Restores and focuses the main window when the modal center closes.
+- Gives unavailable export formats a dedicated muted, struck-through style in both themes while keeping the existing bilingual explanation below the choices.
+- Keeps all R1/R2 export behavior, geometry and theme fixes unchanged; generation engine and protected assets remain untouched.
+- Windows validation completed: strict modality, parent restoration, unavailable-state styling, explanations, bottom geometry and dark-theme hover behavior accepted.
+
+## v1.8 DEV_5_R2 — 2026-08-23
+- Disables the Current View PNG option when Global is selected because it would be pixel-identical to the dedicated Global PNG; Global PNG becomes the default preview export in that case.
+- Adds a bilingual explanation beside the disabled option.
+- Gives both export windows a small theme-independent bottom safety margin and lets their content frame fill the complete client area.
+- Colors the native Toplevel surface with the active theme to prevent any exposed system-color strip.
+- Explicitly themes normal, disabled, hovered and pressed Checkbutton states, preventing light system-color flashes in the dark theme.
+- Keeps every R1 export rule and output unchanged; generation engine and protected assets remain untouched.
+
+## v1.8 DEV_5_R1 — 2026-08-23
+- Replaces the direct all-at-once map export with a bilingual Map Export Center using one folder and one Windows-safe shared basename.
+- Offers independent EDM, MAP, unchanged source SAV, Global PNG and current-view PNG selections with an exact live filename summary.
+- Enables EDM/MAP only for the validated 768 scaffold and SAV only when the current output retains a real imported SAV source; no SAV writer is introduced.
+- Distinguishes a marker-free Global PNG in the active projection from the current rendered View PNG with its selected overlay and start layer.
+- Detects every existing destination before writing and asks for one grouped overwrite confirmation.
+- Replaces the three Chart export buttons with one bilingual multi-format Export Center for JSON, CSV and the currently displayed PNG chart.
+- Persists imported SAV source identity in map metadata so an SAV kept in A/B still exports the correct unchanged source after later navigation.
+- Adds pure export planning/sanitization helpers and an integration check that writes real EDM/MAP/PNG outputs.
+- Generation engine, protected profiles and native library unchanged; candidate awaits Windows validation.
+
 ## v1.8 DEV_4 PERF+ R1 — 2026-08-23
 - Builds a separate, reversible performance candidate from the Windows-validated DEV_4_R6 checkpoint.
 - Splits deterministic map rendering into a reusable marker-free square raster followed by lightweight projection and start-marker composition.

@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-23 — v1.8 DEV_4 PERF+ R1 validée sous Windows**
+> Last refreshed: **2026-08-23 — v1.8 DEV_5_R3 validée sous Windows**
 
 ## État release / Git
 
@@ -20,6 +20,7 @@
 - DEV_4_R5 validée et publiée sur `dev` au commit `7585042` : réglage persistant `Masqués / Petits / Normaux`, base raster sans marqueurs réutilisée et tooltip actualisé sans destruction.
 - DEV_4_R6 validée et publiée sur `dev` au commit `0f3e5f6` : déplacement de l'aperçu Batch épinglé, remplacement à position constante et double tampon lors des changements de projection/miniature.
 - DEV_4 PERF+ R1 validée sous Windows et intégrée à `dev` : cache raster en calques, invalidations ciblées et écritures de sliders différées. Aucune régression ni baisse de performances observable ; R6 reste le checkpoint historique de repli.
+- DEV_5_R3 est validée sous Windows : centres d’export cartes et Graphiques multi-format, option Vue actuelle non redondante, bas de fenêtres et survols corrigés, modalité Windows stricte et formats indisponibles grisés/barrés. La hauteur initiale est calculée depuis le contenu ; toute extension future devra ajouter une contrainte écran et un scroll de secours si nécessaire.
 
 
 ## v1.8 DEV_2 — Responsive UI v1 + Status/Feedback v1
@@ -83,13 +84,15 @@ Feature principale envisagée pour v1.8.
 
 Popup `Exporter…` avec :
 - un seul nom de base partagé ;
-- cases `.edm`, `.map`, `.sav` ;
-- option potentielle PNG de la vue de base ;
-- conserver séparément l'export PNG de la vue courante (overlays/zoom/vue active).
+- cases `.edm`, `.map`, copie `.sav` inchangée, PNG Global et PNG Vue actuelle ;
+- disponibilité dépendant uniquement des capacités réellement validées ;
+- noms exacts affichés avant export et écrasements confirmés en une fois.
+
+Implémenté dans DEV_5_R1, validation Windows en attente.
 
 ### 3. Export Graphiques unifié
 
-Étudier/remplacer les multiples boutons d'export par un bouton `Exporter…` ouvrant une popup avec formats applicables (PNG/CSV/JSON selon contexte). Garder une architecture extensible.
+Les multiples boutons sont remplacés dans DEV_5_R1 par un bouton `Exporter…` ouvrant une popup JSON/CSV/PNG avec dossier, nom partagé, aperçu des sorties et confirmation groupée. Validation Windows en attente.
 
 ### 4. A/B — polish léger
 

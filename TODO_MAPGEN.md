@@ -75,8 +75,8 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [ ] Futur : synchronisation optionnelle/désactivable Graphiques ↔ vue Map, hors périmètre du socle v1.7 initial.
 - [ ] Futur proche traduction : ajouter **allemand (DE)** et **espagnol (ES)** à l'interface ; inclure explicitement l'onglet Statistiques dans toutes les langues utilisateur.
 - [x] v1.8 DEV_1 : traduire intégralement le **titre de la fenêtre**, y compris le libellé du moteur.
-- [ ] v1.8 : refondre l'export map avec un popup unique : nom de base commun + cases `.EDM`, `.MAP`, `.SAV`, et option PNG de la vue de base ; conserver l'export PNG de la vue courante avec overlays séparément.
-- [ ] v1.8/futur Graphiques : étudier un bouton **Exporter…** unique ouvrant un popup multi-format, pouvant remplacer les boutons d'export séparés si l'UX est meilleure.
+- [x] v1.8 DEV_5_R3 : centre d’export map multi-format validé sous Windows ; géométrie/thème corrigés, modalité Windows stricte et formats indisponibles grisés/barrés.
+- [x] v1.8 DEV_5_R3 : bouton Graphiques **Exporter…** unique et popup JSON/CSV/PNG validés sous Windows ; mêmes corrections de géométrie, thème et modalité.
 - [ ] Futur proche : rendre configurables les **2 rayons** utilisés par Arbres/Pierres/Poissons/Stock minier proches (rester à deux intervalles ; pas de troisième rayon dans l'UI actuelle).
 - [ ] Futur Graphiques : proposer éventuellement plusieurs représentations d'une même métrique (ex. barres / donut) via un sélecteur, plutôt lors d'une grosse évolution Stats/Graphs.
 - [ ] Futur Graphiques : histogrammes de distribution des tailles de massifs/lacs/rivières.
@@ -96,6 +96,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **v1.8 DEV_2_R6 — test Windows + GIF effectué** : trois régions et minimum jugés très proches du résultat final ; GIF de redimensionnement validant la structure générale, mais révélant le bouton Thème coupé juste avant le passage compact, la zone globale pas complètement ancrée à droite et les identités A/B encore tronquées par largeur fixe.
 - [x] **v1.8 DEV_2_R7 — validée sous Windows** : GIF de redimensionnement contrôlé avec et sans A/B définis ; ancrage réel à droite, passage compact à 1750 px sans coupure, boutons A/B adaptatifs, croix rouge active et taille minimale validés.
 - [ ] **Status/Feedback v2 — grosse révision UI future** : couleurs sémantiques, jolies icônes dessinées/validées sans génération d’image IA, meilleure hiérarchie/priorité/temporisation, davantage d’actions liées et explications de contrôles indisponibles. Garder la zone concise : ce n’est pas un journal/log.
+- [ ] **Audit global des états interactifs — refonte UI future** : retrouver et harmoniser dans toute l’application les contrôles désactivés, verrouillés ou temporairement indisponibles ; vérifier normal/survol/pression/focus en clair et sombre. R3 expérimente dans les centres d’export le couple texte grisé + barré avant toute généralisation.
 - [ ] **Responsive UI v2 / refonte UI future** : revoir plus profondément l’organisation, breakpoints, densité, éventuels panneaux repliables/scroll de secours après retour d’usage sur v1.
 
 ## v1.8 — Workflow, accessibilité & production (13 axes validés)
@@ -104,8 +105,9 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Vue Territoires — palette joueurs exacte — DEV_4_R1 validée sous Windows** : claims 0..19 reliés strictement à la palette J1–J20 centralisée et validée dans [`SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png`](references/SETTLERS3_PLAYER_COLORS_20_REFERENCE_20260820.png) ; les valeurs inconnues ne sont plus recyclées par modulo.
 - [x] **Vue Départs dédiée — DEV_4_R4 validée sous Windows** : Global épurée, Carrée/Parallélogramme, centrage et opacité validés. La frontière conserve exactement 210 marqueurs à la taille minimale sans chevauchement, 1×1 Carrée / 2×2 Parallélogramme. Cet aspect devient la référence ; R3 reste seulement un repli historique.
 - [ ] **Label joueur de la Vue Départs — passe de conception dédiée** : réintroduire plus tard une identification J1–J20 après brainstorming de sa forme, de son ancrage, de sa position et de ses collisions, afin d'aboutir à un rendu fini plutôt qu'à un simple retour de l'ancien texte.
-- [ ] **Export maps multi-format** : popup, nom de base unique, cases EDM/MAP/SAV + option PNG de base ; conserver PNG vue courante séparé.
-- [ ] **Export Graphiques unifié** : étudier un bouton `Exporter…` multi-format (PNG/CSV/JSON selon contexte).
+- [x] **Export maps multi-format — DEV_5_R3 validée sous Windows** : popup bilingue, dossier et nom de base commun, sélection EDM/MAP/copie SAV inchangée/PNG Global/PNG vue actuelle, disponibilité explicite, résumé des noms et confirmation groupée. R2 désactive Vue actuelle lorsque Global la rendrait identique et corrige bas de fenêtre/survols ; R3 bloque toute interaction extérieure et rend les choix indisponibles grisés/barrés.
+- [x] **Export Graphiques unifié — DEV_5_R3 validée sous Windows** : bouton unique `Exporter…`, dossier et nom commun, sélection JSON/CSV/PNG du graphique affiché, résumé et confirmation groupée ; géométrie et états de thème corrigés en R2, modalité stricte en R3.
+- [ ] **Évolutivité future des centres d’export** : leur hauteur initiale est déjà calculée depuis le contenu réel. Si des formats supplémentaires sont ajoutés, préserver ce calcul puis contraindre la fenêtre à la hauteur visible de l’écran avec une zone défilable de secours lorsque le contenu ne peut plus tenir entièrement.
 - [x] **A/B polish léger — DEV_1** : reset A/B/A+B, suppression du résumé texte redondant, boutons LED conservés.
 - [x] **Titre de fenêtre entièrement i18n — DEV_1** : FR/EN.
 - [ ] **Langues programme** : allemand (DE) + espagnol (ES) ; communication externe reste surtout EN/FR, DE ponctuel possible.
@@ -121,7 +123,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Réglage des marqueurs Batch — DEV_4_R5 validée sous Windows** : réglage global persistant dans Paramètres, choix `Masqués / Petits / Normaux`, valeur par défaut `Petits`, actualisation immédiate des miniatures et du grand aperçu. Pilote de rendu par couches validé : base sans marqueurs conservée par résultat/projection, recomposition limitée aux sprites et remplacement atomique du tooltip sans clignotement.
 - [x] **Interaction grand aperçu Batch — DEV_4_R6 validée sous Windows** : un aperçu épinglé se déplace par glisser-déposer, un clic sur son image ne le ferme plus, cliquer une autre miniature remplace la carte à la même position, et recliquer la miniature source ferme l'aperçu. `Échap`, placement initial automatique, limites d'écran et survol temporaire sont conservés. Changements de projection et de miniature utilisent un double tampon validé pour afficher la nouvelle surface avant de retirer l'ancienne.
 - [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
-- [ ] **README transparence IA** : indiquer clairement conception/direction humaine + usage important de ChatGPT/OpenAI, notamment backend/analyse/reverse-engineering.
+- [x] **README transparence IA** : conception/direction humaine et usage important de ChatGPT/OpenAI explicitement indiqués, notamment pour le backend, l’analyse et le reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
 
 ### Rappel de checkpoint DEV_3
@@ -163,13 +165,13 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] Mesures PERF+ R1 sur la référence 768×768 : projection mise en cache ~7,6× plus rapide ; recomposition d'opacité Départs ~24× plus rapide ; parité pixel exacte dans les deux projections. Test Windows validé sans régression ni croissance problématique observée.
 - [ ] Si un fine tuning important est nécessaire, reporter l'ensemble vers une passe dédiée autour de v1.11, notamment avant ou avec les Vues cumulables et interactions Graphiques → carte.
 
-## v1.8 / workflow de génération — planifié après v1.7
+## v1.8 / workflow de génération — plan Batch historique désormais réalisé
 
-- [ ] **Génération par lot / Batch Generation** : fenêtre dédiée pour préparer et lancer plusieurs maps avec les mêmes paramètres disponibles qu’une génération unitaire (mode, archétype, taille, joueurs, seed, etc.).
-- [ ] Première version limitée à **4 maps simultanées** ; architecture extensible jusqu’à 8 seulement après mesure du coût réel RAM/temps/cache.
-- [ ] Chaque map du lot possède un état visuel compact (attente / génération / terminée / erreur) et ses propres paramètres.
-- [ ] Permettre d’affecter directement un résultat du batch au slot **Comparaison A** ou **Comparaison B**.
-- [ ] Réutiliser le pipeline de génération existant ; ne pas créer un second moteur divergent.
+- [x] **Génération par lot / Batch Generation** : fenêtre dédiée avec les paramètres ordinaires de génération, validée en DEV_3.
+- [x] Première version limitée à **4 maps simultanées** ; architecture extensible jusqu’à 8 seulement après mesure du coût réel RAM/temps/cache.
+- [x] Chaque map du lot possède un état visuel compact et ses propres paramètres.
+- [x] Affectation directe d’un résultat du Batch au slot **Comparaison A** ou **Comparaison B**.
+- [x] Pipeline de génération existant réutilisé sans moteur Batch divergent.
 - [ ] **Comparaison multi-maps 3+ : fonctionnalité planifiée à très forte probabilité**, distincte de l’A/B actuelle. Permettre de scinder le viewer en 2, 3 ou 4 zones, chacune compatible avec le système de Vues existant. La repousser après une grosse passe sur le générateur afin qu’elle serve ensuite de banc d’analyse rapide pour les évolutions profondes.
 - [ ] Prévoir la multi-comparaison comme outil particulièrement utile pour comparer plusieurs variantes d’un même seed, plusieurs tailles/configurations, et plus tard plusieurs combinaisons de **Modifiers**.
 - [ ] **Modifiers / Modificateurs** : fonctionnalité future conservée explicitement dans la roadmap. Objectif : appliquer volontairement des modifications fortes/amusement aux règles ou proportions de génération (ex. eau, montagnes, ressources, végétation, etc.) sans transformer chaque variante en nouvel archétype. Les paramètres exacts et garde-fous seront définis lors du chantier dédié.

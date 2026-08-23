@@ -3,6 +3,7 @@ import json, traceback, shutil
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from tkinter import font as tkfont
 from PIL import Image, ImageTk
 
 from .gui import App as BaseApp, VIEWS, NATIVE_LIMITS
@@ -85,6 +86,14 @@ class App(BaseApp):
         s.configure('Section.TLabel',background=bg,foreground=accent,font=('TkDefaultFont',10,'bold'));s.configure('Hint.TLabel',background=bg,foreground=muted)
         s.configure('TNotebook',background=bg,borderwidth=0);s.configure('TNotebook.Tab',background=panel,foreground=fg,padding=(10,6));s.map('TNotebook.Tab',background=[('selected',field)])
         s.configure('TButton',background=field,foreground=fg);s.map('TButton',background=[('active',panel)])
+        s.configure('TCheckbutton',background=bg,foreground=fg)
+        s.map('TCheckbutton',background=[('disabled',bg),('active',bg),('pressed',bg)],foreground=[('disabled',muted),('active',fg),('pressed',fg)])
+        unavailable='#747980' if dark else '#8a8d91'
+        if not hasattr(self,'_unavailable_font'):
+            self._unavailable_font=tkfont.nametofont('TkDefaultFont').copy()
+        self._unavailable_font.configure(overstrike=True)
+        s.configure('Unavailable.TCheckbutton',background=bg,foreground=unavailable,font=self._unavailable_font,indicatorcolor=panel)
+        s.map('Unavailable.TCheckbutton',background=[('disabled',bg)],foreground=[('disabled',unavailable)],indicatorcolor=[('disabled',panel)])
         s.configure('TCombobox',fieldbackground=field,background=field,foreground=fg,selectbackground=field,selectforeground=fg)
         s.map('TCombobox',fieldbackground=[('readonly',field),('disabled',field)],background=[('readonly',field),('disabled',field)],foreground=[('readonly',fg)],selectbackground=[('readonly',field)],selectforeground=[('readonly',fg)])
         self.option_add('*TCombobox*Listbox.background',field)
@@ -136,7 +145,8 @@ class App(BaseApp):
         if not path:return
         try:
             p=Path(path);ext=p.suffix.lower();self._task_begin(f'Import {p.name}…',8)
-            if ext=='.sav':state=read_sav_state(p)
+            if ext=='.sav':
+                state=read_sav_state(p);state.metadata.update({'source_format':'SAV','source_path':str(p),'territories_available':True})
             elif ext in ('.edm','.map'):
                 state=read_area(p);state.starts=read_starts(p);state.metadata.update({'source_format':ext[1:].upper(),'source_path':str(p),'territories_available':False})
             else:raise ValueError('Extension non supportée')

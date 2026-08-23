@@ -13,10 +13,11 @@ from .gui_v15 import App as V15StableApp
 from .binary import export_with_scaffold
 from .preview import render, render_square_base, compose_rendered_map, compose_start_markers, project_parallelogram, HEATMAP_RESOURCES
 from .preferences import save_settings, DEFAULT_SHORTCUTS
-from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD
+from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD, OUTPUT
 from .session_cache import GenerationCacheKey, SessionGenerationCache, SessionStatsCache
 from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
+from .export_center import safe_export_basename, map_export_capabilities, map_export_paths, stats_export_paths, existing_export_paths
 
 VIEWS.clear()
 VIEWS.update({'Global':'global','Départs':'starts','Territoires':'territories','Élévation':'heightmap','Ressources':'resources','Chemins':'paths','Cultures':'crops','Carte thermique':'heatmap'})
@@ -27,8 +28,8 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_4 PERF+ R1 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_4 PERF+ R1 — generation engine v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_5_R3 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_5_R3 — generation engine v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -171,6 +172,19 @@ TEXTS={
  'Session / Comparaison':{'en':'Session / Comparison'},'Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…':{'en':'Format: Ctrl+G, Ctrl+Shift+C, Alt+1, F1…'},
 }
 
+EXPORT_TEXT={
+ 'fr':{
+  'map_title':'Exporter la carte','stats_title':'Exporter les statistiques et le graphique','folder':'Dossier','browse':'Parcourir…','basename':'Nom de base','formats':'Formats','files':'Fichiers prévus','none':'Sélectionnez au moins un format.','cancel':'Annuler','export':'Exporter','overwrite_title':'Fichiers existants','overwrite':'Ces fichiers existent déjà :\n\n{files}\n\nLes remplacer ?','invalid_name':'Le nom de base est vide ou invalide.','invalid_folder':'Sélectionnez un dossier de sortie valide.','done':'Export terminé :\n\n{files}',
+  'edm':'Carte éditeur (.EDM)','map':'Carte jouable (.MAP)','sav':'SAV source inchangé (.SAV)','png_global':'Carte globale, projection active (.PNG)','png_current':'Vue actuelle avec ses couches (.PNG)','json':'Statistiques complètes (.JSON)','csv':'Statistiques complètes (.CSV)','png':'Graphique actuellement affiché (.PNG)',
+  'binary_unavailable':'EDM/MAP indisponibles : aucun scaffold validé pour cette taille.','sav_unavailable':'SAV indisponible : seule la copie inchangée d’un SAV importé est autorisée.','sav_exact':'Le SAV sera copié octet pour octet ; aucun writer SAV n’est utilisé.','current_unavailable':'Vue actuelle indisponible : avec Global, elle serait identique au PNG Global.','safe_name':'Les caractères incompatibles avec Windows sont remplacés par « _ ».',
+ },
+ 'en':{
+  'map_title':'Export map','stats_title':'Export statistics and chart','folder':'Folder','browse':'Browse…','basename':'Base name','formats':'Formats','files':'Planned files','none':'Select at least one format.','cancel':'Cancel','export':'Export','overwrite_title':'Existing files','overwrite':'These files already exist:\n\n{files}\n\nReplace them?','invalid_name':'The base name is empty or invalid.','invalid_folder':'Select a valid output folder.','done':'Export complete:\n\n{files}',
+  'edm':'Editor map (.EDM)','map':'Playable map (.MAP)','sav':'Unchanged source SAV (.SAV)','png_global':'Global map, active projection (.PNG)','png_current':'Current view with its layers (.PNG)','json':'Complete statistics (.JSON)','csv':'Complete statistics (.CSV)','png':'Currently displayed chart (.PNG)',
+  'binary_unavailable':'EDM/MAP unavailable: no validated scaffold exists for this size.','sav_unavailable':'SAV unavailable: only an unchanged copy of an imported SAV is allowed.','sav_exact':'The SAV is copied byte for byte; no SAV writer is used.','current_unavailable':'Current View unavailable: with Global selected, it would be identical to the Global PNG.','safe_name':'Characters incompatible with Windows are replaced with “_”.',
+ },
+}
+
 MINERAL_NAMES={0x10:'Coal',0x20:'Iron',0x30:'Gold',0x40:'Gemstones',0x50:'Sulfur'}
 TERRAIN_NAMES={16:'Grass',22:'Agricultural runtime',24:'Yellow Grass',28:'Worked/Path runtime',32:'Rocky',34:'Rocky detail',35:'Rock/Snow transition',48:'Shore',128:'Snow',129:'Snow transition',96:'River 1',97:'River 2',98:'River 3',99:'River 4'}
 
@@ -302,6 +316,7 @@ class App(V15StableApp):
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
         self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_hover_after=None;self._batch_i18n={}
+        self._map_export_window=None;self._stats_export_window=None
         super().__init__()
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
 
@@ -704,9 +719,7 @@ class App(V15StableApp):
         self.stats_chart_var=tk.StringVar(value=CHART_LABELS[self.prefs.get('language','fr')]['terrain_families'])
         self.stats_chart_combo=ttk.Combobox(controls,textvariable=self.stats_chart_var,state='readonly',width=40)
         self.stats_chart_combo.grid(row=0,column=1,sticky='ew',padx=(0,8));self.stats_chart_combo.bind('<<ComboboxSelected>>',lambda e:self._refresh_stats_chart())
-        ttk.Button(controls,text='Exporter JSON',command=self._export_stats_json).grid(row=0,column=2,padx=3)
-        ttk.Button(controls,text='Exporter CSV',command=self._export_stats_csv).grid(row=0,column=3,padx=3)
-        ttk.Button(controls,text='Exporter PNG',command=self._export_stats_chart).grid(row=0,column=4,padx=3)
+        self.stats_export_button=ttk.Button(controls,text='Exporter…',command=self._open_stats_export_center);self.stats_export_button.grid(row=0,column=2,padx=3)
         self.stats_chart_canvas=tk.Canvas(frame,highlightthickness=0,bg='#212225');self.stats_chart_canvas.grid(row=1,column=0,sticky='nsew')
         self.stats_chart_canvas.bind('<Configure>',lambda e:self._refresh_stats_chart(),add='+')
         self.stats_chart_canvas.bind('<Motion>',self._chart_tooltip_motion,add='+');self.stats_chart_canvas.bind('<Leave>',lambda e:self._hide_chart_tooltip(),add='+')
@@ -792,25 +805,93 @@ class App(V15StableApp):
             label.configure(text=text,background=bg,foreground=fg)
         tip.geometry(f"+{self.stats_chart_canvas.winfo_rootx()+event.x+14}+{self.stats_chart_canvas.winfo_rooty()+event.y+12}")
 
-    def _export_stats_json(self):
-        stats=self._ensure_stats_cache()
-        if not stats:return
-        path=filedialog.asksaveasfilename(defaultextension='.json',filetypes=[('JSON','*.json')],initialfile='map_stats.json')
-        if path:Path(path).write_text(stats_json(stats),encoding='utf-8');self._feedback('graph_exported','success',format='JSON',file=Path(path).name)
+    def _default_export_basename(self,stats=False):
+        source=self._current_source_path()
+        if source:return safe_export_basename(source.stem+('_stats' if stats else ''))
+        st=self.current.state;m=st.metadata
+        base=f"S3_{m.get('archetype','Imported')}_{m.get('mode','Map')}_{len(st.starts) or m.get('players',0)}P_{st.side}x{st.side}_seed_{m.get('seed','import')}_MapGenV1_8"
+        return safe_export_basename(base+('_stats' if stats else ''))
 
-    def _export_stats_csv(self):
-        stats=self._ensure_stats_cache()
-        if not stats:return
-        path=filedialog.asksaveasfilename(defaultextension='.csv',filetypes=[('CSV','*.csv')],initialfile='map_stats.csv')
-        if path:Path(path).write_text(stats_csv(stats),encoding='utf-8-sig');self._feedback('graph_exported','success',format='CSV',file=Path(path).name)
+    def _current_source_path(self):
+        if not self.current:return None
+        metadata=self.current.state.metadata;value=metadata.get('source_path')
+        if value:
+            path=Path(value)
+            if path.is_file():return path
+        source=getattr(self,'import_source',None)
+        return Path(source) if source and Path(source).is_file() and metadata.get('source_format') else None
 
-    def _export_stats_chart(self):
-        stats=self._ensure_stats_cache()
-        if not stats:return
-        path=filedialog.asksaveasfilename(defaultextension='.png',filetypes=[('PNG','*.png')],initialfile=f"stats_{self._stats_chart_key()}.png")
-        if not path:return
-        w=max(900,int(self.stats_chart_canvas.winfo_width()));h=max(520,int(self.stats_chart_canvas.winfo_height()))
-        im=render_stats_chart(stats,self._stats_chart_key(),lang=self.prefs.get('language','fr'),dark=self.prefs.get('theme','dark')=='dark',width=w,height=h,compare_stats=self._compare_stats_pair());im.save(path);self._feedback('graph_exported','success',format='PNG',file=Path(path).name)
+    def _choose_export_folder(self,var,parent):
+        chosen=filedialog.askdirectory(parent=parent,title=EXPORT_TEXT[self.prefs.get('language','fr')]['folder'],initialdir=var.get() or str(OUTPUT))
+        if chosen:var.set(chosen)
+
+    def _confirm_export_conflicts(self,paths,parent,text):
+        conflicts=existing_export_paths(paths)
+        if not conflicts:return True
+        names='\n'.join(f'• {p.name}' for p in conflicts)
+        return messagebox.askyesno(text['overwrite_title'],text['overwrite'].format(files=names),parent=parent)
+
+    def _close_export_center(self,attribute):
+        window=getattr(self,attribute,None)
+        if window is not None:
+            try:window.grab_release();window.destroy()
+            except tk.TclError:pass
+        setattr(self,attribute,None)
+        try:
+            if self.tk.call('tk','windowingsystem')=='win32':self.attributes('-disabled',False)
+            self.focus_force()
+        except tk.TclError:pass
+
+    def _activate_export_modal(self,window):
+        window.grab_set()
+        try:
+            if self.tk.call('tk','windowingsystem')=='win32':self.attributes('-disabled',True)
+        except tk.TclError:pass
+        window.focus_force()
+
+    def _place_export_center(self,window):
+        window.update_idletasks();width=window.winfo_reqwidth();height=window.winfo_reqheight()+16;screen_w=window.winfo_screenwidth();screen_h=window.winfo_screenheight()
+        x=max(0,min(self.winfo_rootx()+80,screen_w-width));y=max(0,min(self.winfo_rooty()+80,screen_h-height));window.geometry(f'{width}x{height}+{x}+{y}')
+
+    def _open_stats_export_center(self):
+        if not self.current:return
+        existing=self._stats_export_window
+        if existing is not None:
+            try:existing.deiconify();existing.lift();existing.focus_force();return
+            except tk.TclError:self._stats_export_window=None
+        lang=self.prefs.get('language','fr');text=EXPORT_TEXT[lang];w=tk.Toplevel(self);self._stats_export_window=w;w.title(text['stats_title']);w.transient(self);w.resizable(True,False);w.protocol('WM_DELETE_WINDOW',lambda:self._close_export_center('_stats_export_window'))
+        w.configure(background=self._ui_theme_colors.get('panel','#292a2d'));w.rowconfigure(0,weight=1)
+        body=ttk.Frame(w,padding=14);body.grid(sticky='nsew');body.columnconfigure(1,weight=1);w.columnconfigure(0,weight=1)
+        folder=tk.StringVar(value=str(OUTPUT));basename=tk.StringVar(value=self._default_export_basename(True));formats={key:tk.BooleanVar(value=True) for key in ('json','csv','png')}
+        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=54).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
+        ttk.Label(body,text=text['basename']).grid(row=1,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=basename).grid(row=1,column=1,columnspan=2,sticky='ew',padx=(8,0));ttk.Label(body,text=text['safe_name'],style='Hint.TLabel').grid(row=2,column=1,columnspan=2,sticky='w',padx=(8,0))
+        box=ttk.LabelFrame(body,text=text['formats'],padding=8);box.grid(row=3,column=0,columnspan=3,sticky='ew',pady=(12,8))
+        for col,key in enumerate(('json','csv','png')):ttk.Checkbutton(box,text=text[key],variable=formats[key]).grid(row=0,column=col,sticky='w',padx=(0 if col==0 else 14,0))
+        summary=tk.StringVar();ttk.Label(body,text=text['files']).grid(row=4,column=0,sticky='nw');ttk.Label(body,textvariable=summary,justify='left',wraplength=520).grid(row=4,column=1,columnspan=2,sticky='w',padx=(8,0))
+        actions=ttk.Frame(body);actions.grid(row=5,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],command=lambda:self._close_export_center('_stats_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export']);export_button.pack(side='left')
+        def planned():
+            try:return stats_export_paths(Path(folder.get()),basename.get(),[key for key,var in formats.items() if var.get()])
+            except ValueError:return {}
+        def refresh(*_):
+            paths=planned();summary.set('\n'.join(path.name for path in paths.values()) if paths else text['none']);export_button.configure(state='normal' if paths else 'disabled')
+        def perform():
+            paths=planned()
+            if not paths:return messagebox.showwarning(text['stats_title'],text['none'],parent=w)
+            target=Path(folder.get())
+            if not str(folder.get()).strip():return messagebox.showerror(text['stats_title'],text['invalid_folder'],parent=w)
+            if not self._confirm_export_conflicts(paths,w,text):return
+            try:
+                target.mkdir(parents=True,exist_ok=True);stats=self._ensure_stats_cache()
+                if 'json' in paths:paths['json'].write_text(stats_json(stats),encoding='utf-8')
+                if 'csv' in paths:paths['csv'].write_text(stats_csv(stats),encoding='utf-8-sig')
+                if 'png' in paths:
+                    width=max(900,int(self.stats_chart_canvas.winfo_width()));height=max(520,int(self.stats_chart_canvas.winfo_height()))
+                    render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=self.prefs.get('theme','dark')=='dark',width=width,height=height,compare_stats=self._compare_stats_pair()).save(paths['png'])
+                names='\n'.join(path.name for path in paths.values());self._close_export_center('_stats_export_window');self._feedback('graph_exported','success',format='/'.join(key.upper() for key in paths),file=target.name);messagebox.showinfo(text['stats_title'],text['done'].format(files=names),parent=self)
+            except Exception as error:messagebox.showerror(text['stats_title'],str(error),parent=w)
+        export_button.configure(command=perform)
+        for var in (folder,basename,*formats.values()):var.trace_add('write',refresh)
+        refresh();self._place_export_center(w);self._activate_export_modal(w)
 
     def _populate_current(self,imported=False):
         # These panels are reports, not editors. Temporarily unlock them only while refreshing.
@@ -1811,19 +1892,62 @@ class App(V15StableApp):
         messagebox.showinfo('Aide / Help','\n'.join(lines)+extra)
 
     def export(self):
+        self._open_map_export_center()
+
+    def _open_map_export_center(self):
         if not self.current:return
-        folder=filedialog.askdirectory(title='Dossier de sortie')
-        if not folder:return
-        try:
-            folder=Path(folder);st=self.current.state;side=st.side;self._task_begin('Export…',5)
-            base=(f"S3_{st.metadata.get('archetype','Imported')}_{st.metadata.get('mode','Map')}_{len(st.starts) or st.metadata.get('players',0)}P_{side}x{side}_seed_{st.metadata.get('seed','import')}_MapGenV1_6").replace(' ','');made=[]
-            if side==768:
-                edm=folder/(base+'.edm');mp=folder/('1-'+base+'.map');export_with_scaffold(st,EDM_SCAFFOLD,edm);self._task_progress(35,'Export MAP…');export_with_scaffold(st,MAP_SCAFFOLD,mp);made += [edm.name,mp.name]
-            else:made.append('EDM/MAP non réécrits : aucun scaffold validé pour cette taille.')
-            self._task_progress(62,'Export SAV/aperçu…')
-            if self.import_source and self.import_source.suffix.lower()=='.sav':sv=folder/(base+'.sav');shutil.copy2(self.import_source,sv);made.append(sv.name+' (copie SAV inchangée)')
-            else:made.append('SAV non exporté : writer SAV volontairement non implémenté/validé.')
-            png=folder/(base+'_preview.png');render(st,png,**self._render_options());made.append(png.name);self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['export_done']);messagebox.showinfo('Export','\n'.join(made))
-        except Exception as e:self._task_error('Erreur export');messagebox.showerror('Export',f'{e}')
+        existing=self._map_export_window
+        if existing is not None:
+            try:existing.deiconify();existing.lift();existing.focus_force();return
+            except tk.TclError:self._map_export_window=None
+        lang=self.prefs.get('language','fr');text=EXPORT_TEXT[lang];state=self.current.state;source_path=self._current_source_path();capabilities=map_export_capabilities(state.side,source_path);capabilities['png_current']=self._view_key()!='global'
+        w=tk.Toplevel(self);self._map_export_window=w;w.title(text['map_title']);w.transient(self);w.resizable(True,False);w.protocol('WM_DELETE_WINDOW',lambda:self._close_export_center('_map_export_window'))
+        w.configure(background=self._ui_theme_colors.get('panel','#292a2d'));w.rowconfigure(0,weight=1)
+        body=ttk.Frame(w,padding=14);body.grid(sticky='nsew');body.columnconfigure(1,weight=1);w.columnconfigure(0,weight=1)
+        folder=tk.StringVar(value=str(OUTPUT));basename=tk.StringVar(value=self._default_export_basename(False))
+        preferred_png='png_global' if self._view_key()=='global' else 'png_current'
+        formats={key:tk.BooleanVar(value=(capabilities[key] and (key in ('edm','map','sav') or key==preferred_png))) for key in capabilities}
+        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=58).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
+        ttk.Label(body,text=text['basename']).grid(row=1,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=basename).grid(row=1,column=1,columnspan=2,sticky='ew',padx=(8,0));ttk.Label(body,text=text['safe_name'],style='Hint.TLabel').grid(row=2,column=1,columnspan=2,sticky='w',padx=(8,0))
+        box=ttk.LabelFrame(body,text=text['formats'],padding=8);box.grid(row=3,column=0,columnspan=3,sticky='ew',pady=(12,6));box.columnconfigure(0,weight=1);box.columnconfigure(1,weight=1)
+        order=('edm','map','sav','png_global','png_current')
+        for index,key in enumerate(order):
+            check=ttk.Checkbutton(box,text=text[key],variable=formats[key]);check.grid(row=index//2,column=index%2,sticky='w',padx=(0 if index%2==0 else 14,0),pady=2)
+            if not capabilities[key]:check.configure(state='disabled',style='Unavailable.TCheckbutton')
+        hints=[]
+        if not capabilities['edm']:hints.append(text['binary_unavailable'])
+        if not capabilities['sav']:hints.append(text['sav_unavailable'])
+        else:hints.append(text['sav_exact'])
+        if not capabilities['png_current']:hints.append(text['current_unavailable'])
+        ttk.Label(body,text='\n'.join(hints),style='Hint.TLabel',justify='left',wraplength=620).grid(row=4,column=0,columnspan=3,sticky='w',pady=(2,8))
+        summary=tk.StringVar();ttk.Label(body,text=text['files']).grid(row=5,column=0,sticky='nw');ttk.Label(body,textvariable=summary,justify='left',wraplength=540).grid(row=5,column=1,columnspan=2,sticky='w',padx=(8,0))
+        actions=ttk.Frame(body);actions.grid(row=6,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],command=lambda:self._close_export_center('_map_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export']);export_button.pack(side='left')
+        def planned():
+            try:return map_export_paths(Path(folder.get()),basename.get(),[key for key,var in formats.items() if var.get() and capabilities[key]])
+            except ValueError:return {}
+        def refresh(*_):
+            paths=planned();summary.set('\n'.join(path.name for path in paths.values()) if paths else text['none']);export_button.configure(state='normal' if paths else 'disabled')
+        def perform():
+            paths=planned()
+            if not paths:return messagebox.showwarning(text['map_title'],text['none'],parent=w)
+            target=Path(folder.get())
+            if not str(folder.get()).strip():return messagebox.showerror(text['map_title'],text['invalid_folder'],parent=w)
+            if not self._confirm_export_conflicts(paths,w,text):return
+            self._close_export_center('_map_export_window')
+            try:
+                target.mkdir(parents=True,exist_ok=True);self._task_begin(text['map_title']+'…',5);total=len(paths);done=0
+                if 'edm' in paths:export_with_scaffold(state,EDM_SCAFFOLD,paths['edm']);done+=1;self._task_progress(5+85*done/total,paths['edm'].name)
+                if 'map' in paths:export_with_scaffold(state,MAP_SCAFFOLD,paths['map']);done+=1;self._task_progress(5+85*done/total,paths['map'].name)
+                if 'sav' in paths:
+                    if source_path.resolve()!=paths['sav'].resolve():shutil.copy2(source_path,paths['sav'])
+                    done+=1;self._task_progress(5+85*done/total,paths['sav'].name)
+                projection=self.prefs.get('projection','square')
+                if 'png_global' in paths:render(state,paths['png_global'],labels=False,view='global',overlay_alpha=100,projection=projection);done+=1;self._task_progress(5+85*done/total,paths['png_global'].name)
+                if 'png_current' in paths:render(state,paths['png_current'],labels=True,**self._render_options());done+=1;self._task_progress(5+85*done/total,paths['png_current'].name)
+                names='\n'.join(path.name for path in paths.values());self._task_done(FEEDBACK_TEXT[lang]['export_done']);messagebox.showinfo(text['map_title'],text['done'].format(files=names),parent=self)
+            except Exception as error:self._task_error('Erreur export' if lang=='fr' else 'Export error');messagebox.showerror(text['map_title'],str(error),parent=self)
+        export_button.configure(command=perform)
+        for var in (folder,basename,*formats.values()):var.trace_add('write',refresh)
+        refresh();self._place_export_center(w);self._activate_export_modal(w)
 
 def main():App().mainloop()
