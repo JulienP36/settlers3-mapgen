@@ -104,7 +104,8 @@ def test_r2_assignment_is_unique_and_batch_buttons_show_led_state():
     assert "moved=self._compare_slots.get(other) is out" in SRC
     assert "if moved:self._compare_slots[other]=None" in SRC
     assert "def _refresh_batch_assignment_buttons" in SRC
-    assert "image=self._compare_led_on if out is not None" in SRC
+    assert "active=out is not None and self._compare_slots.get(slot) is out" in SRC
+    assert "ctx['assigned_a' if slot=='A' else 'assigned_b']" in SRC
 
 
 def test_r2_action_order_and_colored_feedback_bar_are_explicit():

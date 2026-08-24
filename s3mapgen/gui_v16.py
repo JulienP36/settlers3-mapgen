@@ -1,6 +1,7 @@
 from __future__ import annotations
 import random
 import shutil
+import hashlib
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -14,7 +15,7 @@ from .binary import export_with_scaffold
 from .preview import render, render_square_base, compose_rendered_map, compose_start_markers, project_parallelogram, HEATMAP_RESOURCES
 from .preferences import save_settings, DEFAULT_SHORTCUTS
 from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD, OUTPUT
-from .session_cache import GenerationCacheKey, SessionGenerationCache, SessionStatsCache
+from .session_cache import GenerationCacheKey, ImportedHistoryKey, SessionGenerationCache, SessionStatsCache
 from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
 from .export_center import safe_export_basename, map_export_capabilities, map_export_paths, stats_export_paths, existing_export_paths
@@ -28,10 +29,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_6_R1 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_6_R1 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_6_R1 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_6_R1 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_7_R10 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_7_R10 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_7_R10 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_7_R10 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -168,7 +169,7 @@ TEXTS={
  'Sensibilité molette':{'en':'Mouse-wheel sensitivity'},'Navigation':{'en':'Navigation'},'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':{'en':'Mouse wheel: zoom\nLeft click + drag: move map\nZoom refresh is delayed to reduce recalculation.'},
  'Paramètres':{'en':'Settings'},'Validations':{'en':'Validations'},'Pipeline':{'en':'Pipeline'},'Métadonnées':{'en':'Metadata'},'Statistiques':{'en':'Statistics'},'Graphiques':{'en':'Charts'},'Exporter JSON':{'en':'Export JSON'},'Exporter CSV':{'en':'Export CSV'},'Exporter PNG':{'en':'Export PNG'},'Ressource Heatmap':{'en':'Heatmap resource'},'Filtre carte thermique':{'en':'Heatmap filter'},
  'Recentrer':{'en':'Reset view'},'Copier seed':{'en':'Copy seed'},'Langue':{'en':'Language'},'Aide':{'en':'Help'},'Historique session':{'en':'Session history'},
- 'Charger':{'en':'Load'},'Vider cache':{'en':'Clear cache'},'Définir A':{'en':'Set A'},'Définir B':{'en':'Set B'},'Basculer A/B':{'en':'Toggle A/B'},
+ 'Charger':{'en':'Load'},'Vider cache':{'en':'Clear cache'},'Gérer…':{'en':'Manage…'},"Capacité de l'historique":{'en':'History capacity'},'Cartes conservées uniquement pendant cette session.':{'en':'Maps are kept for this session only.'},'Définir A':{'en':'Set A'},'Définir B':{'en':'Set B'},'Basculer A/B':{'en':'Toggle A/B'},
  'Vider A':{'en':'Clear A'},'Vider B':{'en':'Clear B'},'Vider A+B':{'en':'Clear A+B'},
  'Raccourcis':{'en':'Shortcuts'},'Appliquer':{'en':'Apply'},'Valeurs par défaut':{'en':'Defaults'},'Réinitialiser':{'en':'Reset'},
  'Session / Comparaison':{'en':'Session / Comparison'},'Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…':{'en':'Format: Ctrl+G, Ctrl+Shift+C, Alt+1, F1…'},
@@ -227,6 +228,7 @@ _TEXTS_DE_ES={
  'Paramètres':('Einstellungen','Ajustes'),'Validations':('Prüfungen','Validaciones'),'Pipeline':('Pipeline','Proceso'),'Métadonnées':('Metadaten','Metadatos'),'Statistiques':('Statistiken','Estadísticas'),'Graphiques':('Diagramme','Gráficos'),'Exporter JSON':('JSON exportieren','Exportar JSON'),'Exporter CSV':('CSV exportieren','Exportar CSV'),'Exporter PNG':('PNG exportieren','Exportar PNG'),'Ressource Heatmap':('Heatmap-Ressource','Recurso del mapa de calor'),'Filtre carte thermique':('Heatmap-Filter','Filtro del mapa de calor'),
  'Recentrer':('Zentrieren','Centrar'),'Copier seed':('Seed kopieren','Copiar seed'),'Langue':('Sprache','Idioma'),'Aide':('Hilfe','Ayuda'),'Historique session':('Sitzungsverlauf','Historial de sesión'),
  'Charger':('Laden','Cargar'),'Vider cache':('Cache leeren','Vaciar caché'),'Définir A':('A festlegen','Definir A'),'Définir B':('B festlegen','Definir B'),'Basculer A/B':('A/B wechseln','Alternar A/B'),
+ 'Gérer…':('Verwalten…','Gestionar…'),"Capacité de l'historique":('Verlaufskapazität','Capacidad del historial'),'Cartes conservées uniquement pendant cette session.':('Karten werden nur während dieser Sitzung gespeichert.','Los mapas se conservan solo durante esta sesión.'),
  'Vider A':('A leeren','Vaciar A'),'Vider B':('B leeren','Vaciar B'),'Vider A+B':('A+B leeren','Vaciar A+B'),
  'Raccourcis':('Tastenkürzel','Atajos'),'Appliquer':('Übernehmen','Aplicar'),'Valeurs par défaut':('Standardwerte','Valores predeterminados'),'Réinitialiser':('Zurücksetzen','Restablecer'),
  'Session / Comparaison':('Sitzung / Vergleich','Sesión / Comparación'),'Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…':('Format: Strg+G, Strg+Umschalt+C, Alt+1, F1…','Formato: Ctrl+G, Ctrl+Mayús+C, Alt+1, F1…'),
@@ -264,6 +266,49 @@ EXPORT_TEXT.update({
 NONE_LABELS={'fr':'Aucun','en':'None','de':'Keine','es':'Ninguno'}
 LOWER_NONE_LABELS={'fr':'aucun','en':'none','de':'keine','es':'ninguno'}
 BATCH_HINTS={'fr':'1–4 cartes · paramètres indépendants · génération séquentielle','en':'1–4 maps · independent parameters · sequential generation','de':'1–4 Karten · unabhängige Parameter · sequenzielle Generierung','es':'1–4 mapas · parámetros independientes · generación secuencial'}
+
+HISTORY_TEXT={
+ 'fr':{'title':'Centre d’historique','origin':'Origine','map':'Carte','details':'Détails','preview':'Aperçu sélectionné','generated':'Génération','batch':'Lot','imported':'Import','show':'Afficher','set_a':'Affecter à A','set_b':'Affecter à B','delete':'Supprimer','clear':'Tout vider','close':'Fermer','empty':'Aucune carte dans cette session.','none':'Aucun','current':'Carte actuellement affichée','comparison':'Slot de comparaison : {slots}','mru':'Position MRU : {position}/{total}','source':'Source : {path}','protected':'Protégée : {reasons}','main_view':'vue principale','outside_history':'Carte affichée hors historique','confirm_clear':'Vider entièrement l’historique de session ?','confirm_clear_protected':'Des cartes sont protégées par : {reasons}. Les slots A/B seront libérés et la carte affichée restera visible hors historique. Continuer ?','delete_assigned':'Cette carte est protégée par : {reasons}. Sa suppression libérera ses slots A/B et, si elle est affichée, la laissera visible hors historique. Continuer ?','deleted':'Entrée supprimée de l’historique.','capacity':'{used} / {count} cartes · mémoire de session uniquement','capacity_reduce':'Réduire la capacité de {old} à {new} supprimera {removed} carte(s) ancienne(s) non protégée(s). Continuer ?'},
+ 'en':{'title':'History Center','origin':'Origin','map':'Map','details':'Details','preview':'Selected preview','generated':'Generated','batch':'Batch','imported':'Import','show':'Show','set_a':'Assign to A','set_b':'Assign to B','delete':'Delete','clear':'Clear all','close':'Close','empty':'No map in this session.','none':'None','current':'Currently displayed map','comparison':'Comparison slot: {slots}','mru':'MRU position: {position}/{total}','source':'Source: {path}','protected':'Protected: {reasons}','main_view':'main viewer','outside_history':'Displayed map outside history','confirm_clear':'Clear the entire session history?','confirm_clear_protected':'Maps are protected by: {reasons}. A/B slots will be cleared and the displayed map will remain visible outside history. Continue?','delete_assigned':'This map is protected by: {reasons}. Deleting it will clear its A/B slots and, if displayed, leave it visible outside history. Continue?','deleted':'History entry deleted.','capacity':'{used} / {count} maps · session memory only','capacity_reduce':'Reducing capacity from {old} to {new} will remove {removed} older unprotected map(s). Continue?'},
+ 'de':{'title':'Verlaufszentrum','origin':'Quelle','map':'Karte','details':'Details','preview':'Ausgewählte Vorschau','generated':'Generiert','batch':'Stapel','imported':'Import','show':'Anzeigen','set_a':'A zuweisen','set_b':'B zuweisen','delete':'Löschen','clear':'Alles leeren','close':'Schließen','empty':'Keine Karte in dieser Sitzung.','none':'Keine','current':'Aktuell angezeigte Karte','comparison':'Vergleichsplatz: {slots}','mru':'MRU-Position: {position}/{total}','source':'Quelle: {path}','protected':'Geschützt: {reasons}','main_view':'Hauptansicht','outside_history':'Angezeigte Karte außerhalb des Verlaufs','confirm_clear':'Den gesamten Sitzungsverlauf leeren?','confirm_clear_protected':'Karten sind geschützt durch: {reasons}. A/B werden freigegeben; die angezeigte Karte bleibt außerhalb des Verlaufs sichtbar. Fortfahren?','delete_assigned':'Diese Karte ist geschützt durch: {reasons}. Beim Löschen werden A/B freigegeben; eine angezeigte Karte bleibt außerhalb des Verlaufs sichtbar. Fortfahren?','deleted':'Verlaufseintrag gelöscht.','capacity':'{used} / {count} Karten · nur Sitzungsspeicher','capacity_reduce':'Die Verringerung von {old} auf {new} entfernt {removed} ältere ungeschützte Karte(n). Fortfahren?'},
+ 'es':{'title':'Centro de historial','origin':'Origen','map':'Mapa','details':'Detalles','preview':'Vista previa seleccionada','generated':'Generación','batch':'Lote','imported':'Importación','show':'Mostrar','set_a':'Asignar a A','set_b':'Asignar a B','delete':'Eliminar','clear':'Vaciar todo','close':'Cerrar','empty':'No hay mapas en esta sesión.','none':'Ninguno','current':'Mapa mostrado actualmente','comparison':'Ranura de comparación: {slots}','mru':'Posición MRU: {position}/{total}','source':'Origen: {path}','protected':'Protegido: {reasons}','main_view':'visor principal','outside_history':'Mapa mostrado fuera del historial','confirm_clear':'¿Vaciar todo el historial de sesión?','confirm_clear_protected':'Hay mapas protegidos por: {reasons}. Se vaciarán A/B y el mapa mostrado seguirá visible fuera del historial. ¿Continuar?','delete_assigned':'Este mapa está protegido por: {reasons}. Al eliminarlo se vaciarán sus ranuras A/B y, si está mostrado, seguirá visible fuera del historial. ¿Continuar?','deleted':'Entrada eliminada del historial.','capacity':'{used} / {count} mapas · solo memoria de sesión','capacity_reduce':'Reducir la capacidad de {old} a {new} eliminará {removed} mapa(s) antiguo(s) no protegido(s). ¿Continuar?'},
+}
+
+_CONTEXT_TEXT={
+ 'fr':{'loaded':'Chargée !','shown':'Affichée !','assigned_a':'Affectée à A !','assigned_b':'Affectée à B !','lock_tip':'Protection : {roles}','viewer_role':'V = vue principale','manual_role':'M = verrouillage manuel','outside_tip':'Cette carte reste affichée, mais elle ne se trouve plus dans le cache de session.'},
+ 'en':{'loaded':'Loaded!','shown':'Shown!','assigned_a':'Assigned to A!','assigned_b':'Assigned to B!','lock_tip':'Protection: {roles}','viewer_role':'V = main viewer','manual_role':'M = manual lock','outside_tip':'This map is still displayed, but is no longer in the session cache.'},
+ 'de':{'loaded':'Geladen!','shown':'Angezeigt!','assigned_a':'A zugewiesen!','assigned_b':'B zugewiesen!','lock_tip':'Schutz: {roles}','viewer_role':'V = Hauptansicht','manual_role':'M = manuelle Sperre','outside_tip':'Diese Karte wird noch angezeigt, befindet sich aber nicht mehr im Sitzungscache.'},
+ 'es':{'loaded':'¡Cargado!','shown':'¡Mostrado!','assigned_a':'¡Asignado a A!','assigned_b':'¡Asignado a B!','lock_tip':'Protección: {roles}','viewer_role':'V = visor principal','manual_role':'M = bloqueo manual','outside_tip':'Este mapa sigue mostrándose, pero ya no está en la caché de sesión.'},
+}
+
+_BATCH_CAPACITY_TEXT={
+ 'fr':{'title':'Capacité du cache dépassée','intro':'Si toutes les cartes réussissent, ce lot modifiera le cache de session ({used}/{capacity} actuellement).','existing':'• {count} carte(s) actuellement dans l’historique en sortiront.','batch':'• {count} résultat(s) du lot ne resteront pas dans le cache.','kept':'Tous les résultats resteront consultables dans cette fenêtre jusqu’à sa fermeture.','question':'Continuer la génération ?','continue':'Continuer','cancel':'Annuler'},
+ 'en':{'title':'Cache capacity exceeded','intro':'If every map succeeds, this batch will modify the session cache (currently {used}/{capacity}).','existing':'• {count} map(s) currently in history will be removed.','batch':'• {count} batch result(s) will not remain in the cache.','kept':'All results remain available in this window until it is closed.','question':'Continue generation?','continue':'Continue','cancel':'Cancel'},
+ 'de':{'title':'Cache-Kapazität überschritten','intro':'Wenn alle Karten erfolgreich sind, verändert dieser Stapel den Sitzungscache (aktuell {used}/{capacity}).','existing':'• {count} derzeitige Verlaufskarte(n) werden entfernt.','batch':'• {count} Stapelergebnis(se) bleiben nicht im Cache.','kept':'Alle Ergebnisse bleiben bis zum Schließen dieses Fensters verfügbar.','question':'Generierung fortsetzen?','continue':'Fortfahren','cancel':'Abbrechen'},
+ 'es':{'title':'Capacidad de caché superada','intro':'Si todos los mapas se completan, este lote modificará la caché de sesión (actualmente {used}/{capacity}).','existing':'• {count} mapa(s) del historial actual saldrán de la caché.','batch':'• {count} resultado(s) del lote no permanecerán en la caché.','kept':'Todos los resultados seguirán disponibles en esta ventana hasta cerrarla.','question':'¿Continuar la generación?','continue':'Continuar','cancel':'Cancelar'},
+}
+
+_BATCH_RETENTION_TEXT={
+ 'fr':{'not_cached':'Terminée · non conservée dans le cache','finished_retention':'Lot terminé : {success} réussie(s), {failed} erreur(s), {cancelled} annulée(s) · {lost} résultat(s) hors cache.'},
+ 'en':{'not_cached':'Complete · not retained in cache','finished_retention':'Batch complete: {success} succeeded, {failed} failed, {cancelled} cancelled · {lost} result(s) outside cache.'},
+ 'de':{'not_cached':'Fertig · nicht im Cache behalten','finished_retention':'Stapel abgeschlossen: {success} erfolgreich, {failed} Fehler, {cancelled} abgebrochen · {lost} Ergebnis(se) außerhalb des Caches.'},
+ 'es':{'not_cached':'Completado · no conservado en caché','finished_retention':'Lote terminado: {success} correctos, {failed} errores, {cancelled} cancelados · {lost} resultado(s) fuera de la caché.'},
+}
+for _lang,_values in _BATCH_RETENTION_TEXT.items():BATCH_TEXT[_lang].update(_values)
+
+_HISTORY_CAPACITY_DIALOG_TEXT={
+ 'fr':{'title':'Réduire la capacité de l’historique','continue':'Réduire','cancel':'Annuler'},
+ 'en':{'title':'Reduce history capacity','continue':'Reduce','cancel':'Cancel'},
+ 'de':{'title':'Verlaufskapazität verringern','continue':'Verringern','cancel':'Abbrechen'},
+ 'es':{'title':'Reducir la capacidad del historial','continue':'Reducir','cancel':'Cancelar'},
+}
+
+# One semantic palette drives both built-in themes.  New UI blocks should use
+# these roles (or one of the named ttk styles below) instead of embedding colors.
+THEME_PALETTES={
+ 'dark':{'window':'#202124','panel':'#292a2d','surface':'#303134','surface_alt':'#34363a','field':'#303134','text':'#e8eaed','muted':'#aeb4bc','disabled':'#7f858d','border':'#5f6368','hover':'#3c4043','pressed':'#4a4d51','selection':'#315f86','selection_text':'#ffffff','primary':'#2f7ed8','success':'#34a853','warning':'#f9ab00','danger':'#d93025','info':'#8ab4f8','canvas':'#111214'},
+ 'light':{'window':'#f2f2f2','panel':'#e5e5e5','surface':'#ffffff','surface_alt':'#f5f6f7','field':'#ffffff','text':'#202124','muted':'#5f6368','disabled':'#8a8f98','border':'#aeb3b8','hover':'#d8e3f3','pressed':'#c5d7ee','selection':'#3d6f9b','selection_text':'#ffffff','primary':'#2459a9','success':'#238636','warning':'#b26a00','danger':'#c5221f','info':'#2459a9','canvas':'#d6d6d6'},
+}
 
 def _lang_text(lang,fr,en,de,es):
     return {'fr':fr,'en':en,'de':de,'es':es}.get(lang,en)
@@ -342,10 +387,56 @@ def _selector_icon(master, color, kind='dot', size=18):
         d.rounded_rectangle((4,8,size-4,size-3),radius=2,fill=c,outline='#111111');d.arc((5,2,size-5,11),180,360,fill=c,width=3);d.ellipse((8,11,10,13),fill='#ffffff')
     elif kind=='lock_open':
         d.rounded_rectangle((4,8,size-4,size-3),radius=2,fill=c,outline='#111111');d.arc((7,2,size-2,11),180,315,fill=c,width=3);d.ellipse((8,11,10,13),fill='#ffffff')
+    elif kind=='status_on':
+        d.ellipse((0,0,size-1,size-1),fill=c,outline='#111111',width=1)
+        d.line((size*0.23,size*0.52,size*0.43,size*0.71,size*0.77,size*0.29),fill='#ffffff',width=max(2,size//6),joint='curve')
+    elif kind=='status_off':
+        d.ellipse((2,2,size-3,size-3),fill='#ffffff',outline='#111111',width=1)
+        d.ellipse((4,4,size-5,size-5),fill=None,outline=c,width=max(2,size//7))
+    elif kind=='warning':
+        d.polygon(((size//2,1),(size-2,size-3),(2,size-3)),fill=c,outline='#111111')
+        d.line((size//2,5,size//2,size-8),fill='#111111',width=max(2,size//8));d.ellipse((size//2-1,size-6,size//2+1,size-4),fill='#111111')
+    elif kind=='blank':
+        pass
     else:
         # Generic resource swatch: double outline avoids black/white disappearing.
         d.ellipse((1,1,size-2,size-2),fill='#ffffff',outline='#111111',width=1)
         d.ellipse((3,3,size-4,size-4),fill=c,outline='#444444' if c.lower()!='#101010' else '#eeeeee',width=1)
+    return ImageTk.PhotoImage(im,master=master)
+
+
+def _thumbnail_with_magnifier(image,state='idle'):
+    """Composite a large translucent magnifier without an opaque backing box."""
+    base=image.convert('RGBA');overlay=Image.new('RGBA',base.size,(0,0,0,0));draw=ImageDraw.Draw(overlay)
+    short=max(1,min(base.size));radius=max(12,round(short*.17));handle=max(10,round(short*.14));cx=base.width//2-4;cy=base.height//2-4
+    alpha={'idle':58,'hover':205,'active':238,'preview_hover':236,'close_hover':245}.get(state,58)
+    accent={'idle':(245,248,252,alpha),'hover':(138,190,255,alpha),'active':(72,210,128,alpha),'preview_hover':(178,132,255,alpha),'close_hover':(255,184,92,alpha)}.get(state,(245,248,252,alpha))
+    shadow=(0,0,0,min(170,alpha+42));fill=(12,20,28,22 if state=='idle' else 50)
+    box=(cx-radius,cy-radius,cx+radius,cy+radius);width=max(3,round(short*.035))
+    draw.ellipse((box[0]+2,box[1]+2,box[2]+2,box[3]+2),fill=(0,0,0,28),outline=shadow,width=width+2)
+    draw.ellipse(box,fill=fill,outline=accent,width=width)
+    start=(cx+round(radius*.68),cy+round(radius*.68));end=(start[0]+handle,start[1]+handle)
+    draw.line((start[0]+2,start[1]+2,end[0]+2,end[1]+2),fill=shadow,width=width+3)
+    draw.line((*start,*end),fill=accent,width=width, joint='curve')
+    if state in ('active','preview_hover'):
+        inner=max(4,radius//3);draw.ellipse((cx-inner,cy-inner,cx+inner,cy+inner),outline=(255,255,255,225),width=max(2,width//2))
+        if state=='preview_hover':draw.ellipse((cx-2,cy-2,cx+2,cy+2),fill=(255,255,255,225))
+    elif state=='close_hover':
+        inner=max(5,radius//3);cross=max(3,inner//2);draw.line((cx-cross,cy-cross,cx+cross,cy+cross),fill=(255,255,255,235),width=max(2,width//2));draw.line((cx+cross,cy-cross,cx-cross,cy+cross),fill=(255,255,255,235),width=max(2,width//2))
+    return Image.alpha_composite(base,overlay)
+
+
+def _history_role_icon(master,roles,size=15):
+    """Compact, explicit padlocks for Viewer/A/B and the reserved Manual role."""
+    roles=tuple(roles);gap=1;width=max(1,len(roles)*(size+gap)-gap)
+    im=Image.new('RGBA',(width,size),(0,0,0,0));d=ImageDraw.Draw(im)
+    colors={'V':'#2f7ed8','A':'#34a853','B':'#9b59d0','M':'#d59b28'}
+    for index,role in enumerate(roles):
+        x=index*(size+gap);color=colors.get(role,'#7b8088')
+        d.arc((x+4,0,x+size-5,size-6),180,360,fill='#111111',width=4)
+        d.arc((x+4,0,x+size-5,size-6),180,360,fill=color,width=2)
+        d.rounded_rectangle((x+1,6,x+size-2,size-1),radius=2,fill=color,outline='#111111',width=1)
+        d.text((x+size//2,10),role,fill='#ffffff',anchor='mm',stroke_width=1,stroke_fill='#111111')
     return ImageTk.PhotoImage(im,master=master)
 
 
@@ -401,13 +492,27 @@ class App(V15StableApp):
         self.session_cache=SessionGenerationCache(max_entries=8)
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
+        self._manual_history_locks=[]
+        self.session_cache.set_protected_provider(lambda:(getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks))
         self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._prefs_save_after=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
-        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_hover_after=None;self._batch_i18n={}
+        self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_preview_zoom=1.0;self._batch_hover_after=None;self._batch_i18n={}
         self._map_export_window=None;self._stats_export_window=None
+        self._history_window=None;self._history_tree=None;self._history_center_lookup={};self._history_window_widgets={};self._history_preview_photo=None;self._history_preview_key=None
+        self._history_large_window=None;self._history_large_label=None;self._history_large_photo=None;self._history_large_image=None;self._history_large_key=None;self._history_large_zoom=.72;self._history_large_drag_origin=None;self._history_large_pinned=False;self._history_hover_after=None;self._history_preview_hover=False
+        self._history_role_icons={};self._ui_tooltip_window=None;self._ui_tooltip_key=None
+        self._history_capacity_dialog=None;self._history_capacity_dialog_widgets={}
+        self._magnifier_hover_kind=None;self._magnifier_hover_ref=None;self._magnifier_active_kind=None;self._magnifier_active_ref=None
         super().__init__()
-        self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.after_idle(self._apply_responsive_layout)
+        self.session_cache.resize(self.prefs.get('history_capacity',8))
+        self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.bind('<Escape>',self._close_large_preview_escape,add='+');self.after_idle(self._apply_responsive_layout)
+
+    def _close_large_preview_escape(self,event=None):
+        closed=False
+        if self._batch_preview_window is not None:self._batch_hide_preview_tooltip();closed=True
+        if self._history_large_window is not None:self._history_hide_large_preview();closed=True
+        return 'break' if closed else None
 
     def _settings_tab(self):
         """Build v1.8 display settings, including preview-only start markers."""
@@ -432,13 +537,18 @@ class App(V15StableApp):
         self.preview_marker_combo=ttk.Combobox(f,textvariable=self.preview_marker_var,values=list(PREVIEW_START_MARKER_LABELS[lang].values()),state='readonly')
         self.preview_marker_combo.grid(row=6,column=1,sticky='ew');self.preview_marker_combo.bind('<<ComboboxSelected>>',lambda e:self._preview_marker_changed())
         ttk.Label(f,text='Ce réglage affecte les miniatures et le grand aperçu du lot.',style='Hint.TLabel',wraplength=360).grid(row=7,column=0,columnspan=3,sticky='w')
-        ttk.Label(f,text='Sensibilité molette').grid(row=8,column=0,sticky='w',pady=(14,6))
+        ttk.Label(f,text="Capacité de l'historique").grid(row=8,column=0,sticky='w',pady=(14,6))
+        self.history_capacity_var=tk.StringVar(value=str(self.prefs.get('history_capacity',8)))
+        self.history_capacity_combo=ttk.Combobox(f,textvariable=self.history_capacity_var,values=('4','8','12','16'),state='readonly',width=8)
+        self.history_capacity_combo.grid(row=8,column=1,sticky='w');self.history_capacity_combo.bind('<<ComboboxSelected>>',lambda e:self._history_capacity_changed())
+        ttk.Label(f,text='Cartes conservées uniquement pendant cette session.',style='Hint.TLabel',wraplength=360).grid(row=9,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Sensibilité molette').grid(row=10,column=0,sticky='w',pady=(14,6))
         self.wheel_var=tk.DoubleVar(value=float(self.prefs['wheel_zoom']))
-        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=8,column=1,sticky='ew')
-        self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=8,column=2,padx=(8,0))
-        ttk.Separator(f).grid(row=9,column=0,columnspan=3,sticky='ew',pady=16)
-        ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=10,column=0,columnspan=3,sticky='w')
-        ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=11,column=0,columnspan=3,sticky='w',pady=(6,0))
+        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=10,column=1,sticky='ew')
+        self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=10,column=2,padx=(8,0))
+        ttk.Separator(f).grid(row=11,column=0,columnspan=3,sticky='ew',pady=16)
+        ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=12,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=13,column=0,columnspan=3,sticky='w',pady=(6,0))
 
     def _build(self):
         super()._build();top=self.winfo_children()[0]
@@ -533,9 +643,17 @@ class App(V15StableApp):
         self.session_box=ttk.LabelFrame(self._header_shell,text='Session / Comparaison',padding=(6,4))
         self.session_history_label=ttk.Label(self.session_box,text='Historique session');self.session_history_label.grid(row=0,column=0,sticky='w')
         self.history_var=tk.StringVar(value='');self.history_combo=ttk.Combobox(self.session_box,textvariable=self.history_var,state='readonly',width=27)
+        self.history_combo.bind('<<ComboboxSelected>>',lambda e:self._refresh_state_indicators())
         self.history_load_button=ttk.Button(self.session_box,text='Charger',command=self._load_history)
         self.history_clear_button=ttk.Button(self.session_box,text='Vider cache',command=self._clear_history)
-        self._compare_led_off=_selector_icon(self,'#7b8088','dot',14);self._compare_led_on=_selector_icon(self,'#34a853','dot',14)
+        self.history_manage_button=ttk.Button(self.session_box,text='Gérer…',command=self._open_history_center)
+        self._compare_led_off=_selector_icon(self,'#7b8088','status_off',18);self._compare_led_on=_selector_icon(self,'#34a853','status_on',18)
+        self._history_blank_icon=_selector_icon(self,'#7b8088','blank',16)
+        self._history_outside_icon=_selector_icon(self,'#f2b84b','warning',18)
+        self.history_residency_label=ttk.Label(self.session_box,image='',cursor='hand2')
+        self.history_residency_label.bind('<Button-1>',lambda e:self._history_residency_hint())
+        self.history_residency_label.bind('<Enter>',lambda e:self._history_residency_tooltip())
+        self.history_residency_label.bind('<Leave>',lambda e:self._hide_ui_tooltip())
         self._delete_icon_off=_selector_icon(self.session_box,'#7b8088','cross',14)
         self._delete_icon_on=_selector_icon(self.session_box,'#e04444','cross',14)
         self.compare_a_button=ttk.Button(self.session_box,text='Définir A',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('A'))
@@ -744,7 +862,7 @@ class App(V15StableApp):
         mode='compact_ab' if compact else 'natural_ab'
         if getattr(self,'_session_layout_mode',None)==mode:return
         self._session_layout_mode=mode
-        widgets=(self.history_combo,self.history_load_button,self.history_clear_button,self.compare_a_button,self.compare_b_button,self.compare_toggle_button,self.clear_a_button,self.clear_b_button,self.clear_ab_button)
+        widgets=(self.history_combo,self.history_load_button,self.history_clear_button,self.history_manage_button,self.history_residency_label,self.compare_a_button,self.compare_b_button,self.compare_toggle_button,self.clear_a_button,self.clear_b_button,self.clear_ab_button)
         for w in widgets:
             try:w.grid_forget()
             except tk.TclError:pass
@@ -770,8 +888,10 @@ class App(V15StableApp):
         self.clear_ab_button.configure(width=10 if compact else 0)
         self.history_clear_button.grid(row=1,column=1,padx=(6,2),pady=(4,0),sticky='w')
         self.history_load_button.grid(row=1,column=2,padx=2,pady=(4,0),sticky='w')
-        self.compare_toggle_button.grid(row=1,column=3,padx=2,pady=(4,0),sticky='w')
-        self.clear_ab_button.grid(row=1,column=4,columnspan=2,padx=(3,2),pady=(4,0),sticky='w')
+        self.history_manage_button.grid(row=1,column=3,padx=2,pady=(4,0),sticky='w')
+        self.history_residency_label.grid(row=1,column=0,padx=(2,0),pady=(4,0))
+        self.compare_toggle_button.grid(row=1,column=4,padx=2,pady=(4,0),sticky='w')
+        self.clear_ab_button.grid(row=1,column=5,columnspan=2,padx=(3,2),pady=(4,0),sticky='w')
 
     def _heatmap_locked_hint(self):
         if self._view_key()!='heatmap':self._feedback('heatmap_locked','info')
@@ -994,7 +1114,7 @@ class App(V15StableApp):
         if stats and hasattr(self,'stats'):
             self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(stats,lang=lang))
         for w in report_widgets:w.configure(state='disabled')
-        self._refresh_stats_chart()
+        self._refresh_stats_chart();self._refresh_state_indicators();self._refresh_history_preview()
 
     def _walk(self,root):
         for child in root.winfo_children():
@@ -1124,13 +1244,44 @@ class App(V15StableApp):
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
         for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else TEXTS['Réinitialiser'].get(lang,TEXTS['Réinitialiser']['en']))
         if hasattr(self,'history_combo'):self._refresh_history()
+        self._retranslate_history_center()
+        self._retranslate_history_capacity_dialog()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
         selected=self.lang_var.get();self.prefs['language']=next((key for key,label in LANGUAGE_LABELS.items() if label==selected),'en');self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
     def _apply_theme(self):
-        super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self)
-        field='#303134' if dark else '#ffffff';fg='#e8eaed' if dark else '#202124';muted='#7f858d' if dark else '#8a8f98';panel='#292a2d' if dark else '#e5e5e5'
-        self._ui_theme_colors={'field':field,'fg':fg,'muted':muted,'panel':panel,'bar_bg':'#3c4043' if dark else '#dddddd','bar_fg':'#35a853','dark':dark}
+        super()._apply_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self);palette=dict(THEME_PALETTES['dark' if dark else 'light'])
+        field=palette['field'];fg=palette['text'];muted=palette['disabled'];panel=palette['panel']
+        self._ui_theme_colors={**palette,'field':field,'fg':fg,'muted':muted,'panel':panel,'bar_bg':'#3c4043' if dark else '#dddddd','bar_fg':palette['success'],'dark':dark}
+        # Global state maps prevent Windows native hover/focus colors from leaking
+        # through newly created widgets. Named semantic styles remain available
+        # for intentionally colored primary/status actions.
+        style.configure('TFrame',background=palette['window']);style.configure('Card.TFrame',background=palette['panel'],relief='solid',borderwidth=1)
+        style.configure('TLabel',background=palette['window'],foreground=fg);style.configure('Panel.TLabel',background=palette['panel'],foreground=fg);style.configure('PanelHint.TLabel',background=palette['panel'],foreground=palette['muted'])
+        style.configure('TLabelframe',background=palette['window'],bordercolor=palette['border']);style.configure('TLabelframe.Label',background=palette['window'],foreground=fg)
+        style.configure('History.TLabelframe',background=palette['panel'],bordercolor=palette['border']);style.configure('History.TLabelframe.Label',background=palette['panel'],foreground=fg)
+        style.configure('TButton',background=palette['surface'],foreground=fg,bordercolor=palette['border'],lightcolor=palette['border'],darkcolor=palette['border'])
+        style.map('TButton',background=[('disabled',palette['panel']),('pressed',palette['pressed']),('active',palette['hover'])],foreground=[('disabled',muted),('pressed',fg),('active',fg)])
+        style.configure('TMenubutton',background=palette['surface'],foreground=fg,bordercolor=palette['border']);style.map('TMenubutton',background=[('disabled',palette['panel']),('pressed',palette['pressed']),('active',palette['hover'])],foreground=[('disabled',muted),('active',fg)])
+        for name,color in (('Primary',palette['primary']),('Success',palette['success']),('Warning',palette['warning']),('Danger',palette['danger'])):
+            style.configure(f'{name}.TButton',background=color,foreground='#ffffff')
+            style.map(f'{name}.TButton',background=[('disabled',palette['panel']),('pressed',palette['pressed']),('active',palette['hover'])],foreground=[('disabled',muted),('pressed','#ffffff'),('active','#ffffff')])
+        style.configure('TCheckbutton',background=palette['window'],foreground=fg);style.map('TCheckbutton',background=[('disabled',palette['window']),('pressed',palette['window']),('active',palette['window'])],foreground=[('disabled',muted),('active',fg)])
+        style.configure('TRadiobutton',background=palette['window'],foreground=fg);style.map('TRadiobutton',background=[('disabled',palette['window']),('pressed',palette['window']),('active',palette['window'])],foreground=[('disabled',muted),('active',fg)])
+        for widget_style in ('TEntry','TSpinbox','TCombobox'):
+            style.configure(widget_style,fieldbackground=field,background=field,foreground=fg,selectbackground=palette['selection'],selectforeground=palette['selection_text'],bordercolor=palette['border'])
+            style.map(widget_style,fieldbackground=[('disabled',palette['panel']),('readonly',field),('focus',field)],background=[('disabled',palette['panel']),('readonly',field),('active',palette['hover'])],foreground=[('disabled',muted),('readonly',fg)],selectbackground=[('readonly',palette['selection'])],selectforeground=[('readonly',palette['selection_text'])])
+        style.configure('TNotebook.Tab',background=panel,foreground=fg);style.map('TNotebook.Tab',background=[('selected',field),('active',palette['hover']),('pressed',palette['pressed'])],foreground=[('disabled',muted),('selected',fg),('active',fg)])
+        style.configure('Horizontal.TScale',background=palette['window'],troughcolor=palette['panel']);style.map('Horizontal.TScale',background=[('active',palette['primary']),('disabled',palette['disabled'])])
+        style.configure('Vertical.TScrollbar',background=palette['surface'],troughcolor=palette['panel'],arrowcolor=fg,bordercolor=palette['border']);style.map('Vertical.TScrollbar',background=[('pressed',palette['pressed']),('active',palette['hover'])],arrowcolor=[('disabled',muted)])
+        style.configure('Treeview',background=palette['surface'],fieldbackground=palette['surface'],foreground=fg,bordercolor=palette['border'],rowheight=23)
+        style.map('Treeview',background=[('selected',palette['selection'])],foreground=[('selected',palette['selection_text'])])
+        style.configure('Treeview.Heading',background=panel,foreground=fg,bordercolor=palette['border'],relief='raised')
+        style.map('Treeview.Heading',background=[('pressed',palette['pressed']),('active',palette['hover'])],foreground=[('pressed',fg),('active',fg)])
+        style.configure('History.Treeview',background=palette['surface'],fieldbackground=palette['surface'],foreground=fg,bordercolor=palette['border'],rowheight=24)
+        style.map('History.Treeview',background=[('selected',palette['selection'])],foreground=[('selected',palette['selection_text'])])
+        style.configure('History.Treeview.Heading',background=panel,foreground=fg,bordercolor=palette['border'],relief='raised')
+        style.map('History.Treeview.Heading',background=[('pressed',palette['pressed']),('active',palette['hover'])],foreground=[('pressed',fg),('active',fg)])
         style.configure('ImageSelect.TMenubutton',background=field,foreground=fg,relief='raised')
         style.map('ImageSelect.TMenubutton',background=[('active',panel),('pressed',panel),('disabled',field)],foreground=[('active',fg),('pressed',fg),('disabled',muted)])
         style.configure('Locked.TCombobox',fieldbackground=field,background=field,foreground=muted,selectforeground=muted)
@@ -1148,6 +1299,8 @@ class App(V15StableApp):
         if self._task_dialog is not None and hasattr(self,'_task_dialog_progress'):
             try:self._task_dialog_progress.configure(bg=self._ui_theme_colors['bar_bg'])
             except tk.TclError:pass
+        self._apply_history_window_theme()
+        self._apply_history_capacity_dialog_theme()
         if self._task_overlay is not None:
             try:
                 self._task_overlay.configure(bg=panel)
@@ -1288,7 +1441,7 @@ class App(V15StableApp):
         self._status_kind='error';self.status.set(label);getattr(self,'_sync_status_display',lambda:None)();self._close_task_dialog();self.update_idletasks()
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _schedule_prefs_save(self):
         if self._prefs_save_after is not None:
@@ -1311,9 +1464,62 @@ class App(V15StableApp):
     def _toggle_theme(self):
         self.prefs['theme']='light' if self.prefs.get('theme')=='dark' else 'dark';lang=self.prefs.get('language','fr');self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']]);self._save_prefs();self._apply_theme();self._refresh_theme_button_icon();self._refresh_preview(False);self._refresh_stats_chart();self._feedback('theme_changed','info',theme=THEME_LABELS[lang][self.prefs['theme']])
     def _projection_changed(self):
-        self.prefs['projection']=self._projection_key();self._save_prefs();self._refresh_preview(True);self._refresh_batch_previews()
+        self.prefs['projection']=self._projection_key();self._save_prefs();self._refresh_preview(True);self._refresh_batch_previews();self._refresh_history_preview()
     def _preview_marker_changed(self):
-        self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_batch_previews()
+        self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_batch_previews();self._refresh_history_preview()
+
+    def _history_capacity_changed(self):
+        if self._history_capacity_dialog is not None:return
+        old=int(self.prefs.get('history_capacity',8))
+        try:value=int(self.history_capacity_var.get())
+        except (TypeError,ValueError):value=old
+        if value not in (4,8,12,16):value=old
+        removed=max(0,len(self.session_cache)-value)
+        if value<old and removed:
+            if not self._show_history_capacity_warning(old,value,removed):
+                self.history_capacity_var.set(str(old));return
+        self.prefs['history_capacity']=value;self.session_cache.resize(value);self._save_prefs();self._refresh_history()
+
+    def _show_history_capacity_warning(self,old,new,removed):
+        if self._history_capacity_dialog is not None:return False
+        lang=self.prefs.get('language','fr');dialog_text=_HISTORY_CAPACITY_DIALOG_TEXT[lang];history_text=HISTORY_TEXT[lang];result={'continue':False}
+        parent=self._history_window or self;win=tk.Toplevel(parent);self._history_capacity_dialog=win;win.withdraw();win.title(dialog_text['title']);win.transient(parent);win.resizable(False,False)
+        shell=ttk.Frame(win,padding=16);shell.pack(fill='both',expand=True)
+        title=ttk.Label(shell,text=dialog_text['title'],style='Section.TLabel');title.pack(anchor='w',fill='x',pady=(0,10))
+        message=ttk.Label(shell,text=history_text['capacity_reduce'].format(old=old,new=new,removed=removed),justify='left',wraplength=480);message.pack(anchor='w',fill='x')
+        buttons=ttk.Frame(shell);buttons.pack(fill='x',pady=(16,0))
+        def close(accepted=False):
+            result['continue']=bool(accepted)
+            try:win.grab_release()
+            except tk.TclError:pass
+            self._history_capacity_dialog=None;self._history_capacity_dialog_widgets={}
+            try:self.history_capacity_combo.configure(state='readonly')
+            except tk.TclError:pass
+            win.destroy()
+        cancel=ttk.Button(buttons,text=dialog_text['cancel'],command=lambda:close(False));cancel.pack(side='right')
+        confirm=ttk.Button(buttons,text=dialog_text['continue'],command=lambda:close(True));confirm.pack(side='right',padx=(0,8))
+        self._history_capacity_dialog_widgets={'title':title,'message':message,'cancel':cancel,'confirm':confirm,'old':old,'new':new,'removed':removed}
+        win.protocol('WM_DELETE_WINDOW',lambda:close(False));win.bind('<Escape>',lambda e:close(False),add='+');win.bind('<Return>',lambda e:close(True),add='+')
+        self._apply_history_capacity_dialog_theme();win.update_idletasks();width=max(460,win.winfo_reqwidth());height=win.winfo_reqheight();screen_w=win.winfo_screenwidth();screen_h=win.winfo_screenheight()
+        x=parent.winfo_rootx()+(parent.winfo_width()-width)//2;y=parent.winfo_rooty()+(parent.winfo_height()-height)//2;x=max(8,min(x,screen_w-width-8));y=max(8,min(y,screen_h-height-48));win.geometry(f'{width}x{height}+{x}+{y}')
+        try:self.history_capacity_combo.configure(state='disabled')
+        except tk.TclError:pass
+        win.deiconify();win.lift();win.focus_force();win.grab_set();win.wait_window();return result['continue']
+
+    def _retranslate_history_capacity_dialog(self):
+        win=self._history_capacity_dialog;widgets=self._history_capacity_dialog_widgets
+        if win is None or not widgets:return
+        try:
+            lang=self.prefs.get('language','fr');dialog_text=_HISTORY_CAPACITY_DIALOG_TEXT[lang];history_text=HISTORY_TEXT[lang]
+            win.title(dialog_text['title']);widgets['title'].configure(text=dialog_text['title']);widgets['message'].configure(text=history_text['capacity_reduce'].format(old=widgets['old'],new=widgets['new'],removed=widgets['removed']))
+            widgets['cancel'].configure(text=dialog_text['cancel']);widgets['confirm'].configure(text=dialog_text['continue'])
+        except tk.TclError:pass
+
+    def _apply_history_capacity_dialog_theme(self):
+        win=self._history_capacity_dialog
+        if win is None:return
+        try:win.configure(background=getattr(self,'_ui_theme_colors',THEME_PALETTES['dark']).get('window','#202124'))
+        except tk.TclError:pass
 
     def _opacity_changed(self):
         self.opacity_label.configure(text=f'{int(self.opacity_var.get())} %');self.prefs['overlay_alpha']=int(self.opacity_var.get());self._schedule_prefs_save()
@@ -1366,11 +1572,464 @@ class App(V15StableApp):
     def _cache_key(self):
         return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v1.5-stable')
     def _history_label(self,key):
-        mods=LOWER_NONE_LABELS.get(self.prefs.get('language','fr'),LOWER_NONE_LABELS['en']) if not key.modifiers else '+'.join(key.modifiers)
-        return f'{key.seed} · {key.side} · {key.players}P · {key.mode} · {key.archetype} · {mods}'
-    def _refresh_history(self):
-        self._history_lookup={self._history_label(k):k for k,_ in self.session_cache.entries()};vals=list(self._history_lookup);self.history_combo.configure(values=vals)
+        meta=self.session_cache.metadata(key)
+        origin=self._history_origin(key);prefix=HISTORY_TEXT[self.prefs.get('language','fr')].get(origin,origin)
+        if isinstance(key,ImportedHistoryKey):
+            name=meta.get('source_name') or f'{key.source_format} import'
+            return f'{prefix} · {name} · {key.source_format} · {meta.get("side","?")} · {meta.get("players",0)}P'
+        lang=self.prefs.get('language','fr');mods=LOWER_NONE_LABELS.get(lang,LOWER_NONE_LABELS['en']) if not key.modifiers else '+'.join(key.modifiers)
+        mode=MODE_LABELS[lang].get(key.mode,key.mode);archetype=ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)
+        return f'{prefix} · {key.seed} · {key.side} · {key.players}P · {mode} · {archetype} · {mods}'
+    def _history_origin(self,key):
+        return self.session_cache.metadata(key).get('origin','generated')
+    def _refresh_history(self,preferred_index=None):
+        self._history_lookup={}
+        for key,_ in self.session_cache.entries():
+            label=self._history_label(key);candidate=label;suffix=2
+            while candidate in self._history_lookup:candidate=f'{label} · {suffix}';suffix+=1
+            self._history_lookup[candidate]=key
+        vals=list(self._history_lookup);self.history_combo.configure(values=vals)
         if vals and self.history_var.get() not in vals:self.history_var.set(vals[0])
+        if not vals:self.history_var.set('')
+        self._refresh_history_center(preferred_index=preferred_index);self._refresh_state_indicators()
+
+    def _register_import_history(self,out,path):
+        path=Path(path);digest=hashlib.sha256(path.read_bytes()).hexdigest();fmt=path.suffix[1:].upper()
+        key=ImportedHistoryKey(digest=digest,source_format=fmt);state=out.state
+        self.session_cache.put(key,out,{'origin':'imported','source_format':fmt,'source_name':path.name,'source_path':str(path),'side':state.side,'players':len(state.starts) or state.metadata.get('players',0)})
+        self._refresh_history()
+
+    def import_file(self):
+        before=getattr(self,'current',None);super().import_file()
+        if self.current is not None and self.current is not before and self.import_source:
+            self._register_import_history(self.current,self.import_source)
+
+    def _display_history_key(self,key):
+        # UI navigation is observational: only an actual generation cache hit
+        # promotes an LRU entry. Displaying/assigning must keep list order stable.
+        out=self.session_cache.peek(key) if key else None
+        if out is None:self._feedback('history_empty','warning');return
+        need_stats=self.session_stats_cache.get(out.state) is None
+        if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),'Chargement de l’historique…','Loading history…','Verlauf wird geladen…','Cargando historial…'),10)
+        self.current=out;source=self.session_cache.metadata(key).get('source_path');self.import_source=Path(source) if source else None
+        self._populate_current(imported=isinstance(key,ImportedHistoryKey));self._invalidate_preview();self._refresh_preview(True);self._refresh_history()
+        if need_stats:self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['history_loaded'])
+        else:self._feedback('history_loaded','success')
+
+    def _history_roles_for_output(self,out):
+        if out is None:return ()
+        roles=[]
+        if out is getattr(self,'current',None):roles.append('V')
+        if self._compare_slots.get('A') is out:roles.append('A')
+        if self._compare_slots.get('B') is out:roles.append('B')
+        if any(value is out for value in self._manual_history_locks):roles.append('M')
+        return tuple(roles)
+
+    def _history_role_image(self,roles):
+        roles=tuple(roles)
+        if not roles:return self._history_blank_icon
+        if roles not in self._history_role_icons:self._history_role_icons[roles]=_history_role_icon(self,roles)
+        return self._history_role_icons[roles]
+
+    def _history_role_tooltip_text(self,roles):
+        lang=self.prefs.get('language','fr');ctx=_CONTEXT_TEXT[lang];parts=[]
+        for role in roles:
+            if role=='V':parts.append(ctx['viewer_role'])
+            elif role in ('A','B'):parts.append(f'{role} = Slot {role}')
+            elif role=='M':parts.append(ctx['manual_role'])
+        return ctx['lock_tip'].format(roles=' · '.join(parts)) if parts else ''
+
+    def _show_ui_tooltip(self,widget,text,key=None,x=None,y=None):
+        if not text:return
+        marker=key if key is not None else (id(widget),text)
+        if self._ui_tooltip_window is not None and self._ui_tooltip_key==marker:return
+        self._hide_ui_tooltip();colors=getattr(self,'_ui_theme_colors',THEME_PALETTES['dark'])
+        win=tk.Toplevel(widget);win.withdraw();win.overrideredirect(True);win.attributes('-topmost',True)
+        label=tk.Label(win,text=text,justify='left',wraplength=360,padx=7,pady=5,bg=colors.get('surface','#303134'),fg=colors.get('text','#e8eaed'),bd=1,relief='solid',highlightthickness=0);label.pack()
+        win.update_idletasks()
+        if x is None:x=widget.winfo_rootx()+12
+        if y is None:y=widget.winfo_rooty()+widget.winfo_height()+6
+        x=max(6,min(int(x),widget.winfo_screenwidth()-win.winfo_reqwidth()-6));y=max(6,min(int(y),widget.winfo_screenheight()-win.winfo_reqheight()-42))
+        win.geometry(f'+{x}+{y}');win.deiconify();win.lift();self._ui_tooltip_window=win;self._ui_tooltip_key=marker
+
+    def _hide_ui_tooltip(self):
+        if self._ui_tooltip_window is not None:
+            try:self._ui_tooltip_window.destroy()
+            except tk.TclError:pass
+        self._ui_tooltip_window=None;self._ui_tooltip_key=None
+
+    def _history_tree_motion(self,event):
+        tree=self._history_tree
+        if tree is None:return
+        iid=tree.identify_row(event.y);key=self._history_center_lookup.get(iid);out=self.session_cache.peek(key) if key else None;roles=self._history_roles_for_output(out)
+        if roles:self._show_ui_tooltip(tree,self._history_role_tooltip_text(roles),key=('history-role',iid,roles),x=event.x_root+14,y=event.y_root+16)
+        else:self._hide_ui_tooltip()
+
+    @staticmethod
+    def _magnifier_refs_match(left,right):
+        if left is right:return True
+        if isinstance(left,dict) or isinstance(right,dict):return False
+        return left==right
+
+    def _magnifier_state_for(self,kind,ref):
+        hovered=self._magnifier_hover_kind==kind and self._magnifier_refs_match(self._magnifier_hover_ref,ref)
+        active=self._magnifier_active_kind==kind and self._magnifier_refs_match(self._magnifier_active_ref,ref) and self._magnifier_preview_exists(kind,ref)
+        if active and hovered:return 'close_hover' if self._magnifier_preview_pinned(kind,ref) else 'preview_hover'
+        if active:return 'active'
+        if hovered:return 'hover'
+        return 'idle'
+
+    def _refresh_magnifier_target(self,kind,ref):
+        if kind=='batch' and isinstance(ref,dict):self._batch_refresh_thumbnail_photo(ref)
+        elif kind=='history' and self._magnifier_refs_match(self._history_selected_key(),ref):self._history_refresh_thumbnail_photo()
+
+    def _set_magnifier_hover(self,kind=None,ref=None):
+        old_kind,old_ref=self._magnifier_hover_kind,self._magnifier_hover_ref
+        self._magnifier_hover_kind=kind;self._magnifier_hover_ref=ref
+        if old_kind is not None:self._refresh_magnifier_target(old_kind,old_ref)
+        if kind is not None and not (old_kind==kind and self._magnifier_refs_match(old_ref,ref)):self._refresh_magnifier_target(kind,ref)
+
+    def _set_magnifier_active(self,kind=None,ref=None):
+        old_kind,old_ref=self._magnifier_active_kind,self._magnifier_active_ref
+        self._magnifier_active_kind=kind;self._magnifier_active_ref=ref
+        if old_kind is not None:self._refresh_magnifier_target(old_kind,old_ref)
+        if kind is not None and not (old_kind==kind and self._magnifier_refs_match(old_ref,ref)):self._refresh_magnifier_target(kind,ref)
+
+    def _activate_magnifier(self,kind,ref):self._set_magnifier_active(kind,ref)
+
+    def _magnifier_preview_exists(self,kind,ref):
+        if kind=='batch':return self._batch_preview_window is not None and self._batch_preview_row is ref
+        if kind=='history':return self._history_large_window is not None and self._magnifier_refs_match(self._history_large_key[0] if self._history_large_key else None,ref)
+        return False
+
+    def _magnifier_preview_pinned(self,kind,ref):
+        if kind=='batch':return self._batch_preview_pinned and self._batch_preview_row is ref
+        if kind=='history':return self._history_large_pinned and self._magnifier_refs_match(self._history_large_key[0] if self._history_large_key else None,ref)
+        return False
+
+    def _restore_magnifier_visual(self):
+        kind,ref=self._magnifier_active_kind,self._magnifier_active_ref
+        if kind is not None and self._magnifier_preview_exists(kind,ref):self._refresh_magnifier_target(kind,ref);return
+        if self._batch_preview_pinned and self._batch_preview_window is not None:
+            self._set_magnifier_active('batch',self._batch_preview_row);return
+        if self._history_large_pinned and self._history_large_window is not None and self._history_large_key:
+            self._set_magnifier_active('history',self._history_large_key[0]);return
+        self._set_magnifier_active()
+
+    def _open_history_center(self):
+        if self._history_window is not None:
+            try:self._history_window.deiconify();self._history_window.lift();self._history_window.focus_force();return
+            except tk.TclError:self._history_window=None
+        lang=self.prefs.get('language','fr');text=HISTORY_TEXT[lang];w=tk.Toplevel(self);self._history_window=w
+        w.title(text['title']);w.transient(self);w.resizable(True,True);w.minsize(620,300);w.geometry('860x420');w.protocol('WM_DELETE_WINDOW',self._close_history_center)
+        shell=ttk.Frame(w,padding=12);shell.pack(fill='both',expand=True);shell.rowconfigure(0,weight=1);shell.columnconfigure(0,weight=1)
+        content=ttk.Panedwindow(shell,orient='horizontal');content.grid(row=0,column=0,columnspan=2,sticky='nsew')
+        table_host=ttk.Frame(content);preview_host=ttk.LabelFrame(content,text=text['preview'],padding=8,style='History.TLabelframe');content.add(table_host,weight=4);content.add(preview_host,weight=2)
+        table_host.rowconfigure(0,weight=1);table_host.columnconfigure(0,weight=1)
+        columns=('origin','map','details');tree=ttk.Treeview(table_host,columns=columns,show='tree headings',selectmode='browse',style='History.Treeview');self._history_tree=tree
+        tree.heading('#0',text='#',anchor='center');tree.heading('origin',text=text['origin']);tree.heading('map',text=text['map']);tree.heading('details',text=text['details'])
+        tree.column('#0',width=68,minwidth=68,stretch=False,anchor='center')
+        tree.column('origin',width=100,stretch=False);tree.column('map',width=220,stretch=True);tree.column('details',width=330,stretch=True)
+        scroll=ttk.Scrollbar(table_host,orient='vertical',command=tree.yview);tree.configure(yscrollcommand=scroll.set);tree.grid(row=0,column=0,sticky='nsew');scroll.grid(row=0,column=1,sticky='ns')
+        tree.bind('<<TreeviewSelect>>',lambda e:self._history_selection_changed());tree.bind('<Double-1>',lambda e:self._history_center_show());tree.bind('<Motion>',self._history_tree_motion);tree.bind('<Leave>',lambda e:self._hide_ui_tooltip())
+        preview_image_host=tk.Frame(preview_host,height=230,bd=0,highlightthickness=0);preview_image_host.pack(fill='x');preview_image_host.pack_propagate(False)
+        self._history_preview_label=tk.Label(preview_image_host,text='—',anchor='center',bd=0,highlightthickness=0,cursor='hand2');self._history_preview_label.pack(fill='both',expand=True)
+        self._history_preview_label.bind('<Button-1>',lambda e:self._history_toggle_large_preview());self._history_preview_label.bind('<Enter>',lambda e:self._history_schedule_hover_preview());self._history_preview_label.bind('<Leave>',lambda e:self._history_thumbnail_leave())
+        preview_image_host.bind('<Enter>',lambda e:self._history_schedule_hover_preview(),add='+');preview_image_host.bind('<Leave>',lambda e:self._history_thumbnail_leave(),add='+')
+        self._history_preview_status=tk.StringVar(value='');self._history_preview_source=tk.StringVar(value='')
+        ttk.Label(preview_host,textvariable=self._history_preview_status,style='Panel.TLabel',justify='left',wraplength=260).pack(fill='x',pady=(8,2))
+        ttk.Label(preview_host,textvariable=self._history_preview_source,style='PanelHint.TLabel',justify='left',wraplength=260).pack(fill='x')
+        info=ttk.Label(shell,text=text['capacity'].format(used=len(self.session_cache),count=self.session_cache.max_entries),style='Hint.TLabel');info.grid(row=1,column=0,columnspan=2,sticky='w',pady=(8,4))
+        actions=ttk.Frame(shell);actions.grid(row=2,column=0,columnspan=2,sticky='ew');actions.columnconfigure(4,weight=1)
+        buttons={}
+        for col,(name,label,command) in enumerate((('show',text['show'],self._history_center_show),('a',text['set_a'],lambda:self._history_center_assign('A')),('b',text['set_b'],lambda:self._history_center_assign('B')),('delete',text['delete'],self._history_center_delete))):
+            image=self._compare_led_off if name in ('show','a','b') else ''
+            buttons[name]=ttk.Button(actions,text=label,image=image,compound='left',command=command,state='disabled');buttons[name].grid(row=0,column=col,padx=(0,6))
+        buttons['clear']=ttk.Button(actions,text=text['clear'],command=self._history_center_clear);buttons['clear'].grid(row=0,column=5,padx=(6,6))
+        buttons['close']=ttk.Button(actions,text=text['close'],command=self._close_history_center);buttons['close'].grid(row=0,column=6)
+        self._history_window_widgets={'tree':tree,'info':info,'buttons':buttons,'preview_host':preview_host,'preview_image_host':preview_image_host};self._apply_history_window_theme();self._refresh_history_center()
+        w.update_idletasks();screen_w=w.winfo_screenwidth();screen_h=w.winfo_screenheight();width=min(1120,max(760,screen_w-40));height=min(500,max(340,screen_h-80));x=max(0,min(self.winfo_rootx()+60,screen_w-width));y=max(0,min(self.winfo_rooty()+60,screen_h-height));w.geometry(f'{width}x{height}+{x}+{y}')
+
+    def _close_history_center(self):
+        win=self._history_window
+        self._history_cancel_hover_preview();self._history_preview_hover=False
+        if self._magnifier_hover_kind=='history':self._set_magnifier_hover()
+        self._history_hide_large_preview();self._hide_ui_tooltip()
+        self._history_window=None;self._history_tree=None;self._history_center_lookup={};self._history_window_widgets={}
+        self._history_preview_label=None;self._history_preview_status=None;self._history_preview_source=None;self._history_preview_photo=None;self._history_preview_base_image=None;self._history_preview_key=None
+        if win is not None:
+            try:win.destroy()
+            except tk.TclError:pass
+
+    def _history_selected_key(self):
+        if self._history_tree is None:return None
+        try:
+            if not self._history_tree.winfo_exists():return None
+            selection=self._history_tree.selection();return self._history_center_lookup.get(selection[0]) if selection else None
+        except tk.TclError:return None
+
+    def _history_selection_changed(self):
+        state='normal' if self._history_selected_key() is not None else 'disabled'
+        for name in ('show','a','b','delete'):
+            button=self._history_window_widgets.get('buttons',{}).get(name)
+            if button is not None:button.configure(state=state)
+        self._refresh_history_preview();self._refresh_state_indicators()
+
+    def _refresh_history_center(self,preferred_index=None):
+        tree=self._history_tree
+        if tree is None:return
+        selected=self._history_selected_key();old_y=tree.yview()[0] if tree.get_children() else 0.0;tree.delete(*tree.get_children());self._history_center_lookup={};lang=self.prefs.get('language','fr');text=HISTORY_TEXT[lang]
+        for index,(key,out) in enumerate(self.session_cache.entries()):
+            meta=self.session_cache.metadata(key);origin=self._history_origin(key);origin_label=text.get(origin,origin)
+            if isinstance(key,ImportedHistoryKey):map_label=meta.get('source_name',key.source_format);details=f'(.{key.source_format.lower()}) · {meta.get("side",out.state.side)}×{meta.get("side",out.state.side)} · {meta.get("players",len(out.state.starts))}P'
+            else:map_label=f'Seed {key.seed}';details=f'{key.side}×{key.side} · {key.players}P · {MODE_LABELS[lang].get(key.mode,key.mode)} · {ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)}'
+            roles=self._history_roles_for_output(out)
+            iid=f'h{index}';tree.insert('', 'end',iid=iid,text=str(index+1),image=self._history_role_image(roles),values=(origin_label,map_label,details),tags=('even' if index%2==0 else 'odd',));self._history_center_lookup[iid]=key
+            if key==selected:tree.selection_set(iid)
+        children=tree.get_children()
+        if not tree.selection() and children and preferred_index is not None:
+            iid=children[max(0,min(int(preferred_index),len(children)-1))];tree.selection_set(iid);tree.focus(iid);tree.see(iid)
+        elif tree.selection():tree.focus(tree.selection()[0])
+        if children and preferred_index is None:tree.yview_moveto(old_y)
+        info=self._history_window_widgets.get('info')
+        if info is not None:info.configure(text=text['capacity'].format(used=len(self.session_cache),count=self.session_cache.max_entries))
+        self._history_selection_changed()
+
+    def _refresh_history_preview(self):
+        label=getattr(self,'_history_preview_label',None)
+        if self._history_window is None or label is None:return
+        try:
+            if not label.winfo_exists():return
+        except tk.TclError:return
+        key=self._history_selected_key();out=self.session_cache.peek(key) if key else None;lang=self.prefs.get('language','fr');text=HISTORY_TEXT[lang]
+        if out is None:
+            self._history_preview_photo=None;self._history_preview_base_image=None;self._history_preview_key=None;label.configure(image='',text='—');self._history_preview_status.set(text['empty']);self._history_preview_source.set('');self._history_hide_large_preview();return
+        marker_mode=self.prefs.get('preview_start_markers','small')
+        preview_key=(id(out.state),self.prefs.get('projection','square'),marker_mode)
+        if preview_key!=self._history_preview_key or getattr(self,'_history_preview_base_image',None) is None:
+            image=render(out.state,labels=False,view='global',projection=self.prefs.get('projection','square'),start_markers=marker_mode!='hidden',start_marker_scale=2 if marker_mode=='normal' else 1)
+            image.thumbnail((300,210),Image.Resampling.NEAREST);self._history_preview_base_image=image;self._history_preview_key=preview_key
+        self._history_refresh_thumbnail_photo()
+        slots=[slot for slot,value in self._compare_slots.items() if value is out];parts=[text['comparison'].format(slots='/'.join(slots) if slots else text['none'])]
+        if getattr(self,'current',None) is out:parts.append(text['current'])
+        reasons=[]
+        if getattr(self,'current',None) is out:reasons.append(text['main_view'])
+        reasons.extend(f'Slot {slot}' for slot in slots)
+        if reasons:parts.append(text['protected'].format(reasons=', '.join(reasons)))
+        entries=self.session_cache.entries();position=next((index+1 for index,(entry_key,_) in enumerate(entries) if entry_key==key),1);parts.append(text['mru'].format(position=position,total=len(entries)))
+        self._history_preview_status.set('\n'.join(parts));source=self.session_cache.metadata(key).get('source_path');self._history_preview_source.set(text['source'].format(path=source) if source else '')
+        if self._history_large_window is not None:self._history_refresh_large_preview()
+
+    def _history_refresh_thumbnail_photo(self):
+        label=getattr(self,'_history_preview_label',None);base=getattr(self,'_history_preview_base_image',None);key=self._history_selected_key()
+        if self._history_window is None or label is None or base is None or key is None:return
+        try:
+            if not label.winfo_exists():return
+            shown=_thumbnail_with_magnifier(base,self._magnifier_state_for('history',key));self._history_preview_photo=ImageTk.PhotoImage(shown,master=label);label.configure(image=self._history_preview_photo,text='')
+        except tk.TclError:return
+
+    def _history_schedule_hover_preview(self):
+        self._history_cancel_hover_preview();self._history_preview_hover=True
+        key=self._history_selected_key()
+        if key is None:return
+        self._set_magnifier_hover('history',key)
+        if not self._history_large_pinned:self._history_hover_after=self.after(700,lambda k=key:self._history_hover_preview_ready(k))
+
+    def _history_hover_preview_ready(self,key):
+        self._history_hover_after=None
+        if self._history_preview_hover and self._magnifier_refs_match(self._history_selected_key(),key):self._history_show_large_preview(False)
+
+    def _history_cancel_hover_preview(self):
+        if self._history_hover_after is not None:
+            try:self.after_cancel(self._history_hover_after)
+            except tk.TclError:pass
+            self._history_hover_after=None
+
+    def _history_thumbnail_leave(self):
+        self._history_cancel_hover_preview()
+        try:self.after_idle(self._history_finish_thumbnail_leave)
+        except tk.TclError:pass
+
+    def _history_finish_thumbnail_leave(self):
+        host=self._history_window_widgets.get('preview_image_host')
+        if host is not None:
+            try:
+                x,y=host.winfo_pointerxy();inside=host.winfo_rootx()<=x<host.winfo_rootx()+host.winfo_width() and host.winfo_rooty()<=y<host.winfo_rooty()+host.winfo_height()
+                if inside:return
+            except tk.TclError:pass
+        self._history_preview_hover=False
+        self._set_magnifier_hover()
+        if not self._history_large_pinned:self._history_hide_large_preview()
+        else:self._restore_magnifier_visual()
+
+    def _history_toggle_large_preview(self):
+        key=self._history_selected_key()
+        if key is None:return
+        if self._history_large_pinned and self._history_large_window is not None and self._history_large_key and self._history_large_key[0]==key:
+            self._history_hide_large_preview();return
+        self._history_show_large_preview(True)
+
+    def _history_show_large_preview(self,pinned=False):
+        self._history_cancel_hover_preview()
+        key=self._history_selected_key();out=self.session_cache.peek(key) if key else None
+        if out is None:return
+        old=self._history_large_window;preserved=None
+        if old is not None:
+            try:preserved=(old.winfo_x(),old.winfo_y())
+            except tk.TclError:pass
+        marker_mode=self.prefs.get('preview_start_markers','small');projection=self.prefs.get('projection','square')
+        render_key=(key,id(out.state),projection,marker_mode)
+        if render_key!=self._history_large_key or self._history_large_image is None:
+            self._history_large_image=render(out.state,labels=False,view='global',projection=projection,start_markers=marker_mode!='hidden',start_marker_scale=2 if marker_mode=='normal' else 1)
+            self._history_large_key=render_key
+        if pinned:
+            shown,size=self._history_large_scaled_image(self._history_large_image)
+            if preserved is None:preserved=self._history_large_initial_position(size)
+            x,y=self._history_large_clamp(*preserved,size)
+        else:
+            shown,size,x,y=self._temporary_preview_geometry(self._history_large_image,self._history_large_zoom,self._history_preview_label)
+        old_projection=getattr(self,'_history_large_projection',None)
+        if old is not None and self._history_large_label is not None and old_projection==projection:
+            try:
+                photo=ImageTk.PhotoImage(shown,master=old);self._history_large_label.configure(image=photo,cursor='fleur' if pinned else 'arrow');self._history_large_photo=photo;old.geometry(f'{size[0]}x{size[1]}+{x}+{y}');self._history_large_pinned=bool(pinned);self._history_bind_large_surface(self._history_large_label,pinned);self._activate_magnifier('history',key);old.lift();return
+            except tk.TclError:pass
+        win,label,photo=self._history_build_large_surface(shown,size,x,y,pinned)
+        self._history_large_window=win;self._history_large_label=label;self._history_large_photo=photo;self._history_large_projection=projection;self._history_large_pinned=bool(pinned);self._activate_magnifier('history',key)
+        win.deiconify();win.lift();win.update_idletasks()
+        if old is not None and old is not win:
+            try:old.destroy()
+            except tk.TclError:pass
+
+    def _history_large_scaled_image(self,image):
+        screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();max_w=max(320,screen_w-80);max_h=max(280,screen_h-120)
+        factor=min(float(self._history_large_zoom),max_w/image.width,max_h/image.height)
+        size=(max(1,round(image.width*factor)),max(1,round(image.height*factor)))
+        return image.resize(size,Image.Resampling.NEAREST),size
+
+    def _history_large_initial_position(self,size):
+        anchor=self._history_preview_label;anchor.update_idletasks();screen_w=self.winfo_screenwidth();margin=14
+        ax=anchor.winfo_rootx();ay=anchor.winfo_rooty();aw=anchor.winfo_width()
+        x=ax-size[0]-margin if ax>=screen_w-(ax+aw) else ax+aw+margin
+        return x,ay
+
+    def _history_large_clamp(self,x,y,size):
+        screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight()
+        return max(8,min(int(x),screen_w-size[0]-8)),max(8,min(int(y),screen_h-size[1]-48))
+
+    def _temporary_preview_geometry(self,image,zoom,anchor):
+        """Fit an unpinned preview beside its source without changing stored zoom."""
+        screen_w=self.winfo_screenwidth();screen_h=self.winfo_screenheight();gap=18
+        anchor.update_idletasks();ax=anchor.winfo_rootx();ay=anchor.winfo_rooty();aw=anchor.winfo_width();ah=anchor.winfo_height()
+        left,top,right,bottom=8,8,screen_w-8,screen_h-48
+        regions=(
+            ('left',left,top,max(left,ax-gap),bottom),
+            ('right',min(right,ax+aw+gap),top,right,bottom),
+            ('top',left,top,right,max(top,ay-gap)),
+            ('bottom',left,min(bottom,ay+ah+gap),right,bottom),
+        )
+        choices=[]
+        for priority,(side,x0,y0,x1,y1) in enumerate(regions):
+            available_w=max(0,x1-x0);available_h=max(0,y1-y0)
+            if available_w<1 or available_h<1:continue
+            factor=min(float(zoom),available_w/image.width,available_h/image.height)
+            if factor<=0:continue
+            width=max(1,round(image.width*factor));height=max(1,round(image.height*factor))
+            if side=='left':x=x1-width;y=max(y0,min(ay+(ah-height)//2,y1-height))
+            elif side=='right':x=x0;y=max(y0,min(ay+(ah-height)//2,y1-height))
+            elif side=='top':x=max(x0,min(ax+(aw-width)//2,x1-width));y=y1-height
+            else:x=max(x0,min(ax+(aw-width)//2,x1-width));y=y0
+            choices.append((factor,-priority,(width,height),int(x),int(y)))
+        if not choices:
+            shown,size=self._history_large_scaled_image(image);x,y=self._history_large_clamp(8,8,size);return shown,size,x,y
+        _,_,size,x,y=max(choices,key=lambda item:(item[0],item[1]))
+        return image.resize(size,Image.Resampling.NEAREST),size,x,y
+
+    def _history_build_large_surface(self,shown,size,x,y,pinned):
+        chroma='#ff00ff';win=tk.Toplevel(self._history_window or self);win.withdraw();win.overrideredirect(True);win.configure(bg=chroma);win.attributes('-topmost',True)
+        try:win.wm_attributes('-transparentcolor',chroma)
+        except tk.TclError:pass
+        photo=ImageTk.PhotoImage(shown,master=win);label=tk.Label(win,image=photo,bg=chroma,bd=0,highlightthickness=0,cursor='fleur' if pinned else 'arrow');label.pack()
+        win.geometry(f'{size[0]}x{size[1]}+{x}+{y}')
+        self._history_bind_large_surface(label,pinned)
+        win.bind('<Escape>',lambda e:self._history_hide_large_preview(),add='+');win.update_idletasks();return win,label,photo
+
+    def _history_bind_large_surface(self,label,pinned):
+        for sequence in ('<ButtonPress-1>','<B1-Motion>','<ButtonRelease-1>','<MouseWheel>','<Button-4>','<Button-5>'):label.unbind(sequence)
+        if pinned:
+            label.bind('<ButtonPress-1>',self._history_large_drag_start);label.bind('<B1-Motion>',self._history_large_drag_move);label.bind('<ButtonRelease-1>',self._history_large_drag_end)
+        label.bind('<MouseWheel>',self._history_large_wheel);label.bind('<Button-4>',lambda e:self._history_large_wheel(e,1));label.bind('<Button-5>',lambda e:self._history_large_wheel(e,-1))
+
+    def _history_large_drag_start(self,event):
+        win=self._history_large_window
+        if win is None:return 'break'
+        try:self._history_large_drag_origin=(event.x_root,event.y_root,win.winfo_x(),win.winfo_y())
+        except tk.TclError:self._history_large_drag_origin=None
+        return 'break'
+
+    def _history_large_drag_move(self,event):
+        win=self._history_large_window;origin=self._history_large_drag_origin
+        if win is None or origin is None:return 'break'
+        try:
+            size=(win.winfo_width(),win.winfo_height());x,y=self._history_large_clamp(origin[2]+event.x_root-origin[0],origin[3]+event.y_root-origin[1],size);win.geometry(f'+{x}+{y}')
+        except tk.TclError:pass
+        return 'break'
+
+    def _history_large_drag_end(self,event=None):self._history_large_drag_origin=None;return 'break'
+    def _history_large_wheel(self,event,direction=None):
+        if direction is None:direction=1 if getattr(event,'delta',0)>0 else -1
+        self._history_large_zoom=max(.35,min(1.25,self._history_large_zoom+(.1 if direction>0 else -.1)));self._history_refresh_large_preview();return 'break'
+    def _history_refresh_large_preview(self):
+        if self._history_large_window is not None:self._history_show_large_preview(self._history_large_pinned)
+    def _history_hide_large_preview(self):
+        closing_key=self._history_large_key[0] if self._history_large_key else None
+        if self._history_large_window is not None:
+            try:self._history_large_window.destroy()
+            except tk.TclError:pass
+        self._history_large_window=None;self._history_large_label=None;self._history_large_photo=None;self._history_large_image=None;self._history_large_key=None;self._history_large_drag_origin=None;self._history_large_pinned=False;self._history_large_projection=None
+        if self._magnifier_active_kind=='history' and self._magnifier_refs_match(self._magnifier_active_ref,closing_key):self._set_magnifier_active()
+        self._restore_magnifier_visual()
+
+    def _history_center_show(self):
+        key=self._history_selected_key()
+        if key is not None:self._display_history_key(key)
+    def _history_center_assign(self,slot):
+        key=self._history_selected_key();out=self.session_cache.peek(key) if key else None
+        if out is not None:self._set_compare_output(slot,out);self._refresh_history()
+    def _history_center_delete(self):
+        key=self._history_selected_key()
+        if key is None:return
+        children=list(self._history_tree.get_children());selection=self._history_tree.selection();index=children.index(selection[0]) if selection and selection[0] in children else 0
+        out=self.session_cache.peek(key);slots=[slot for slot,value in self._compare_slots.items() if value is out];text=HISTORY_TEXT[self.prefs.get('language','fr')]
+        reasons=[]
+        if out is getattr(self,'current',None):reasons.append(text['main_view'])
+        reasons.extend(f'Slot {slot}' for slot in slots)
+        if reasons and not messagebox.askyesno(text['title'],text['delete_assigned'].format(reasons=', '.join(reasons)),parent=self._history_window):return
+        for slot in slots:
+            self._compare_slots[slot]=None
+            if self._compare_active==slot:self._compare_active=None
+        self.session_cache.remove(key);self._refresh_compare_label();self._refresh_history(preferred_index=index);self._feedback_key=None;self._status_kind='info';self.status.set(text['deleted']);self._sync_status_display();self._refresh_state_indicators()
+    def _history_center_clear(self):
+        self._clear_history(confirm=True,parent=self._history_window)
+
+    def _retranslate_history_center(self):
+        if self._history_window is None:return
+        text=HISTORY_TEXT[self.prefs.get('language','fr')];self._history_window.title(text['title']);tree=self._history_tree
+        tree.heading('#0',text='#');
+        for key in ('origin','map','details'):tree.heading(key,text=text[key])
+        self._history_window_widgets['preview_host'].configure(text=text['preview'])
+        for key,label in (('show','show'),('a','set_a'),('b','set_b'),('delete','delete'),('clear','clear'),('close','close')):self._history_window_widgets['buttons'][key].configure(text=text[label])
+        self._refresh_history_center()
+
+    def _apply_history_window_theme(self):
+        if self._history_window is None:return
+        try:
+            colors=self._ui_theme_colors;self._history_window.configure(background=colors.get('window','#202124'))
+            self._history_tree.tag_configure('even',background=colors.get('surface','#303134'),foreground=colors.get('text','#e8eaed'))
+            self._history_tree.tag_configure('odd',background=colors.get('surface_alt','#34363a'),foreground=colors.get('text','#e8eaed'))
+            self._history_preview_label.configure(background=colors.get('panel','#292a2d'),foreground=colors.get('text','#e8eaed'))
+            host=self._history_window_widgets.get('preview_image_host')
+            if host is not None:host.configure(background=colors.get('panel','#292a2d'))
+        except tk.TclError:pass
 
     # ---------- v1.8 DEV_3: Batch Generation v1 ----------
     def _batch_text(self,key,**values):
@@ -1440,10 +2099,11 @@ class App(V15StableApp):
             mini_bg=getattr(self,'_ui_theme_colors',{}).get('panel','#292a2d')
             row['thumbnail_host']=tk.Frame(frame,width=182,height=122,bg=mini_bg,bd=0,highlightthickness=0);row['thumbnail_host'].grid(row=0,column=1,rowspan=2,sticky='e');row['thumbnail_host'].grid_propagate(False)
             row['thumbnail']=tk.Label(row['thumbnail_host'],text=str(index),bg=mini_bg,bd=0,highlightthickness=0,cursor='hand2');row['thumbnail'].place(relx=.5,rely=.5,anchor='center')
-            row['thumbnail'].bind('<Button-1>',lambda e,r=row:self._batch_toggle_large_preview(r));row['thumbnail'].bind('<Enter>',lambda e,r=row:self._batch_schedule_hover_preview(r));row['thumbnail'].bind('<Leave>',self._batch_thumbnail_leave)
+            row['thumbnail'].bind('<Button-1>',lambda e,r=row:self._batch_toggle_large_preview(r));row['thumbnail'].bind('<Enter>',lambda e,r=row:self._batch_schedule_hover_preview(r));row['thumbnail'].bind('<Leave>',lambda e,r=row:self._batch_thumbnail_leave(r))
+            row['thumbnail_host'].bind('<Enter>',lambda e,r=row:self._batch_schedule_hover_preview(r),add='+');row['thumbnail_host'].bind('<Leave>',lambda e,r=row:self._batch_thumbnail_leave(r),add='+')
             result_line=ttk.Frame(frame);result_line.grid(row=1,column=0,sticky='ew',padx=(7,8),pady=(7,3));result_line.columnconfigure(3,weight=1)
             row['status_var']=tk.StringVar(value=bt['waiting'])
-            row['show']=ttk.Button(result_line,text=bt['show'],state='disabled',command=lambda r=row:self._batch_show_result(r));row['show'].grid(row=0,column=0,padx=(0,4))
+            row['show']=ttk.Button(result_line,text=bt['show'],image=self._compare_led_off,compound='left',state='disabled',command=lambda r=row:self._batch_show_result(r));row['show'].grid(row=0,column=0,padx=(0,4))
             row['set_a']=ttk.Button(result_line,text=bt['set_a'],image=self._compare_led_off,compound='left',state='disabled',command=lambda r=row:self._batch_assign_result(r,'A'));row['set_a'].grid(row=0,column=1,padx=2)
             row['set_b']=ttk.Button(result_line,text=bt['set_b'],image=self._compare_led_off,compound='left',state='disabled',command=lambda r=row:self._batch_assign_result(r,'B'));row['set_b'].grid(row=0,column=2,padx=(2,7))
             row['progress']=tk.Canvas(result_line,height=26,highlightthickness=0,bd=0);row['progress'].grid(row=0,column=3,sticky='ew');row['progress'].bind('<Configure>',lambda e,r=row:self._batch_draw_progress(r))
@@ -1493,7 +2153,7 @@ class App(V15StableApp):
         try:
             canvas.update_idletasks();w=max(1,canvas.winfo_width());h=max(1,canvas.winfo_height());canvas.delete('all')
             colors=getattr(self,'_ui_theme_colors',{});bg=colors.get('bar_bg','#3c4043');state=row.get('state','waiting')
-            fill={'running':colors.get('bar_fg','#35a853'),'success':'#35a853','cached':'#2879d0','failed':'#d84a3a','cancelled':'#7f858d'}.get(state,colors.get('muted','#7f858d'))
+            fill={'running':colors.get('bar_fg','#35a853'),'success':'#35a853','cached':'#2879d0','not_cached':colors.get('warning','#f9ab00'),'failed':'#d84a3a','cancelled':'#7f858d'}.get(state,colors.get('muted','#7f858d'))
             value=float(row.get('progress_value',0));canvas.configure(bg=bg)
             if value>0:canvas.create_rectangle(0,0,max(1,round(w*value/100)),h,fill=fill,outline='')
             shown=self._fit_progress_detail(row.get('status_var').get() if row.get('status_var') else '',max(40,w-18))
@@ -1515,7 +2175,12 @@ class App(V15StableApp):
         row['preview_base_key']=(state_key,projection)
         image=self._batch_compose_preview(row)
         thumb=image.copy();thumb.thumbnail((180,120),Image.Resampling.NEAREST)
-        row['thumbnail_photo']=ImageTk.PhotoImage(thumb);row['thumbnail'].configure(image=row['thumbnail_photo'],text='')
+        row['thumbnail_base_image']=thumb;self._batch_refresh_thumbnail_photo(row)
+
+    def _batch_refresh_thumbnail_photo(self,row):
+        base=row.get('thumbnail_base_image');label=row.get('thumbnail')
+        if base is None or label is None:return
+        shown=_thumbnail_with_magnifier(base,self._magnifier_state_for('batch',row));row['thumbnail_photo']=ImageTk.PhotoImage(shown,master=label);label.configure(image=row['thumbnail_photo'],text='')
 
     def _batch_compose_preview(self,row):
         base=row.get('preview_base_image');out=row.get('result')
@@ -1533,7 +2198,13 @@ class App(V15StableApp):
 
     def _batch_schedule_hover_preview(self,row):
         self._batch_cancel_hover_preview()
-        if row.get('result') is not None and not self._batch_preview_pinned:self._batch_hover_after=self.after(700,lambda:self._batch_show_preview_tooltip(row,False))
+        if row.get('result') is None:return
+        self._set_magnifier_hover('batch',row)
+        if not self._batch_preview_pinned:self._batch_hover_after=self.after(700,lambda r=row:self._batch_hover_preview_ready(r))
+
+    def _batch_hover_preview_ready(self,row):
+        self._batch_hover_after=None
+        if self._magnifier_hover_kind=='batch' and self._magnifier_hover_ref is row:self._batch_show_preview_tooltip(row,False)
 
     def _batch_cancel_hover_preview(self,event=None):
         if self._batch_hover_after is not None:
@@ -1541,9 +2212,21 @@ class App(V15StableApp):
             except tk.TclError:pass
             self._batch_hover_after=None
 
-    def _batch_thumbnail_leave(self,event=None):
+    def _batch_thumbnail_leave(self,row=None):
         self._batch_cancel_hover_preview()
+        try:self.after_idle(lambda r=row:self._batch_finish_thumbnail_leave(r))
+        except tk.TclError:pass
+
+    def _batch_finish_thumbnail_leave(self,row):
+        if row is not None:
+            host=row.get('thumbnail_host')
+            try:
+                x,y=host.winfo_pointerxy();inside=host.winfo_rootx()<=x<host.winfo_rootx()+host.winfo_width() and host.winfo_rooty()<=y<host.winfo_rooty()+host.winfo_height()
+                if inside:return
+            except (tk.TclError,AttributeError):pass
+        if self._magnifier_hover_kind=='batch' and self._magnifier_hover_ref is row:self._set_magnifier_hover()
         if not self._batch_preview_pinned:self._batch_hide_preview_tooltip()
+        else:self._restore_magnifier_visual()
 
     def _batch_toggle_large_preview(self,row):
         if self._batch_preview_pinned and self._batch_preview_row is row:
@@ -1559,10 +2242,11 @@ class App(V15StableApp):
         if old_win is not None and self._batch_preview_pinned:
             try:preserved=(old_win.winfo_x(),old_win.winfo_y())
             except tk.TclError:pass
-        shown,size,x,y=self._batch_preview_geometry(row,image)
+        if pinned:shown,size,x,y=self._batch_preview_geometry(row,image)
+        else:shown,size,x,y=self._temporary_preview_geometry(image,self._batch_preview_zoom,row['thumbnail_host'])
         if preserved is not None:x,y=self._batch_clamp_preview_position(preserved[0],preserved[1],size)
         win,label,photo=self._batch_build_preview_surface(shown,size,x,y,pinned)
-        self._batch_preview_window=win;self._batch_preview_label=label;self._batch_preview_photo=photo;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned);self._batch_preview_projection=self.prefs.get('projection','square')
+        self._batch_preview_window=win;self._batch_preview_label=label;self._batch_preview_photo=photo;self._batch_preview_row=row;self._batch_preview_pinned=bool(pinned);self._batch_preview_projection=self.prefs.get('projection','square');self._activate_magnifier('batch',row)
         win.deiconify();win.lift();win.update_idletasks()
         if old_win is not None and old_win is not win:
             try:old_win.destroy()
@@ -1577,6 +2261,7 @@ class App(V15StableApp):
         win.geometry(f'{size[0]}x{size[1]}+{x}+{y}')
         if pinned:
             label.bind('<ButtonPress-1>',self._batch_preview_drag_start);label.bind('<B1-Motion>',self._batch_preview_drag_move);label.bind('<ButtonRelease-1>',self._batch_preview_drag_end)
+        label.bind('<MouseWheel>',self._batch_preview_wheel);label.bind('<Button-4>',lambda e:self._batch_preview_wheel(e,1));label.bind('<Button-5>',lambda e:self._batch_preview_wheel(e,-1))
         win.bind('<Escape>',lambda e:self._batch_hide_preview_tooltip(),add='+')
         win.update_idletasks();return win,label,photo
 
@@ -1585,9 +2270,12 @@ class App(V15StableApp):
         ax=anchor.winfo_rootx();ay=anchor.winfo_rooty();aw=anchor.winfo_width();ah=anchor.winfo_height();margin=14
         left_space=max(0,ax-margin-8);right_space=max(0,screen_w-(ax+aw)-margin-8);place_left=left_space>=right_space
         side_space=left_space if place_left else right_space
-        if side_space<360:place_left=not place_left;side_space=left_space if place_left else right_space
-        max_w=max(280,min(900,side_space));max_h=min(700,max(280,screen_h-96))
-        factor=min(max_w/image.width,max_h/image.height,1.0);size=(max(1,int(image.width*factor)),max(1,int(image.height*factor)));shown=image.resize(size,Image.Resampling.NEAREST)
+        if side_space<360:place_left=not place_left
+        # Match History preview: zoom is constrained by the visible screen, not
+        # by the narrow strip beside the Batch window. Overlap is preferable to
+        # silently flattening most of the requested zoom range.
+        max_w=max(320,screen_w-80);max_h=max(280,screen_h-120)
+        factor=min(max_w/image.width,max_h/image.height,float(self._batch_preview_zoom));size=(max(1,int(image.width*factor)),max(1,int(image.height*factor)));shown=image.resize(size,Image.Resampling.NEAREST)
         x=(ax-size[0]-margin) if place_left else (ax+aw+margin);x=max(8,min(x,screen_w-size[0]-8))
         y=ay+(ah-size[1])//2;y=max(8,min(y,screen_h-size[1]-48))
         return shown,size,x,y
@@ -1615,11 +2303,18 @@ class App(V15StableApp):
     def _batch_preview_drag_end(self,event=None):
         self._batch_preview_drag_origin=None;return 'break'
 
+    def _batch_preview_wheel(self,event,direction=None):
+        if direction is None:direction=1 if getattr(event,'delta',0)>0 else -1
+        self._batch_preview_zoom=max(.35,min(1.25,self._batch_preview_zoom+(.1 if direction>0 else -.1)));self._batch_refresh_preview_tooltip(self._batch_preview_row);return 'break'
+
     def _batch_refresh_preview_tooltip(self,row):
         win=self._batch_preview_window;label=self._batch_preview_label
         if win is None or label is None or self._batch_preview_row is not row:return
         try:
-            current=(win.winfo_x(),win.winfo_y());image=self._batch_compose_preview(row);shown,size,_,_=self._batch_preview_geometry(row,image);x,y=self._batch_clamp_preview_position(current[0],current[1],size)
+            current=(win.winfo_x(),win.winfo_y());image=self._batch_compose_preview(row)
+            if self._batch_preview_pinned:
+                shown,size,_,_=self._batch_preview_geometry(row,image);x,y=self._batch_clamp_preview_position(current[0],current[1],size)
+            else:shown,size,x,y=self._temporary_preview_geometry(image,self._batch_preview_zoom,row['thumbnail_host'])
             projection=self.prefs.get('projection','square')
             if projection!=self._batch_preview_projection:
                 new_win,new_label,new_photo=self._batch_build_preview_surface(shown,size,x,y,self._batch_preview_pinned)
@@ -1630,10 +2325,13 @@ class App(V15StableApp):
         except tk.TclError:pass
 
     def _batch_hide_preview_tooltip(self):
+        closing_row=self._batch_preview_row
         if self._batch_preview_window is not None:
             try:self._batch_preview_window.destroy()
             except tk.TclError:pass
         self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None
+        if self._magnifier_active_kind=='batch' and self._magnifier_active_ref is closing_row:self._set_magnifier_active()
+        self._restore_magnifier_visual()
 
     def _retranslate_batch_window(self):
         win=getattr(self,'_batch_window',None)
@@ -1649,12 +2347,13 @@ class App(V15StableApp):
                 row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
                 row['arch'].configure(values=[ARCHETYPE_LABELS[lang][key] for key in ARCHETYPE_ORDER]);row['arch_var'].set(ARCHETYPE_LABELS[lang][arch])
                 row['modifier'].configure(values=[bt['none']]);row['modifier_var'].set(bt['none']);row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
-                state=row.get('state','waiting');key='cached' if row.get('cached') else ('success' if state=='success' else state)
+                state=row.get('state','waiting');key='not_cached' if state=='not_cached' else ('cached' if row.get('cached') else ('success' if state=='success' else state))
                 if key=='failed':text=bt['failed'].format(error=row.get('error',''))
                 elif key in bt:text=bt[key]
                 else:text=bt['waiting']
                 row['status_var'].set(text);self._batch_draw_progress(row)
             self._batch_start_button.configure(text=bt['start']);self._batch_cancel_button.configure(text=bt['cancel']);self._batch_close_button.configure(text=bt['close'])
+            self._refresh_batch_assignment_buttons()
         except tk.TclError:pass
 
     def _batch_update_row_visibility(self):
@@ -1727,13 +2426,67 @@ class App(V15StableApp):
         try:requests=self._batch_collect_requests()
         except ValueError as exc:
             messagebox.showerror(self._batch_text('invalid_title'),str(exc),parent=self._batch_window);return
+        if not self._confirm_batch_cache_capacity(requests):return
         self._batch_queue=list(requests);self._batch_active_count=len(requests);self._batch_running=True;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None
         for request in requests:
-            row=request['row'];row['result']=None;row['cached']=False;row['error']='';row.pop('preview_image',None);row.pop('thumbnail_photo',None);row['thumbnail'].configure(image='',text=str(row['index']))
+            row=request['row'];row['result']=None;row['cached']=False;row['error']='';row.pop('history_key',None);row.pop('preview_image',None);row.pop('thumbnail_photo',None);row.pop('thumbnail_base_image',None);row['thumbnail'].configure(image='',text=str(row['index']))
             self._batch_update_progress(row,0,self._batch_text('waiting'),'waiting')
             row['show'].configure(state='disabled');row['set_a'].configure(state='disabled');row['set_b'].configure(state='disabled')
         self._batch_set_running_controls(True);self._batch_summary_var.set(self._batch_text('running',current=1,total=len(requests)))
         self.after(20,self._batch_run_next)
+
+    def _confirm_batch_cache_capacity(self,requests):
+        forecast=self._batch_cache_capacity_forecast(requests)
+        if forecast['existing_evicted']==0 and forecast['batch_dropped']==0:return True
+        return self._show_batch_cache_warning(forecast)
+
+    def _batch_cache_capacity_forecast(self,requests):
+        """Simulate generation plus final re-touch without mutating the real LRU."""
+        entries=self.session_cache.entries();original_keys=[key for key,_ in entries]
+        simulated={key:value for key,value in reversed(entries)};capacity=self.session_cache.max_entries
+        protected_ids={id(value) for value in (getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks) if value is not None and any(cached is value for cached in simulated.values())}
+        requested_keys=[request['key'] for request in requests];requested_values={};last_value=None
+        def trim():
+            while len(simulated)>capacity:
+                victim=next((key for key,value in simulated.items() if id(value) not in protected_ids),None)
+                if victim is None:break
+                simulated.pop(victim,None)
+        for key in requested_keys:
+            if key in simulated:value=simulated.pop(key)
+            elif key in requested_values:value=requested_values[key]
+            else:value=object()
+            requested_values.setdefault(key,value);simulated[key]=value;last_value=value;trim()
+        if getattr(self,'current',None) is None and last_value is not None:protected_ids.add(id(last_value))
+        for key in requested_keys:
+            value=requested_values[key];simulated.pop(key,None);simulated[key]=value;trim()
+        final_keys=set(simulated);unique_requested=list(dict.fromkeys(requested_keys))
+        existing_evicted=sum(key not in final_keys for key in original_keys)
+        batch_dropped=sum(key not in final_keys for key in unique_requested)
+        return {'used':len(entries),'capacity':capacity,'requested':len(unique_requested),'retained':len(unique_requested)-batch_dropped,'protected':len(protected_ids),'existing_evicted':existing_evicted,'batch_dropped':batch_dropped}
+
+    def _show_batch_cache_warning(self,forecast):
+        lang=self.prefs.get('language','fr');text=_BATCH_CAPACITY_TEXT[lang];result={'continue':False}
+        parent=self._batch_window or self;win=tk.Toplevel(parent);win.withdraw();win.title(text['title']);win.transient(parent);win.resizable(False,False)
+        colors=getattr(self,'_ui_theme_colors',THEME_PALETTES.get(self.prefs.get('theme','dark'),THEME_PALETTES['dark']));win.configure(background=colors.get('window','#202124'))
+        shell=ttk.Frame(win,padding=16);shell.pack(fill='both',expand=True)
+        ttk.Label(shell,text=text['title'],style='Section.TLabel').pack(anchor='w',fill='x',pady=(0,10))
+        lines=[text['intro'].format(**forecast)]
+        if forecast['existing_evicted']:lines.append(text['existing'].format(count=forecast['existing_evicted']))
+        if forecast['batch_dropped']:lines.append(text['batch'].format(count=forecast['batch_dropped']))
+        lines.extend((text['kept'],text['question']))
+        ttk.Label(shell,text='\n\n'.join((lines[0],'\n'.join(lines[1:-2]),lines[-2],lines[-1])),justify='left',wraplength=520).pack(anchor='w',fill='x')
+        buttons=ttk.Frame(shell);buttons.pack(fill='x',pady=(16,0))
+        def close(accepted=False):
+            result['continue']=bool(accepted)
+            try:win.grab_release()
+            except tk.TclError:pass
+            win.destroy()
+        ttk.Button(buttons,text=text['cancel'],command=lambda:close(False)).pack(side='right')
+        ttk.Button(buttons,text=text['continue'],command=lambda:close(True)).pack(side='right',padx=(0,8))
+        win.protocol('WM_DELETE_WINDOW',lambda:close(False));win.bind('<Escape>',lambda e:close(False),add='+');win.bind('<Return>',lambda e:close(True),add='+')
+        win.update_idletasks();width=max(480,win.winfo_reqwidth());height=win.winfo_reqheight();screen_w=win.winfo_screenwidth();screen_h=win.winfo_screenheight()
+        x=parent.winfo_rootx()+(parent.winfo_width()-width)//2;y=parent.winfo_rooty()+(parent.winfo_height()-height)//2;x=max(8,min(x,screen_w-width-8));y=max(8,min(y,screen_h-height-48));win.geometry(f'{width}x{height}+{x}+{y}')
+        win.deiconify();win.lift();win.focus_force();win.grab_set();win.wait_window();return result['continue']
 
     def _batch_run_next(self):
         if not self._batch_running:return
@@ -1750,7 +2503,7 @@ class App(V15StableApp):
         try:
             out=self.session_cache.get(key);cached=out is not None
             if out is None:out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype)
-            self.session_cache.put(key,out);row['result']=out;row['cached']=cached;self._batch_last_success=out
+            self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'});row['history_key']=key;row['result']=out;row['cached']=cached;self._batch_last_success=out
             self._batch_update_progress(row,100,self._batch_text('cached' if cached else 'success'),'cached' if cached else 'success');self._batch_render_thumbnail(row)
         except Exception as exc:
             row['error']=str(exc);self._batch_update_progress(row,100,self._batch_text('failed',error=str(exc)),'failed')
@@ -1770,8 +2523,26 @@ class App(V15StableApp):
             row['show'].configure(state=enabled);row['set_a'].configure(state=enabled);row['set_b'].configure(state=enabled)
         self._refresh_history();self._refresh_batch_assignment_buttons()
         if self._batch_last_success is not None:
-            self.current=self._batch_last_success;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
-        self._feedback('batch_done','success' if failed==0 else 'warning',success=success,failed=failed,cancelled=cancelled)
+            # Batch is a producer, not an implicit navigation command. It fills an
+            # empty viewer for convenience, but never replaces an existing map.
+            if self._batch_should_autodisplay():
+                self.current=self._batch_last_success;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            # Re-touch successful rows under the final protection set so the
+            # preflight forecast and the actual retained set follow the same rule.
+            for row in active:
+                key=row.get('history_key');out=row.get('result')
+                if key is not None and out is not None:self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'})
+            self._refresh_history()
+        lost_ids=set()
+        for row in active:
+            out=row.get('result')
+            if out is not None and row.get('state') in ('success','cached') and not self._output_in_history(out):
+                lost_ids.add(id(out));self._batch_update_progress(row,100,self._batch_text('not_cached'),'not_cached')
+        if lost_ids:self._batch_summary_var.set(self._batch_text('finished_retention',success=success,failed=failed,cancelled=cancelled,lost=len(lost_ids)))
+        self._feedback('batch_done','success' if failed==0 and not lost_ids else 'warning',success=success,failed=failed,cancelled=cancelled)
+
+    def _batch_should_autodisplay(self):
+        return getattr(self,'current',None) is None
 
     def _batch_show_result(self,row):
         out=row.get('result')
@@ -1803,30 +2574,31 @@ class App(V15StableApp):
             key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
             mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
             if cached is not None:
-                self.current=cached;self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
+                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
             self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
-            self.session_cache.put(key,self.current);self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
         except Exception as e:
             import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
     def _load_history(self):
-        key=self._history_lookup.get(self.history_var.get());out=self.session_cache.get(key) if key else None
-        if out is not None:
-            need_stats=self.session_stats_cache.get(out.state) is None
-            if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),'Chargement de l’historique…','Loading history…','Verlauf wird geladen…','Cargando historial…'),10)
-            self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
-            if need_stats:self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['history_loaded'])
-            else:self._feedback('history_loaded','success')
-        else:self._feedback('history_empty','warning')
-    def _clear_history(self):self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('');self._feedback('history_cleared','success')
+        self._display_history_key(self._history_lookup.get(self.history_var.get()))
+    def _clear_history(self,confirm=True,parent=None):
+        text=HISTORY_TEXT[self.prefs.get('language','fr')];slots=[slot for slot,value in self._compare_slots.items() if value is not None];reasons=[]
+        if self._output_in_history(getattr(self,'current',None)):reasons.append(text['main_view'])
+        reasons.extend(f'Slot {slot}' for slot in slots)
+        prompt=text['confirm_clear_protected'].format(reasons=', '.join(reasons)) if reasons else text['confirm_clear']
+        if confirm and not messagebox.askyesno(text['title'],prompt,parent=parent or self):return
+        self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('')
+        if slots:self._compare_slots={'A':None,'B':None};self._compare_active=None;self._refresh_compare_label()
+        self._refresh_history_center();self._refresh_state_indicators();self._feedback('history_cleared','success')
     def _set_compare_slot(self,slot):
         if not self.current:return
         self._set_compare_output(slot,self.current)
     def _set_compare_output(self,slot,out):
         if out is None:return 'ignored',None
         if self._compare_slots.get(slot) is out:
-            self._compare_active=slot;self._refresh_compare_label();lang=self.prefs.get('language','fr')
+            self._compare_active=slot;self._refresh_compare_label();getattr(self,'_refresh_history_preview',lambda:None)();lang=self.prefs.get('language','fr')
             self._feedback_key=None;self._status_kind='info';self.status.set(_lang_text(lang,f'Cette carte est déjà affectée à {slot}.',f'This map is already assigned to {slot}.',f'Diese Karte ist bereits {slot} zugewiesen.',f'Este mapa ya está asignado a {slot}.'));getattr(self,'_sync_status_display',lambda:None)();return 'already',None
         other='B' if slot=='A' else 'A';moved=self._compare_slots.get(other) is out
         if moved:self._compare_slots[other]=None
@@ -1834,6 +2606,7 @@ class App(V15StableApp):
         if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),f'Préparation comparaison {slot}…',f'Preparing comparison {slot}…',f'Vergleich {slot} wird vorbereitet…',f'Preparando comparación {slot}…'),10)
         self._compare_slots[slot]=out;self._compare_active=slot;self._stats_for_output(out);self._refresh_compare_label();self._refresh_stats_chart()
         lang=self.prefs.get('language','fr');message=(_lang_text(lang,f'Carte déplacée de {other} vers {slot}.',f'Map moved from {other} to {slot}.',f'Karte von {other} nach {slot} verschoben.',f'Mapa movido de {other} a {slot}.') if moved else _lang_text(lang,f'Comparaison {slot} prête.',f'Comparison {slot} ready.',f'Vergleich {slot} ist bereit.',f'Comparación {slot} lista.'))
+        getattr(self,'_refresh_history_preview',lambda:None)()
         if need_stats:self._task_done(message)
         else:self._feedback_key=None;self._status_kind='success';self.status.set(message);getattr(self,'_sync_status_display',lambda:None)()
         return ('moved' if moved else 'assigned'),(other if moved else None)
@@ -1863,26 +2636,73 @@ class App(V15StableApp):
         self._refresh_batch_assignment_buttons()
 
     def _refresh_batch_assignment_buttons(self):
+        lang=self.prefs.get('language','fr');bt=BATCH_TEXT[lang];ctx=_CONTEXT_TEXT[lang]
         for row in getattr(self,'_batch_rows',[]):
             out=row.get('result')
+            show=row.get('show')
+            if show is not None:
+                active=out is not None and out is getattr(self,'current',None)
+                try:show.configure(text=ctx['shown'] if active else bt['show'],image=self._compare_led_on if active else self._compare_led_off)
+                except tk.TclError:pass
             for slot,key in (('A','set_a'),('B','set_b')):
                 button=row.get(key)
                 if button is not None:
-                    try:button.configure(image=self._compare_led_on if out is not None and self._compare_slots.get(slot) is out else self._compare_led_off)
+                    active=out is not None and self._compare_slots.get(slot) is out
+                    try:button.configure(text=ctx['assigned_a' if slot=='A' else 'assigned_b'] if active else bt['set_a' if slot=='A' else 'set_b'],image=self._compare_led_on if active else self._compare_led_off)
                     except tk.TclError:pass
+    def _output_in_history(self,out):
+        return out is not None and any(value is out for _,value in self.session_cache.entries())
+    def _history_residency_hint(self):
+        current=getattr(self,'current',None)
+        if current is None or self._output_in_history(current):return
+        text=HISTORY_TEXT[self.prefs.get('language','fr')]['outside_history'];self._feedback_key=None;self._status_kind='warning';self.status.set(text);self._sync_status_display()
+    def _history_residency_tooltip(self):
+        current=getattr(self,'current',None)
+        if current is None or self._output_in_history(current):return
+        self._show_ui_tooltip(self.history_residency_label,_CONTEXT_TEXT[self.prefs.get('language','fr')]['outside_tip'],key='outside-history')
+    def _localized_source(self,source):
+        lang=self.prefs.get('language','fr')
+        return source if lang=='fr' else TEXTS.get(source,{}).get(lang,TEXTS.get(source,{}).get('en',source))
+    def _refresh_state_indicators(self):
+        current=getattr(self,'current',None)
+        selected_key=self._history_lookup.get(self.history_var.get()) if hasattr(self,'history_var') else None
+        selected_out=self.session_cache.peek(selected_key) if selected_key is not None else None
+        load=getattr(self,'history_load_button',None)
+        if load is not None:
+            active=selected_out is not None and selected_out is current
+            try:load.configure(text=_CONTEXT_TEXT[self.prefs.get('language','fr')]['loaded'] if active else self._localized_source('Charger'),image=self._compare_led_on if active else self._compare_led_off,compound='left')
+            except tk.TclError:pass
+        residency=getattr(self,'history_residency_label',None)
+        if residency is not None:
+            try:residency.configure(image=self._history_outside_icon if current is not None and not self._output_in_history(current) else '')
+            except tk.TclError:pass
+        key=self._history_selected_key();out=self.session_cache.peek(key) if key is not None else None
+        buttons=self._history_window_widgets.get('buttons',{})
+        states={'show':out is not None and out is current,'a':out is not None and self._compare_slots.get('A') is out,'b':out is not None and self._compare_slots.get('B') is out}
+        for name,active in states.items():
+            button=buttons.get(name)
+            if button is not None:
+                text=HISTORY_TEXT[self.prefs.get('language','fr')];label=(_CONTEXT_TEXT[self.prefs.get('language','fr')][{'show':'shown','a':'assigned_a','b':'assigned_b'}[name]] if active else text[{'show':'show','a':'set_a','b':'set_b'}[name]])
+                try:button.configure(text=label,image=self._compare_led_on if active else self._compare_led_off,compound='left')
+                except tk.TclError:pass
+        for iid,entry_key in self._history_center_lookup.items():
+            entry=self.session_cache.peek(entry_key);roles=self._history_roles_for_output(entry)
+            try:self._history_tree.item(iid,image=self._history_role_image(roles))
+            except (tk.TclError,AttributeError):pass
+        self._refresh_batch_assignment_buttons()
     def _refresh_compare_label(self):
         # Compatibility helper kept for existing callers; identity is now shown only on the LED buttons.
-        self._refresh_compare_buttons();self._refresh_stats_chart()
+        self._refresh_compare_buttons();self._refresh_stats_chart();self._refresh_state_indicators()
     def _clear_compare_slot(self,slot):
         if slot not in self._compare_slots:return
         self._compare_slots[slot]=None
         if self._compare_active==slot:self._compare_active=None
-        self._refresh_compare_label()
+        self._refresh_compare_label();getattr(self,'_refresh_history_preview',lambda:None)()
         lang=self.prefs.get('language','fr')
         self._feedback_key=None;self._status_kind='success';self.status.set(_lang_text(lang,f'Comparaison {slot} vidée',f'Comparison {slot} cleared',f'Vergleich {slot} geleert',f'Comparación {slot} vaciada'));getattr(self,'_sync_status_display',lambda:None)()
     def _clear_compare_slots(self):
         self._compare_slots={'A':None,'B':None};self._compare_active=None
-        self._refresh_compare_label()
+        self._refresh_compare_label();getattr(self,'_refresh_history_preview',lambda:None)()
         self._feedback_key=None;self._status_kind='success';self.status.set(_lang_text(self.prefs.get('language','fr'),'Comparaisons A/B vidées','A/B comparisons cleared','A/B-Vergleiche geleert','Comparaciones A/B vaciadas'));getattr(self,'_sync_status_display',lambda:None)()
     def _toggle_compare(self):
         a,b=self._compare_slots['A'],self._compare_slots['B']

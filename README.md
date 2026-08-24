@@ -20,14 +20,14 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_6_R1 validée / moteur v1.5 stable
+## État actuel — v1.8 DEV_7_R10 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_6_R1 étend l’interface dynamique à quatre langues persistantes — français, anglais, allemand et espagnol — y compris Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. La passe est validée sous Windows, avec une limite non bloquante documentée : le rapport texte Statistiques se retraduit après rechargement de la carte. Le moteur et les formats binaires validés sont inchangés.
+DEV_7_R10 conserve les corrections R9 et ajoute une règle anticollision commune aux grands aperçus temporaires Batch et Historique : la miniature source reste toujours accessible, avec réduction visuelle temporaire si le zoom mémorisé est trop grand. Les aperçus épinglés restent entièrement libres et `Échap` fournit une sortie de secours. DEV_7 est validée sous Windows ; le moteur et les formats binaires validés sont inchangés.
 
 La GUI v1.6 comprend notamment :
 
@@ -37,7 +37,7 @@ La GUI v1.6 comprend notamment :
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
 - FR/EN/DE/ES persistants avec bascule dynamique et repli anglais de sécurité ;
 - inspecteur exact de cellule ;
-- cache LRU de session (8 générations), historique et comparaison A/B légère ;
+- historique LRU unifié et configurable (4/8/12/16, 8 par défaut), centre de gestion et comparaison A/B légère ;
 - génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
 - centres d’export multi-format : EDM/MAP 768, copie SAV source inchangée lorsqu’elle existe, PNG Global/vue courante et Graphiques JSON/CSV/PNG ;
 - vue Global épurée, Vue Départs dédiée avec 210 petits marqueurs sur le contour initial exact et opacité réglable ; miniatures Batch avec marqueurs masqués, petits ou normaux via un réglage persistant ;

@@ -1,3 +1,92 @@
+## v1.8 DEV_7_R10 — 2026-08-24
+- Keeps the source thumbnail accessible whenever a large preview is opened by delayed hover.
+- Selects the best available area around the source and temporarily reduces only the rendered preview when required.
+- Preserves the stored zoom value and leaves pinned previews fully movable and unconstrained by thumbnail avoidance.
+- Adds Escape as a fallback way to close a visible large preview.
+- Applies the same behavior to Batch and History; DEV_7_R10 is validated under Windows.
+
+## v1.8 DEV_7_R9 — 2026-08-24
+- Fixes the reproducible Tk error triggered by generating after closing the History Center.
+- Cancels pending History callbacks, clears destroyed widget references and guards late preview refreshes.
+- Adds a fifth magnifier state for temporary hover-opened previews without showing a misleading close cross.
+- Keeps the orange close cross exclusively for pinned previews that a click will actually close.
+- Gives the Batch large preview the same screen-wide zoom geometry as History while preserving the 35–125% range.
+- Preserves drag, remembered position and atomic replacement behavior; candidate awaits Windows validation.
+
+## v1.8 DEV_7_R8 — 2026-08-24
+1. Restores a neutral style for the history-capacity confirmation action.
+2. Makes the idle magnifier more translucent and adds an explicit active-hover close state.
+3. Separates the active preview source from the currently hovered thumbnail so both cues can coexist.
+4. Binds hover lifetime to the full thumbnail container to prevent stuck visual states.
+5. Adds mouse-wheel zoom to the Batch large preview with the same 35–125% range as History.
+6. Preserves click, delayed hover, drag, position retention and atomic replacement behavior.
+7. Candidate awaits Windows validation; generation engine and protected assets remain unchanged.
+
+## v1.8 DEV_7_R7 — 2026-08-24
+- Replaces the history-capacity reduction prompt with a fully modal, themed FR/EN/DE/ES dialog that prevents background wheel/click changes and duplicate confirmations.
+- Restores large translucent magnifiers as deterministic RGBA thumbnail layers without opaque backing rectangles.
+- Introduces exclusive inactive, awake and active magnifier states shared across Batch and History previews.
+- Preserves delayed hover, click pinning, drag/zoom and atomic preview replacement behavior.
+- Locks the Batch forecast to the shared protection list so future manual locks scale without capacity-specific rules.
+- Candidate awaits Windows validation; generation engine and protected assets remain unchanged.
+
+## v1.8 DEV_7_R6 — 2026-08-24
+- Simulates the final Batch cache exactly for every supported capacity: 4, 8, 12 and 16 maps.
+- Separates existing history entries that will be evicted from newly generated Batch results that will not remain cached.
+- Replaces the native capacity prompt with a themed modal dialog localized in FR/EN/DE/ES.
+- Marks successfully generated but non-retained Batch rows with a localized warning state and includes their count in the final summary.
+- Preserves the validated R5 cancellation and viewer behavior; generation engine and protected assets remain unchanged.
+- Candidate awaits Windows validation.
+
+## v1.8 DEV_7_R5 — 2026-08-24
+- Removes the white outer pixels from the validated checked-circle size.
+- Removes the unstable R4 magnifier overlays while preserving direct thumbnail hover/click interactions and the validated History preview.
+- Fixes Batch capacity forecasting by counting distinct cached Viewer/A/B/manual protections and testing the exact capacity-4/three-protection case.
+- Keeps an existing viewer map after Batch completion; automatic display now only fills an empty viewer.
+- Records the rare, non-reproducible long Statistics calculation for monitoring rather than applying a speculative fix.
+- Generation engine, binary formats and protected assets remain unchanged; candidate awaits Windows validation.
+
+## v1.8 DEV_7_R4 — 2026-08-24
+- Keeps History order stable while maps are displayed or assigned; only real generation-cache hits promote LRU entries.
+- Replaces the ambiguous protection glyph with compact combinable `V/A/B` padlocks and prepares the reserved `M` manual-lock role.
+- Enlarges the checked state inside its existing button footprint and adds contextual Loaded/Shown/Assigned labels in FR/EN/DE/ES.
+- Adds three-state magnifier overlays to History and Batch thumbnails.
+- Aligns the History large preview with Batch: delayed hover, pinning, drag, wheel zoom, same-source close and position-preserving replacement.
+- Atomically replaces preview surfaces during projection changes and updates marker/selection changes in place to avoid flicker.
+- Adds a hover explanation to the outside-history warning and a preflight warning when protected entries leave insufficient room for a Batch.
+- Records the post-DEV_7 GitHub Issues/Wiki design pass without creating repository Issues yet.
+- Generation engine, binary formats and the five protected assets remain unchanged; candidate awaits Windows validation.
+
+## v1.8 DEV_7_R3 — 2026-08-24
+- Adds a compact MRU rank column and live used/capacity count to the History Center; protected entries carry a lock without consuming another data column.
+- Replaces color-only dots with larger hollow/checked state icons on History, Batch and header Show/Load/A/B actions.
+- Displays imported formats as lowercase parenthesized extensions in Details.
+- Keeps the selected preview vertically stable and adds a deterministic frameless large preview with drag, wheel zoom, preserved position and live replacement.
+- Renames Comparison to Comparison slot in the selected information panel and refreshes all current/A/B/protection information immediately.
+- Extends manual-delete and Clear All warnings to the currently displayed map; a manually removed current map remains visible and is explicitly marked outside history until replaced.
+- Keeps automatic LRU protection, exact source preservation, generation engine, binary formats and protected assets unchanged.
+- Candidate awaits Windows validation.
+
+## v1.8 DEV_7_R2 — 2026-08-24
+- Introduces shared semantic light/dark palettes and explicit normal, hover, pressed, selected, focused and disabled state maps for recurring ttk widget families.
+- Fixes History Treeview rows and headings in dark mode with dedicated styles and explicit alternating row colors.
+- Adds a selected-map panel with deterministic preview, A/B presence, current-map state, MRU position and full imported source path without duplicating table columns.
+- Protects the currently displayed output and A/B outputs from automatic LRU eviction; completed four-map batches remain complete at the minimum capacity of four.
+- Warns before manually deleting an A/B map, then clears the affected slots only after confirmation; Clear All follows the same rule.
+- Keeps selection at the same row after deletion, falling back to the previous row at the end.
+- Renames the setting to “Capacité de l’historique” and warns before a reduction removes older unprotected entries.
+- Keeps all History Center content live in FR/EN/DE/ES and both themes; generation engine and protected assets remain unchanged.
+- Candidate awaits Windows validation.
+
+## v1.8 DEV_7_R1 — 2026-08-23
+- Unifies simple generations, Batch results and imported EDM/MAP/SAV maps in one session-only MRU history.
+- Adds explicit origin and map metadata, content-based import deduplication and configurable 4/8/12/16 capacity (default 8).
+- Keeps the compact header selector and adds a resizable History Center with Show, Assign A, Assign B, delete-one and clear-all actions.
+- Restores the original import source when loading a history item, preserving exact unchanged SAV copy behavior after history and A/B navigation.
+- Keeps history content in memory only; deleting or evicting an entry does not invalidate maps already held by the current viewer or A/B slots.
+- Supports live FR/EN/DE/ES retranslation and light/dark theme changes in the open History Center.
+- Generation engine, binary formats, map rendering and protected assets remain unchanged; candidate awaits Windows validation.
+
 ## v1.8 DEV_6_R1 — 2026-08-23
 - Extends the persistent dynamic UI language selector from FR/EN to FR/EN/DE/ES with deterministic German and Spanish raster flags.
 - Localizes the main window, Batch generation, both Export Centers, settings, feedback, help, disabled states and fully localized window titles.

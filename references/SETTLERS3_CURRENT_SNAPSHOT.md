@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-23 — v1.8 DEV_6_R1 validée sous Windows**
+> Last refreshed: **2026-08-24 — v1.8 DEV_7_R10 validée sous Windows**
 
 ## État release / Git
 
@@ -23,6 +23,11 @@
 - DEV_5_R3 est validée sous Windows : centres d’export cartes et Graphiques multi-format, option Vue actuelle non redondante, bas de fenêtres et survols corrigés, modalité Windows stricte et formats indisponibles grisés/barrés. La hauteur initiale est calculée depuis le contenu ; toute extension future devra ajouter une contrainte écran et un scroll de secours si nécessaire.
 - DEV_5_R3 est publiée sur `dev` au commit `75c9f345ccd41fba986805cc9150fc2d800f3025`.
 - DEV_6_R1 est validée sous Windows et publiée sur `dev` au commit `68eef2d` : interface FR/EN/DE/ES dynamique et persistante, couvrant fenêtre principale, Batch, exports, paramètres, feedback, aide, rapports statistiques, graphiques, légendes et tooltips. Limite connue non bloquante : le rapport texte de l’onglet Statistiques ne change de langue qu’après rechargement de la carte ; correction reportée à la future amélioration de cet onglet. Moteur, formats et rendu inchangés.
+- DEV_7_R1 est une candidate locale non publiée : historique de session MRU unifié pour générations simples, Batch et imports EDM/MAP/SAV, Centre d’historique, capacité persistante 4/8/12/16 et préservation de la source SAV exacte lors des navigations Historique/A/B. Validation Windows requise avant synchronisation sur `dev`.
+- DEV_7_R2 remplace localement R1 comme candidate : palettes sémantiques globales, états ttk audités, tableau sombre corrigé, aperçu de sélection, suppression/vidage A/B confirmés, sélection stable et protection de la carte courante/A/B contre les évictions automatiques. Aucun push avant validation Windows.
+- DEV_7_R6 et R7 sont validées sous Windows. DEV_7_R8 a validé la source active et le survol indépendants, la sortie de zone, la loupe plus translucide, le bouton neutre et le zoom Batch, mais a révélé un crash Tk reproductible après fermeture du Centre d’historique.
+- DEV_7_R10 est validée sous Windows et constitue l’état final de DEV_7 : cycle de vie du Centre sécurisé, cinq états de loupe, parité de zoom, anticollision des aperçus temporaires avec leur miniature source, réduction visuelle sans altération du zoom mémorisé, liberté totale des aperçus épinglés et fermeture de secours par `Échap`. L’incident statistique non reproductible reste sous surveillance. Synchronisation sur `dev` autorisée.
+- Après validation de DEV_7, une courte passe de conception GitHub Issues + Wiki aura lieu avant d’amorcer DEV_8 ; aucune Issue n’est créée dans R4.
 - Politique linguistique : FR/EN sont les références relues et considérées comme correctes. DE/ES ont été traduits automatiquement et seulement partiellement revus ; le README doit conserver cet avertissement, valable aussi pour toute future langue jusqu’à validation humaine compétente.
 
 

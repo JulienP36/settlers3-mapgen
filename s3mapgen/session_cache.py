@@ -13,20 +13,47 @@ class GenerationCacheKey:
     modifiers: tuple = ()
     engine_revision: str = 'v1.5'
 
+@dataclass(frozen=True)
+class ImportedHistoryKey:
+    """Stable identity for an imported source, independent from its path."""
+    digest: str
+    source_format: str
+
 class SessionGenerationCache:
     def __init__(self, max_entries: int = 8):
         self.max_entries = max(1, int(max_entries))
-        self._items: OrderedDict[GenerationCacheKey, Any] = OrderedDict()
+        self._items: OrderedDict[Any, Any] = OrderedDict()
+        self._metadata: dict[Any, dict[str, Any]] = {}
+        self._protected_provider = None
+    def set_protected_provider(self,provider): self._protected_provider=provider
+    def _protected_ids(self):
+        if self._protected_provider is None:return set()
+        try:return {id(value) for value in self._protected_provider() if value is not None}
+        except Exception:return set()
+    def _trim(self):
+        while len(self._items)>self.max_entries:
+            protected=self._protected_ids();victim=next((key for key,value in self._items.items() if id(value) not in protected),None)
+            if victim is None:break
+            self._items.pop(victim,None);self._metadata.pop(victim,None)
     def get(self, key):
         value = self._items.get(key)
         if value is not None:
             self._items.move_to_end(key)
         return value
-    def put(self, key, value):
+    def peek(self,key): return self._items.get(key)
+    def put(self, key, value, metadata=None):
         self._items[key] = value; self._items.move_to_end(key)
-        while len(self._items) > self.max_entries:
-            self._items.popitem(last=False)
-    def clear(self): self._items.clear()
+        if metadata is not None:
+            self._metadata[key] = dict(metadata)
+        self._trim()
+    def metadata(self,key): return dict(self._metadata.get(key,{}))
+    def set_metadata(self,key,metadata):
+        if key in self._items:self._metadata[key]=dict(metadata)
+    def remove(self,key):
+        value=self._items.pop(key,None);self._metadata.pop(key,None);return value
+    def resize(self,max_entries):
+        self.max_entries=max(1,int(max_entries));self._trim()
+    def clear(self): self._items.clear();self._metadata.clear()
     def entries(self): return list(reversed(self._items.items()))
     def __len__(self): return len(self._items)
 
