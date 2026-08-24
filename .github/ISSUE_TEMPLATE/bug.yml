@@ -1,5 +1,5 @@
 name: Bug
-description: Signaler un comportement incorrect ou un crash reproductible.
+description: Report incorrect behavior or a reproducible crash.
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -7,23 +7,23 @@ body:
     id: version
     attributes:
       label: Version
-      description: Version ou candidate testée, si elle est connue.
-      placeholder: "Ex. v1.8 DEV_8_R1"
+      description: Tested version or candidate, if known.
+      placeholder: "Example: v1.8 DEV_8_R1"
   - type: textarea
     id: problem
     attributes:
-      label: Problème observé
-      description: Décris brièvement ce qui se passe et ce qui était attendu.
+      label: Observed problem
+      description: Briefly describe what happened and what you expected instead.
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
-      label: Étapes de reproduction
-      description: Une liste numérotée est idéale, mais une note rapide peut être complétée plus tard.
-      placeholder: "1. Ouvrir…\n2. Cliquer…\n3. Observer…"
+      label: Reproduction steps
+      description: A numbered list is ideal, but a quick note can be completed later.
+      placeholder: "1. Open…\n2. Click…\n3. Observe…"
   - type: textarea
     id: context
     attributes:
-      label: Contexte complémentaire
-      description: Fichier, seed, capture, traceback, thème, langue ou autre information utile.
+      label: Additional context
+      description: Relevant file, seed, screenshot, traceback, theme, language, or other useful information.

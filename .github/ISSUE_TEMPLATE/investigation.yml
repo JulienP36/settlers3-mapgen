@@ -1,21 +1,21 @@
-name: Investigation technique
-description: Conserver une question technique ou une analyse bornée à effectuer plus tard.
+name: Technical investigation
+description: Track a technical question or a bounded analysis for later.
 title: "[Investigation] "
 labels: ["investigation"]
 body:
   - type: textarea
     id: question
     attributes:
-      label: Question à résoudre
+      label: Question to resolve
     validations:
       required: true
   - type: textarea
     id: known
     attributes:
-      label: Éléments déjà connus
-      description: Observations, fichiers, hypothèses ou expériences déjà réalisées.
+      label: Known information
+      description: Existing observations, files, hypotheses, or experiments.
   - type: textarea
     id: decision
     attributes:
-      label: Décision attendue
-      description: Ce que cette investigation doit permettre de choisir ou de valider.
+      label: Expected decision
+      description: What this investigation should help decide or validate.

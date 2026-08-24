@@ -1,22 +1,22 @@
-name: Amélioration
-description: Proposer une amélioration suffisamment concrète pour être suivie.
-title: "[Amélioration] "
+name: Enhancement
+description: Suggest a concrete improvement that should be tracked.
+title: "[Enhancement] "
 labels: ["enhancement"]
 body:
   - type: textarea
     id: need
     attributes:
-      label: Besoin ou problème rencontré
-      description: Une phrase suffit pour enregistrer rapidement l’idée depuis un téléphone.
+      label: Need or problem
+      description: One sentence is enough to quickly save the idea from a phone.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Comportement proposé
-      description: Facultatif si l’idée doit encore être précisée ensemble.
+      label: Proposed behavior
+      description: Optional when the idea still needs further discussion.
   - type: textarea
     id: validation
     attributes:
-      label: Résultat attendu
-      description: Comment saurons-nous que l’amélioration répond au besoin ?
+      label: Expected outcome
+      description: How will we know that the improvement addresses the need?
