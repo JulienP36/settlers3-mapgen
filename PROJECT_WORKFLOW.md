@@ -59,6 +59,15 @@ Check these hashes after significant tooling/UI/Stats work.
 - `references/SETTLERS3_PREGEN_READ_FIRST.md`: mandatory entry point before touching generation/map bytes.
 - dated `SETTLERS3_SNAPSHOT_*`: historical checkpoints only.
 
+## GitHub Issues
+- `TODO_MAPGEN.md` reste la roadmap exhaustive et accueille les idées lointaines, hypothèses et sujets encore flous.
+- Une Issue est réservée à un bug, une amélioration ou une investigation suffisamment actionnable qui doit survivre à la passe courante ; ne pas en créer lorsqu’une tâche établie sera traitée immédiatement.
+- Les Issues peuvent être rédigées en français. Conserver les labels et conventions GitHub en anglais.
+- Les modèles Bug, Amélioration et Investigation sont proposés, mais les Issues libres restent autorisées pour enregistrer rapidement une idée depuis un téléphone.
+- Ne pas recréer rétroactivement les problèmes déjà corrigés : les notes DEV et l’historique Git suffisent.
+- Pour une correction nécessitant une validation Windows ou visuelle, référencer l’Issue dans le premier commit puis ne la fermer qu’après validation utilisateur.
+- Créer des milestones uniquement pour les versions dont le focus est suffisamment stable ; éviter les milestones par révision DEV/R.
+
 ## Recovery after context loss
 1. Open branch `dev`.
 2. Read this workflow.

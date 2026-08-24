@@ -1,0 +1,29 @@
+name: Bug
+description: Signaler un comportement incorrect ou un crash reproductible.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Version ou candidate testée, si elle est connue.
+      placeholder: "Ex. v1.8 DEV_8_R1"
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème observé
+      description: Décris brièvement ce qui se passe et ce qui était attendu.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Une liste numérotée est idéale, mais une note rapide peut être complétée plus tard.
+      placeholder: "1. Ouvrir…\n2. Cliquer…\n3. Observer…"
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte complémentaire
+      description: Fichier, seed, capture, traceback, thème, langue ou autre information utile.
