@@ -1,3 +1,35 @@
+## v1.8 TITLEBAR_TEST_R4 — 2026-08-25
+
+- Keeps the Windows-validated dark caption and separator unchanged.
+- Gives the light theme its own light-gray native caption, dark text and visible separator instead of inheriting the dark caption.
+- Preserves event-driven updates only: window mapping and explicit theme changes, with no polling or background work.
+- Keeps the one-pixel separator static after placement and preserves the native Windows frame.
+- Remains an isolated experiment based on the Windows-validated DEV_7_R10 state.
+
+## v1.8 TITLEBAR_TEST_R3 — 2026-08-25
+
+- Gives the native caption a darker color that remains distinct from the dark client area.
+- Separates caption color, outer Windows border and the client-edge separator into independent semantic roles.
+- Adds a one-pixel internal separator below the native caption because DWM border color alone does not guarantee that boundary.
+- Preserves native Windows chrome, event-driven refresh and the documented Help-dialog exception.
+- Remains an isolated experiment based on the Windows-validated DEV_7_R10 state.
+
+## v1.8 TITLEBAR_TEST_R2 — 2026-08-25
+
+- Keeps the native Windows caption dark in both built-in application themes.
+- Adds dedicated semantic roles for native caption, caption text and border instead of coupling them to client-area colors.
+- Requests a fixed medium-gray DWM border as the first non-invasive separator test while preserving the standard Windows frame.
+- Records the native Help message box as an explicit theming exception for a later dialog-design pass.
+- Remains an isolated experiment based on the Windows-validated DEV_7_R10 state.
+
+## v1.8 TITLEBAR_TEST_R1 — 2026-08-25
+
+- Adds best-effort native DWM theming for decorated Tk title bars.
+- Reuses the active semantic theme palette for caption, text and border colors on supported Windows versions.
+- Refreshes only on theme changes and top-level window mapping; no polling is introduced.
+- Keeps native Windows chrome and ignores borderless preview overlays.
+- Remains an isolated experiment based on the Windows-validated DEV_7_R10 state.
+
 ## v1.8 DEV_7_R10 — 2026-08-24
 - Keeps the source thumbnail accessible whenever a large preview is opened by delayed hover.
 - Selects the best available area around the source and temporarily reduces only the rendered preview when required.

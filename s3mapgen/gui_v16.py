@@ -19,6 +19,7 @@ from .session_cache import GenerationCacheKey, ImportedHistoryKey, SessionGenera
 from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
 from .export_center import safe_export_basename, map_export_capabilities, map_export_paths, stats_export_paths, existing_export_paths
+from .native_titlebar import apply_native_titlebar
 
 VIEWS.clear()
 VIEWS.update({'Global':'global','Départs':'starts','Territoires':'territories','Élévation':'heightmap','Ressources':'resources','Chemins':'paths','Cultures':'crops','Carte thermique':'heatmap'})
@@ -29,10 +30,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_7_R10 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_7_R10 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_7_R10 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_7_R10 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -306,8 +307,8 @@ _HISTORY_CAPACITY_DIALOG_TEXT={
 # One semantic palette drives both built-in themes.  New UI blocks should use
 # these roles (or one of the named ttk styles below) instead of embedding colors.
 THEME_PALETTES={
- 'dark':{'window':'#202124','panel':'#292a2d','surface':'#303134','surface_alt':'#34363a','field':'#303134','text':'#e8eaed','muted':'#aeb4bc','disabled':'#7f858d','border':'#5f6368','hover':'#3c4043','pressed':'#4a4d51','selection':'#315f86','selection_text':'#ffffff','primary':'#2f7ed8','success':'#34a853','warning':'#f9ab00','danger':'#d93025','info':'#8ab4f8','canvas':'#111214'},
- 'light':{'window':'#f2f2f2','panel':'#e5e5e5','surface':'#ffffff','surface_alt':'#f5f6f7','field':'#ffffff','text':'#202124','muted':'#5f6368','disabled':'#8a8f98','border':'#aeb3b8','hover':'#d8e3f3','pressed':'#c5d7ee','selection':'#3d6f9b','selection_text':'#ffffff','primary':'#2459a9','success':'#238636','warning':'#b26a00','danger':'#c5221f','info':'#2459a9','canvas':'#d6d6d6'},
+ 'dark':{'window':'#202124','panel':'#292a2d','surface':'#303134','surface_alt':'#34363a','field':'#303134','text':'#e8eaed','muted':'#aeb4bc','disabled':'#7f858d','border':'#5f6368','hover':'#3c4043','pressed':'#4a4d51','selection':'#315f86','selection_text':'#ffffff','primary':'#2f7ed8','success':'#34a853','warning':'#f9ab00','danger':'#d93025','info':'#8ab4f8','canvas':'#111214','titlebar':'#15171a','titlebar_text':'#e8eaed','titlebar_border':'#3c4043','titlebar_separator':'#6f7378','titlebar_dark':True},
+ 'light':{'window':'#f2f2f2','panel':'#e5e5e5','surface':'#ffffff','surface_alt':'#f5f6f7','field':'#ffffff','text':'#202124','muted':'#5f6368','disabled':'#8a8f98','border':'#aeb3b8','hover':'#d8e3f3','pressed':'#c5d7ee','selection':'#3d6f9b','selection_text':'#ffffff','primary':'#2459a9','success':'#238636','warning':'#b26a00','danger':'#c5221f','info':'#2459a9','canvas':'#d6d6d6','titlebar':'#dfe3e8','titlebar_text':'#202124','titlebar_border':'#aeb3b8','titlebar_separator':'#8f969e','titlebar_dark':False},
 }
 
 def _lang_text(lang,fr,en,de,es):
@@ -504,9 +505,31 @@ class App(V15StableApp):
         self._history_role_icons={};self._ui_tooltip_window=None;self._ui_tooltip_key=None
         self._history_capacity_dialog=None;self._history_capacity_dialog_widgets={}
         self._magnifier_hover_kind=None;self._magnifier_hover_ref=None;self._magnifier_active_kind=None;self._magnifier_active_ref=None
+        self._native_titlebar_after=None
         super().__init__()
         self.session_cache.resize(self.prefs.get('history_capacity',8))
-        self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.bind('<Escape>',self._close_large_preview_escape,add='+');self.after_idle(self._apply_responsive_layout)
+        self.bind_class('Toplevel','<Map>',self._native_titlebar_mapped,add='+')
+        self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.bind('<Escape>',self._close_large_preview_escape,add='+');self.after_idle(self._apply_responsive_layout);self._schedule_native_titlebar_refresh()
+
+    def _native_titlebar_mapped(self,event):
+        self._schedule_native_titlebar_refresh()
+
+    def _schedule_native_titlebar_refresh(self):
+        if self._native_titlebar_after is not None:
+            try:self.after_cancel(self._native_titlebar_after)
+            except tk.TclError:pass
+        self._native_titlebar_after=self.after_idle(self._refresh_native_titlebars)
+
+    def _refresh_native_titlebars(self):
+        self._native_titlebar_after=None
+        palette=getattr(self,'_ui_theme_colors',None)
+        if not palette:return
+        targets=[self,*[w for w in self._walk(self) if isinstance(w,tk.Toplevel)]]
+        seen=set()
+        for target in targets:
+            if target is None or id(target) in seen:continue
+            seen.add(id(target))
+            apply_native_titlebar(target,palette)
 
     def _close_large_preview_escape(self,event=None):
         closed=False
@@ -1315,6 +1338,7 @@ class App(V15StableApp):
             try:row['thumbnail_host'].configure(bg=panel);row['thumbnail'].configure(bg=panel)
             except (KeyError,tk.TclError):pass
             self._batch_draw_progress(row)
+        self._schedule_native_titlebar_refresh()
 
     def _style_combobox_popdowns(self,field,fg,panel):
         for combo in self._walk(self):
