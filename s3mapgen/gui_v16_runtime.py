@@ -1,3 +1,5 @@
+"""Composition root binding the current UI to the protected v1.5 generator."""
+
 from .app_paths import LEGACY_PROFILE, UPGRADED_PROFILE, UPGRADED_REFERENCE, LIBRARY
 from .generator_v15 import MapGenerator
 from .gui_v16 import App as _V16App

@@ -69,16 +69,13 @@ def test_dev10_manual_history_controls_are_translated_in_every_language():
 
 
 def test_dev10_history_center_wires_manual_lock_reorder_and_cleanup():
-    source = Path('s3mapgen/gui_v16.py').read_text(encoding='utf-8')
-    for token in (
-        "self._manual_history_locks=[];self._history_visual_order=[]",
-        "command=self._history_center_toggle_manual_lock",
-        "command=lambda:self._history_center_move(-1)",
-        "command=lambda:self._history_center_move(1)",
-        "self._manual_history_locks=[value for value in self._manual_history_locks if value is not out]",
-        "self._manual_history_locks=[];self._history_visual_order=[]",
+    for method_name in (
+        '_history_center_toggle_manual_lock',
+        '_history_center_move',
+        '_history_center_delete',
+        '_clear_history',
     ):
-        assert token in source
+        assert callable(getattr(App, method_name))
 
 
 def test_capacity_cannot_be_reduced_below_unique_protected_maps():

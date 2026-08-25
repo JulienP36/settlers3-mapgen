@@ -1,3 +1,33 @@
+# Changelog
+
+## v1.8 DEV_11 — 2026-08-26
+
+- Adds a reviewed English project entry point linked bidirectionally with the historical French README.
+- Documents the real runtime architecture, protected-engine boundary, data flows, cache/protection semantics and safe-change rules without adding runtime work.
+- Adds a reproducible debugging guide covering source/package failures, layered validation and the first-priority partial `.EDM` import investigation for v1.9 DEV_1.
+- Prepares an explicit GitHub About description, restrained topic list, real-screenshot requirements and release checklist without changing repository settings.
+- Applies the approved About description and nine Topics to the public GitHub repository.
+- Integrates four real Windows screenshots of Generation/Viewer, Statistics, Charts and Batch into both READMEs, with recorded provenance and an explicit cache-reuse caption.
+- Documents the known three-base-morphology seed limit instead of presenting rotations or mirrors as independent generated forms.
+- Makes the deterministic source-package contract require the English README and all three maintenance/publication guides.
+- Clarifies that `V` protects its attached Viewer map against eviction; simple generation is the exception because it necessarily moves the Viewer and `V` to the new result.
+- Surfaces that `V` exception in the localized Help window and protection tooltip, and makes the mandatory snapshot refresh/checkpoint boundary explicit in project/versioning workflow.
+- Keeps the v1.5 engine, binary formats, rendering and user-facing behavior unchanged.
+- The first R2 archive was withdrawn before validation because it covered only part of the agreed scope; the rebuilt R2 then passed its targeted Windows checks.
+- Consolidates the validated R1/R2 work into the only publishable checkpoint, `DEV_11` without a revision suffix, and closes development before the v1.8 RC phase.
+
+## v1.8 DEV_11_R1 — 2026-08-25
+
+- Adds a deterministic source-ZIP builder with one-root, required-file, excluded-path, corruption, SHA-256 and extracted-runtime validation.
+- Runs the packaged source self-test from the extracted candidate directory so incomplete archives fail before delivery.
+- Extracts stable history ordering and identity-based protection selection into pure helpers covered by behavioral tests instead of source-text coupling.
+- Rewrites the session cache core for readable control flow and explicit hard-cap/LRU contracts without changing its public behavior.
+- Centralizes application and engine version metadata in the localized window titles to prevent release-label drift.
+- Makes the explicit engine/checksum smoke script directly runnable from the project root without relying on pytest path setup.
+- Keeps the validated v1.5 generation engine, binary formats, profiles, native library and rendering behavior unchanged.
+- Windows maintenance validation passed for the main controls, History Center, hard capacity, simple/Batch generation, `.MAP`/`.SAV` loading, languages and themes; the revision remains local because the broader DEV_11 publication/maintainability scope is not complete.
+- Records partial `.EDM` loading failures as a potentially older defect promoted to the first priority of v1.9 DEV_1, and clarifies that `V` protects against eviction except when simple generation necessarily moves the Viewer to its new result.
+
 ## v1.8 DEV_10 — 2026-08-25
 
 - Makes cache capacity a strict invariant: a simple generation/import can no longer create a hidden overflow slot when every retained map is protected.
@@ -15,7 +45,7 @@
 - Separated the user-visible history order from true LRU recency; Viewer/A/B actions and cache hits no longer reorder the visual list.
 - New/imported maps enter at the top while preserving the relative manual order of surviving entries.
 - Extended delete, clear, capacity reduction and Batch forecasting to the shared V/A/B/M protection model.
-- Deferred the standalone Windows package and packaged updater to the v1.8 RC phase; ordinary DEV work returns to source ZIPs and `launch_gui`.
+- Deferred the standalone Windows package and packaged updater to the v1.8 RC phase; ordinary DEV work returns to source ZIPs and `run_gui.bat` / `run_gui.py`.
 
 ## v1.8 DEV_9_R2 — 2026-08-25
 
@@ -360,6 +390,32 @@
 - Reserved `Générer lot…` / `Generate batch…` action slot for v1.8 Batch.
 - Session/Comparison compact A/B layout; compact mode fits the 900 px minimum runtime width.
 
+## v1.8 DEV_2_R4 — 2026-08-22
+
+- Reserved a future multi-select **Modifiers** control after Archetype; current value is None only.
+- Wired modifiers into generation cache/history/status semantics without touching generator v1.5.
+- Reduced Session history field width and reflowed Load/Clear cache actions on constrained widths.
+- Stacked Help/Theme below Language in compact mode.
+- Progress overlay unchanged and validated.
+
+## v1.8 DEV_2_R3 — 2026-08-22
+
+- Reorganizes the application header by function instead of historical grid position.
+- On normal 1080p-width windows, Generation stays left, Session/Comparison uses the center, and Language/Help/Theme stay right.
+- `Copier seed` / `Copy seed` stays next to the Seed controls.
+- Inspector remains visible in the upper application area rather than being hidden under the map viewer.
+- Feedback/status remains a prominent thin messenger strip immediately above the main map/data area.
+- Compact mode is now reserved for genuinely narrow windows instead of being forced solely by 1080p screen height.
+- Viewer toolbar/progress/feedback behavior from R2 is preserved.
+
+## v1.8 DEV_2_R2 — 2026-08-22
+
+- 1080p explicit compact target.
+- Viewer-specific toolbar for View / Heatmap filter / Recenter / Zoom, with its own reflow.
+- Removed the obsolete header Progressbar from layout to prevent the persistent pale strip after resize.
+- Expanded Status/Feedback v1 for A/B toggle, empty cache, theme button, recenter, random seed, graph/stat exports, opacity lock and player-count changes.
+- No generation-engine changes.
+
 ## v1.8 DEV_2
 - Responsive header/layout v1 for 1080p and smaller windows.
 - Formal Status/Feedback bar v1 with FR/EN user-facing messages.
@@ -395,14 +451,20 @@
 - Updated forward TODOs without adding Graph↔Map coupling or extra proximity radii.
 - Generation engine v1.5 unchanged.
 
+## v1.7 DEV_10 — 2026-08-21
+
+- Stats/debug: exhaustive Terrain/Object ID inventories.
+- Stats schema v6 with normalized `/1000` densities using relevant support denominators.
+- Generic interactive chart tooltips, including A/B.
+- A/B slot buttons expose a visible set-state with green LED and short map identity.
+- Documentation/TODO cleanup before RC preparation.
+
 ## v1.7 DEV_9 — 2026-08-21
 - Mini-polish DEV_8 review: external chart values always use the left annotation lane.
 - Nearby mining excludes Snow-family-covered ore; Stats schema v5.
 - Nearest-opponent cue reordered to `→ [color] Pn`.
 - Top-3 component labels replaced by compact `# + medal` badges.
 - Generation engine v1.5 unchanged.
-
-## v1.7 DEV_2 — 2026-08-20
 
 ## v1.7 DEV_5 — 2026-08-20
 - Stats chart redesign: vertical normal charts, semantic colors and segmented bars.
@@ -448,8 +510,6 @@
 - Ajustement ultra ciblé de l’overlay de progression : en thème clair, suppression du halo/contour noir autour du texte dans la barre.
 - Couleur du texte inchangée ; rendu thème sombre inchangé.
 - Moteur v1.5, profils et données natives inchangés.
-
-# Changelog
 
 ## v1.6 RC_8 — 2026-08-20
 
@@ -549,33 +609,3 @@
 - Scrollbars sur les onglets texte.
 - Export SAV non inventé : copie inchangée seulement si la source importée est déjà un SAV.
 - TODO actualisé avec la généralisation future de la morphologie Upgraded.
-
-## v1.7 DEV_10
-- Stats/debug: exhaustive Terrain/Object ID inventories.
-- Stats schema v6 with normalized /1000 densities using relevant support denominators.
-- Generic interactive chart tooltips, including A/B.
-- A/B slot buttons now expose a visible set-state (green LED + short map identity).
-- Documentation/TODO cleanup before RC preparation.
-## v1.8 DEV_2_R3 — header layout refinement
-
-- Reorganizes the application header by function instead of historical grid position.
-- On normal 1080p-width windows, Generation stays left, Session/Comparison uses the center, and Language/Help/Theme stay right.
-- `Copier seed` / `Copy seed` stays next to the Seed controls.
-- Inspector remains visible in the upper application area rather than being hidden under the map viewer.
-- Feedback/status remains a prominent thin messenger strip immediately above the main map/data area.
-- Compact mode is now reserved for genuinely narrow windows instead of being forced solely by 1080p screen height.
-- Viewer toolbar/progress/feedback behavior from R2 is preserved.
-
-## v1.8 DEV_2_R2 — responsive/feedback follow-up
-- 1080p explicit compact target.
-- Viewer-specific toolbar for View / Heatmap filter / Recenter / Zoom, with its own reflow.
-- Removed the obsolete header Progressbar from layout to prevent the persistent pale strip after resize.
-- Expanded Status/Feedback v1 for A/B toggle, empty cache, theme button, recenter, random seed, graph/stat exports, opacity lock and player-count changes.
-- No generation-engine changes.
-## v1.8 DEV_2_R4 — header density + modifiers reservation
-
-- Reserved a future multi-select **Modifiers** control after Archetype; current value is None only.
-- Wired modifiers into generation cache/history/status semantics without touching generator v1.5.
-- Reduced Session history field width and reflowed Load/Clear cache actions on constrained widths.
-- Stacked Help/Theme below Language in compact mode.
-- Progress overlay unchanged and validated.

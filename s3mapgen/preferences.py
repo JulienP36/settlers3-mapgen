@@ -1,3 +1,5 @@
+"""Versioned user-settings loading, migration, validation and persistence."""
+
 from __future__ import annotations
 import json, os
 from pathlib import Path

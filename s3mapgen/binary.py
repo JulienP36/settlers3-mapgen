@@ -1,3 +1,10 @@
+"""Confirmed EDM/MAP serialization and read-only SAV parsing boundary.
+
+Only structures demonstrated by project references belong here. EDM/MAP writes
+reuse validated scaffolds; SAV data is inspected or copied unchanged, never
+synthesized by this module.
+"""
+
 from __future__ import annotations
 from pathlib import Path
 import struct

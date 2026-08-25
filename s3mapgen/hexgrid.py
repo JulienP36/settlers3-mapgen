@@ -1,3 +1,5 @@
+"""Vectorized HEX6 distance, neighborhood and component operations."""
+
 from __future__ import annotations
 from collections import deque
 import numpy as np

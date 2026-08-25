@@ -1,3 +1,5 @@
+"""Compatibility UI layer for themes, projection, navigation and preferences."""
+
 from __future__ import annotations
 import json, traceback, shutil
 from pathlib import Path

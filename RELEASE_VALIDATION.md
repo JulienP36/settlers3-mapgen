@@ -2,6 +2,8 @@
 
 Date : 2026-08-21
 
+> Document historique de la validation **v1.7 STABLE**. Il ne décrit pas l’état courant de v1.8 ; utiliser `PROJECT_WORKFLOW.md`, `VERSIONING.md` et `references/SETTLERS3_CURRENT_SNAPSHOT.md` pour la reprise actuelle.
+
 ## v1.7 — STABLE
 
 La v1.7 est la release de fondation **Statistiques / Graphiques** au-dessus du moteur de génération v1.5 stable et inchangé.

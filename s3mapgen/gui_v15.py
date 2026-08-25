@@ -1,3 +1,5 @@
+"""Stable v1.5 UI/export shell inherited by the current v1.8 interface."""
+
 from __future__ import annotations
 import shutil
 from pathlib import Path

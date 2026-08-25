@@ -1,4 +1,5 @@
 from s3mapgen.gui_v16 import VIEW_LABELS, HEATMAP_LABELS, OBJECT_NAMES, WINDOW_TITLES, FEEDBACK_TEXT
+from s3mapgen.version import APP_VERSION, ENGINE_VERSION
 
 
 def test_view_and_heatmap_labels_are_localized_and_decorated():
@@ -23,10 +24,12 @@ def test_inspector_object_table_contains_known_ids():
 
 
 def test_window_title_is_fully_localized_for_v18_dev6():
-    assert WINDOW_TITLES['fr'] == 'Settlers III MapGen v1.8 DEV_10 — moteur de génération v1.5'
-    assert WINDOW_TITLES['en'] == 'Settlers III MapGen v1.8 DEV_10 — generation engine v1.5'
-    assert WINDOW_TITLES['de'] == 'Settlers III MapGen v1.8 DEV_10 — Generierungs-Engine v1.5'
-    assert WINDOW_TITLES['es'] == 'Settlers III MapGen v1.8 DEV_10 — motor de generación v1.5'
+    prefix = f'Settlers III MapGen v{APP_VERSION}'
+    suffix = f'v{ENGINE_VERSION}'
+    assert WINDOW_TITLES['fr'] == f'{prefix} — moteur de génération {suffix}'
+    assert WINDOW_TITLES['en'] == f'{prefix} — generation engine {suffix}'
+    assert WINDOW_TITLES['de'] == f'{prefix} — Generierungs-Engine {suffix}'
+    assert WINDOW_TITLES['es'] == f'{prefix} — motor de generación {suffix}'
 
 
 def test_feedback_text_has_human_status_and_locked_control_hint_in_both_languages():

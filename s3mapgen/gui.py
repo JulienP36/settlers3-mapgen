@@ -1,3 +1,9 @@
+"""Historical base GUI retained for the current compatibility inheritance chain.
+
+Normal v1.8 startup does not instantiate this class directly; the active
+composition root is :mod:`s3mapgen.gui_v16_runtime`.
+"""
+
 from __future__ import annotations
 import json, traceback, random, shutil
 from pathlib import Path

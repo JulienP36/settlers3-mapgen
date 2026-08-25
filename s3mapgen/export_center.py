@@ -1,3 +1,5 @@
+"""Pure export capability, filename and overwrite-planning helpers."""
+
 from __future__ import annotations
 
 from pathlib import Path

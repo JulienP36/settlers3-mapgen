@@ -1,3 +1,10 @@
+"""Current v1.8 UI/tooling layer above the protected v1.5 engine runtime.
+
+The module owns presentation, Batch, history, comparison, analysis and export
+coordination. Generation is injected by :mod:`s3mapgen.gui_v16_runtime` so UI
+maintenance does not silently replace the validated engine implementation.
+"""
+
 from __future__ import annotations
 import random
 import shutil
@@ -15,12 +22,18 @@ from .binary import export_with_scaffold
 from .preview import render, render_square_base, compose_rendered_map, compose_start_markers, project_parallelogram, HEATMAP_RESOURCES
 from .preferences import save_settings, DEFAULT_SHORTCUTS
 from .app_paths import EDM_SCAFFOLD, MAP_SCAFFOLD, OUTPUT
+from .history_order import (
+    cached_protected_outputs,
+    move_visual_key,
+    reconcile_visual_order,
+)
 from .session_cache import GenerationCacheKey, ImportedHistoryKey, SessionGenerationCache, SessionStatsCache
 from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_csv
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
 from .export_center import safe_export_basename, map_export_capabilities, map_export_paths, stats_export_paths, existing_export_paths
 from .native_titlebar import apply_native_titlebar
 from .shortcuts import canonicalize_shortcut, shortcut_from_event, shortcut_to_tk
+from .version import APP_VERSION, ENGINE_VERSION
 
 VIEWS.clear()
 VIEWS.update({'Global':'global','Départs':'starts','Territoires':'territories','Élévation':'heightmap','Ressources':'resources','Chemins':'paths','Cultures':'crops','Carte thermique':'heatmap'})
@@ -30,11 +43,15 @@ VIEW_LABELS={
  'en':{'global':'Global','starts':'Starts','territories':'Territories','heightmap':'Elevation','resources':'Resources','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
+_WINDOW_ENGINE_LABELS={
+ 'fr':'moteur de génération',
+ 'en':'generation engine',
+ 'de':'Generierungs-Engine',
+ 'es':'motor de generación',
+}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_10 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_10 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_10 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_10 — motor de generación v1.5',
+ lang:f'Settlers III MapGen v{APP_VERSION} — {engine_label} v{ENGINE_VERSION}'
+ for lang,engine_label in _WINDOW_ENGINE_LABELS.items()
 }
 
 FEEDBACK_TEXT={
@@ -159,10 +176,10 @@ COMMAND_LABELS={
 }
 
 SHORTCUT_UI_TEXT={
- 'fr':{'capture':'Appuyez sur les touches…','disabled':'Désactivé','disable':'Désactiver','reset':'Réinitialiser','apply':'Appliquer','defaults':'Valeurs par défaut','hint':'Cliquez sur un raccourci puis appuyez sur la combinaison. Échap annule ; Suppr ou Retour arrière désactive.','title':'Raccourcis','pending':'Modifications non appliquées.','conflict_summary':'Conflit à corriger avant application.','pending_tip':'Modification non appliquée.','conflict_tip':'« {shortcut} » est aussi affecté à : {actions}.','invalid_tip':'Combinaison invalide.','help_title':'Aide','action':'Action','shortcut':'Raccourci','navigation':'Navigation','close':'Fermer','wheel':'Molette : zoom','drag':'Clic gauche + glisser : déplacer la carte','cache':'Historique : capacité configurable, mémoire de session uniquement.','compare':'A/B conserve vue, zoom, projection et couche.'},
- 'en':{'capture':'Press the keys…','disabled':'Disabled','disable':'Disable','reset':'Reset','apply':'Apply','defaults':'Defaults','hint':'Click a shortcut, then press the combination. Escape cancels; Delete or Backspace disables it.','title':'Shortcuts','pending':'Unapplied changes.','conflict_summary':'Resolve the conflict before applying.','pending_tip':'Unapplied change.','conflict_tip':'“{shortcut}” is also assigned to: {actions}.','invalid_tip':'Invalid combination.','help_title':'Help','action':'Action','shortcut':'Shortcut','navigation':'Navigation','close':'Close','wheel':'Mouse wheel: zoom','drag':'Left click + drag: move the map','cache':'History: configurable capacity, session memory only.','compare':'A/B preserves view, zoom, projection and overlay.'},
- 'de':{'capture':'Tasten drücken…','disabled':'Deaktiviert','disable':'Deaktivieren','reset':'Zurücksetzen','apply':'Übernehmen','defaults':'Standardwerte','hint':'Klicken Sie auf ein Tastenkürzel und drücken Sie die Kombination. Escape bricht ab; Entf oder Rücktaste deaktiviert.','title':'Tastenkürzel','pending':'Nicht übernommene Änderungen.','conflict_summary':'Konflikt vor dem Übernehmen beheben.','pending_tip':'Nicht übernommene Änderung.','conflict_tip':'„{shortcut}“ ist auch zugewiesen an: {actions}.','invalid_tip':'Ungültige Kombination.','help_title':'Hilfe','action':'Aktion','shortcut':'Tastenkürzel','navigation':'Navigation','close':'Schließen','wheel':'Mausrad: Zoom','drag':'Linksklick + Ziehen: Karte verschieben','cache':'Verlauf: konfigurierbare Kapazität, nur Sitzungsspeicher.','compare':'A/B behält Ansicht, Zoom, Projektion und Ebene bei.'},
- 'es':{'capture':'Pulsa las teclas…','disabled':'Desactivado','disable':'Desactivar','reset':'Restablecer','apply':'Aplicar','defaults':'Valores predeterminados','hint':'Haz clic en un atajo y pulsa la combinación. Escape cancela; Supr o Retroceso lo desactiva.','title':'Atajos','pending':'Cambios sin aplicar.','conflict_summary':'Resuelve el conflicto antes de aplicar.','pending_tip':'Cambio sin aplicar.','conflict_tip':'«{shortcut}» también está asignado a: {actions}.','invalid_tip':'Combinación no válida.','help_title':'Ayuda','action':'Acción','shortcut':'Atajo','navigation':'Navegación','close':'Cerrar','wheel':'Rueda: zoom','drag':'Clic izquierdo + arrastrar: mover el mapa','cache':'Historial: capacidad configurable, solo memoria de sesión.','compare':'A/B conserva vista, zoom, proyección y capa.'},
+ 'fr':{'capture':'Appuyez sur les touches…','disabled':'Désactivé','disable':'Désactiver','reset':'Réinitialiser','apply':'Appliquer','defaults':'Valeurs par défaut','hint':'Cliquez sur un raccourci puis appuyez sur la combinaison. Échap annule ; Suppr ou Retour arrière désactive.','title':'Raccourcis','pending':'Modifications non appliquées.','conflict_summary':'Conflit à corriger avant application.','pending_tip':'Modification non appliquée.','conflict_tip':'« {shortcut} » est aussi affecté à : {actions}.','invalid_tip':'Combinaison invalide.','help_title':'Aide','action':'Action','shortcut':'Raccourci','navigation':'Navigation','close':'Fermer','wheel':'Molette : zoom','drag':'Clic gauche + glisser : déplacer la carte','cache':'Historique : capacité configurable, mémoire de session uniquement.','viewer_protection':'V protège la carte affichée contre l’éviction. Une génération simple déplace V vers son nouveau résultat.','compare':'A/B conserve vue, zoom, projection et couche.'},
+ 'en':{'capture':'Press the keys…','disabled':'Disabled','disable':'Disable','reset':'Reset','apply':'Apply','defaults':'Defaults','hint':'Click a shortcut, then press the combination. Escape cancels; Delete or Backspace disables it.','title':'Shortcuts','pending':'Unapplied changes.','conflict_summary':'Resolve the conflict before applying.','pending_tip':'Unapplied change.','conflict_tip':'“{shortcut}” is also assigned to: {actions}.','invalid_tip':'Invalid combination.','help_title':'Help','action':'Action','shortcut':'Shortcut','navigation':'Navigation','close':'Close','wheel':'Mouse wheel: zoom','drag':'Left click + drag: move the map','cache':'History: configurable capacity, session memory only.','viewer_protection':'V protects the displayed map from eviction. Simple generation moves V to its new result.','compare':'A/B preserves view, zoom, projection and overlay.'},
+ 'de':{'capture':'Tasten drücken…','disabled':'Deaktiviert','disable':'Deaktivieren','reset':'Zurücksetzen','apply':'Übernehmen','defaults':'Standardwerte','hint':'Klicken Sie auf ein Tastenkürzel und drücken Sie die Kombination. Escape bricht ab; Entf oder Rücktaste deaktiviert.','title':'Tastenkürzel','pending':'Nicht übernommene Änderungen.','conflict_summary':'Konflikt vor dem Übernehmen beheben.','pending_tip':'Nicht übernommene Änderung.','conflict_tip':'„{shortcut}“ ist auch zugewiesen an: {actions}.','invalid_tip':'Ungültige Kombination.','help_title':'Hilfe','action':'Aktion','shortcut':'Tastenkürzel','navigation':'Navigation','close':'Schließen','wheel':'Mausrad: Zoom','drag':'Linksklick + Ziehen: Karte verschieben','cache':'Verlauf: konfigurierbare Kapazität, nur Sitzungsspeicher.','viewer_protection':'V schützt die angezeigte Karte vor dem Entfernen. Eine einfache Generierung verschiebt V zum neuen Ergebnis.','compare':'A/B behält Ansicht, Zoom, Projektion und Ebene bei.'},
+ 'es':{'capture':'Pulsa las teclas…','disabled':'Desactivado','disable':'Desactivar','reset':'Restablecer','apply':'Aplicar','defaults':'Valores predeterminados','hint':'Haz clic en un atajo y pulsa la combinación. Escape cancela; Supr o Retroceso lo desactiva.','title':'Atajos','pending':'Cambios sin aplicar.','conflict_summary':'Resuelve el conflicto antes de aplicar.','pending_tip':'Cambio sin aplicar.','conflict_tip':'«{shortcut}» también está asignado a: {actions}.','invalid_tip':'Combinación no válida.','help_title':'Ayuda','action':'Acción','shortcut':'Atajo','navigation':'Navegación','close':'Cerrar','wheel':'Rueda: zoom','drag':'Clic izquierdo + arrastrar: mover el mapa','cache':'Historial: capacidad configurable, solo memoria de sesión.','viewer_protection':'V protege el mapa mostrado contra la expulsión. Una generación simple mueve V al nuevo resultado.','compare':'A/B conserva vista, zoom, proyección y capa.'},
 }
 
 THEME_LABELS={'fr':{'dark':'Sombre','light':'Clair'},'en':{'dark':'Dark','light':'Light'}}
@@ -296,10 +313,10 @@ _HISTORY_MANUAL_TEXT={
 for _lang,_values in _HISTORY_MANUAL_TEXT.items():HISTORY_TEXT[_lang].update(_values)
 
 _CONTEXT_TEXT={
- 'fr':{'loaded':'Chargée !','shown':'Affichée !','assigned_a':'Affectée à A !','assigned_b':'Affectée à B !','lock_tip':'Protection : {roles}','viewer_role':'V = vue principale','manual_role':'M = verrouillage manuel','outside_tip':'Cette carte reste affichée, mais elle ne se trouve plus dans le cache de session.'},
- 'en':{'loaded':'Loaded!','shown':'Shown!','assigned_a':'Assigned to A!','assigned_b':'Assigned to B!','lock_tip':'Protection: {roles}','viewer_role':'V = main viewer','manual_role':'M = manual lock','outside_tip':'This map is still displayed, but is no longer in the session cache.'},
- 'de':{'loaded':'Geladen!','shown':'Angezeigt!','assigned_a':'A zugewiesen!','assigned_b':'B zugewiesen!','lock_tip':'Schutz: {roles}','viewer_role':'V = Hauptansicht','manual_role':'M = manuelle Sperre','outside_tip':'Diese Karte wird noch angezeigt, befindet sich aber nicht mehr im Sitzungscache.'},
- 'es':{'loaded':'¡Cargado!','shown':'¡Mostrado!','assigned_a':'¡Asignado a A!','assigned_b':'¡Asignado a B!','lock_tip':'Protección: {roles}','viewer_role':'V = visor principal','manual_role':'M = bloqueo manual','outside_tip':'Este mapa sigue mostrándose, pero ya no está en la caché de sesión.'},
+ 'fr':{'loaded':'Chargée !','shown':'Affichée !','assigned_a':'Affectée à A !','assigned_b':'Affectée à B !','lock_tip':'Protection : {roles}','viewer_role':'V = vue principale (une génération simple déplace V vers son nouveau résultat)','manual_role':'M = verrouillage manuel','outside_tip':'Cette carte reste affichée, mais elle ne se trouve plus dans le cache de session.'},
+ 'en':{'loaded':'Loaded!','shown':'Shown!','assigned_a':'Assigned to A!','assigned_b':'Assigned to B!','lock_tip':'Protection: {roles}','viewer_role':'V = main viewer (simple generation moves V to its new result)','manual_role':'M = manual lock','outside_tip':'This map is still displayed, but is no longer in the session cache.'},
+ 'de':{'loaded':'Geladen!','shown':'Angezeigt!','assigned_a':'A zugewiesen!','assigned_b':'B zugewiesen!','lock_tip':'Schutz: {roles}','viewer_role':'V = Hauptansicht (eine einfache Generierung verschiebt V zum neuen Ergebnis)','manual_role':'M = manuelle Sperre','outside_tip':'Diese Karte wird noch angezeigt, befindet sich aber nicht mehr im Sitzungscache.'},
+ 'es':{'loaded':'¡Cargado!','shown':'¡Mostrado!','assigned_a':'¡Asignado a A!','assigned_b':'¡Asignado a B!','lock_tip':'Protección: {roles}','viewer_role':'V = visor principal (una generación simple mueve V al nuevo resultado)','manual_role':'M = bloqueo manual','outside_tip':'Este mapa sigue mostrándose, pero ya no está en la caché de sesión.'},
 }
 
 _BATCH_CAPACITY_TEXT={
@@ -1702,21 +1719,26 @@ class App(V15StableApp):
         return self.session_cache.metadata(key).get('origin','generated')
     def _ordered_history_entries(self):
         """Return the stable visual order without touching cache recency."""
-        lru_entries=self.session_cache.entries();live={key:value for key,value in lru_entries}
-        kept=[key for key in self._history_visual_order if key in live]
-        added=[key for key,_ in lru_entries if key not in kept]
-        self._history_visual_order=added+kept
-        return [(key,live[key]) for key in self._history_visual_order]
+        self._history_visual_order, ordered = reconcile_visual_order(
+            self.session_cache.entries(),
+            self._history_visual_order,
+        )
+        return ordered
+
     def _history_move_key(self,key,step):
-        entries=self._ordered_history_entries();keys=[entry_key for entry_key,_ in entries]
-        if key not in keys:return False
-        old=keys.index(key);new=max(0,min(len(keys)-1,old+int(step)))
-        if new==old:return False
-        keys[old],keys[new]=keys[new],keys[old];self._history_visual_order=keys;return True
+        entries = self._ordered_history_entries()
+        keys = [entry_key for entry_key, _ in entries]
+        self._history_visual_order, moved = move_visual_key(keys, key, step)
+        return moved
+
     def _cached_protected_outputs(self):
-        cached={id(value):value for _,value in self.session_cache.entries()}
-        candidates=(getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks)
-        return [cached[identity] for identity in dict.fromkeys(id(value) for value in candidates if value is not None) if identity in cached]
+        candidates = (
+            getattr(self, 'current', None),
+            self._compare_slots.get('A'),
+            self._compare_slots.get('B'),
+            *self._manual_history_locks,
+        )
+        return cached_protected_outputs(self.session_cache.entries(), candidates)
     def _refresh_history(self,preferred_index=None):
         self._history_lookup={}
         for key,_ in self._ordered_history_entries():
@@ -3057,7 +3079,7 @@ class App(V15StableApp):
             value=ttk.Label(shortcuts,anchor='w');value.grid(row=row,column=1,sticky='ew',pady=2);shortcut_labels[cmd]=value
         navigation=ttk.LabelFrame(body,padding=10);navigation.pack(fill='x',pady=(10,0))
         navigation_labels=[]
-        for row in range(4):
+        for row in range(5):
             label=ttk.Label(navigation,anchor='w');label.grid(row=row,column=0,sticky='w',pady=1);navigation_labels.append(label)
         close=ttk.Button(body,command=self._close_help_window);close.pack(anchor='e',pady=(10,0))
         self._help_widgets={'shortcuts':shortcuts,'action_header':action_header,'shortcut_header':shortcut_header,'actions':action_labels,'values':shortcut_labels,'navigation':navigation,'navigation_labels':navigation_labels,'close':close}
@@ -3078,7 +3100,7 @@ class App(V15StableApp):
         w.title(text['help_title']);widgets['shortcuts'].configure(text=text['title']);widgets['action_header'].configure(text=text['action']);widgets['shortcut_header'].configure(text=text['shortcut']);widgets['navigation'].configure(text=text['navigation']);widgets['close'].configure(text=text['close'])
         for cmd,label in widgets['actions'].items():label.configure(text=COMMAND_LABELS[lang][cmd])
         for cmd,label in widgets['values'].items():label.configure(text=sc.get(cmd,DEFAULT_SHORTCUTS[cmd]) or text['disabled'])
-        for label,value in zip(widgets['navigation_labels'],(text['wheel'],text['drag'],text['cache'],text['compare'])):label.configure(text=value)
+        for label,value in zip(widgets['navigation_labels'],(text['wheel'],text['drag'],text['cache'],text['viewer_protection'],text['compare'])):label.configure(text=value)
     def _apply_help_window_theme(self):
         if self._help_window is None:return
         try:self._help_window.configure(background=self._ui_theme_colors.get('window','#202124'))

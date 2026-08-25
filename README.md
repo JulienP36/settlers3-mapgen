@@ -1,5 +1,7 @@
 # Settlers III MapGen
 
+**Français** · [English](README_EN.md)
+
 > Générateur procédural expérimental pour **The Settlers III**, construit à partir de reverse-engineering des formats `.EDM`, `.MAP` et `.SAV`, d'analyses du générateur natif et de nombreuses validations dans l'éditeur et en jeu.
 
 > **Note de développement / transparence :** ce projet est conçu, dirigé, testé et validé humainement, avec un usage important de **ChatGPT / OpenAI comme assistance d’implémentation**, notamment pour le backend, l’analyse technique et les outils de reverse-engineering. Cette assistance fait partie explicitement du processus de développement du projet.
@@ -20,16 +22,44 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_10 / moteur v1.5 stable
+## Aperçus de l’application
+
+### Génération et Viewer
+
+![Génération Legacy 768×768 et vue Départs dans le Viewer](docs/screenshots/v1_8_generation_viewer.png)
+
+*Carte réellement générée, projection parallélogramme et zones de départ des quatre joueurs.*
+
+### Statistiques
+
+![Carte thermique et rapport Statistiques d’une carte générée](docs/screenshots/v1_8_statistics.png)
+
+*Rapport détaillé : terrains, ressources, hydrologie, relief, départs et inventaires d’IDs.*
+
+### Graphiques
+
+![Vue Ressources et graphique du stock minier](docs/screenshots/v1_8_charts.png)
+
+*Vue Ressources associée au graphique sémantique du stock minier, dont la part recouverte par la neige.*
+
+### Génération par lot
+
+![Génération par lot de quatre cartes avec miniatures et états de cache](docs/screenshots/v1_8_batch.png)
+
+*Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
+
+## État actuel — v1.8 DEV_11 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_10 finalise le verrouillage manuel `M` et l’ordre visuel réorganisable, tout en imposant une capacité de cache strictement infranchissable. Si toutes les places existantes sont protégées, une nouvelle carte simple reste affichée mais n’entre pas dans l’historique. Les protections disposent de leur propre colonne et l’avertissement hors historique appartient visuellement au Viewer. Le moteur et les formats binaires validés sont inchangés.
+DEV_10 a finalisé le verrouillage manuel `M`, l’ordre visuel réorganisable et une capacité de cache strictement infranchissable. DEV_11_R1 a validé sous Windows la première tranche de maintenance : version visible centralisée, logique pure d’ordre/protection de l’historique isolée de Tk et ZIP source déterministe soumis à une validation complète puis à l’autodiagnostic depuis son propre dossier extrait.
 
-DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `launch_gui`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
+DEV_11 clôt la passe publication/maintenabilité : documents canoniques propres, entrée anglaise, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de la protection `V`. Les régressions automatisées et les contrôles Windows R1/R2 sont validés. Le moteur et les formats binaires validés sont inchangés ; la prochaine étape est la phase RC de v1.8.
+
+DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `run_gui.bat` / `run_gui.py`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
 
 La GUI v1.6 comprend notamment :
 
@@ -116,6 +146,8 @@ La première implémentation exécutable d'Upgraded 768 utilise encore le checkp
 
 La prochaine grosse étape de génération est de **généraliser cette morphologie Upgraded** afin de produire de nouvelles formes fraîches et compatibles avec plusieurs tailles et archétypes sans dépendre d'un unique checkpoint 768.
 
+Limite connue avant cette refonte : les seeds actuelles ne produisent que trois morphologies de base, ensuite présentées avec des rotations et parfois un miroir. L’audit seed/RNG et la diversification objective sont planifiés pour la v1.10.
+
 ## Installation Windows
 
 Premier lancement :
@@ -153,6 +185,9 @@ Les références principales sont dans `references/`. En particulier :
 - `SETTLERS3_UPGRADED_RULE_MATRIX_v1.md` — correspondance règles Upgraded / implémentation / validators ;
 - `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md` — format EDM/MAP ;
 - `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` — lecture SAV ;
+- `docs/ARCHITECTURE.md` — couches runtime, flux de données, invariants et zones protégées ;
+- `docs/DEBUGGING.md` — diagnostic reproductible, commandes de validation et informations à conserver ;
+- `docs/GITHUB_PUBLICATION.md` — métadonnées proposées et checklist de publication, sans modifier les réglages du dépôt ;
 - `TODO_MAPGEN.md` — feuille de route courante.
 
 ## Versioning

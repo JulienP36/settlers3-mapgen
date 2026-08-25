@@ -15,15 +15,33 @@ Do not rely on conversation memory when the repository contains a newer canonica
 
 ## Permanent branches
 - `main` = STABLE only.
-- `dev` = current development + frequent tested recovery checkpoints.
+- `dev` = current development, avec publication des checkpoints **DEV complets uniquement** (`DEV_1`, `DEV_2`, etc.).
 - `rc` = Release Candidate currently under external validation.
 
 Normal promotion flow: `dev` → `rc` → `main`.
 
 ## Checkpoint policy
-Checkpoint `dev` frequently whenever a coherent unit of work is testable or when a long session has materially changed the project. A checkpoint should normally include affected code, tests, TODO/changelog/reference updates when relevant, and the living snapshot when the resumable project state changed.
+Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohérente est testable ou qu’une longue session a matériellement changé le projet. Une candidate suffixée (`DEV_X_R1`, `R2`, etc.) reste locale et peut être remplacée autant de fois que nécessaire.
+
+Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
+
+Le checkpoint final doit inclure le code concerné, les tests, TODO/changelog/références utiles et le snapshot vivant à jour. Ne jamais confondre une archive de test Windows avec un checkpoint Git publiable.
 
 DEV/RC builds do not need tags or GitHub Releases. STABLE receives an annotated `vX.Y` tag and GitHub Release.
+
+### Mandatory living-snapshot refresh
+
+Update `references/SETTLERS3_CURRENT_SNAPSHOT.md` immediately after every explicitly validated DEV stage/checkpoint and every validated RC or STABLE release. This refresh is mandatory before the final commit, package or push for that stage; it must record the validation result, known limitations and the actual next work.
+
+When a suffixed local candidate such as `DEV_X_RY` is validated but its full DEV scope is not complete, update the snapshot locally without publishing that intermediate revision. Keep `TODO_MAPGEN.md`, `DEV_CANDIDATE_NOTES.md` and the changelog synchronized whenever the validation changes the known issues or next action. La validation d’une tranche ne clôt jamais implicitement la DEV entière.
+
+Checklist obligatoire à chaque étape validée :
+
+1. consigner le résultat réel de la validation et les anomalies/report éventuels ;
+2. mettre à jour le snapshot vivant avant de fabriquer l’archive ou le commit final correspondant ;
+3. synchroniser TODO, feuille de candidate, journal DEV et changelog uniquement là où l’état a réellement changé ;
+4. si l’étape reste une `DEV_X_Rn`, conserver tous les changements et artefacts localement ;
+5. ne publier sur `dev` qu’après clôture et validation du périmètre complet sous le nom `DEV_X` sans suffixe.
 
 ## Standing authorization for `dev`
 
@@ -81,18 +99,25 @@ Check these hashes after significant tooling/UI/Stats work.
 ## Release path
 See `VERSIONING.md` for the full release checklist. STABLE publication is intentionally conservative: validate RC, update docs/tests, package, verify source state, promote to `main`, tag, then publish GitHub Release.
 
-## Post-v1.7 discoverability / publication workflow
-The project remains primarily a personal tool, but public releases should be discoverable by Settlers III players who are actively looking for this kind of utility. Treat discoverability as release hygiene, not as an SEO/marketing campaign.
+## Post-v1.7 GitHub discoverability / publication workflow
 
-After v1.7 STABLE:
-1. Review the GitHub repository **About** description and keep it short, explicit and keyword-natural.
-2. Add useful repository topics such as `settlers-iii`, `settlers3`, `map-generator`, `procedural-generation`, `reverse-engineering`, `python` and other format-specific topics only when they genuinely fit.
-3. Preserve the French README while adding an accessible English entry point/summary (or a clearly linked `README_EN.md`). Naturally include useful search terminology such as `Settlers III map generator`, `Settlers 3 procedural map generator`, `Siedler III Kartengenerator`, `.EDM`, `.MAP` and `.SAV`; never keyword-stuff.
-4. Continue publishing **STABLE versions as proper GitHub Releases** with a version tag, downloadable package and readable release notes. DEV/RC remain non-release checkpoints.
-5. Community outreach (Discord/wiki/map sites) is optional and only if the project owner later chooses to present the tool publicly; do not make it a prerequisite for development or releases.
+Dans ce projet, **découvrabilité GitHub** désigne précisément l’exploitation de surfaces du dépôt jusque-là inutilisées :
+
+1. renseigner la description courte de la section **About** ;
+2. activer des **Topics** pertinents (`settlers-3` ou `settlers3`, `map-generator`, `procedural-generation`, `reverse-engineering`, puis autres uniquement s’ils sont réellement utiles).
+
+Ne pas élargir automatiquement ce chantier à une stratégie SEO, à du bourrage de mots-clés dans le README ou à une campagne communautaire.
+
+Les éléments suivants appartiennent aussi à la finition/publication de DEV_11, mais restent des tâches distinctes de la découvrabilité GitHub :
+
+- conserver le README français et fournir une entrée anglaise clairement liée ;
+- ajouter des captures réelles et récentes de l’application ;
+- publier les versions STABLE comme vraies GitHub Releases avec tag, artefacts et notes lisibles ; DEV/RC restent hors Releases.
+
+Le partage Discord/wiki/sites de maps reste optionnel et seulement sur décision ultérieure du propriétaire.
 ## v1.8 accessibility / public-facing rules
 - Public-facing README material must transparently mention the substantial use of ChatGPT/OpenAI in implementation assistance, especially backend, analysis and reverse-engineering tooling, while keeping project direction/validation accurately attributed to the project owner.
-- Keep daily DEV work source-first through `launch_gui`; do not rebuild or carry PyInstaller output during ordinary feature revisions.
+- Keep daily DEV work source-first through `run_gui.bat` / `run_gui.py`; do not rebuild or carry PyInstaller output during ordinary feature revisions.
 - At v1.8 RC, freeze new features while still allowing fixes, polish, optimization and documentation, then produce two separate artifacts: a Python/source ZIP and an installation-free Windows x64 portable ZIP.
 - Rebuild and validate the standalone Windows `.exe` and evolve the GitHub-Releases updater during RC; preserve user settings, verify release integrity and never require an installer.
 - **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.

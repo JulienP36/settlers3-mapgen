@@ -1,3 +1,5 @@
+"""Read-only derivation and serialization of structured map statistics."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict

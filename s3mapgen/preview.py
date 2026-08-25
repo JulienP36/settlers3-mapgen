@@ -1,3 +1,5 @@
+"""Deterministic map rendering from real MapState data and validated overlays."""
+
 from __future__ import annotations
 import math
 import numpy as np

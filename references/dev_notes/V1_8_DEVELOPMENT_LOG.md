@@ -1,6 +1,6 @@
 # Settlers III MapGen — journal de développement v1.8
 
-Ce document consolide les 39 notes de candidates auparavant dispersées à la racine du dépôt. Il conserve les décisions finales, les essais structurants et les régressions importantes de DEV_1 à DEV_8. Les textes intégraux des anciennes notes restent récupérables dans l’historique Git, notamment au commit `94f48d1` qui clôture DEV_8.
+Ce document consolide les anciennes notes de candidates auparavant dispersées à la racine du dépôt. Il conserve les décisions finales, les essais structurants et les régressions importantes de v1.8. Les textes intégraux restent récupérables dans l’historique Git ; `DEV_CANDIDATE_NOTES.md` sert uniquement à la candidate locale active.
 
 ## Règles communes
 
@@ -22,6 +22,9 @@ Ce document consolide les 39 notes de candidates auparavant dispersées à la ra
 | DEV_7 | DEV_7_R10 | Historique unifié, protections et aperçus robustes | 192 |
 | Expérience | TITLEBAR_TEST_R4 | Barres de titre Windows sémantiques | inclus dans la suite |
 | DEV_8 | DEV_8_R4 | Raccourcis configurables v2 et Aide dynamique | 207 |
+| DEV_9 | DEV_9_R2 | Preuve Windows autonome `onedir` et autodiagnostic réel | — |
+| DEV_10 | DEV_10 | Verrou `M`, ordre manuel et capacité dure | 223 |
+| DEV_11 R1 | locale, validée | Maintenance, helpers purs et ZIP déterministe | 227 |
 
 Chaque checkpoint final a également passé les 49 validations moteur, le checksum binaire et le contrôle des cinq hashes protégés.
 
@@ -158,6 +161,54 @@ L’ancienne Aide native, initialement hors inventaire, a été remplacée et in
 - fenêtre Aide réutilisable, thémée, FR/EN/DE/ES et actualisée depuis les raccourcis réellement configurés.
 
 Leçon Windows : les bits étendus Tk puis l’interrogation globale de l’état clavier ont produit des faux positifs `Alt` ou raté `Shift`. R4 ne consulte plus aucun état global : la combinaison est construite uniquement depuis les événements d’appui/relâchement de modificateurs réellement reçus. Touches simples et vrais Ctrl/Shift/Alt ont été validés sous Windows.
+
+## DEV_9 — preuve d’exécutable Windows autonome
+
+- R1 a échoué au démarrage : `unittest` avait été exclu alors que SciPy le charge indirectement via `numpy.testing`.
+- R2 a supprimé les exclusions manuelles et fait importer au self-test la même chaîne GUI que le lancement normal.
+- Distribution `onedir`, ressources résolues depuis le bundle, settings sous `%APPDATA%` et exports à côté de l’exécutable.
+- Build Windows automatisé, ZIP, SHA-256 et vérification des hashes protégés.
+- Premier démarrage Windows validé ; le paquet final et l’updater sont ensuite revenus à la phase RC afin de garder les DEV ordinaires source-first.
+
+## DEV_10 — verrouillage et ordre manuel de l’historique
+
+- Ajout du verrou manuel `M`, combinable avec `V/A/B`, réellement protecteur contre l’éviction.
+- Ordre visuel réorganisable par Monter/Descendre, indépendant de la récence LRU.
+- Les actions Viewer/A/B et les hits cache ne changent pas l’ordre visuel ; les nouvelles entrées arrivent en tête.
+- Capacité strictement dure : aucun dépassement caché lorsque toutes les places sont protégées.
+- Si aucune ancienne entrée n’est évictable, le nouveau résultat peut rester affiché hors historique avec signalement rattaché au Viewer.
+- Rang `#` séparé de la bande V/A/B/M et prévision Batch alignée sur la même règle.
+- DEV_10 validée sous Windows puis publiée sur `dev` au commit `84f3522`.
+
+## DEV_11 — publication et maintenabilité
+
+### R1 locale validée
+
+- Version runtime/packaging centralisée.
+- Règles d’ordre visuel et de sélection des protections extraites en helpers purs.
+- Cache de session remis en forme et documenté sans changement de contrat.
+- Tests comportementaux remplaçant les assertions fragiles fondées sur le texte source.
+- Constructeur de ZIP source déterministe avec racine unique, exclusions, fichiers obligatoires, test de corruption et SHA-256.
+- Autodiagnostic et suite pytest exécutés depuis le dossier réellement extrait.
+- 227 tests, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; validation Windows fonctionnelle terminée.
+
+Précision historique : `V` protège la carte affichée contre l’éviction tant qu’il lui reste attaché. Une génération simple affiche nécessairement son nouveau résultat et déplace `V`; l’ancienne carte peut alors devenir évictable. Ce comportement a été accepté et doit être expliqué, pas modifié implicitement.
+
+Limite détectée pendant R1 : certains `.EDM` s’ouvrent et d’autres échouent. Le diagnostic est reporté en première priorité de v1.9 DEV_1 avant les expériences d’IDs.
+
+### R2 reconstruite et validée
+
+La première archive étiquetée R2 a été retirée avant validation : elle ne couvrait pas correctement l’ensemble des consignes publication/maintenabilité et reposait encore sur des documents canoniques devenus confus.
+
+La reconstruction a regroupé le nettoyage documentaire, le README anglais, quatre captures Windows réelles, About/Topics GitHub, les guides architecture/diagnostic, les commentaires utiles, la clarification de `V`, la discipline de snapshot et les régressions finales. La candidate reconstruite a passé le contrôle Windows ciblé : démarrage, aide/infobulle `V`, langues, génération simple et sanity check.
+
+### Checkpoint DEV_11
+
+- 231 tests pytest, 49 validations moteur, checksum binaire, autodiagnostic extrait et cinq hashes protégés PASS.
+- R1 et R2 validées sous Windows ; anomalie `.EDM` partielle explicitement reportée à v1.9 DEV_1.
+- Entrée anglaise, captures/provenance et surfaces GitHub About/Topics terminées.
+- Version consolidée en `1.8 DEV_11` sans suffixe ; aucune candidate `R` publiée.
+- DEV_11 clôt le développement fonctionnel de v1.8 et ouvre la phase RC.
 
 ## Politique de notes à partir de DEV_9
 

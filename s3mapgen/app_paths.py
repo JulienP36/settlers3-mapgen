@@ -1,3 +1,5 @@
+"""Resolve bundled resources and writable output locations in source/frozen modes."""
+
 from pathlib import Path
 import sys
 
