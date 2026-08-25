@@ -1,0 +1,46 @@
+param(
+    [switch]$InstallDependencies
+)
+
+$ErrorActionPreference = 'Stop'
+$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$DistRoot = Join-Path $ProjectRoot 'dist\Settlers3MapGen'
+$WorkRoot = Join-Path $ProjectRoot 'build\windows\work'
+$ArtifactRoot = Join-Path $ProjectRoot 'artifacts'
+$ZipPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R1_WINDOWS_X64.zip'
+$ReportPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R1_SELFTEST.json'
+
+Set-Location $ProjectRoot
+
+if ($InstallDependencies) {
+    python -m pip install --upgrade pip
+    python -m pip install -r requirements.txt -r build\windows\requirements-build.txt
+}
+
+if (Test-Path $DistRoot) { Remove-Item -LiteralPath $DistRoot -Recurse -Force }
+if (Test-Path $WorkRoot) { Remove-Item -LiteralPath $WorkRoot -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $ArtifactRoot | Out-Null
+if (Test-Path $ZipPath) { Remove-Item -LiteralPath $ZipPath -Force }
+if (Test-Path $ReportPath) { Remove-Item -LiteralPath $ReportPath -Force }
+
+python -m PyInstaller --noconfirm --clean `
+    --distpath (Join-Path $ProjectRoot 'dist') `
+    --workpath $WorkRoot `
+    build\windows\settlers3_mapgen.spec
+if ($LASTEXITCODE -ne 0) { throw 'PyInstaller build failed.' }
+
+Copy-Item -LiteralPath build\windows\README_FIRST.txt -Destination $DistRoot
+$env:S3MAPGEN_SELFTEST_REPORT = $ReportPath
+& (Join-Path $DistRoot 'Settlers3MapGen.exe') --self-test
+if ($LASTEXITCODE -ne 0) { throw 'Packaged executable self-test failed.' }
+
+$Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
+if ($Report.status -ne 'PASS' -or -not $Report.frozen) {
+    throw 'Packaged executable did not validate as a frozen runtime.'
+}
+
+Compress-Archive -Path $DistRoot -DestinationPath $ZipPath -CompressionLevel Optimal
+$Hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ZipPath).Hash
+Set-Content -LiteralPath ($ZipPath + '.sha256') -Value ($Hash + '  ' + (Split-Path $ZipPath -Leaf)) -Encoding ascii
+Write-Host "Created $ZipPath"
+Write-Host "SHA-256 $Hash"

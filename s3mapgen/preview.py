@@ -1,5 +1,4 @@
 from __future__ import annotations
-from pathlib import Path
 import math
 import numpy as np
 from scipy import ndimage
@@ -7,6 +6,7 @@ from PIL import Image,ImageDraw
 from .constants import *
 from .hexgrid import hex_distance
 from .model import MapState
+from .app_paths import START_MARKER_SHEET
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
 PALETTE={GRASS:(72,148,69),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(76,101,56),SWAMP_TRANS:(94,119,67),GRASS_SWAMP_TRANS:(115,139,78),22:(147,112,72),28:(126,99,66),34:(116,116,108),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
@@ -38,9 +38,7 @@ PLAYER_COLORS=(
     (125,160,205), # P20 light blue
 )
 
-START_MARKER_SHEET=Path(__file__).resolve().parent.parent/'references'/'SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png'
-
-def _load_player_start_markers(path:Path=START_MARKER_SHEET)->tuple[Image.Image,...]:
+def _load_player_start_markers(path=START_MARKER_SHEET)->tuple[Image.Image,...]:
     """Extract the 20 user-provided native start markers without inventing pixels.
 
     The reference has a flat editor-grass background. Connected components give

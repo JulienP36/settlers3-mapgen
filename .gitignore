@@ -20,3 +20,7 @@ Thumbs.db
 
 # Release packages are produced outside the source tree
 *.zip
+dist/
+artifacts/
+build/windows/work/
+.venv-build/

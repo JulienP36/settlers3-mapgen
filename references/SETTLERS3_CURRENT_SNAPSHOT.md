@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-25 — DEV_8_R4 validée sous Windows**
+> Last refreshed: **2026-08-25 — DEV_9_R1 candidate Windows autonome**
 
 ## État release / Git
 
@@ -30,6 +30,9 @@
 - DEV_7_R10 est publiée sur `dev` au commit `36c9440`. Les modèles GitHub Issues anglais et les jalons v1.8/v1.9/v1.10 sont en place ; le Wiki est volontairement reporté car prématuré.
 - TITLEBAR_TEST_R4 est validée sous Windows : les barres de titre natives suivent désormais des rôles sémantiques propres à chaque thème (barre, texte, contour, séparateur et mode des contrôles natifs). Les thèmes clair et sombre disposent chacun d’une barre distincte du contenu et d’un séparateur interne de 1 px. Le mécanisme est événementiel uniquement — affichage de fenêtre ou changement explicite de thème — sans polling ni coût CPU permanent observable.
 - DEV_8_R4 est validée sous Windows : après l’échec de l’état global Windows en R3, la capture repose exclusivement sur les événements d’appui/relâchement effectivement reçus par le contrôle focalisé. Aucun masque étendu Tk ni état système ne peut injecter un `Alt` fantôme. Touches simples et vrais modificateurs Ctrl/Shift/Alt sont confirmés ; badges, défilement horizontal/vertical, migration JSON, commandes supplémentaires et Aide thémée/dynamique sont validés. DEV_8 est clôturée sur R4.
+- DEV_9_R1 est la première candidate Windows x64 autonome. Elle emploie PyInstaller `onedir`, embarque toutes les ressources runtime requises, conserve les préférences dans `%APPDATA%`, place les exports par défaut à côté de l’exécutable et valide le vrai binaire avec `--self-test` avant archivage. Le build produit ZIP + SHA-256 par GitHub Actions ; aucune Release n’est créée avant validation Windows.
+- Choix R1 : privilégier `onedir` pour la fiabilité et un démarrage plus prévisible avec NumPy/SciPy/Pillow et les données natives. Un éventuel `onefile` ne sera étudié qu’après mesure, sans remplacer automatiquement ce format.
+- L’infrastructure accepte facultativement `assets/Settlers3MapGen.ico`; en son absence, R1 reste neutre. L’icône finale demeure un futur asset pixel art fait main par le propriétaire, sans génération d’image IA.
 - Les 39 anciennes notes de candidates v1.8 ont été consolidées dans `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`. À partir de DEV_9, une seule feuille roulante `DEV_CANDIDATE_NOTES.md` est utilisée puis retirée après consolidation.
 - Politique linguistique : FR/EN sont les références relues et considérées comme correctes. DE/ES ont été traduits automatiquement et seulement partiellement revus ; le README doit conserver cet avertissement, valable aussi pour toute future langue jusqu’à validation humaine compétente.
 

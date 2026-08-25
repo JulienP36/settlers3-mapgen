@@ -1,3 +1,13 @@
+## v1.8 DEV_9_R1 — 2026-08-25
+
+- Introduces the first autonomous Windows x64 package in PyInstaller `onedir` form: users no longer need Python, pip or a source checkout.
+- Separates bundled read-only resources from the application directory, keeping default exports beside the executable and preferences under `%APPDATA%/Settlers3MapGen`.
+- Bundles the required profiles, native library, EDM/MAP scaffolds, upgraded reference and J1–J20 marker sheet.
+- Adds an executable `--self-test` that opens every required runtime resource and emits a machine-readable report before the candidate is archived.
+- Adds a reproducible Windows build, SHA-256 output and GitHub Actions artifact while deliberately avoiding a GitHub Release before Windows validation.
+- Prepares optional `.ico` adoption without generating or inventing a final visual asset; the handmade pixel-art icon remains deferred.
+- Keeps generation engine v1.5, binary formats and protected assets unchanged.
+
 ## v1.8 DEV_8_R4 — 2026-08-25
 
 - Removes the unreliable Windows global-key-state query introduced in R3 after real validation showed both phantom Alt and missed Shift results.

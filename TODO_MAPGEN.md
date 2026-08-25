@@ -127,8 +127,8 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Raccourcis v2 — DEV_8_R4 validée sous Windows** : capture fondée exclusivement sur les événements d’appui/relâchement des modificateurs, sans état global Windows ni bits Tk ambigus ; actions supplémentaires, AZERTY/QWERTY, conflits non modaux, modifications en attente, désactivation/reset et migration du JSON existant.
 - [x] **Historique session amélioré — DEV_7_R10 validée sous Windows** : imports + Batch dans l’historique, capacité configurable, Centre dédié, rang stable lors des actions UI, aperçu sélectionné et grand aperçu aligné sur Batch, protections `V/A/B` explicites et indicateurs accessibles avec libellés contextuels. R9 a sécurisé le cycle de vie du Centre et finalisé les cinq états de loupe ; R10 empêche les aperçus temporaires de masquer leur miniature source sans contraindre les aperçus épinglés.
 - [ ] **Signalétique set/unset — future passe UI** : revoir le design des états Chargée/Affichée/Affectée afin que la différence set/unset se lise encore plus vite, au-delà du cercle coché et du seul changement de libellé ; conserver une information non fondée uniquement sur la couleur et vérifier clair/sombre ainsi que daltonisme.
-- [ ] **Premier vrai `.exe`** : packaging autonome sans Python/pip à installer.
-- [ ] **Icône application/exe** : infrastructure + placeholder simple ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
+- [~] **Premier vrai `.exe` — DEV_9_R1 candidate** : packaging Windows x64 autonome `onedir`, ressources embarquées, chemins robustes, autodiagnostic du binaire, ZIP et SHA-256 automatisés. Validation Windows réelle encore requise.
+- [~] **Icône application/exe — infrastructure DEV_9_R1** : build prêt à adopter automatiquement `assets/Settlers3MapGen.ico`. R1 conserve l’icône neutre du programme ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
 - [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
 - [~] **Registre de provenance des éléments visuels** : registre initial créé dans `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md` pour les références et assets actuellement utilisés ; le compléter avant chaque future intégration graphique externe.
 - [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée. La modernisation manuelle éventuelle des marqueurs J1–J20 est explicitement reportée à cette passe.
@@ -321,13 +321,25 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] **Nettoyage des notes DEV après DEV_8** : les 39 notes dispersées sont consolidées dans `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`. Les futures candidates réutiliseront un unique `DEV_CANDIDATE_NOTES.md`, retiré après consolidation à la clôture de chaque DEV.
 - [ ] Étendre progressivement la config utilisateur persistante aux autres réglages utiles sans complexifier le format inutilement. Le verrouillage/réordonnancement manuel de l’historique reste le candidat prioritaire à ne pas trop repousser, mais ne doit pas être greffé à R1 sans besoin observé.
 
-## DEV_9 — mini-polish retours DEV_8
+## Pré-DEV_9 — mini-polish retours DEV_8 terminé
 
 - [x] Labels extérieurs des petits segments toujours placés à gauche.
 - [x] Stock minier proche : minerai sous famille Neige exclu des métriques locales.
 - [x] Distance adversaire : ordre `→ couleur adversaire label adversaire`.
 - [x] Podiums massifs/lacs/rivières : `# + médaille` pour les rangs 1–3.
 - [x] Stats schema v5 pour refléter la nouvelle sémantique du minage local.
+
+## DEV_9 — premier exécutable Windows autonome
+
+- [~] **DEV_9_R1** : distribution Windows x64 en dossier autonome avec `Settlers3MapGen.exe`, sans Python/pip chez l’utilisateur.
+- [x] Résoudre les ressources par rapport au bundle PyInstaller, indépendamment du répertoire courant de lancement.
+- [x] Conserver les préférences dans `%APPDATA%/Settlers3MapGen/settings.json` et placer le dossier d’export par défaut à côté de l’exécutable.
+- [x] Embarquer profils, bibliothèque native, scaffolds EDM/MAP, référence Upgraded et sprites J1–J20 nécessaires au runtime.
+- [x] Ajouter un autodiagnostic du véritable exécutable packagé avant création du ZIP, plus un rapport JSON et un SHA-256.
+- [x] Automatiser le build Windows via GitHub Actions sans créer prématurément de tag ou de Release.
+- [x] Préparer l’adoption facultative d’un `.ico` fourni manuellement ; conserver une icône neutre en son absence.
+- [ ] Valider sous Windows : extraction complète, premier lancement, SmartScreen, génération/import/export, Batch, thèmes/langues, préférences persistantes et lancement depuis plusieurs emplacements.
+- [ ] Après validation, clôturer DEV_9 puis ouvrir DEV_10 pour l’updater compatible exécutable.
 
 ## Post-v1.7 — découvrabilité / publication GitHub
 - [ ] Renseigner/revoir la description **About** GitHub avec une formulation courte et explicite sur Settlers III MapGen.

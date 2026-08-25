@@ -1,0 +1,49 @@
+name: Build Windows DEV candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/build-windows-dev.yml'
+      - 'build/windows/**'
+      - 'config/**'
+      - 'data/**'
+      - 'references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png'
+      - 'requirements.txt'
+      - 'run_gui.py'
+      - 's3mapgen/**'
+      - 'tests/**'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+          cache: 'pip'
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt -r build/windows/requirements-build.txt pytest
+      - name: Regression tests
+        run: python -m pytest -q
+      - name: Engine smoke validation
+        run: python tests/run_smoke.py
+      - name: Build and validate standalone folder
+        shell: powershell
+        run: .\build\windows\build_windows.ps1
+      - name: Upload Windows candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: SETTLERS3_MAPGEN_V1_8_DEV_9_R1_WINDOWS_X64
+          path: |
+            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R1_WINDOWS_X64.zip
+            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R1_WINDOWS_X64.zip.sha256
+            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R1_SELFTEST.json
+          if-no-files-found: error
+          compression-level: 0
