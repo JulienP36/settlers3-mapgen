@@ -1,4 +1,4 @@
-## v1.8 DEV_10_R2 — 2026-08-25
+## v1.8 DEV_10 — 2026-08-25
 
 - Makes cache capacity a strict invariant: a simple generation/import can no longer create a hidden overflow slot when every retained map is protected.
 - Keeps a rejected new result displayed outside history and reports the situation through localized dynamic feedback.
@@ -6,6 +6,7 @@
 - Separates the history rank from the V/A/B/M protection strip so combined locks no longer collide with the row number.
 - Moves the larger outside-history warning from cache controls to the Viewer toolbar, where its meaning is unambiguous.
 - Aligns Batch capacity forecasting with the same hard-limit insertion rule.
+- Centers the protection lock in its dedicated History Center heading and closes DEV_10 without a revision suffix.
 
 ## v1.8 DEV_10_R1 — 2026-08-25
 

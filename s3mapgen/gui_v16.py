@@ -31,10 +31,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_10_R2 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_10_R2 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_10_R2 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_10_R2 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_10 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_10 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_10 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_10 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -432,6 +432,15 @@ def _selector_icon(master, color, kind='dot', size=18):
     return ImageTk.PhotoImage(im,master=master)
 
 
+def _history_heading_lock_icon(master,width=62,size=18):
+    """Center a real lock inside the full History protection heading width."""
+    im=Image.new('RGBA',(width,size),(0,0,0,0));d=ImageDraw.Draw(im);x=(width-size)//2;c='#d84a3a'
+    d.rounded_rectangle((x+4,8,x+size-4,size-3),radius=2,fill=c,outline='#111111')
+    d.arc((x+5,2,x+size-5,11),180,360,fill=c,width=3)
+    d.ellipse((x+8,11,x+10,13),fill='#ffffff')
+    return ImageTk.PhotoImage(im,master=master)
+
+
 def _thumbnail_with_magnifier(image,state='idle'):
     """Composite a large translucent magnifier without an opaque backing box."""
     base=image.convert('RGBA');overlay=Image.new('RGBA',base.size,(0,0,0,0));draw=ImageDraw.Draw(overlay)
@@ -741,6 +750,7 @@ class App(V15StableApp):
         self.heatmap_var=tk.StringVar(value='Arbres')
         self._lock_closed_icon=_selector_icon(self,'#d84a3a','lock_closed',18)
         self._lock_open_icon=_selector_icon(self,'#2ca85a','lock_open',18)
+        self._history_heading_lock_icon=_history_heading_lock_icon(self)
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
         self._build_stats_charts_tab()
         self._shortcut_settings_tab()
@@ -1853,7 +1863,7 @@ class App(V15StableApp):
         table_host=ttk.Frame(content);preview_host=ttk.LabelFrame(content,text=text['preview'],padding=8,style='History.TLabelframe');content.add(table_host,weight=4);content.add(preview_host,weight=2)
         table_host.rowconfigure(0,weight=1);table_host.columnconfigure(0,weight=1)
         columns=('rank','origin','map','details');tree=ttk.Treeview(table_host,columns=columns,show='tree headings',selectmode='browse',style='History.Treeview');self._history_tree=tree
-        tree.heading('#0',text='',image=self._lock_closed_icon,anchor='center');tree.heading('rank',text='#',anchor='center');tree.heading('origin',text=text['origin']);tree.heading('map',text=text['map']);tree.heading('details',text=text['details'])
+        tree.heading('#0',text='',image=self._history_heading_lock_icon,anchor='center');tree.heading('rank',text='#',anchor='center');tree.heading('origin',text=text['origin']);tree.heading('map',text=text['map']);tree.heading('details',text=text['details'])
         tree.column('#0',width=68,minwidth=68,stretch=False,anchor='center');tree.column('rank',width=34,minwidth=34,stretch=False,anchor='center')
         tree.column('origin',width=100,stretch=False);tree.column('map',width=220,stretch=True);tree.column('details',width=330,stretch=True)
         scroll=ttk.Scrollbar(table_host,orient='vertical',command=tree.yview);tree.configure(yscrollcommand=scroll.set);tree.grid(row=0,column=0,sticky='nsew');scroll.grid(row=0,column=1,sticky='ns')
@@ -2163,7 +2173,7 @@ class App(V15StableApp):
     def _retranslate_history_center(self):
         if self._history_window is None:return
         text=HISTORY_TEXT[self.prefs.get('language','fr')];self._history_window.title(text['title']);tree=self._history_tree
-        tree.heading('#0',text='',image=self._lock_closed_icon);tree.heading('rank',text='#');
+        tree.heading('#0',text='',image=self._history_heading_lock_icon,anchor='center');tree.heading('rank',text='#');
         for key in ('origin','map','details'):tree.heading(key,text=text[key])
         self._history_window_widgets['preview_host'].configure(text=text['preview'])
         for key,label in (('show','show'),('a','set_a'),('b','set_b'),('delete','delete'),('clear','clear'),('close','close')):self._history_window_widgets['buttons'][key].configure(text=text[label])

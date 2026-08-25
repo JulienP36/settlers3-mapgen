@@ -1,4 +1,4 @@
-# v1.8 DEV_10_R2 — candidate source
+# v1.8 DEV_10 — completed development checkpoint
 
 Date : 2026-08-25  
 Base : DEV_9_R2, preuve Windows autonome clôturée  
@@ -6,7 +6,7 @@ Moteur : v1.5 protégé, inchangé
 
 ## Objet
 
-Correctif de capacité dure et passe de lisibilité sur le verrouillage manuel du Centre d’historique. Le développement reste sur le ZIP source classique et `launch_gui`; aucun paquet `.exe` n’est produit pendant DEV_10.
+Version complétée du verrouillage manuel et de l’organisation du Centre d’historique. Le développement reste sur le ZIP source classique et `launch_gui`; aucun paquet `.exe` n’est produit pendant DEV_10.
 
 ## Principaux changements à vérifier
 

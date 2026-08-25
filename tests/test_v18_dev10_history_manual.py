@@ -133,3 +133,4 @@ def test_history_center_separates_protection_icons_from_rank_column():
     assert "columns=('rank','origin','map','details')" in source
     assert "values=(index+1,origin_label,map_label,details)" in source
     assert "_selector_icon(self.viewer_toolbar,'#f2b84b','warning',20)" in source
+    assert "def _history_heading_lock_icon(master,width=62,size=18):" in source

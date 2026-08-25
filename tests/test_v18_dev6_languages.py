@@ -44,4 +44,4 @@ def test_language_selector_contains_four_deterministic_flags_and_reverse_lookup(
 
 def test_dev6_titles_exist_for_every_supported_language():
     assert set(WINDOW_TITLES)==LANGS
-    assert all('DEV_10_R2' in title for title in WINDOW_TITLES.values())
+    assert all('DEV_10' in title and '_R' not in title for title in WINDOW_TITLES.values())

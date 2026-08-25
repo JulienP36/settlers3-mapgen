@@ -63,7 +63,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] Densités normalisées `/1000` avec support pertinent : terre pour arbres/pierres/agriculture, eau pour poissons, montagne pour minerais.
 - [x] Export CSV enrichi avec les densités normalisées ; JSON schema v7 après correction Herbe sèche.
 - [x] Tooltips interactifs génériques sur les segments/barres des graphes, y compris A/B.
-- [x] Tooltips : fenêtre persistante pendant le mouvement + sémantique par segment (libre/sous neige, mer/lacs, roche/neige, rayons, minerais, A/B) — DEV_10_R2.
+- [x] Tooltips : fenêtre persistante pendant le mouvement + sémantique par segment (libre/sous neige, mer/lacs, roche/neige, rayons, minerais, A/B) — DEV_10.
 - [x] Slots de comparaison A/B : état visible directement sur les boutons avec LED verte + identification courte de la map définie.
 - [x] DEV_11 : famille **Herbe** corrigée et segmentée en Herbe verte (Terrain 16) + Herbe sèche (Terrain 24), avec légende et tooltips dédiés.
 - [x] DEV_11 : tooltips enrichis avec les IDs contextuels utiles (terrain, objet ou ressource) sans ajouter systématiquement le terrain support quand il n'apporte rien.
@@ -296,7 +296,7 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [ ] **Pilotage de la vue** optionnel/désactivable depuis un graphique ; exemples Agriculture→Cultures, familles de terrain→surbrillance du biome survolé, distances→vue relationnelle avec flèches. Concevoir avec la future composition des vues avant de coder.
 - [x] **DEV_7_R1 → R3** : fondations successives de l’historique unifié, du thème sémantique, des protections et de l’aperçu ; candidates remplacées par R4 après retours Windows.
 - [x] **DEV_7_R4 → R10 validée sous Windows** : ordre LRU stable lors des actions UI ; cadenas explicites `V/A/B` avec rôle `M` préparé ; états cercle/coche et libellés contextuels ; aperçu Historique aligné sur Batch avec remplacement atomique ; infobulle hors historique ; prévision exacte 4/8/12/16 ; confirmation de réduction protégée ; loupes translucides à cinq états ; cycle de vie Tk sécurisé ; parité réelle de zoom et anticollision des aperçus temporaires.
-- [~] **DEV_10_R2 — verrouillage manuel et capacité dure** : cadenas `M` réel et ordre visuel réorganisable, sans modification lors des affectations Viewer/A/B ni d’un hit LRU. La capacité ne peut plus être dépassée : si toutes les anciennes cartes sont protégées, la nouvelle reste visible hors historique. Protections et rang sont séparés, et le signal hors historique est rattaché au Viewer. Validation Windows requise.
+- [x] **DEV_10 — verrouillage manuel et capacité dure validés sous Windows** : cadenas `M` réel et ordre visuel réorganisable, sans modification lors des affectations Viewer/A/B ni d’un hit LRU. La capacité ne peut plus être dépassée : si toutes les anciennes cartes sont protégées, la nouvelle reste visible hors historique. Protections et rang sont séparés, et le signal hors historique est rattaché au Viewer.
 - [x] **DEV_7_R9 — crash après fermeture du Centre d’historique corrigé dans la candidate** : reproduction minimale couverte par régression. Les callbacks sont annulés avant destruction, toutes les références de preview sont invalidées, et les rafraîchissements vérifient fenêtre et widget avant configuration. Validation Windows requise.
 - [x] **Loupes de miniatures — candidate R9** : cinq états déterministes couvrent repos, survol, source active, aperçu temporaire et fermeture. La croix n’apparaît que lorsqu’un clic ferme réellement un aperçu épinglé ; l’aperçu ouvert par pause souris possède un état distinct. Validation Windows requise.
 - [ ] **Surveillance calcul Statistiques potentiellement bloqué** : incident unique non reproductible observé pendant la revue R4. Si récidive, relever fichier/carte, action précédente, vue/onglet actif, slots A/B et durée ; profiler seulement avec un cas reproductible.
@@ -345,11 +345,11 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 
 ## DEV_10 — verrouillage et ordre manuel de l’historique
 
-- [~] **R1 candidate source** : bouton contextuel Verrouiller/Déverrouiller, cadenas `M` explicite et protection réelle contre l’éviction.
-- [~] Réorganisation par Monter/Descendre ; le rang `#` et le sélecteur principal suivent cet ordre visuel, indépendant de l’ordre LRU interne.
-- [~] Nouvelles cartes en tête ; actions Afficher/A/B et hits cache ne réordonnent pas la liste manuelle.
-- [~] Suppression/vidage libèrent aussi `M` après avertissement ; réduction de capacité refusée si elle devient inférieure aux protections uniques V/A/B/M.
-- [~] FR/EN/DE/ES, thèmes et prévision Batch réutilisent les infrastructures existantes ; validation Windows requise.
+- [x] Bouton contextuel Verrouiller/Déverrouiller, cadenas `M` explicite et protection réelle contre l’éviction.
+- [x] Réorganisation par Monter/Descendre ; le rang `#` et le sélecteur principal suivent cet ordre visuel, indépendant de l’ordre LRU interne.
+- [x] Nouvelles cartes en tête ; actions Afficher/A/B et hits cache ne réordonnent pas la liste manuelle.
+- [x] Suppression/vidage libèrent aussi `M` après avertissement ; réduction de capacité refusée si elle devient inférieure aux protections uniques V/A/B/M.
+- [x] Capacité strictement dure, signal hors historique rattaché au Viewer, bande de protections séparée et prévision Batch alignée ; validation Windows terminée.
 
 ## Post-v1.7 — découvrabilité / publication GitHub
 - [ ] Renseigner/revoir la description **About** GitHub avec une formulation courte et explicite sur Settlers III MapGen.
