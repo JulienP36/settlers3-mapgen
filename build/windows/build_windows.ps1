@@ -31,8 +31,9 @@ if ($LASTEXITCODE -ne 0) { throw 'PyInstaller build failed.' }
 
 Copy-Item -LiteralPath build\windows\README_FIRST.txt -Destination $DistRoot
 $env:S3MAPGEN_SELFTEST_REPORT = $ReportPath
-& (Join-Path $DistRoot 'Settlers3MapGen.exe') --self-test
-if ($LASTEXITCODE -ne 0) { throw 'Packaged executable self-test failed.' }
+$SelfTest = Start-Process -FilePath (Join-Path $DistRoot 'Settlers3MapGen.exe') `
+    -ArgumentList '--self-test' -Wait -PassThru
+if ($SelfTest.ExitCode -ne 0) { throw "Packaged executable self-test failed with exit code $($SelfTest.ExitCode)." }
 
 $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
 if ($Report.status -ne 'PASS' -or -not $Report.frozen) {

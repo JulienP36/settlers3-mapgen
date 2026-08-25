@@ -48,7 +48,9 @@ def test_pyinstaller_spec_is_onedir_and_bundles_runtime_resources():
     assert 'COLLECT(' in spec
     assert "name='Settlers3MapGen'" in spec
     assert 'optional_icon' in spec
+    assert 'excludes=[]' in spec
     assert "'unittest'" not in spec
+    assert "'pydoc'" not in spec
 
 
 def test_windows_workflow_runs_binary_self_test_before_upload():
@@ -57,6 +59,9 @@ def test_windows_workflow_runs_binary_self_test_before_upload():
     assert 'upload-artifact@v4' in workflow
     assert 'windows-latest' in workflow
     assert 'verify_protected_hashes.ps1' in workflow
+    build_script=(ROOT/'build/windows/build_windows.ps1').read_text(encoding='utf-8')
+    assert 'Start-Process' in build_script
+    assert '-Wait' in build_script
 
 
 def test_runtime_report_is_json_serializable():

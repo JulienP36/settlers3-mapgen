@@ -23,7 +23,9 @@ a=Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['pytest','pydoc'],
+    # Do not hand-exclude standard or third-party modules: SciPy/NumPy/Tk may
+    # reach apparently unrelated helpers during their normal import chain.
+    excludes=[],
     noarchive=False,
     optimize=1,
 )

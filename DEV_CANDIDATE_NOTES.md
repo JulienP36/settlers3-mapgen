@@ -8,7 +8,7 @@ Moteur : v1.5 protégé, inchangé
 
 Première distribution Windows x64 autonome de Settlers III MapGen. Le ZIP contient un dossier `Settlers3MapGen` complet avec l’exécutable et ses dépendances privées ; aucune installation Python/pip n’est requise.
 
-R1 est rejetée : elle échouait dès le démarrage car `unittest` avait été exclu du bundle alors que SciPy l’importe via `numpy.testing`. R2 réintègre ce module et étend l’autodiagnostic pour charger toute la chaîne GUI normale ; cette classe de faux PASS est désormais couverte.
+R1 est rejetée : elle échouait dès le démarrage car des modules standards avaient été exclus du bundle alors que SciPy/NumPy/Tk les atteignent indirectement. R2 supprime toute exclusion manuelle et étend l’autodiagnostic pour charger toute la chaîne GUI normale ; cette classe de faux PASS est désormais couverte.
 
 ## Validation automatisée
 
