@@ -1,19 +1,12 @@
 from __future__ import annotations
 import json, os
 from pathlib import Path
+from .shortcuts import DEFAULT_SHORTCUTS, canonicalize_shortcut
 
-DEFAULT_SHORTCUTS = {
-    'generate': 'Ctrl+G',
-    'import': 'Ctrl+O',
-    'export': 'Ctrl+E',
-    'reset_view': 'Ctrl+R',
-    'copy_seed': 'Ctrl+Shift+C',
-    'toggle_ab': 'Ctrl+B',
-    'toggle_theme': 'Ctrl+Shift+T',
-    'help': 'F1',
-}
+SETTINGS_SCHEMA_VERSION = 2
 
 DEFAULTS = {
+    'settings_version': SETTINGS_SCHEMA_VERSION,
     'theme': 'dark',
     'overlay_alpha': 75,
     'projection': 'square',
@@ -32,9 +25,13 @@ def _clean_shortcuts(value) -> dict:
     out = dict(DEFAULT_SHORTCUTS)
     if isinstance(value, dict):
         for key in DEFAULT_SHORTCUTS:
-            v = value.get(key)
-            if isinstance(v, str) and v.strip():
-                out[key] = v.strip()
+            if key not in value:
+                continue
+            try:
+                out[key] = canonicalize_shortcut(value.get(key))
+            except (TypeError, ValueError):
+                # One malformed user entry never invalidates the full file.
+                out[key] = DEFAULT_SHORTCUTS[key]
     return out
 
 def load_settings() -> dict:
@@ -56,6 +53,7 @@ def load_settings() -> dict:
     cfg['wheel_zoom'] = max(1.02, min(1.30, float(cfg.get('wheel_zoom', 1.10))))
     cfg['language'] = cfg.get('language') if cfg.get('language') in ('fr', 'en', 'de', 'es') else 'fr'
     cfg['shortcuts'] = _clean_shortcuts(cfg.get('shortcuts'))
+    cfg['settings_version'] = SETTINGS_SCHEMA_VERSION
     return cfg
 
 def save_settings(settings: dict) -> None:
@@ -65,6 +63,7 @@ def save_settings(settings: dict) -> None:
         if key in settings:
             clean[key] = settings[key]
     clean['shortcuts'] = _clean_shortcuts(clean.get('shortcuts'))
+    clean['settings_version'] = SETTINGS_SCHEMA_VERSION
     tmp = path.with_suffix('.tmp')
     tmp.write_text(json.dumps(clean, indent=2, ensure_ascii=False), encoding='utf-8')
     tmp.replace(path)

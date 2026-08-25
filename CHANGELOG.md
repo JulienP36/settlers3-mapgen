@@ -1,3 +1,38 @@
+## v1.8 DEV_8_R4 — 2026-08-25
+
+- Removes the unreliable Windows global-key-state query introduced in R3 after real validation showed both phantom Alt and missed Shift results.
+- Builds captured combinations exclusively from modifier key press/release events observed by the focused capture control.
+- Ignores every Tk state mask when the GUI supplies that explicit modifier set, eliminating both extended-state false positives.
+- Keeps all validated R3 badges, reminders, scrolling, persistence, migration and Help behavior unchanged.
+- Windows validation passed for plain keys and genuine Ctrl, Shift and Alt combinations, with no phantom modifier remaining.
+
+## v1.8 DEV_8_R3 — 2026-08-25
+
+- Stops inferring Alt from platform-dependent extended Tk state bits during capture.
+- Tracks real modifier key presses and queries the physical Ctrl/Shift/Alt state on Windows at the primary key event, eliminating the remaining phantom Alt path without disabling genuine Alt shortcuts.
+- Replaces the small pixelated conflict triangle with a larger circular exclamation badge and gives pending changes a distinct clock badge.
+- Makes the bottom pending/conflict reminder bold, color-coded and icon-assisted in both themes.
+- Adds automatic vertical scrolling to Settings and Shortcuts while preserving the useful R2 horizontal scrolling; each bar appears only when needed.
+- Keeps persistence and schema migration unchanged; candidate awaits Windows validation.
+
+## v1.8 DEV_8_R2 — 2026-08-25
+
+- Fixes phantom `Alt` capture on Windows by excluding the unrelated `0x0080` keyboard-state bit while retaining both validated Alt indicators.
+- Replaces modal shortcut-conflict errors with per-row warning icons, localized tooltips and an Apply button disabled until conflicts are resolved.
+- Marks every changed-but-unapplied shortcut with a distinct inline icon and a compact localized reminder below the list.
+- Makes individual and global resets participate in the same explicit Apply workflow.
+- Adds automatic horizontal scrolling to Settings and Shortcuts only when their content no longer fits the available compact width.
+- Keeps the R1 migration, expanded commands and dynamic themed Help unchanged; candidate awaits Windows validation.
+
+## v1.8 DEV_8_R1 — 2026-08-25
+
+- Replaces free-text shortcut editing with direct key capture, per-action Disable and Reset controls, conflict detection and canonical Tk/Windows binding conversion.
+- Expands configurable shortcuts to Batch generation, PNG preview, History Center and A+B clearing while keeping existing actions and allowing any shortcut to be disabled.
+- Migrates the existing `%APPDATA%/Settlers3MapGen/settings.json` shortcut map entry by entry to schema 2; malformed entries fall back independently and user-disabled entries remain disabled.
+- Replaces the native Help message box with a reusable themed FR/EN/DE/ES window listing the live configured shortcuts and navigation controls.
+- Preserves the validated semantic native title bars and their event-driven behavior; generation engine, binary formats and protected assets remain unchanged.
+- Candidate awaits Windows validation before synchronization on `dev`.
+
 ## v1.8 TITLEBAR_TEST_R4 — 2026-08-25
 
 - Keeps the Windows-validated dark caption and separator unchanged.

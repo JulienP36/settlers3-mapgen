@@ -20,6 +20,7 @@ from .stats_analysis import analyze_map, format_stats_report, stats_json, stats_
 from .stats_charts import render_stats_chart, CHART_KEYS, CHART_LABELS
 from .export_center import safe_export_basename, map_export_capabilities, map_export_paths, stats_export_paths, existing_export_paths
 from .native_titlebar import apply_native_titlebar
+from .shortcuts import canonicalize_shortcut, shortcut_from_event, shortcut_to_tk
 
 VIEWS.clear()
 VIEWS.update({'Global':'global','Départs':'starts','Territoires':'territories','Élévation':'heightmap','Ressources':'resources','Chemins':'paths','Cultures':'crops','Carte thermique':'heatmap'})
@@ -30,10 +31,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 TITLEBAR_TEST_R4 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_8_R4 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_8_R4 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_8_R4 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_8_R4 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -151,8 +152,15 @@ ARCHETYPE_LABELS={
 }
 
 COMMAND_LABELS={
- 'fr':{'generate':'Générer','import':'Importer','export':'Exporter','reset_view':'Recentrer','copy_seed':'Copier le seed','toggle_ab':'Basculer A/B','toggle_theme':'Basculer thème','help':'Aide'},
- 'en':{'generate':'Generate','import':'Import','export':'Export','reset_view':'Reset view','copy_seed':'Copy seed','toggle_ab':'Toggle A/B','toggle_theme':'Toggle theme','help':'Help'},
+ 'fr':{'generate':'Générer','generate_batch':'Générer un lot','import':'Importer','export':'Exporter','save_preview':'Enregistrer l’aperçu PNG','manage_history':'Gérer l’historique','reset_view':'Recentrer','copy_seed':'Copier le seed','toggle_ab':'Basculer A/B','clear_compare':'Vider A+B','toggle_theme':'Basculer thème','help':'Aide'},
+ 'en':{'generate':'Generate','generate_batch':'Generate batch','import':'Import','export':'Export','save_preview':'Save PNG preview','manage_history':'Manage history','reset_view':'Reset view','copy_seed':'Copy seed','toggle_ab':'Toggle A/B','clear_compare':'Clear A+B','toggle_theme':'Toggle theme','help':'Help'},
+}
+
+SHORTCUT_UI_TEXT={
+ 'fr':{'capture':'Appuyez sur les touches…','disabled':'Désactivé','disable':'Désactiver','reset':'Réinitialiser','apply':'Appliquer','defaults':'Valeurs par défaut','hint':'Cliquez sur un raccourci puis appuyez sur la combinaison. Échap annule ; Suppr ou Retour arrière désactive.','title':'Raccourcis','pending':'Modifications non appliquées.','conflict_summary':'Conflit à corriger avant application.','pending_tip':'Modification non appliquée.','conflict_tip':'« {shortcut} » est aussi affecté à : {actions}.','invalid_tip':'Combinaison invalide.','help_title':'Aide','action':'Action','shortcut':'Raccourci','navigation':'Navigation','close':'Fermer','wheel':'Molette : zoom','drag':'Clic gauche + glisser : déplacer la carte','cache':'Historique : capacité configurable, mémoire de session uniquement.','compare':'A/B conserve vue, zoom, projection et couche.'},
+ 'en':{'capture':'Press the keys…','disabled':'Disabled','disable':'Disable','reset':'Reset','apply':'Apply','defaults':'Defaults','hint':'Click a shortcut, then press the combination. Escape cancels; Delete or Backspace disables it.','title':'Shortcuts','pending':'Unapplied changes.','conflict_summary':'Resolve the conflict before applying.','pending_tip':'Unapplied change.','conflict_tip':'“{shortcut}” is also assigned to: {actions}.','invalid_tip':'Invalid combination.','help_title':'Help','action':'Action','shortcut':'Shortcut','navigation':'Navigation','close':'Close','wheel':'Mouse wheel: zoom','drag':'Left click + drag: move the map','cache':'History: configurable capacity, session memory only.','compare':'A/B preserves view, zoom, projection and overlay.'},
+ 'de':{'capture':'Tasten drücken…','disabled':'Deaktiviert','disable':'Deaktivieren','reset':'Zurücksetzen','apply':'Übernehmen','defaults':'Standardwerte','hint':'Klicken Sie auf ein Tastenkürzel und drücken Sie die Kombination. Escape bricht ab; Entf oder Rücktaste deaktiviert.','title':'Tastenkürzel','pending':'Nicht übernommene Änderungen.','conflict_summary':'Konflikt vor dem Übernehmen beheben.','pending_tip':'Nicht übernommene Änderung.','conflict_tip':'„{shortcut}“ ist auch zugewiesen an: {actions}.','invalid_tip':'Ungültige Kombination.','help_title':'Hilfe','action':'Aktion','shortcut':'Tastenkürzel','navigation':'Navigation','close':'Schließen','wheel':'Mausrad: Zoom','drag':'Linksklick + Ziehen: Karte verschieben','cache':'Verlauf: konfigurierbare Kapazität, nur Sitzungsspeicher.','compare':'A/B behält Ansicht, Zoom, Projektion und Ebene bei.'},
+ 'es':{'capture':'Pulsa las teclas…','disabled':'Desactivado','disable':'Desactivar','reset':'Restablecer','apply':'Aplicar','defaults':'Valores predeterminados','hint':'Haz clic en un atajo y pulsa la combinación. Escape cancela; Supr o Retroceso lo desactiva.','title':'Atajos','pending':'Cambios sin aplicar.','conflict_summary':'Resuelve el conflicto antes de aplicar.','pending_tip':'Cambio sin aplicar.','conflict_tip':'«{shortcut}» también está asignado a: {actions}.','invalid_tip':'Combinación no válida.','help_title':'Ayuda','action':'Acción','shortcut':'Atajo','navigation':'Navegación','close':'Cerrar','wheel':'Rueda: zoom','drag':'Clic izquierdo + arrastrar: mover el mapa','cache':'Historial: capacidad configurable, solo memoria de sesión.','compare':'A/B conserva vista, zoom, proyección y capa.'},
 }
 
 THEME_LABELS={'fr':{'dark':'Sombre','light':'Clair'},'en':{'dark':'Dark','light':'Light'}}
@@ -209,8 +217,8 @@ ARCHETYPE_LABELS.update({
  'es':{'continental':'Continental','large_islands':'Islas grandes','small_islands':'Islas pequeñas'},
 })
 COMMAND_LABELS.update({
- 'de':{'generate':'Generieren','import':'Importieren','export':'Exportieren','reset_view':'Ansicht zentrieren','copy_seed':'Seed kopieren','toggle_ab':'A/B wechseln','toggle_theme':'Design wechseln','help':'Hilfe'},
- 'es':{'generate':'Generar','import':'Importar','export':'Exportar','reset_view':'Centrar vista','copy_seed':'Copiar seed','toggle_ab':'Alternar A/B','toggle_theme':'Cambiar tema','help':'Ayuda'},
+ 'de':{'generate':'Generieren','generate_batch':'Stapel generieren','import':'Importieren','export':'Exportieren','save_preview':'PNG-Vorschau speichern','manage_history':'Verlauf verwalten','reset_view':'Ansicht zentrieren','copy_seed':'Seed kopieren','toggle_ab':'A/B wechseln','clear_compare':'A+B leeren','toggle_theme':'Design wechseln','help':'Hilfe'},
+ 'es':{'generate':'Generar','generate_batch':'Generar lote','import':'Importar','export':'Exportar','save_preview':'Guardar vista previa PNG','manage_history':'Gestionar historial','reset_view':'Centrar vista','copy_seed':'Copiar seed','toggle_ab':'Alternar A/B','clear_compare':'Vaciar A+B','toggle_theme':'Cambiar tema','help':'Ayuda'},
 })
 THEME_LABELS.update({'de':{'dark':'Dunkel','light':'Hell'},'es':{'dark':'Oscuro','light':'Claro'}})
 PROJECTION_LABELS.update({'de':{'square':'Quadratisch','parallelogram':'Parallelogramm'},'es':{'square':'Cuadrada','parallelogram':'Paralelogramo'}})
@@ -397,6 +405,12 @@ def _selector_icon(master, color, kind='dot', size=18):
     elif kind=='warning':
         d.polygon(((size//2,1),(size-2,size-3),(2,size-3)),fill=c,outline='#111111')
         d.line((size//2,5,size//2,size-8),fill='#111111',width=max(2,size//8));d.ellipse((size//2-1,size-6,size//2+1,size-4),fill='#111111')
+    elif kind=='conflict':
+        d.ellipse((1,1,size-2,size-2),fill=c,outline='#111111',width=1)
+        d.line((size//2,4,size//2,size-7),fill='#ffffff',width=max(2,size//7));d.ellipse((size//2-1,size-5,size//2+1,size-3),fill='#ffffff')
+    elif kind=='pending':
+        d.ellipse((1,1,size-2,size-2),fill=c,outline='#111111',width=1)
+        cx=size//2;cy=size//2;d.line((cx,4,cx,cy),fill='#202124',width=max(2,size//9));d.line((cx,cy,size-5,cy+3),fill='#202124',width=max(2,size//9));d.ellipse((cx-1,cy-1,cx+1,cy+1),fill='#202124')
     elif kind=='blank':
         pass
     else:
@@ -504,6 +518,7 @@ class App(V15StableApp):
         self._history_large_window=None;self._history_large_label=None;self._history_large_photo=None;self._history_large_image=None;self._history_large_key=None;self._history_large_zoom=.72;self._history_large_drag_origin=None;self._history_large_pinned=False;self._history_hover_after=None;self._history_preview_hover=False
         self._history_role_icons={};self._ui_tooltip_window=None;self._ui_tooltip_key=None
         self._history_capacity_dialog=None;self._history_capacity_dialog_widgets={}
+        self._help_window=None;self._help_widgets={};self._shortcut_capture_command=None;self._shortcut_capture_modifiers=set();self._shortcut_row_states={};self._scroll_tab_surfaces=[]
         self._magnifier_hover_kind=None;self._magnifier_hover_ref=None;self._magnifier_active_kind=None;self._magnifier_active_ref=None
         self._native_titlebar_after=None
         super().__init__()
@@ -537,9 +552,30 @@ class App(V15StableApp):
         if self._history_large_window is not None:self._history_hide_large_preview();closed=True
         return 'break' if closed else None
 
+    def _scroll_notebook_tab(self,title):
+        """Create a tab whose content remains reachable at compact dimensions."""
+        host=ttk.Frame(self.nb);self.nb.add(host,text=title);host.rowconfigure(0,weight=1);host.columnconfigure(0,weight=1)
+        canvas=tk.Canvas(host,highlightthickness=0,borderwidth=0)
+        hbar=ttk.Scrollbar(host,orient='horizontal',command=canvas.xview);vbar=ttk.Scrollbar(host,orient='vertical',command=canvas.yview);canvas.configure(xscrollcommand=hbar.set,yscrollcommand=vbar.set)
+        canvas.grid(row=0,column=0,sticky='nsew')
+        inner=ttk.Frame(canvas,padding=14);item=canvas.create_window((0,0),window=inner,anchor='nw')
+        def refresh(_event=None):
+            try:
+                required_w=max(1,inner.winfo_reqwidth());required_h=max(1,inner.winfo_reqheight());available_w=max(1,canvas.winfo_width());available_h=max(1,canvas.winfo_height())
+                canvas.itemconfigure(item,width=max(required_w,available_w));canvas.configure(scrollregion=canvas.bbox('all'))
+                if required_w>available_w+1:
+                    if not hbar.winfo_ismapped():hbar.grid(row=1,column=0,sticky='ew')
+                elif hbar.winfo_ismapped():hbar.grid_remove();canvas.xview_moveto(0)
+                if required_h>available_h+1:
+                    if not vbar.winfo_ismapped():vbar.grid(row=0,column=1,sticky='ns')
+                elif vbar.winfo_ismapped():vbar.grid_remove();canvas.yview_moveto(0)
+            except tk.TclError:pass
+        inner.bind('<Configure>',refresh,add='+');canvas.bind('<Configure>',refresh,add='+')
+        self._scroll_tab_surfaces.append(canvas);return inner
+
     def _settings_tab(self):
         """Build v1.8 display settings, including preview-only start markers."""
-        f=ttk.Frame(self.nb,padding=14);self.nb.add(f,text='Paramètres');f.columnconfigure(1,weight=1)
+        f=self._scroll_notebook_tab('Paramètres');f.columnconfigure(1,weight=1)
         ttk.Label(f,text='Affichage',style='Section.TLabel').grid(row=0,column=0,columnspan=3,sticky='w',pady=(0,10))
         ttk.Label(f,text='Thème').grid(row=1,column=0,sticky='w',pady=6)
         lang=self.prefs.get('language','fr')
@@ -1152,17 +1188,25 @@ class App(V15StableApp):
         return None
 
     def _shortcut_settings_tab(self):
-        f=ttk.Frame(self.nb,padding=14);self.nb.add(f,text='Raccourcis');f.columnconfigure(1,weight=1)
-        self.shortcut_vars={};self.shortcut_labels={};self.shortcut_reset_buttons={};lang=self.prefs.get('language','fr')
+        f=self._scroll_notebook_tab('Raccourcis');f.columnconfigure(1,weight=1)
+        self.shortcut_vars={};self.shortcut_display_vars={};self.shortcut_labels={};self.shortcut_capture_buttons={};self.shortcut_disable_buttons={};self.shortcut_reset_buttons={};self.shortcut_status_labels={};lang=self.prefs.get('language','fr');text=SHORTCUT_UI_TEXT[lang]
+        self._shortcut_pending_icon=_selector_icon(f,'#f2b84b','pending',22);self._shortcut_conflict_icon=_selector_icon(f,'#e04444','conflict',22);self._shortcut_blank_icon=_selector_icon(f,'#7b8088','blank',22)
         for row,cmd in enumerate(DEFAULT_SHORTCUTS):
             lbl=ttk.Label(f,text=COMMAND_LABELS[lang][cmd]);lbl.grid(row=row,column=0,sticky='w',pady=4);self.shortcut_labels[cmd]=lbl
             var=tk.StringVar(value=self.prefs.get('shortcuts',{}).get(cmd,DEFAULT_SHORTCUTS[cmd]));self.shortcut_vars[cmd]=var
-            ttk.Entry(f,textvariable=var,width=24).grid(row=row,column=1,sticky='ew',padx=(10,8),pady=4)
-            btn=ttk.Button(f,text='Réinitialiser',command=lambda c=cmd:self._reset_one_shortcut(c));btn.grid(row=row,column=2,sticky='e',pady=4);self.shortcut_reset_buttons[cmd]=btn
+            display=tk.StringVar();self.shortcut_display_vars[cmd]=display
+            capture=ttk.Button(f,textvariable=display,command=lambda c=cmd:self._start_shortcut_capture(c));capture.grid(row=row,column=1,sticky='ew',padx=(10,8),pady=4);capture.bind('<KeyPress>',lambda e,c=cmd:self._capture_shortcut_key(c,e));capture.bind('<KeyRelease>',lambda e,c=cmd:self._release_shortcut_key(c,e));self.shortcut_capture_buttons[cmd]=capture
+            disable=ttk.Button(f,text=text['disable'],command=lambda c=cmd:self._disable_shortcut(c));disable.grid(row=row,column=2,sticky='e',padx=(0,6),pady=4);self.shortcut_disable_buttons[cmd]=disable
+            btn=ttk.Button(f,text=text['reset'],command=lambda c=cmd:self._reset_one_shortcut(c));btn.grid(row=row,column=3,sticky='e',pady=4);self.shortcut_reset_buttons[cmd]=btn
+            status=ttk.Label(f,image=self._shortcut_blank_icon,cursor='hand2');status.grid(row=row,column=4,padx=(7,0));status.bind('<Enter>',lambda e,c=cmd:self._shortcut_status_tooltip(c));status.bind('<Leave>',lambda e:self._hide_ui_tooltip());self.shortcut_status_labels[cmd]=status
+            var.trace_add('write',lambda *_args,c=cmd:self._shortcut_values_changed(c))
+            self._refresh_shortcut_capture_text(cmd)
         r=len(DEFAULT_SHORTCUTS)
-        ttk.Button(f,text='Appliquer',command=self._apply_shortcut_settings).grid(row=r,column=0,pady=(12,0),sticky='w')
-        ttk.Button(f,text='Valeurs par défaut',command=self._reset_shortcut_settings).grid(row=r,column=1,pady=(12,0),sticky='w',padx=(10,0))
-        ttk.Label(f,text='Format : Ctrl+G, Ctrl+Shift+C, Alt+1, F1…').grid(row=r+1,column=0,columnspan=3,sticky='w',pady=(8,0))
+        self.shortcut_apply_button=ttk.Button(f,text=text['apply'],command=self._apply_shortcut_settings);self.shortcut_apply_button.grid(row=r,column=0,pady=(12,0),sticky='w')
+        self.shortcut_defaults_button=ttk.Button(f,text=text['defaults'],command=self._reset_shortcut_settings);self.shortcut_defaults_button.grid(row=r,column=1,pady=(12,0),sticky='w',padx=(10,0))
+        self.shortcut_hint_label=ttk.Label(f,text=text['hint'],wraplength=720);self.shortcut_hint_label.grid(row=r+1,column=0,columnspan=4,sticky='w',pady=(8,0))
+        self.shortcut_pending_label=ttk.Label(f,text='',style='ShortcutPending.TLabel',compound='left');self.shortcut_pending_label.grid(row=r+2,column=0,columnspan=5,sticky='w',pady=(7,0))
+        self._refresh_shortcut_validation()
 
     def _capture_translatable_widgets(self):
         self._i18n_widgets=[]
@@ -1265,10 +1309,18 @@ class App(V15StableApp):
             st=self._ensure_stats_cache();self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(st,lang=lang))
         self._refresh_stats_chart();self._refresh_compare_buttons()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
-        for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text='Réinitialiser' if lang=='fr' else TEXTS['Réinitialiser'].get(lang,TEXTS['Réinitialiser']['en']))
+        shortcut_text=SHORTCUT_UI_TEXT[lang]
+        for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text=shortcut_text['reset'])
+        for btn in getattr(self,'shortcut_disable_buttons',{}).values():btn.configure(text=shortcut_text['disable'])
+        if hasattr(self,'shortcut_apply_button'):self.shortcut_apply_button.configure(text=shortcut_text['apply'])
+        if hasattr(self,'shortcut_defaults_button'):self.shortcut_defaults_button.configure(text=shortcut_text['defaults'])
+        if hasattr(self,'shortcut_hint_label'):self.shortcut_hint_label.configure(text=shortcut_text['hint'])
+        for cmd in getattr(self,'shortcut_vars',{}):self._refresh_shortcut_capture_text(cmd)
+        self._refresh_shortcut_validation()
         if hasattr(self,'history_combo'):self._refresh_history()
         self._retranslate_history_center()
         self._retranslate_history_capacity_dialog()
+        self._retranslate_help_window()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
     def _language_changed(self):
         selected=self.lang_var.get();self.prefs['language']=next((key for key,label in LANGUAGE_LABELS.items() if label==selected),'en');self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
@@ -1281,6 +1333,8 @@ class App(V15StableApp):
         # for intentionally colored primary/status actions.
         style.configure('TFrame',background=palette['window']);style.configure('Card.TFrame',background=palette['panel'],relief='solid',borderwidth=1)
         style.configure('TLabel',background=palette['window'],foreground=fg);style.configure('Panel.TLabel',background=palette['panel'],foreground=fg);style.configure('PanelHint.TLabel',background=palette['panel'],foreground=palette['muted'])
+        style.configure('ShortcutPending.TLabel',background=palette['window'],foreground=palette['warning'],font=('TkDefaultFont',9,'bold'))
+        style.configure('ShortcutConflict.TLabel',background=palette['window'],foreground=palette['danger'],font=('TkDefaultFont',9,'bold'))
         style.configure('TLabelframe',background=palette['window'],bordercolor=palette['border']);style.configure('TLabelframe.Label',background=palette['window'],foreground=fg)
         style.configure('History.TLabelframe',background=palette['panel'],bordercolor=palette['border']);style.configure('History.TLabelframe.Label',background=palette['panel'],foreground=fg)
         style.configure('TButton',background=palette['surface'],foreground=fg,bordercolor=palette['border'],lightcolor=palette['border'],darkcolor=palette['border'])
@@ -1297,6 +1351,7 @@ class App(V15StableApp):
         style.configure('TNotebook.Tab',background=panel,foreground=fg);style.map('TNotebook.Tab',background=[('selected',field),('active',palette['hover']),('pressed',palette['pressed'])],foreground=[('disabled',muted),('selected',fg),('active',fg)])
         style.configure('Horizontal.TScale',background=palette['window'],troughcolor=palette['panel']);style.map('Horizontal.TScale',background=[('active',palette['primary']),('disabled',palette['disabled'])])
         style.configure('Vertical.TScrollbar',background=palette['surface'],troughcolor=palette['panel'],arrowcolor=fg,bordercolor=palette['border']);style.map('Vertical.TScrollbar',background=[('pressed',palette['pressed']),('active',palette['hover'])],arrowcolor=[('disabled',muted)])
+        style.configure('Horizontal.TScrollbar',background=palette['surface'],troughcolor=palette['panel'],arrowcolor=fg,bordercolor=palette['border']);style.map('Horizontal.TScrollbar',background=[('pressed',palette['pressed']),('active',palette['hover'])],arrowcolor=[('disabled',muted)])
         style.configure('Treeview',background=palette['surface'],fieldbackground=palette['surface'],foreground=fg,bordercolor=palette['border'],rowheight=23)
         style.map('Treeview',background=[('selected',palette['selection'])],foreground=[('selected',palette['selection_text'])])
         style.configure('Treeview.Heading',background=panel,foreground=fg,bordercolor=palette['border'],relief='raised')
@@ -1324,6 +1379,10 @@ class App(V15StableApp):
             except tk.TclError:pass
         self._apply_history_window_theme()
         self._apply_history_capacity_dialog_theme()
+        self._apply_help_window_theme()
+        for surface in getattr(self,'_scroll_tab_surfaces',[]):
+            try:surface.configure(background=palette['window'])
+            except tk.TclError:pass
         if self._task_overlay is not None:
             try:
                 self._task_overlay.configure(bg=panel)
@@ -2788,45 +2847,156 @@ class App(V15StableApp):
 
     @staticmethod
     def _tk_sequence(shortcut):
-        text=shortcut.strip();parts=[p.strip() for p in text.split('+') if p.strip()]
-        if not parts:return None
-        key=parts[-1];mods=[]
-        for p in parts[:-1]:
-            q=p.lower();mods.append({'ctrl':'Control','control':'Control','shift':'Shift','alt':'Alt'}.get(q,p))
-        if key.upper().startswith('F') and key[1:].isdigit():key=key.upper()
-        elif len(key)==1:
-            # Tk reports shifted letters as uppercase keysyms on Windows.  Using
-            # lowercase here made Ctrl+Shift+T/C unreliable (notably on AZERTY).
-            key=key.upper() if 'Shift' in mods else key.lower()
-        return '<'+'-'.join(mods+[key])+'>'
+        try:return shortcut_to_tk(shortcut)
+        except (TypeError,ValueError):return None
+    def _refresh_shortcut_capture_text(self,cmd):
+        display=getattr(self,'shortcut_display_vars',{}).get(cmd)
+        if display is None:return
+        lang=self.prefs.get('language','fr');text=SHORTCUT_UI_TEXT[lang]
+        if self._shortcut_capture_command==cmd:display.set(text['capture'])
+        else:display.set(self.shortcut_vars[cmd].get() or text['disabled'])
+    def _shortcut_values_changed(self,cmd):
+        self._refresh_shortcut_capture_text(cmd);self._refresh_shortcut_validation()
+    def _refresh_shortcut_validation(self):
+        variables=getattr(self,'shortcut_vars',{})
+        if not variables:return
+        lang=self.prefs.get('language','fr');text=SHORTCUT_UI_TEXT[lang];values={};invalid=set()
+        for cmd,var in variables.items():
+            try:values[cmd]=canonicalize_shortcut(var.get())
+            except (TypeError,ValueError):values[cmd]=var.get();invalid.add(cmd)
+        groups={}
+        for cmd,value in values.items():
+            if cmd not in invalid and value:groups.setdefault(value.casefold(),[]).append(cmd)
+        conflicts={cmd for commands in groups.values() if len(commands)>1 for cmd in commands}
+        applied=self.prefs.get('shortcuts',DEFAULT_SHORTCUTS);states={}
+        for cmd,value in values.items():
+            if cmd in invalid:
+                states[cmd]=('invalid',text['invalid_tip'])
+            elif cmd in conflicts:
+                peers=[COMMAND_LABELS[lang][other] for other in groups[value.casefold()] if other!=cmd]
+                states[cmd]=('conflict',text['conflict_tip'].format(shortcut=value,actions=', '.join(peers)))
+            elif value!=applied.get(cmd,DEFAULT_SHORTCUTS[cmd]):
+                states[cmd]=('pending',text['pending_tip'])
+            else:states[cmd]=('clean','')
+        self._shortcut_row_states=states
+        for cmd,label in getattr(self,'shortcut_status_labels',{}).items():
+            state=states.get(cmd,('clean',''))[0]
+            image=self._shortcut_conflict_icon if state in ('invalid','conflict') else self._shortcut_pending_icon if state=='pending' else self._shortcut_blank_icon
+            label.configure(image=image)
+        blocked=bool(invalid or conflicts);pending=any(state=='pending' for state,_ in states.values())
+        if hasattr(self,'shortcut_apply_button'):self.shortcut_apply_button.configure(state='disabled' if blocked else 'normal')
+        if hasattr(self,'shortcut_pending_label'):
+            self.shortcut_pending_label.configure(text=text['conflict_summary'] if blocked else text['pending'] if pending else '',image=self._shortcut_conflict_icon if blocked else self._shortcut_pending_icon if pending else '',style='ShortcutConflict.TLabel' if blocked else 'ShortcutPending.TLabel')
+    def _shortcut_status_tooltip(self,cmd):
+        label=getattr(self,'shortcut_status_labels',{}).get(cmd);state,tip=self._shortcut_row_states.get(cmd,('clean',''))
+        if label is not None and tip:self._show_ui_tooltip(label,tip,key=('shortcut-status',cmd,state,tip))
+        else:self._hide_ui_tooltip()
+    def _start_shortcut_capture(self,cmd):
+        previous=self._shortcut_capture_command;self._shortcut_capture_command=cmd;self._shortcut_capture_modifiers=set()
+        if previous and previous!=cmd:self._refresh_shortcut_capture_text(previous)
+        self._refresh_shortcut_capture_text(cmd)
+        button=self.shortcut_capture_buttons.get(cmd)
+        if button is not None:button.focus_set()
+    def _finish_shortcut_capture(self,cmd):
+        if self._shortcut_capture_command==cmd:self._shortcut_capture_command=None;self._shortcut_capture_modifiers=set()
+        self._refresh_shortcut_capture_text(cmd)
+    @staticmethod
+    def _shortcut_modifier_key(keysym):
+        if keysym in ('Control_L','Control_R'):return 'Ctrl'
+        if keysym in ('Shift_L','Shift_R'):return 'Shift'
+        if keysym in ('Alt_L','Alt_R','ISO_Level3_Shift'):return 'Alt'
+        return None
+    def _capture_shortcut_key(self,cmd,event):
+        if self._shortcut_capture_command!=cmd:return None
+        keysym=str(getattr(event,'keysym',''))
+        if keysym=='Escape':self._finish_shortcut_capture(cmd);return 'break'
+        if keysym in ('Delete','BackSpace'):
+            self.shortcut_vars[cmd].set('');self._finish_shortcut_capture(cmd);return 'break'
+        modifier=self._shortcut_modifier_key(keysym)
+        if modifier:self._shortcut_capture_modifiers.add(modifier);return 'break'
+        state=int(getattr(event,'state',0));modifiers=set(self._shortcut_capture_modifiers)
+        try:value=shortcut_from_event(keysym,state,pressed_modifiers=modifiers)
+        except (TypeError,ValueError):return 'break'
+        if value is None:return 'break'
+        self.shortcut_vars[cmd].set(value);self._finish_shortcut_capture(cmd);return 'break'
+    def _release_shortcut_key(self,cmd,event):
+        if self._shortcut_capture_command!=cmd:return None
+        modifier=self._shortcut_modifier_key(str(getattr(event,'keysym','')))
+        if modifier:self._shortcut_capture_modifiers.discard(modifier)
+        return 'break'
+    def _disable_shortcut(self,cmd):
+        self.shortcut_vars[cmd].set('');self._finish_shortcut_capture(cmd)
     def _bind_shortcuts(self):
         for seq in self._bound_shortcuts:
             try:self.unbind_all(seq)
             except tk.TclError:pass
         self._bound_shortcuts=[]
-        actions={'generate':self.generate,'import':self.import_file,'export':self.export,'reset_view':self._reset_view,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'toggle_theme':self._toggle_theme,'help':self._show_help}
+        actions={'generate':self.generate,'generate_batch':self._open_batch_window,'import':self.import_file,'export':self.export,'save_preview':self.save_preview,'manage_history':self._open_history_center,'reset_view':self._reset_view,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'clear_compare':self._clear_compare_slots,'toggle_theme':self._toggle_theme,'help':self._show_help}
         for cmd,shortcut in self.prefs.get('shortcuts',DEFAULT_SHORTCUTS).items():
             seq=self._tk_sequence(shortcut)
             if seq and cmd in actions:
                 self.bind_all(seq,lambda e,fn=actions[cmd]:(fn(),'break')[1]);self._bound_shortcuts.append(seq)
     def _apply_shortcut_settings(self):
-        vals={k:v.get().strip() for k,v in self.shortcut_vars.items()};norm=[v.lower().replace(' ','') for v in vals.values()]
-        lang=self.prefs.get('language','fr');title=_lang_text(lang,'Raccourcis','Shortcuts','Tastenkürzel','Atajos')
-        if any(not v for v in vals.values()):messagebox.showerror(title,_lang_text(lang,'Un raccourci ne peut pas être vide.','A shortcut cannot be empty.','Ein Tastenkürzel darf nicht leer sein.','Un atajo no puede estar vacío.'));return
-        dups=sorted({v for v in norm if norm.count(v)>1})
-        if dups:messagebox.showerror(title,_lang_text(lang,'Conflit détecté : ','Conflict detected: ','Konflikt erkannt: ','Conflicto detectado: ')+', '.join(dups));return
-        if any(self._tk_sequence(v) is None for v in vals.values()):messagebox.showerror(title,_lang_text(lang,'Format de raccourci invalide.','Invalid shortcut format.','Ungültiges Tastenkürzelformat.','Formato de atajo no válido.'));return
+        active=self._shortcut_capture_command
+        if active:self._finish_shortcut_capture(active)
+        vals={}
+        for cmd,var in self.shortcut_vars.items():
+            try:vals[cmd]=canonicalize_shortcut(var.get())
+            except (TypeError,ValueError):self._refresh_shortcut_validation();return
+        enabled=[value.casefold() for value in vals.values() if value]
+        duplicate=next((value for value in vals.values() if value and enabled.count(value.casefold())>1),None)
+        if duplicate:self._refresh_shortcut_validation();return
         self.prefs['shortcuts']=vals;self._save_prefs();self._bind_shortcuts();self._feedback('shortcut_applied','success')
+        self._refresh_shortcut_validation();self._retranslate_help_window()
     def _reset_one_shortcut(self,cmd):
-        self.shortcut_vars[cmd].set(DEFAULT_SHORTCUTS[cmd]);self._apply_shortcut_settings()
+        self.shortcut_vars[cmd].set(DEFAULT_SHORTCUTS[cmd]);self._finish_shortcut_capture(cmd)
     def _reset_shortcut_settings(self):
-        for k,v in DEFAULT_SHORTCUTS.items():self.shortcut_vars[k].set(v)
-        self.prefs['shortcuts']=dict(DEFAULT_SHORTCUTS);self._save_prefs();self._bind_shortcuts();self._feedback('shortcut_restored','success')
+        active=self._shortcut_capture_command
+        if active:self._finish_shortcut_capture(active)
+        for k,v in DEFAULT_SHORTCUTS.items():self.shortcut_vars[k].set(v);self._refresh_shortcut_capture_text(k)
+        self._refresh_shortcut_validation()
     def _show_help(self):
-        sc=self.prefs.get('shortcuts',DEFAULT_SHORTCUTS);lang=self.prefs.get('language','fr');lines=[]
-        for cmd in DEFAULT_SHORTCUTS:lines.append(f"{COMMAND_LABELS[lang][cmd]} : {sc.get(cmd,DEFAULT_SHORTCUTS[cmd])}")
-        extra=_lang_text(lang,'\n\nMolette : zoom\nClic gauche + glisser : déplacer\nCache : 8 générations, mémoire de session uniquement.\nA/B : conserve vue, zoom, projection et couche.','\n\nWheel: zoom\nLeft drag: pan\nCache: 8 generations, session memory only.\nA/B preserves view, zoom, projection and overlay.','\n\nMausrad: Zoom\nLinksklick + Ziehen: Karte verschieben\nCache: 8 Generierungen, nur im Sitzungsspeicher.\nA/B behält Ansicht, Zoom, Projektion und Ebene bei.','\n\nRueda: zoom\nClic izquierdo + arrastrar: mover el mapa\nCaché: 8 generaciones, solo en memoria de sesión.\nA/B conserva vista, zoom, proyección y capa.')
-        messagebox.showinfo(_lang_text(lang,'Aide','Help','Hilfe','Ayuda'),'\n'.join(lines)+extra)
+        existing=self._help_window
+        if existing is not None:
+            try:existing.deiconify();existing.lift();existing.focus_force();return
+            except tk.TclError:self._help_window=None
+        w=tk.Toplevel(self);self._help_window=w;w.transient(self);w.resizable(True,True);w.minsize(480,380);w.protocol('WM_DELETE_WINDOW',self._close_help_window)
+        body=ttk.Frame(w,padding=14);body.pack(fill='both',expand=True)
+        shortcuts=ttk.LabelFrame(body,padding=10);shortcuts.pack(fill='both',expand=True);shortcuts.columnconfigure(0,weight=1);shortcuts.columnconfigure(1,weight=1)
+        action_header=ttk.Label(shortcuts,anchor='w');action_header.grid(row=0,column=0,sticky='ew',padx=(0,12),pady=(0,5))
+        shortcut_header=ttk.Label(shortcuts,anchor='w');shortcut_header.grid(row=0,column=1,sticky='ew',pady=(0,5))
+        action_labels={};shortcut_labels={}
+        for row,cmd in enumerate(DEFAULT_SHORTCUTS,start=1):
+            action=ttk.Label(shortcuts,anchor='w');action.grid(row=row,column=0,sticky='ew',padx=(0,12),pady=2);action_labels[cmd]=action
+            value=ttk.Label(shortcuts,anchor='w');value.grid(row=row,column=1,sticky='ew',pady=2);shortcut_labels[cmd]=value
+        navigation=ttk.LabelFrame(body,padding=10);navigation.pack(fill='x',pady=(10,0))
+        navigation_labels=[]
+        for row in range(4):
+            label=ttk.Label(navigation,anchor='w');label.grid(row=row,column=0,sticky='w',pady=1);navigation_labels.append(label)
+        close=ttk.Button(body,command=self._close_help_window);close.pack(anchor='e',pady=(10,0))
+        self._help_widgets={'shortcuts':shortcuts,'action_header':action_header,'shortcut_header':shortcut_header,'actions':action_labels,'values':shortcut_labels,'navigation':navigation,'navigation_labels':navigation_labels,'close':close}
+        self._retranslate_help_window();self._apply_help_window_theme();w.update_idletasks()
+        width=max(520,min(w.winfo_reqwidth(),w.winfo_screenwidth()-80));height=max(430,min(w.winfo_reqheight(),w.winfo_screenheight()-100));x=max(20,(w.winfo_screenwidth()-width)//2);y=max(20,(w.winfo_screenheight()-height)//2);w.geometry(f'{width}x{height}+{x}+{y}')
+    def _close_help_window(self):
+        w=self._help_window;self._help_window=None;self._help_widgets={}
+        if w is not None:
+            try:w.destroy()
+            except tk.TclError:pass
+    def _retranslate_help_window(self):
+        w=self._help_window
+        if w is None:return
+        try:
+            if not w.winfo_exists():self._help_window=None;self._help_widgets={};return
+        except tk.TclError:self._help_window=None;self._help_widgets={};return
+        lang=self.prefs.get('language','fr');text=SHORTCUT_UI_TEXT[lang];widgets=self._help_widgets;sc=self.prefs.get('shortcuts',DEFAULT_SHORTCUTS)
+        w.title(text['help_title']);widgets['shortcuts'].configure(text=text['title']);widgets['action_header'].configure(text=text['action']);widgets['shortcut_header'].configure(text=text['shortcut']);widgets['navigation'].configure(text=text['navigation']);widgets['close'].configure(text=text['close'])
+        for cmd,label in widgets['actions'].items():label.configure(text=COMMAND_LABELS[lang][cmd])
+        for cmd,label in widgets['values'].items():label.configure(text=sc.get(cmd,DEFAULT_SHORTCUTS[cmd]) or text['disabled'])
+        for label,value in zip(widgets['navigation_labels'],(text['wheel'],text['drag'],text['cache'],text['compare'])):label.configure(text=value)
+    def _apply_help_window_theme(self):
+        if self._help_window is None:return
+        try:self._help_window.configure(background=self._ui_theme_colors.get('window','#202124'))
+        except tk.TclError:pass
 
     def export(self):
         self._open_map_export_center()

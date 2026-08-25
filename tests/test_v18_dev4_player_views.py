@@ -24,7 +24,7 @@ def test_starts_view_uses_the_opacity_slider_while_global_remains_locked():
 
 
 def test_dev4_candidate_title_is_explicit():
-    assert all('TITLEBAR_TEST_R4' in title for title in WINDOW_TITLES.values())
+    assert all('DEV_8_R4' in title for title in WINDOW_TITLES.values())
 
 
 def test_batch_previews_use_compact_start_sprites_without_start_boundaries():
