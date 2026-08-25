@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,21 @@ from .app_paths import (
 from .version import APP_VERSION, ENGINE_VERSION
 
 
+PROTECTED_RESOURCE_HASHES={
+    'legacy_profile':'bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85',
+    'upgraded_profile':'11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441',
+    'native_library':'fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d',
+}
+
+
+def _sha256(path:Path)->str:
+    digest=hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda:stream.read(1024*1024),b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def inspect_package() -> dict:
     """Read every bundled runtime resource without modifying user data."""
     checks: dict[str, dict] = {}
@@ -34,17 +50,26 @@ def inspect_package() -> dict:
     ):
         try:
             payload=json.loads(path.read_text(encoding='utf-8'))
-            checks[name]={'path':str(path),'ok':isinstance(payload,dict),'bytes':path.stat().st_size}
+            actual_hash=_sha256(path);expected_hash=PROTECTED_RESOURCE_HASHES[name]
+            ok=isinstance(payload,dict) and actual_hash==expected_hash
+            checks[name]={
+                'path':str(path),'ok':ok,'bytes':path.stat().st_size,
+                'sha256':actual_hash,'expected_sha256':expected_hash,
+            }
+            if not ok: errors.append(name)
         except Exception as exc:
             checks[name]={'path':str(path),'ok':False,'error':str(exc)}
             errors.append(name)
 
     try:
         with np.load(LIBRARY,allow_pickle=False) as native:
+            actual_hash=_sha256(LIBRARY);expected_hash=PROTECTED_RESOURCE_HASHES['native_library']
             checks['native_library']={
-                'path':str(LIBRARY),'ok':bool(native.files),'arrays':len(native.files),
-                'bytes':LIBRARY.stat().st_size,
+                'path':str(LIBRARY),'ok':bool(native.files) and actual_hash==expected_hash,
+                'arrays':len(native.files),'bytes':LIBRARY.stat().st_size,
+                'sha256':actual_hash,'expected_sha256':expected_hash,
             }
+            if actual_hash!=expected_hash: errors.append('native_library')
     except Exception as exc:
         checks['native_library']={'path':str(LIBRARY),'ok':False,'error':str(exc)}
         errors.append('native_library')

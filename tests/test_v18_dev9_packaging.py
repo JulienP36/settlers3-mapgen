@@ -36,6 +36,8 @@ def test_source_package_self_test_reads_all_required_resources():
         'edm_scaffold','map_scaffold','start_markers',
     }
     assert all(check['ok'] for check in report['checks'].values())
+    for key in ('legacy_profile','upgraded_profile','native_library'):
+        assert report['checks'][key]['sha256']==report['checks'][key]['expected_sha256']
 
 
 def test_pyinstaller_spec_is_onedir_and_bundles_runtime_resources():
@@ -52,6 +54,7 @@ def test_windows_workflow_runs_binary_self_test_before_upload():
     assert '--self-test' in workflow or 'build_windows.ps1' in workflow
     assert 'upload-artifact@v4' in workflow
     assert 'windows-latest' in workflow
+    assert 'verify_protected_hashes.ps1' in workflow
 
 
 def test_runtime_report_is_json_serializable():

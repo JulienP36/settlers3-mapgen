@@ -16,6 +16,7 @@ Première distribution Windows x64 autonome de Settlers III MapGen. Le ZIP conti
 - lecture effective des profils, bibliothèque native, références/scaffolds et sprites J1–J20 ;
 - production d’un rapport JSON et du SHA-256 du ZIP ;
 - 49 validations moteur et checksum binaire PASS ; cinq hashes protégés inchangés (5/5).
+- fins de ligne des ressources protégées explicitement stabilisées par `.gitattributes` ; les trois ressources embarquées sont revérifiées byte-for-byte par le véritable `.exe`.
 
 ## Checklist Windows R1
 

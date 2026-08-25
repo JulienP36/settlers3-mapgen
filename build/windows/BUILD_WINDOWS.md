@@ -10,7 +10,7 @@ From a Windows x64 checkout with Python 3.12:
 build\windows\build_windows.bat
 ```
 
-The script installs runtime/build dependencies, creates the folder, runs the packaged executable's resource self-test and writes the ZIP plus its SHA-256 file under `artifacts/`.
+The script installs runtime/build dependencies, creates the folder, runs the packaged executable's resource self-test and writes the ZIP plus its SHA-256 file under `artifacts/`. Git attributes force the protected text resources to retain their repository LF bytes on Windows; the workflow verifies all five protected hashes before building, and the packaged self-test rechecks the three protected resources actually bundled.
 
 An unsigned neutral executable is intentional until the owner supplies the final handmade pixel-art `.ico` at `assets/Settlers3MapGen.ico`. The spec automatically adopts that file when present.
 
