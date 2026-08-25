@@ -69,8 +69,9 @@ def test_semantic_theme_palettes_keep_role_parity():
 def test_dev7_r3_history_table_has_rank_lock_and_live_capacity():
     source = (Path(__file__).parents[1] / 's3mapgen' / 'gui_v16.py').read_text(encoding='utf-8')
     assert "show='tree headings'" in source
-    assert "tree.heading('#0',text='#'" in source
-    assert "text=str(index+1)" in source
+    assert "tree.heading('#0',text='',image=self._lock_closed_icon" in source
+    assert "tree.heading('rank',text='#'" in source
+    assert "values=(index+1,origin_label,map_label,details)" in source
     assert "image=self._history_role_image(roles)" in source
     assert "format(used=len(self.session_cache),count=self.session_cache.max_entries)" in source
 

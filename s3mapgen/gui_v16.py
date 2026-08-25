@@ -31,10 +31,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_10_R1 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_10_R1 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_10_R1 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_10_R1 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_10_R2 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_10_R2 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_10_R2 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_10_R2 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -63,6 +63,7 @@ FEEDBACK_TEXT={
   'modifier_none':'Aucun modificateur actif.',
   'batch_opened':'Génération par lot prête — configurez de 1 à 4 cartes.',
   'batch_done':'Lot terminé — {success} réussie(s), {failed} erreur(s), {cancelled} annulée(s).',
+  'history_not_retained':'Carte affichée, mais non conservée : toutes les places du cache sont protégées.',
  },
  'en':{
   'ready':'Ready — {mode} / {archetype} / modifiers: {modifiers} / {side}×{side} / {players} players.',
@@ -89,6 +90,7 @@ FEEDBACK_TEXT={
   'modifier_none':'No modifier is active.',
   'batch_opened':'Batch generation ready — configure 1 to 4 maps.',
   'batch_done':'Batch complete — {success} succeeded, {failed} failed, {cancelled} cancelled.',
+  'history_not_retained':'Map displayed but not retained: every cache slot is protected.',
  },
 }
 
@@ -247,10 +249,10 @@ for _source,(_de,_es) in _TEXTS_DE_ES.items():
 
 FEEDBACK_TEXT.update({
  'de':{
-  'ready':'Bereit — {mode} / {archetype} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler.','size_reserved':'{side}×{side}: max. {max_players} Spieler. Auswahl bereit; Generierung noch nicht kalibriert.','mode_reserved':'Modus „{mode}“ ist reserviert und nicht implementiert.','arch_reserved':'Archetyp „{archetype}“ ist reserviert und nicht implementiert.','generating':'Generiere {archetype} — {mode} — Modifikatoren: {modifiers} — {side}×{side} — {players} Spieler — Seed {seed}…','generated':'Karte generiert — {archetype} / {mode} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler / Seed {seed}.','cache_hit':'Ergebnis aus dem Cache wiederverwendet — Seed {seed}.','heatmap_locked':'Der Filter ist in der Ansicht „Heatmap“ verfügbar.','history_loaded':'Karte aus dem Sitzungsverlauf geladen.','history_cleared':'Sitzungs-Caches geleert.','shortcut_applied':'Tastenkürzel übernommen.','shortcut_restored':'Tastenkürzel auf Standardwerte zurückgesetzt.','seed_copied':'Seed kopiert: {seed}','export_done':'Export abgeschlossen.','history_empty':'Keine Karte im Sitzungs-Cache verfügbar.','compare_toggled':'Karte zu {map} gewechselt.','theme_changed':'Design geändert: {theme}.','view_reset':'Ansicht zentriert.','seed_randomized':'Neuer zufälliger Seed: {seed}','graph_exported':'Diagrammexport abgeschlossen: {format} — {file}','opacity_locked':'Die Deckkraft ist in der globalen Ansicht nicht verfügbar.','modifier_none':'Kein Modifikator aktiv.','batch_opened':'Stapelgenerierung bereit — 1 bis 4 Karten konfigurieren.','batch_done':'Stapel abgeschlossen — {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.',
+  'ready':'Bereit — {mode} / {archetype} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler.','size_reserved':'{side}×{side}: max. {max_players} Spieler. Auswahl bereit; Generierung noch nicht kalibriert.','mode_reserved':'Modus „{mode}“ ist reserviert und nicht implementiert.','arch_reserved':'Archetyp „{archetype}“ ist reserviert und nicht implementiert.','generating':'Generiere {archetype} — {mode} — Modifikatoren: {modifiers} — {side}×{side} — {players} Spieler — Seed {seed}…','generated':'Karte generiert — {archetype} / {mode} / Modifikatoren: {modifiers} / {side}×{side} / {players} Spieler / Seed {seed}.','cache_hit':'Ergebnis aus dem Cache wiederverwendet — Seed {seed}.','heatmap_locked':'Der Filter ist in der Ansicht „Heatmap“ verfügbar.','history_loaded':'Karte aus dem Sitzungsverlauf geladen.','history_cleared':'Sitzungs-Caches geleert.','shortcut_applied':'Tastenkürzel übernommen.','shortcut_restored':'Tastenkürzel auf Standardwerte zurückgesetzt.','seed_copied':'Seed kopiert: {seed}','export_done':'Export abgeschlossen.','history_empty':'Keine Karte im Sitzungs-Cache verfügbar.','compare_toggled':'Karte zu {map} gewechselt.','theme_changed':'Design geändert: {theme}.','view_reset':'Ansicht zentriert.','seed_randomized':'Neuer zufälliger Seed: {seed}','graph_exported':'Diagrammexport abgeschlossen: {format} — {file}','opacity_locked':'Die Deckkraft ist in der globalen Ansicht nicht verfügbar.','modifier_none':'Kein Modifikator aktiv.','batch_opened':'Stapelgenerierung bereit — 1 bis 4 Karten konfigurieren.','batch_done':'Stapel abgeschlossen — {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.','history_not_retained':'Karte angezeigt, aber nicht behalten: Alle Cache-Plätze sind geschützt.',
  },
  'es':{
-  'ready':'Listo — {mode} / {archetype} / modificadores: {modifiers} / {side}×{side} / {players} jugadores.','size_reserved':'{side}×{side}: máx. {max_players} jugadores. Selección lista; generación aún no calibrada.','mode_reserved':'El modo «{mode}» está reservado y no implementado.','arch_reserved':'El arquetipo «{archetype}» está reservado y no implementado.','generating':'Generando {archetype} — {mode} — modificadores: {modifiers} — {side}×{side} — {players} jugadores — seed {seed}…','generated':'Mapa generado — {archetype} / {mode} / modificadores: {modifiers} / {side}×{side} / {players} jugadores / seed {seed}.','cache_hit':'Resultado reutilizado desde la caché — seed {seed}.','heatmap_locked':'El filtro está disponible en la vista «Mapa de calor».','history_loaded':'Mapa cargado desde el historial de sesión.','history_cleared':'Cachés de sesión vaciadas.','shortcut_applied':'Atajos aplicados.','shortcut_restored':'Atajos restablecidos a sus valores predeterminados.','seed_copied':'Seed copiada: {seed}','export_done':'Exportación terminada.','history_empty':'No hay mapas disponibles en la caché de sesión.','compare_toggled':'Mapa cambiado a {map}.','theme_changed':'Tema cambiado: {theme}.','view_reset':'Vista centrada.','seed_randomized':'Nueva seed aleatoria: {seed}','graph_exported':'Exportación del gráfico terminada: {format} — {file}','opacity_locked':'La opacidad no está disponible en la vista Global.','modifier_none':'No hay modificadores activos.','batch_opened':'Generación por lotes lista — configura de 1 a 4 mapas.','batch_done':'Lote terminado — {success} correctos, {failed} fallidos, {cancelled} cancelados.',
+  'ready':'Listo — {mode} / {archetype} / modificadores: {modifiers} / {side}×{side} / {players} jugadores.','size_reserved':'{side}×{side}: máx. {max_players} jugadores. Selección lista; generación aún no calibrada.','mode_reserved':'El modo «{mode}» está reservado y no implementado.','arch_reserved':'El arquetipo «{archetype}» está reservado y no implementado.','generating':'Generando {archetype} — {mode} — modificadores: {modifiers} — {side}×{side} — {players} jugadores — seed {seed}…','generated':'Mapa generado — {archetype} / {mode} / modificadores: {modifiers} / {side}×{side} / {players} jugadores / seed {seed}.','cache_hit':'Resultado reutilizado desde la caché — seed {seed}.','heatmap_locked':'El filtro está disponible en la vista «Mapa de calor».','history_loaded':'Mapa cargado desde el historial de sesión.','history_cleared':'Cachés de sesión vaciadas.','shortcut_applied':'Atajos aplicados.','shortcut_restored':'Atajos restablecidos a sus valores predeterminados.','seed_copied':'Seed copiada: {seed}','export_done':'Exportación terminada.','history_empty':'No hay mapas disponibles en la caché de sesión.','compare_toggled':'Mapa cambiado a {map}.','theme_changed':'Tema cambiado: {theme}.','view_reset':'Vista centrada.','seed_randomized':'Nueva seed aleatoria: {seed}','graph_exported':'Exportación del gráfico terminada: {format} — {file}','opacity_locked':'La opacidad no está disponible en la vista Global.','modifier_none':'No hay modificadores activos.','batch_opened':'Generación por lotes lista — configura de 1 a 4 mapas.','batch_done':'Lote terminado — {success} correctos, {failed} fallidos, {cancelled} cancelados.','history_not_retained':'Mapa mostrado pero no conservado: todas las plazas de la caché están protegidas.',
  },
 })
 
@@ -720,11 +722,6 @@ class App(V15StableApp):
         self.history_manage_button=ttk.Button(self.session_box,text='Gérer…',command=self._open_history_center)
         self._compare_led_off=_selector_icon(self,'#7b8088','status_off',18);self._compare_led_on=_selector_icon(self,'#34a853','status_on',18)
         self._history_blank_icon=_selector_icon(self,'#7b8088','blank',16)
-        self._history_outside_icon=_selector_icon(self,'#f2b84b','warning',18)
-        self.history_residency_label=ttk.Label(self.session_box,image='',cursor='hand2')
-        self.history_residency_label.bind('<Button-1>',lambda e:self._history_residency_hint())
-        self.history_residency_label.bind('<Enter>',lambda e:self._history_residency_tooltip())
-        self.history_residency_label.bind('<Leave>',lambda e:self._hide_ui_tooltip())
         self._delete_icon_off=_selector_icon(self.session_box,'#7b8088','cross',14)
         self._delete_icon_on=_selector_icon(self.session_box,'#e04444','cross',14)
         self.compare_a_button=ttk.Button(self.session_box,text='Définir A',image=self._compare_led_off,compound='left',command=lambda:self._set_compare_slot('A'))
@@ -766,20 +763,25 @@ class App(V15StableApp):
 
         self.viewer_view_label=ttk.Label(self.viewer_toolbar,text='Vue')
         self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
+        self._history_outside_icon=_selector_icon(self.viewer_toolbar,'#f2b84b','warning',20)
+        self.history_residency_label=ttk.Label(self.viewer_toolbar,image='',cursor='hand2')
+        self.history_residency_label.bind('<Button-1>',lambda e:self._history_residency_hint())
+        self.history_residency_label.bind('<Enter>',lambda e:self._history_residency_tooltip())
+        self.history_residency_label.bind('<Leave>',lambda e:self._hide_ui_tooltip())
         self._view_combo=ColorMenuSelect(self.viewer_toolbar,self.view,width=16,command=self._view_changed)
-        self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
+        self._view_combo.grid(row=0,column=2,sticky='ew',padx=(0,6))
 
         self.heatmap_title=ttk.Label(self.viewer_toolbar,text='Filtre carte thermique',compound='left')
-        self.heatmap_title.grid(row=0,column=2,sticky='w',padx=(2,4))
+        self.heatmap_title.grid(row=0,column=3,sticky='w',padx=(2,4))
         self.heatmap_combo=ColorMenuSelect(self.viewer_toolbar,self.heatmap_var,width=21,command=self._heatmap_changed)
-        self.heatmap_combo.grid(row=0,column=3,padx=(0,6))
+        self.heatmap_combo.grid(row=0,column=4,padx=(0,6))
 
         self.viewer_recenter_button=ttk.Button(self.viewer_toolbar,text='Recentrer',command=self._reset_view)
-        self.viewer_recenter_button.grid(row=0,column=4,padx=(0,8))
+        self.viewer_recenter_button.grid(row=0,column=5,padx=(0,8))
         self.viewer_zoom_label=ttk.Label(self.viewer_toolbar,text='Zoom')
-        self.viewer_zoom_label.grid(row=0,column=5,sticky='w',padx=(0,4))
+        self.viewer_zoom_label.grid(row=0,column=6,sticky='w',padx=(0,4))
         self.zoom_scale=ttk.Scale(self.viewer_toolbar,from_=0.5,to=4.0,variable=self.zoom_var,command=lambda v:self._zoom_changed())
-        self.zoom_scale.grid(row=0,column=6,sticky='ew');self.viewer_toolbar.columnconfigure(6,weight=1,minsize=90)
+        self.zoom_scale.grid(row=0,column=7,sticky='ew');self.viewer_toolbar.columnconfigure(7,weight=1,minsize=90)
         self._bind_scale_jump(self.zoom_scale,self.zoom_var,.5,4.0,self._zoom_changed)
         self.viewer_toolbar.bind('<Configure>',self._apply_viewer_toolbar_layout,add='+')
 
@@ -792,29 +794,31 @@ class App(V15StableApp):
         mode='compact' if compact else 'wide'
         if getattr(self,'_viewer_toolbar_mode',None)==mode:return
         self._viewer_toolbar_mode=mode
-        widgets=(self.viewer_view_label,self._view_combo,self.heatmap_title,self.heatmap_combo,self.viewer_recenter_button,self.viewer_zoom_label,self.zoom_scale)
+        widgets=(self.viewer_view_label,self.history_residency_label,self._view_combo,self.heatmap_title,self.heatmap_combo,self.viewer_recenter_button,self.viewer_zoom_label,self.zoom_scale)
         for w in widgets:
             try:w.grid_forget()
             except tk.TclError:pass
-        for c in range(7):self.viewer_toolbar.columnconfigure(c,weight=0,minsize=0)
+        for c in range(8):self.viewer_toolbar.columnconfigure(c,weight=0,minsize=0)
         if compact:
             self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
-            self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
-            self.viewer_recenter_button.grid(row=0,column=2,padx=(0,4))
+            self.history_residency_label.grid(row=0,column=1,padx=(0,4))
+            self._view_combo.grid(row=0,column=2,sticky='ew',padx=(0,6))
+            self.viewer_recenter_button.grid(row=0,column=3,padx=(0,4))
             self.heatmap_title.grid(row=1,column=0,sticky='w',padx=(0,4),pady=(3,0))
-            self.heatmap_combo.grid(row=1,column=1,sticky='ew',padx=(0,6),pady=(3,0))
-            self.viewer_zoom_label.grid(row=1,column=2,sticky='w',padx=(0,4),pady=(3,0))
-            self.zoom_scale.grid(row=1,column=3,sticky='ew',pady=(3,0))
-            self.viewer_toolbar.columnconfigure(1,weight=0);self.viewer_toolbar.columnconfigure(3,weight=1,minsize=80)
+            self.heatmap_combo.grid(row=1,column=2,sticky='ew',padx=(0,6),pady=(3,0))
+            self.viewer_zoom_label.grid(row=1,column=3,sticky='w',padx=(0,4),pady=(3,0))
+            self.zoom_scale.grid(row=1,column=4,sticky='ew',pady=(3,0))
+            self.viewer_toolbar.columnconfigure(2,weight=0);self.viewer_toolbar.columnconfigure(4,weight=1,minsize=80)
         else:
             self.viewer_view_label.grid(row=0,column=0,sticky='w',padx=(0,4))
-            self._view_combo.grid(row=0,column=1,sticky='ew',padx=(0,6))
-            self.heatmap_title.grid(row=0,column=2,sticky='w',padx=(2,4))
-            self.heatmap_combo.grid(row=0,column=3,padx=(0,6))
-            self.viewer_recenter_button.grid(row=0,column=4,padx=(0,8))
-            self.viewer_zoom_label.grid(row=0,column=5,sticky='w',padx=(0,4))
-            self.zoom_scale.grid(row=0,column=6,sticky='ew')
-            self.viewer_toolbar.columnconfigure(1,weight=0);self.viewer_toolbar.columnconfigure(6,weight=1,minsize=90)
+            self.history_residency_label.grid(row=0,column=1,padx=(0,4))
+            self._view_combo.grid(row=0,column=2,sticky='ew',padx=(0,6))
+            self.heatmap_title.grid(row=0,column=3,sticky='w',padx=(2,4))
+            self.heatmap_combo.grid(row=0,column=4,padx=(0,6))
+            self.viewer_recenter_button.grid(row=0,column=5,padx=(0,8))
+            self.viewer_zoom_label.grid(row=0,column=6,sticky='w',padx=(0,4))
+            self.zoom_scale.grid(row=0,column=7,sticky='ew')
+            self.viewer_toolbar.columnconfigure(2,weight=0);self.viewer_toolbar.columnconfigure(7,weight=1,minsize=90)
 
     def _apply_initial_window_geometry(self):
         """Choose a useful initial size from the actual screen without assuming 1440p."""
@@ -933,7 +937,7 @@ class App(V15StableApp):
         mode='compact_ab' if compact else 'natural_ab'
         if getattr(self,'_session_layout_mode',None)==mode:return
         self._session_layout_mode=mode
-        widgets=(self.history_combo,self.history_load_button,self.history_clear_button,self.history_manage_button,self.history_residency_label,self.compare_a_button,self.compare_b_button,self.compare_toggle_button,self.clear_a_button,self.clear_b_button,self.clear_ab_button)
+        widgets=(self.history_combo,self.history_load_button,self.history_clear_button,self.history_manage_button,self.compare_a_button,self.compare_b_button,self.compare_toggle_button,self.clear_a_button,self.clear_b_button,self.clear_ab_button)
         for w in widgets:
             try:w.grid_forget()
             except tk.TclError:pass
@@ -960,7 +964,6 @@ class App(V15StableApp):
         self.history_clear_button.grid(row=1,column=1,padx=(6,2),pady=(4,0),sticky='w')
         self.history_load_button.grid(row=1,column=2,padx=2,pady=(4,0),sticky='w')
         self.history_manage_button.grid(row=1,column=3,padx=2,pady=(4,0),sticky='w')
-        self.history_residency_label.grid(row=1,column=0,padx=(2,0),pady=(4,0))
         self.compare_toggle_button.grid(row=1,column=4,padx=2,pady=(4,0),sticky='w')
         self.clear_ab_button.grid(row=1,column=5,columnspan=2,padx=(3,2),pady=(4,0),sticky='w')
 
@@ -1718,8 +1721,9 @@ class App(V15StableApp):
     def _register_import_history(self,out,path):
         path=Path(path);digest=hashlib.sha256(path.read_bytes()).hexdigest();fmt=path.suffix[1:].upper()
         key=ImportedHistoryKey(digest=digest,source_format=fmt);state=out.state
-        self.session_cache.put(key,out,{'origin':'imported','source_format':fmt,'source_name':path.name,'source_path':str(path),'side':state.side,'players':len(state.starts) or state.metadata.get('players',0)})
+        retained=self.session_cache.put(key,out,{'origin':'imported','source_format':fmt,'source_name':path.name,'source_path':str(path),'side':state.side,'players':len(state.starts) or state.metadata.get('players',0)})
         self._refresh_history()
+        if not retained:self._feedback('history_not_retained','warning')
 
     def import_file(self):
         before=getattr(self,'current',None);super().import_file()
@@ -1848,9 +1852,9 @@ class App(V15StableApp):
         content=ttk.Panedwindow(shell,orient='horizontal');content.grid(row=0,column=0,columnspan=2,sticky='nsew')
         table_host=ttk.Frame(content);preview_host=ttk.LabelFrame(content,text=text['preview'],padding=8,style='History.TLabelframe');content.add(table_host,weight=4);content.add(preview_host,weight=2)
         table_host.rowconfigure(0,weight=1);table_host.columnconfigure(0,weight=1)
-        columns=('origin','map','details');tree=ttk.Treeview(table_host,columns=columns,show='tree headings',selectmode='browse',style='History.Treeview');self._history_tree=tree
-        tree.heading('#0',text='#',anchor='center');tree.heading('origin',text=text['origin']);tree.heading('map',text=text['map']);tree.heading('details',text=text['details'])
-        tree.column('#0',width=68,minwidth=68,stretch=False,anchor='center')
+        columns=('rank','origin','map','details');tree=ttk.Treeview(table_host,columns=columns,show='tree headings',selectmode='browse',style='History.Treeview');self._history_tree=tree
+        tree.heading('#0',text='',image=self._lock_closed_icon,anchor='center');tree.heading('rank',text='#',anchor='center');tree.heading('origin',text=text['origin']);tree.heading('map',text=text['map']);tree.heading('details',text=text['details'])
+        tree.column('#0',width=68,minwidth=68,stretch=False,anchor='center');tree.column('rank',width=34,minwidth=34,stretch=False,anchor='center')
         tree.column('origin',width=100,stretch=False);tree.column('map',width=220,stretch=True);tree.column('details',width=330,stretch=True)
         scroll=ttk.Scrollbar(table_host,orient='vertical',command=tree.yview);tree.configure(yscrollcommand=scroll.set);tree.grid(row=0,column=0,sticky='nsew');scroll.grid(row=0,column=1,sticky='ns')
         tree.bind('<<TreeviewSelect>>',lambda e:self._history_selection_changed());tree.bind('<Double-1>',lambda e:self._history_center_show());tree.bind('<Motion>',self._history_tree_motion);tree.bind('<Leave>',lambda e:self._hide_ui_tooltip())
@@ -1916,7 +1920,7 @@ class App(V15StableApp):
             if isinstance(key,ImportedHistoryKey):map_label=meta.get('source_name',key.source_format);details=f'(.{key.source_format.lower()}) · {meta.get("side",out.state.side)}×{meta.get("side",out.state.side)} · {meta.get("players",len(out.state.starts))}P'
             else:map_label=f'Seed {key.seed}';details=f'{key.side}×{key.side} · {key.players}P · {MODE_LABELS[lang].get(key.mode,key.mode)} · {ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)}'
             roles=self._history_roles_for_output(out)
-            iid=f'h{index}';tree.insert('', 'end',iid=iid,text=str(index+1),image=self._history_role_image(roles),values=(origin_label,map_label,details),tags=('even' if index%2==0 else 'odd',));self._history_center_lookup[iid]=key
+            iid=f'h{index}';tree.insert('', 'end',iid=iid,text='',image=self._history_role_image(roles),values=(index+1,origin_label,map_label,details),tags=('even' if index%2==0 else 'odd',));self._history_center_lookup[iid]=key
             if key==selected:tree.selection_set(iid)
         children=tree.get_children()
         if not tree.selection() and children and preferred_index is not None:
@@ -2159,7 +2163,7 @@ class App(V15StableApp):
     def _retranslate_history_center(self):
         if self._history_window is None:return
         text=HISTORY_TEXT[self.prefs.get('language','fr')];self._history_window.title(text['title']);tree=self._history_tree
-        tree.heading('#0',text='#');
+        tree.heading('#0',text='',image=self._lock_closed_icon);tree.heading('rank',text='#');
         for key in ('origin','map','details'):tree.heading(key,text=text[key])
         self._history_window_widgets['preview_host'].configure(text=text['preview'])
         for key,label in (('show','show'),('a','set_a'),('b','set_b'),('delete','delete'),('clear','clear'),('close','close')):self._history_window_widgets['buttons'][key].configure(text=text[label])
@@ -2591,19 +2595,22 @@ class App(V15StableApp):
         simulated={key:value for key,value in reversed(entries)};capacity=self.session_cache.max_entries
         protected_ids={id(value) for value in (getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks) if value is not None and any(cached is value for cached in simulated.values())}
         requested_keys=[request['key'] for request in requests];requested_values={};last_value=None
-        def trim():
+        def trim(fallback_key=None):
             while len(simulated)>capacity:
                 victim=next((key for key,value in simulated.items() if id(value) not in protected_ids),None)
+                if victim is None and fallback_key in simulated:victim=fallback_key
+                if victim is None:victim=next(iter(simulated),None)
                 if victim is None:break
                 simulated.pop(victim,None)
         for key in requested_keys:
-            if key in simulated:value=simulated.pop(key)
+            is_new=key not in simulated
+            if not is_new:value=simulated.pop(key)
             elif key in requested_values:value=requested_values[key]
             else:value=object()
-            requested_values.setdefault(key,value);simulated[key]=value;last_value=value;trim()
+            requested_values.setdefault(key,value);simulated[key]=value;last_value=value;trim(key if is_new else None)
         if getattr(self,'current',None) is None and last_value is not None:protected_ids.add(id(last_value))
         for key in requested_keys:
-            value=requested_values[key];simulated.pop(key,None);simulated[key]=value;trim()
+            value=requested_values[key];is_new=key not in simulated;simulated.pop(key,None);simulated[key]=value;trim(key if is_new else None)
         final_keys=set(simulated);unique_requested=list(dict.fromkeys(requested_keys))
         existing_evicted=sum(key not in final_keys for key in original_keys)
         batch_dropped=sum(key not in final_keys for key in unique_requested)
@@ -2722,8 +2729,9 @@ class App(V15StableApp):
                 self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
             self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
-            self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
+            if not retained:self._feedback('history_not_retained','warning')
         except Exception as e:
             import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
     def _load_history(self):

@@ -30,9 +30,16 @@ class SessionGenerationCache:
         if self._protected_provider is None:return set()
         try:return {id(value) for value in self._protected_provider() if value is not None}
         except Exception:return set()
-    def _trim(self):
+    def _trim(self, fallback_key=None):
         while len(self._items)>self.max_entries:
             protected=self._protected_ids();victim=next((key for key,value in self._items.items() if id(value) not in protected),None)
+            # A newly displayed result is protected by the Viewer role before it
+            # is inserted.  If every older entry is protected, reject that new
+            # result from history instead of silently growing beyond capacity.
+            if victim is None and fallback_key in self._items:victim=fallback_key
+            # This final guard makes max_entries a hard invariant even if a
+            # caller bypasses the UI rule that prevents over-protected resizes.
+            if victim is None:victim=next(iter(self._items),None)
             if victim is None:break
             self._items.pop(victim,None);self._metadata.pop(victim,None)
     def get(self, key):
@@ -42,10 +49,12 @@ class SessionGenerationCache:
         return value
     def peek(self,key): return self._items.get(key)
     def put(self, key, value, metadata=None):
+        is_new=key not in self._items
         self._items[key] = value; self._items.move_to_end(key)
         if metadata is not None:
             self._metadata[key] = dict(metadata)
-        self._trim()
+        self._trim(fallback_key=key if is_new else None)
+        return key in self._items
     def metadata(self,key): return dict(self._metadata.get(key,{}))
     def set_metadata(self,key,metadata):
         if key in self._items:self._metadata[key]=dict(metadata)

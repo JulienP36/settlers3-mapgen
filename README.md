@@ -20,14 +20,14 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_10_R1 / moteur v1.5 stable
+## État actuel — v1.8 DEV_10_R2 / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_10_R1 ajoute au Centre d’historique un verrouillage manuel réel (`M`) et un ordre visuel réorganisable, volontairement indépendant de l’ordre LRU utilisé pour les évictions. Les cartes verrouillées restent protégées avec celles du Viewer et des slots A/B ; l’ordre et les verrous demeurent limités à la session. Le moteur et les formats binaires validés sont inchangés.
+DEV_10_R2 conserve le verrouillage manuel `M` et l’ordre visuel réorganisable de R1, tout en imposant une capacité de cache strictement infranchissable. Si toutes les places existantes sont protégées, une nouvelle carte simple reste affichée mais n’entre pas dans l’historique. Les protections disposent désormais de leur propre colonne et l’avertissement hors historique appartient visuellement au Viewer. Le moteur et les formats binaires validés sont inchangés.
 
 DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `launch_gui`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
 
