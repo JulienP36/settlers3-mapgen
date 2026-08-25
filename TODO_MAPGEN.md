@@ -127,8 +127,9 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Raccourcis v2 — DEV_8_R4 validée sous Windows** : capture fondée exclusivement sur les événements d’appui/relâchement des modificateurs, sans état global Windows ni bits Tk ambigus ; actions supplémentaires, AZERTY/QWERTY, conflits non modaux, modifications en attente, désactivation/reset et migration du JSON existant.
 - [x] **Historique session amélioré — DEV_7_R10 validée sous Windows** : imports + Batch dans l’historique, capacité configurable, Centre dédié, rang stable lors des actions UI, aperçu sélectionné et grand aperçu aligné sur Batch, protections `V/A/B` explicites et indicateurs accessibles avec libellés contextuels. R9 a sécurisé le cycle de vie du Centre et finalisé les cinq états de loupe ; R10 empêche les aperçus temporaires de masquer leur miniature source sans contraindre les aperçus épinglés.
 - [ ] **Signalétique set/unset — future passe UI** : revoir le design des états Chargée/Affichée/Affectée afin que la différence set/unset se lise encore plus vite, au-delà du cercle coché et du seul changement de libellé ; conserver une information non fondée uniquement sur la couleur et vérifier clair/sombre ainsi que daltonisme.
-- [~] **Premier vrai `.exe` — DEV_9_R2 candidate** : packaging Windows x64 autonome `onedir`, ressources embarquées, chemins robustes, autodiagnostic de démarrage du binaire, ZIP et SHA-256 automatisés. Validation Windows réelle encore requise.
-- [~] **Icône application/exe — infrastructure DEV_9_R2** : build prêt à adopter automatiquement `assets/Settlers3MapGen.ico`. La candidate conserve l’icône neutre du programme ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
+- [x] **Preuve de faisabilité `.exe` — DEV_9_R2** : packaging Windows x64 autonome `onedir`, ressources embarquées, chemins robustes, import complet du runtime GUI par l’autodiagnostic, ZIP et SHA-256 automatisés ; démarrage Windows réel validé après correction R2.
+- [ ] **Paquet `.exe` final — phase RC v1.8** : ne plus reconstruire PyInstaller pendant les DEV ordinaires. À partir des RC, publier séparément un ZIP sources/Python et un ZIP Windows x64 portable sans installation, puis reprendre les derniers ajustements de packaging.
+- [~] **Icône application/exe — infrastructure DEV_9_R2** : build prêt à adopter automatiquement `assets/Settlers3MapGen.ico`. L’icône finale sera dessinée manuellement en pixel art par l’utilisateur et intégrée pendant une future passe visuelle ou les RC. Aucune image IA.
 - [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
 - [~] **Registre de provenance des éléments visuels** : registre initial créé dans `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md` pour les références et assets actuellement utilisés ; le compléter avant chaque future intégration graphique externe.
 - [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée. La modernisation manuelle éventuelle des marqueurs J1–J20 est explicitement reportée à cette passe.
@@ -136,7 +137,7 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Territoires EDM/MAP — DEV_4_R4 validée sous Windows** : Territoires est placé juste après Départs. Pour SAV, conserver les claims runtime réels. Pour EDM/MAP et états générés sans claims, reconstruire une couche initiale depuis le masque natif exact de 3500 cellules autour de chaque start ; ne jamais présenter cette couche comme une information lue dans le fichier. Chevauchements : départ HEX6 le plus proche, puis plus petit numéro de joueur en cas d'égalité.
 - [x] **Réglage des marqueurs Batch — DEV_4_R5 validée sous Windows** : réglage global persistant dans Paramètres, choix `Masqués / Petits / Normaux`, valeur par défaut `Petits`, actualisation immédiate des miniatures et du grand aperçu. Pilote de rendu par couches validé : base sans marqueurs conservée par résultat/projection, recomposition limitée aux sprites et remplacement atomique du tooltip sans clignotement.
 - [x] **Interaction grand aperçu Batch — DEV_4_R6 validée sous Windows** : un aperçu épinglé se déplace par glisser-déposer, un clic sur son image ne le ferme plus, cliquer une autre miniature remplace la carte à la même position, et recliquer la miniature source ferme l'aperçu. `Échap`, placement initial automatique, limites d'écran et survol temporaire sont conservés. Changements de projection et de miniature utilisent un double tampon validé pour afficher la nouvelle surface avant de retirer l'ancienne.
-- [ ] **Updater v2 pour executable** : version installée/dernière STABLE, SHA, settings préservés, remplacement/rollback propre.
+- [ ] **Updater v2 pour exécutable — phase RC v1.8** : version locale/dernière STABLE, SHA, settings préservés, remplacement/rollback propre ; aucun chantier updater pendant les DEV ordinaires.
 - [x] **README transparence IA** : conception/direction humaine et usage important de ChatGPT/OpenAI explicitement indiqués, notamment pour le backend, l’analyse et le reverse-engineering.
 - [ ] **Découvrabilité GitHub** : About/Topics, entrée anglaise claire, FR conservé, termes Settlers III/Settlers 3/Siedler III + EDM/MAP/SAV naturels, sans spam SEO.
 
@@ -295,7 +296,7 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [ ] **Pilotage de la vue** optionnel/désactivable depuis un graphique ; exemples Agriculture→Cultures, familles de terrain→surbrillance du biome survolé, distances→vue relationnelle avec flèches. Concevoir avec la future composition des vues avant de coder.
 - [x] **DEV_7_R1 → R3** : fondations successives de l’historique unifié, du thème sémantique, des protections et de l’aperçu ; candidates remplacées par R4 après retours Windows.
 - [x] **DEV_7_R4 → R10 validée sous Windows** : ordre LRU stable lors des actions UI ; cadenas explicites `V/A/B` avec rôle `M` préparé ; états cercle/coche et libellés contextuels ; aperçu Historique aligné sur Batch avec remplacement atomique ; infobulle hors historique ; prévision exacte 4/8/12/16 ; confirmation de réduction protégée ; loupes translucides à cinq états ; cycle de vie Tk sécurisé ; parité réelle de zoom et anticollision des aperçus temporaires.
-- [ ] **Verrouillage manuel de l’historique** : concevoir le déplacement/réordonnancement et le cadenas `M` sans modifier automatiquement l’ordre lors des affectations Viewer/A/B. Lors de son implémentation, conserver impérativement la liste commune des protections déjà utilisée par le vrai cache et la prévision Batch ; les tests R7 couvrent déjà l’échelonnement 4/8/12/16 avec plusieurs verrous manuels simulés.
+- [~] **DEV_10_R1 — verrouillage manuel de l’historique** : cadenas `M` réel et ordre visuel réorganisable, sans modifier automatiquement cet ordre lors des affectations Viewer/A/B ni lors d’un hit LRU. La liste commune V/A/B/M protège le vrai cache et alimente la prévision Batch ; verrous et ordre restent limités à la session. Validation Windows requise.
 - [x] **DEV_7_R9 — crash après fermeture du Centre d’historique corrigé dans la candidate** : reproduction minimale couverte par régression. Les callbacks sont annulés avant destruction, toutes les références de preview sont invalidées, et les rafraîchissements vérifient fenêtre et widget avant configuration. Validation Windows requise.
 - [x] **Loupes de miniatures — candidate R9** : cinq états déterministes couvrent repos, survol, source active, aperçu temporaire et fermeture. La croix n’apparaît que lorsqu’un clic ferme réellement un aperçu épinglé ; l’aperçu ouvert par pause souris possède un état distinct. Validation Windows requise.
 - [ ] **Surveillance calcul Statistiques potentiellement bloqué** : incident unique non reproductible observé pendant la revue R4. Si récidive, relever fichier/carte, action précédente, vue/onglet actif, slots A/B et durée ; profiler seulement avec un cas reproductible.
@@ -329,9 +330,9 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] Podiums massifs/lacs/rivières : `# + médaille` pour les rangs 1–3.
 - [x] Stats schema v5 pour refléter la nouvelle sémantique du minage local.
 
-## DEV_9 — premier exécutable Windows autonome
+## DEV_9 — preuve d’exécutable Windows autonome clôturée
 
-- [~] **DEV_9_R2** : distribution Windows x64 en dossier autonome avec `Settlers3MapGen.exe`, sans Python/pip chez l’utilisateur. R1 rejetée après échec au démarrage : `unittest` avait été exclu alors que SciPy l’importe via `numpy.testing`.
+- [x] **DEV_9_R2** : distribution Windows x64 en dossier autonome avec `Settlers3MapGen.exe`, sans Python/pip chez l’utilisateur. R1 rejetée après échec au démarrage : `unittest` avait été exclu alors que SciPy l’importe via `numpy.testing` ; R2 démarre réellement sous Windows.
 - [x] Résoudre les ressources par rapport au bundle PyInstaller, indépendamment du répertoire courant de lancement.
 - [x] Conserver les préférences dans `%APPDATA%/Settlers3MapGen/settings.json` et placer le dossier d’export par défaut à côté de l’exécutable.
 - [x] Embarquer profils, bibliothèque native, scaffolds EDM/MAP, référence Upgraded et sprites J1–J20 nécessaires au runtime.
@@ -339,8 +340,16 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] **R2** : faire importer à l’autodiagnostic toute la chaîne GUI normale, afin qu’une dépendance gelée manquante bloque automatiquement le build.
 - [x] Automatiser le build Windows via GitHub Actions sans créer prématurément de tag ou de Release.
 - [x] Préparer l’adoption facultative d’un `.ico` fourni manuellement ; conserver une icône neutre en son absence.
-- [ ] Valider sous Windows : extraction complète, premier lancement, SmartScreen, génération/import/export, Batch, thèmes/langues, préférences persistantes et lancement depuis plusieurs emplacements.
-- [ ] Après validation, clôturer DEV_9 puis ouvrir DEV_10 pour l’updater compatible exécutable.
+- [x] Valider la faisabilité sous Windows : extraction complète et premier lancement réel après autodiagnostic du runtime GUI.
+- [x] Décision post-DEV_9 : développement quotidien via `launch_gui`; paquet Windows et updater entièrement reportés aux RC v1.8, sans installateur.
+
+## DEV_10 — verrouillage et ordre manuel de l’historique
+
+- [~] **R1 candidate source** : bouton contextuel Verrouiller/Déverrouiller, cadenas `M` explicite et protection réelle contre l’éviction.
+- [~] Réorganisation par Monter/Descendre ; le rang `#` et le sélecteur principal suivent cet ordre visuel, indépendant de l’ordre LRU interne.
+- [~] Nouvelles cartes en tête ; actions Afficher/A/B et hits cache ne réordonnent pas la liste manuelle.
+- [~] Suppression/vidage libèrent aussi `M` après avertissement ; réduction de capacité refusée si elle devient inférieure aux protections uniques V/A/B/M.
+- [~] FR/EN/DE/ES, thèmes et prévision Batch réutilisent les infrastructures existantes ; validation Windows requise.
 
 ## Post-v1.7 — découvrabilité / publication GitHub
 - [ ] Renseigner/revoir la description **About** GitHub avec une formulation courte et explicite sur Settlers III MapGen.

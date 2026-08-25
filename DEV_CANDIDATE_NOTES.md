@@ -1,38 +1,36 @@
-# v1.8 DEV_9_R2 — candidate Windows
+# v1.8 DEV_10_R1 — candidate source
 
 Date : 2026-08-25  
-Base : DEV_8_R4 validée sous Windows  
+Base : DEV_9_R2, preuve Windows autonome clôturée  
 Moteur : v1.5 protégé, inchangé
 
 ## Objet
 
-Première distribution Windows x64 autonome de Settlers III MapGen. Le ZIP contient un dossier `Settlers3MapGen` complet avec l’exécutable et ses dépendances privées ; aucune installation Python/pip n’est requise.
+Première passe de verrouillage et d’organisation manuelle du Centre d’historique. Le développement revient au ZIP source classique et à `launch_gui`; aucun paquet `.exe` n’est produit pendant DEV_10.
 
-R1 est rejetée : elle échouait dès le démarrage car des modules standards avaient été exclus du bundle alors que SciPy/NumPy/Tk les atteignent indirectement. R2 supprime toute exclusion manuelle et étend l’autodiagnostic pour charger toute la chaîne GUI normale ; cette classe de faux PASS est désormais couverte.
+## Principaux changements à vérifier
+
+1. Sélectionner une carte puis utiliser **Verrouiller** : un cadenas `M` apparaît et la carte résiste aux évictions automatiques.
+2. Le même bouton devient **Déverrouiller** et retire uniquement la protection manuelle ; V/A/B restent indépendants et combinables.
+3. Utiliser `↑` / `↓` : le rang `#`, le tableau et le sélecteur principal suivent le nouvel ordre.
+4. Afficher une carte, l’affecter à A/B ou provoquer un hit cache ne doit jamais modifier cet ordre visible.
+5. Une nouvelle génération ou un nouvel import apparaît en tête sans déranger l’ordre relatif existant.
+6. Suppression et vidage avertissent aussi pour `M`, puis retirent correctement le verrou si l’action est confirmée.
+7. Une réduction de capacité inférieure au nombre de cartes protégées V/A/B/M est refusée par une fenêtre traduisible et thémée.
+8. Batch tient compte immédiatement des verrous manuels dans sa prévision d’évictions et de résultats non conservés.
+9. Vérifier FR/EN, puis changement dynamique DE/ES, ainsi que thèmes clair/sombre dans le Centre.
+10. Fermer et rouvrir le programme : ordre et verrous disparaissent normalement, car l’historique reste une mémoire de session.
 
 ## Validation automatisée
 
-- 213 tests de régression PASS localement ; suite rejouée dans le workflow Windows ;
-- build PyInstaller `onedir` ;
-- exécution du véritable `Settlers3MapGen.exe --self-test`, incluant l’import du runtime GUI normal ;
-- lecture effective des profils, bibliothèque native, références/scaffolds et sprites J1–J20 ;
-- production d’un rapport JSON et du SHA-256 du ZIP ;
-- 49 validations moteur et checksum binaire PASS ; cinq hashes protégés inchangés (5/5).
-- fins de ligne des ressources protégées explicitement stabilisées par `.gitattributes` ; les trois ressources embarquées sont revérifiées byte-for-byte par le véritable `.exe`.
+- 219 tests de régression PASS ;
+- tests dédiés à l’indépendance ordre visuel/LRU, aux protections uniques et aux traductions DEV_10 ;
+- 49 validations moteur et checksum binaire PASS ;
+- cinq hashes protégés inchangés (5/5).
 
-## Checklist Windows R1
+## Hors périmètre
 
-1. Décompresser entièrement le ZIP et lancer `Settlers3MapGen.exe` sans Python installé.
-2. Tester le lancement depuis un dossier normal, le Bureau et un raccourci ; le répertoire courant ne doit rien changer.
-3. Générer une carte simple puis un lot ; vérifier le viewer, l’historique, A/B, Stats et Graphiques.
-4. Importer un EDM, un MAP et un SAV ; exporter les formats disponibles et confirmer que `output` est proposé à côté de l’exécutable.
-5. Fermer/réouvrir après changements de langue, thème et raccourcis ; les préférences doivent persister dans `%APPDATA%/Settlers3MapGen`.
-6. Tester clair/sombre, FR/EN/DE/ES, fenêtre d’aide et fenêtres secondaires.
-7. Noter précisément le comportement SmartScreen/antivirus et le temps du premier démarrage.
-
-## Limites intentionnelles
-
-- candidate non signée ;
-- icône finale pixel art non incluse ;
-- updater pour le package exécutable reporté à DEV_10 ;
-- aucune GitHub Release avant validation utilisateur.
+- aucun drag-and-drop des lignes en R1 : boutons accessibles et déterministes d’abord ;
+- aucune persistance inter-session de l’historique, de l’ordre ou des cadenas `M` ;
+- paquet Windows portable et updater reportés à la phase RC v1.8 ;
+- aucun installateur prévu.

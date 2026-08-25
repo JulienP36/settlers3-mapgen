@@ -11,10 +11,10 @@ from s3mapgen.version import APP_VERSION, ENGINE_VERSION, WINDOWS_FILE_VERSION
 ROOT=Path(__file__).resolve().parent.parent
 
 
-def test_dev9_version_metadata():
-    assert APP_VERSION=='1.8 DEV_9_R2'
+def test_current_version_metadata():
+    assert APP_VERSION=='1.8 DEV_10_R1'
     assert ENGINE_VERSION=='1.5'
-    assert WINDOWS_FILE_VERSION==(1,8,9,2)
+    assert WINDOWS_FILE_VERSION==(1,8,10,1)
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):

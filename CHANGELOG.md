@@ -1,3 +1,12 @@
+## v1.8 DEV_10_R1 — 2026-08-25
+
+- Added session-only manual `M` locks to protect selected history maps from real cache eviction.
+- Added explicit Lock/Unlock and Move up/Move down controls to the History Center in FR/EN/DE/ES.
+- Separated the user-visible history order from true LRU recency; Viewer/A/B actions and cache hits no longer reorder the visual list.
+- New/imported maps enter at the top while preserving the relative manual order of surviving entries.
+- Extended delete, clear, capacity reduction and Batch forecasting to the shared V/A/B/M protection model.
+- Deferred the standalone Windows package and packaged updater to the v1.8 RC phase; ordinary DEV work returns to source ZIPs and `launch_gui`.
+
 ## v1.8 DEV_9_R2 — 2026-08-25
 
 - Fixes the R1 startup failure caused by manually excluding Python standard-library modules reached indirectly by the normal SciPy/NumPy/Tk GUI import chain; R2 no longer uses hand-maintained module exclusions.

@@ -20,21 +20,16 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_9_R2 candidate Windows / moteur v1.5 stable
+## État actuel — v1.8 DEV_10_R1 / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_9_R2 ajoute le premier package Windows x64 autonome sous forme d’un dossier compact : l’utilisateur décompresse le ZIP puis lance `Settlers3MapGen.exe`, sans installer Python, pip ou les dépendances. Les ressources nécessaires sont embarquées, les exports proposés par défaut restent visibles à côté de l’exécutable et les préférences existantes restent dans `%APPDATA%/Settlers3MapGen`. Après l’échec de démarrage R1 dû à une dépendance standard exclue, le build charge désormais toute la chaîne GUI depuis le véritable `.exe` avant d’accepter l’archive. Cette candidate n’est pas signée et attend une validation Windows réelle ; le moteur et les formats binaires validés sont inchangés.
+DEV_10_R1 ajoute au Centre d’historique un verrouillage manuel réel (`M`) et un ordre visuel réorganisable, volontairement indépendant de l’ordre LRU utilisé pour les évictions. Les cartes verrouillées restent protégées avec celles du Viewer et des slots A/B ; l’ordre et les verrous demeurent limités à la session. Le moteur et les formats binaires validés sont inchangés.
 
-### Candidate Windows autonome
-
-- décompresser entièrement le ZIP avant de lancer le programme ;
-- conserver le dossier `_internal` à côté de `Settlers3MapGen.exe` ;
-- un avertissement SmartScreen peut apparaître puisque la candidate n’est pas signée numériquement ;
-- l’icône finale en pixel art et l’updater compatible exécutable restent respectivement prévus pour une passe visuelle ultérieure et DEV_10.
+DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `launch_gui`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
 
 La GUI v1.6 comprend notamment :
 
@@ -44,7 +39,7 @@ La GUI v1.6 comprend notamment :
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
 - FR/EN/DE/ES persistants avec bascule dynamique et repli anglais de sécurité ;
 - inspecteur exact de cellule ;
-- historique LRU unifié et configurable (4/8/12/16, 8 par défaut), centre de gestion et comparaison A/B légère ;
+- historique LRU unifié et configurable (4/8/12/16, 8 par défaut), centre de gestion, ordre visuel manuel, verrouillage `M` et comparaison A/B légère ;
 - génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
 - centres d’export multi-format : EDM/MAP 768, copie SAV source inchangée lorsqu’elle existe, PNG Global/vue courante et Graphiques JSON/CSV/PNG ;
 - vue Global épurée, Vue Départs dédiée avec 210 petits marqueurs sur le contour initial exact et opacité réglable ; miniatures Batch avec marqueurs masqués, petits ou normaux via un réglage persistant ;
@@ -60,7 +55,7 @@ Le contour SAV n'est plus une ellipse approximative : les coordonnées de dépar
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 
-La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** ouvre maintenant la passe Workflow / accessibilité / production (Batch Generation, exports, historique/configuration, langues, packaging `.exe`, updater et découvrabilité). Une v1.9 de transition est prévue pour l'archéologie/data mapping avant le retour profond au générateur en v1.10.
+La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** ouvre maintenant la passe Workflow / accessibilité / production (Batch Generation, exports, historique/configuration, langues et découvrabilité). Le paquet `.exe` portable et son updater seront finalisés pendant les RC de v1.8. Une v1.9 de transition est prévue pour l'archéologie/data mapping avant le retour profond au générateur en v1.10.
 
 ## Modes de génération
 

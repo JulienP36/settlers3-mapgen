@@ -2,7 +2,7 @@
 
 > **LIVING RECOVERY SNAPSHOT — v1.8 development.**
 >
-> Last refreshed: **2026-08-25 — DEV_9_R2 candidate Windows autonome**
+> Last refreshed: **2026-08-25 — DEV_10_R1 historique manuel**
 
 ## État release / Git
 
@@ -32,6 +32,8 @@
 - DEV_8_R4 est validée sous Windows : après l’échec de l’état global Windows en R3, la capture repose exclusivement sur les événements d’appui/relâchement effectivement reçus par le contrôle focalisé. Aucun masque étendu Tk ni état système ne peut injecter un `Alt` fantôme. Touches simples et vrais modificateurs Ctrl/Shift/Alt sont confirmés ; badges, défilement horizontal/vertical, migration JSON, commandes supplémentaires et Aide thémée/dynamique sont validés. DEV_8 est clôturée sur R4.
 - DEV_9_R1 a été rejetée au premier lancement Windows : le spec excluait `unittest`, mais SciPy le charge indirectement via `numpy.testing`. Son autodiagnostic ne chargeait que les ressources et n’importait pas la chaîne GUI, d’où le faux PASS du build.
 - DEV_9_R2 corrige l’exclusion et fait désormais importer au véritable `.exe --self-test` le même runtime GUI que le démarrage normal avant de contrôler les ressources. Elle conserve PyInstaller `onedir`, `%APPDATA%`, les exports à côté de l’exécutable, ZIP + SHA-256 et l’absence de Release avant validation Windows.
+- DEV_9 est désormais une preuve de faisabilité clôturée : le développement quotidien reste source-first via `launch_gui`. Le paquet Windows portable, son icône finale et l’updater reviennent seulement pendant les RC v1.8, sous forme d’un artefact séparé et sans installateur.
+- DEV_10_R1 ouvre le verrouillage manuel `M` et l’ordre visuel réorganisable du Centre d’historique. Cet ordre ne modifie jamais le vrai LRU ; verrous et ordre restent propres à la session, tandis que cache et prévision Batch réutilisent la liste commune de protections V/A/B/M.
 - Choix R1 : privilégier `onedir` pour la fiabilité et un démarrage plus prévisible avec NumPy/SciPy/Pillow et les données natives. Un éventuel `onefile` ne sera étudié qu’après mesure, sans remplacer automatiquement ce format.
 - L’infrastructure accepte facultativement `assets/Settlers3MapGen.ico`; en son absence, R1 reste neutre. L’icône finale demeure un futur asset pixel art fait main par le propriétaire, sans génération d’image IA.
 - Les 39 anciennes notes de candidates v1.8 ont été consolidées dans `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`. À partir de DEV_9, une seule feuille roulante `DEV_CANDIDATE_NOTES.md` est utilisée puis retirée après consolidation.
@@ -303,7 +305,7 @@ Objectif général : revenir au cœur du programme après v1.8 + v1.9.
 
 ## Prochaine action recommandée
 
-Choisir le périmètre compact de DEV_7 parmi les axes v1.8 restants. Candidat recommandé à discuter : Historique de session v2, afin de consolider imports, Batch, cache et affectations A/B avant le chantier de packaging exécutable.
+Valider DEV_10_R1 sous Windows : verrouiller/déverrouiller plusieurs cartes, réorganiser l’ordre visible, vérifier que les actions Viewer/A/B ne le modifient pas, puis tester éviction simple, Batch, suppression, vidage et réduction de capacité.
 
 Conserver séparément : extraction éventuelle de la couleur effective des joueurs, interaction Graphiques→carte et étude contrôlée des Terrain IDs 18/19 pour v1.9 ; viewer scindable jusqu'à quatre cartes après la grosse passe générateur ; audit seed/diversité uniquement en v1.10 ; vues composables comme étude UX sans garantir toutes les combinaisons.
 

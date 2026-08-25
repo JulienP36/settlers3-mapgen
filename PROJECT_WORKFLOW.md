@@ -92,6 +92,7 @@ After v1.7 STABLE:
 5. Community outreach (Discord/wiki/map sites) is optional and only if the project owner later chooses to present the tool publicly; do not make it a prerequisite for development or releases.
 ## v1.8 accessibility / public-facing rules
 - Public-facing README material must transparently mention the substantial use of ChatGPT/OpenAI in implementation assistance, especially backend, analysis and reverse-engineering tooling, while keeping project direction/validation accurately attributed to the project owner.
-- Prioritize a self-contained Windows `.exe` during v1.8 so external users do not need to install Python/pip/dependencies.
-- Evolve the GitHub-Releases updater for packaged executable updates; preserve user settings and verify release integrity.
+- Keep daily DEV work source-first through `launch_gui`; do not rebuild or carry PyInstaller output during ordinary feature revisions.
+- At v1.8 RC, freeze new features while still allowing fixes, polish, optimization and documentation, then produce two separate artifacts: a Python/source ZIP and an installation-free Windows x64 portable ZIP.
+- Rebuild and validate the standalone Windows `.exe` and evolve the GitHub-Releases updater during RC; preserve user settings, verify release integrity and never require an installer.
 - **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.

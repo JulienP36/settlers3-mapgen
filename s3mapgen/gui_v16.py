@@ -31,10 +31,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_9_R2 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_9_R2 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_9_R2 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_9_R2 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_10_R1 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_10_R1 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_10_R1 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_10_R1 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={
@@ -283,6 +283,16 @@ HISTORY_TEXT={
  'es':{'title':'Centro de historial','origin':'Origen','map':'Mapa','details':'Detalles','preview':'Vista previa seleccionada','generated':'Generación','batch':'Lote','imported':'Importación','show':'Mostrar','set_a':'Asignar a A','set_b':'Asignar a B','delete':'Eliminar','clear':'Vaciar todo','close':'Cerrar','empty':'No hay mapas en esta sesión.','none':'Ninguno','current':'Mapa mostrado actualmente','comparison':'Ranura de comparación: {slots}','mru':'Posición MRU: {position}/{total}','source':'Origen: {path}','protected':'Protegido: {reasons}','main_view':'visor principal','outside_history':'Mapa mostrado fuera del historial','confirm_clear':'¿Vaciar todo el historial de sesión?','confirm_clear_protected':'Hay mapas protegidos por: {reasons}. Se vaciarán A/B y el mapa mostrado seguirá visible fuera del historial. ¿Continuar?','delete_assigned':'Este mapa está protegido por: {reasons}. Al eliminarlo se vaciarán sus ranuras A/B y, si está mostrado, seguirá visible fuera del historial. ¿Continuar?','deleted':'Entrada eliminada del historial.','capacity':'{used} / {count} mapas · solo memoria de sesión','capacity_reduce':'Reducir la capacidad de {old} a {new} eliminará {removed} mapa(s) antiguo(s) no protegido(s). ¿Continuar?'},
 }
 
+# DEV_10 keeps manual cache protection and visual ordering vocabulary together
+# without changing the stable v1.8 history keys used by older tests/settings.
+_HISTORY_MANUAL_TEXT={
+ 'fr':{'lock':'Verrouiller','unlock':'Déverrouiller','move_up':'Monter','move_down':'Descendre','display_position':'Position affichée : {position}/{total}','manual_lock':'verrouillage manuel','locked':'Carte verrouillée manuellement dans le cache.','unlocked':'Verrouillage manuel retiré.','capacity_protected':'La capacité {new} est inférieure aux {protected} cartes actuellement protégées. Libérez d’abord des slots ou des verrouillages manuels.','confirm_clear_protected':'Des cartes sont protégées par : {reasons}. Les slots A/B et les verrouillages manuels seront libérés ; la carte affichée restera visible hors historique. Continuer ?','delete_assigned':'Cette carte est protégée par : {reasons}. Sa suppression libérera ses slots A/B et son verrouillage manuel ; si elle est affichée, elle restera visible hors historique. Continuer ?'},
+ 'en':{'lock':'Lock','unlock':'Unlock','move_up':'Move up','move_down':'Move down','display_position':'Displayed position: {position}/{total}','manual_lock':'manual lock','locked':'Map manually locked in the cache.','unlocked':'Manual lock removed.','capacity_protected':'Capacity {new} is lower than the {protected} currently protected maps. Clear slots or manual locks first.','confirm_clear_protected':'Maps are protected by: {reasons}. A/B slots and manual locks will be cleared; the displayed map will remain visible outside history. Continue?','delete_assigned':'This map is protected by: {reasons}. Deleting it will clear its A/B slots and manual lock; if displayed, it will remain visible outside history. Continue?'},
+ 'de':{'lock':'Sperren','unlock':'Entsperren','move_up':'Nach oben','move_down':'Nach unten','display_position':'Anzeigeposition: {position}/{total}','manual_lock':'manuelle Sperre','locked':'Karte manuell im Cache gesperrt.','unlocked':'Manuelle Sperre entfernt.','capacity_protected':'Die Kapazität {new} ist kleiner als die {protected} derzeit geschützten Karten. Geben Sie zuerst Plätze oder manuelle Sperren frei.','confirm_clear_protected':'Karten sind geschützt durch: {reasons}. A/B und manuelle Sperren werden freigegeben; die angezeigte Karte bleibt außerhalb des Verlaufs sichtbar. Fortfahren?','delete_assigned':'Diese Karte ist geschützt durch: {reasons}. Beim Löschen werden A/B und die manuelle Sperre freigegeben; eine angezeigte Karte bleibt außerhalb des Verlaufs. Fortfahren?'},
+ 'es':{'lock':'Bloquear','unlock':'Desbloquear','move_up':'Subir','move_down':'Bajar','display_position':'Posición mostrada: {position}/{total}','manual_lock':'bloqueo manual','locked':'Mapa bloqueado manualmente en la caché.','unlocked':'Bloqueo manual eliminado.','capacity_protected':'La capacidad {new} es inferior a los {protected} mapas protegidos actualmente. Libera primero ranuras o bloqueos manuales.','confirm_clear_protected':'Hay mapas protegidos por: {reasons}. Se vaciarán A/B y los bloqueos manuales; el mapa mostrado seguirá visible fuera del historial. ¿Continuar?','delete_assigned':'Este mapa está protegido por: {reasons}. Al eliminarlo se vaciarán A/B y su bloqueo manual; si está mostrado, seguirá visible fuera del historial. ¿Continuar?'},
+}
+for _lang,_values in _HISTORY_MANUAL_TEXT.items():HISTORY_TEXT[_lang].update(_values)
+
 _CONTEXT_TEXT={
  'fr':{'loaded':'Chargée !','shown':'Affichée !','assigned_a':'Affectée à A !','assigned_b':'Affectée à B !','lock_tip':'Protection : {roles}','viewer_role':'V = vue principale','manual_role':'M = verrouillage manuel','outside_tip':'Cette carte reste affichée, mais elle ne se trouve plus dans le cache de session.'},
  'en':{'loaded':'Loaded!','shown':'Shown!','assigned_a':'Assigned to A!','assigned_b':'Assigned to B!','lock_tip':'Protection: {roles}','viewer_role':'V = main viewer','manual_role':'M = manual lock','outside_tip':'This map is still displayed, but is no longer in the session cache.'},
@@ -507,7 +517,9 @@ class App(V15StableApp):
         self.session_cache=SessionGenerationCache(max_entries=8)
         self.session_stats_cache=SessionStatsCache(max_entries=12)
         self._history_lookup={};self._compare_slots={'A':None,'B':None};self._compare_active=None
-        self._manual_history_locks=[]
+        # History remains session-only.  Manual locks protect cached outputs;
+        # visual order is deliberately independent from the real LRU order.
+        self._manual_history_locks=[];self._history_visual_order=[]
         self.session_cache.set_protected_provider(lambda:(getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks))
         self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._prefs_save_after=None
         self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_dialog=None;self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
@@ -1557,19 +1569,23 @@ class App(V15StableApp):
         try:value=int(self.history_capacity_var.get())
         except (TypeError,ValueError):value=old
         if value not in (4,8,12,16):value=old
+        protected=len(self._cached_protected_outputs())
+        if value<protected:
+            self._show_history_capacity_warning(old,value,0,blocked=True,protected=protected);self.history_capacity_var.set(str(old));return
         removed=max(0,len(self.session_cache)-value)
         if value<old and removed:
             if not self._show_history_capacity_warning(old,value,removed):
                 self.history_capacity_var.set(str(old));return
         self.prefs['history_capacity']=value;self.session_cache.resize(value);self._save_prefs();self._refresh_history()
 
-    def _show_history_capacity_warning(self,old,new,removed):
+    def _show_history_capacity_warning(self,old,new,removed,blocked=False,protected=0):
         if self._history_capacity_dialog is not None:return False
         lang=self.prefs.get('language','fr');dialog_text=_HISTORY_CAPACITY_DIALOG_TEXT[lang];history_text=HISTORY_TEXT[lang];result={'continue':False}
         parent=self._history_window or self;win=tk.Toplevel(parent);self._history_capacity_dialog=win;win.withdraw();win.title(dialog_text['title']);win.transient(parent);win.resizable(False,False)
         shell=ttk.Frame(win,padding=16);shell.pack(fill='both',expand=True)
         title=ttk.Label(shell,text=dialog_text['title'],style='Section.TLabel');title.pack(anchor='w',fill='x',pady=(0,10))
-        message=ttk.Label(shell,text=history_text['capacity_reduce'].format(old=old,new=new,removed=removed),justify='left',wraplength=480);message.pack(anchor='w',fill='x')
+        body=history_text['capacity_protected'].format(new=new,protected=protected) if blocked else history_text['capacity_reduce'].format(old=old,new=new,removed=removed)
+        message=ttk.Label(shell,text=body,justify='left',wraplength=480);message.pack(anchor='w',fill='x')
         buttons=ttk.Frame(shell);buttons.pack(fill='x',pady=(16,0))
         def close(accepted=False):
             result['continue']=bool(accepted)
@@ -1579,10 +1595,13 @@ class App(V15StableApp):
             try:self.history_capacity_combo.configure(state='readonly')
             except tk.TclError:pass
             win.destroy()
-        cancel=ttk.Button(buttons,text=dialog_text['cancel'],command=lambda:close(False));cancel.pack(side='right')
-        confirm=ttk.Button(buttons,text=dialog_text['continue'],command=lambda:close(True));confirm.pack(side='right',padx=(0,8))
-        self._history_capacity_dialog_widgets={'title':title,'message':message,'cancel':cancel,'confirm':confirm,'old':old,'new':new,'removed':removed}
-        win.protocol('WM_DELETE_WINDOW',lambda:close(False));win.bind('<Escape>',lambda e:close(False),add='+');win.bind('<Return>',lambda e:close(True),add='+')
+        cancel_label=_lang_text(lang,'OK','OK','OK','OK') if blocked else dialog_text['cancel']
+        cancel=ttk.Button(buttons,text=cancel_label,command=lambda:close(False));cancel.pack(side='right')
+        confirm=None
+        if not blocked:
+            confirm=ttk.Button(buttons,text=dialog_text['continue'],command=lambda:close(True));confirm.pack(side='right',padx=(0,8))
+        self._history_capacity_dialog_widgets={'title':title,'message':message,'cancel':cancel,'confirm':confirm,'old':old,'new':new,'removed':removed,'blocked':blocked,'protected':protected}
+        win.protocol('WM_DELETE_WINDOW',lambda:close(False));win.bind('<Escape>',lambda e:close(False),add='+');win.bind('<Return>',lambda e:close(False if blocked else True),add='+')
         self._apply_history_capacity_dialog_theme();win.update_idletasks();width=max(460,win.winfo_reqwidth());height=win.winfo_reqheight();screen_w=win.winfo_screenwidth();screen_h=win.winfo_screenheight()
         x=parent.winfo_rootx()+(parent.winfo_width()-width)//2;y=parent.winfo_rooty()+(parent.winfo_height()-height)//2;x=max(8,min(x,screen_w-width-8));y=max(8,min(y,screen_h-height-48));win.geometry(f'{width}x{height}+{x}+{y}')
         try:self.history_capacity_combo.configure(state='disabled')
@@ -1594,8 +1613,11 @@ class App(V15StableApp):
         if win is None or not widgets:return
         try:
             lang=self.prefs.get('language','fr');dialog_text=_HISTORY_CAPACITY_DIALOG_TEXT[lang];history_text=HISTORY_TEXT[lang]
-            win.title(dialog_text['title']);widgets['title'].configure(text=dialog_text['title']);widgets['message'].configure(text=history_text['capacity_reduce'].format(old=widgets['old'],new=widgets['new'],removed=widgets['removed']))
-            widgets['cancel'].configure(text=dialog_text['cancel']);widgets['confirm'].configure(text=dialog_text['continue'])
+            win.title(dialog_text['title']);widgets['title'].configure(text=dialog_text['title'])
+            if widgets.get('blocked'):
+                widgets['message'].configure(text=history_text['capacity_protected'].format(new=widgets['new'],protected=widgets['protected']));widgets['cancel'].configure(text='OK')
+            else:
+                widgets['message'].configure(text=history_text['capacity_reduce'].format(old=widgets['old'],new=widgets['new'],removed=widgets['removed']));widgets['cancel'].configure(text=dialog_text['cancel']);widgets['confirm'].configure(text=dialog_text['continue'])
         except tk.TclError:pass
 
     def _apply_history_capacity_dialog_theme(self):
@@ -1665,9 +1687,26 @@ class App(V15StableApp):
         return f'{prefix} · {key.seed} · {key.side} · {key.players}P · {mode} · {archetype} · {mods}'
     def _history_origin(self,key):
         return self.session_cache.metadata(key).get('origin','generated')
+    def _ordered_history_entries(self):
+        """Return the stable visual order without touching cache recency."""
+        lru_entries=self.session_cache.entries();live={key:value for key,value in lru_entries}
+        kept=[key for key in self._history_visual_order if key in live]
+        added=[key for key,_ in lru_entries if key not in kept]
+        self._history_visual_order=added+kept
+        return [(key,live[key]) for key in self._history_visual_order]
+    def _history_move_key(self,key,step):
+        entries=self._ordered_history_entries();keys=[entry_key for entry_key,_ in entries]
+        if key not in keys:return False
+        old=keys.index(key);new=max(0,min(len(keys)-1,old+int(step)))
+        if new==old:return False
+        keys[old],keys[new]=keys[new],keys[old];self._history_visual_order=keys;return True
+    def _cached_protected_outputs(self):
+        cached={id(value):value for _,value in self.session_cache.entries()}
+        candidates=(getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks)
+        return [cached[identity] for identity in dict.fromkeys(id(value) for value in candidates if value is not None) if identity in cached]
     def _refresh_history(self,preferred_index=None):
         self._history_lookup={}
-        for key,_ in self.session_cache.entries():
+        for key,_ in self._ordered_history_entries():
             label=self._history_label(key);candidate=label;suffix=2
             while candidate in self._history_lookup:candidate=f'{label} · {suffix}';suffix+=1
             self._history_lookup[candidate]=key
@@ -1823,13 +1862,19 @@ class App(V15StableApp):
         ttk.Label(preview_host,textvariable=self._history_preview_status,style='Panel.TLabel',justify='left',wraplength=260).pack(fill='x',pady=(8,2))
         ttk.Label(preview_host,textvariable=self._history_preview_source,style='PanelHint.TLabel',justify='left',wraplength=260).pack(fill='x')
         info=ttk.Label(shell,text=text['capacity'].format(used=len(self.session_cache),count=self.session_cache.max_entries),style='Hint.TLabel');info.grid(row=1,column=0,columnspan=2,sticky='w',pady=(8,4))
-        actions=ttk.Frame(shell);actions.grid(row=2,column=0,columnspan=2,sticky='ew');actions.columnconfigure(4,weight=1)
+        actions=ttk.Frame(shell);actions.grid(row=2,column=0,columnspan=2,sticky='ew');actions.columnconfigure(7,weight=1)
         buttons={}
-        for col,(name,label,command) in enumerate((('show',text['show'],self._history_center_show),('a',text['set_a'],lambda:self._history_center_assign('A')),('b',text['set_b'],lambda:self._history_center_assign('B')),('delete',text['delete'],self._history_center_delete))):
+        for col,(name,label,command) in enumerate((('show',text['show'],self._history_center_show),('a',text['set_a'],lambda:self._history_center_assign('A')),('b',text['set_b'],lambda:self._history_center_assign('B')))):
             image=self._compare_led_off if name in ('show','a','b') else ''
             buttons[name]=ttk.Button(actions,text=label,image=image,compound='left',command=command,state='disabled');buttons[name].grid(row=0,column=col,padx=(0,6))
-        buttons['clear']=ttk.Button(actions,text=text['clear'],command=self._history_center_clear);buttons['clear'].grid(row=0,column=5,padx=(6,6))
-        buttons['close']=ttk.Button(actions,text=text['close'],command=self._close_history_center);buttons['close'].grid(row=0,column=6)
+        buttons['lock']=ttk.Button(actions,text=text['lock'],image=self._lock_closed_icon,compound='left',command=self._history_center_toggle_manual_lock,state='disabled');buttons['lock'].grid(row=0,column=3,padx=(0,6))
+        buttons['up']=ttk.Button(actions,text='↑',width=3,command=lambda:self._history_center_move(-1),state='disabled');buttons['up'].grid(row=0,column=4,padx=(0,3))
+        buttons['down']=ttk.Button(actions,text='↓',width=3,command=lambda:self._history_center_move(1),state='disabled');buttons['down'].grid(row=0,column=5,padx=(0,6))
+        buttons['delete']=ttk.Button(actions,text=text['delete'],command=self._history_center_delete,state='disabled');buttons['delete'].grid(row=0,column=6,padx=(0,6))
+        buttons['clear']=ttk.Button(actions,text=text['clear'],command=self._history_center_clear);buttons['clear'].grid(row=0,column=8,padx=(6,6))
+        buttons['close']=ttk.Button(actions,text=text['close'],command=self._close_history_center);buttons['close'].grid(row=0,column=9)
+        buttons['up'].bind('<Enter>',lambda e:self._show_ui_tooltip(buttons['up'],HISTORY_TEXT[self.prefs.get('language','fr')]['move_up'],key='history-up'));buttons['up'].bind('<Leave>',lambda e:self._hide_ui_tooltip())
+        buttons['down'].bind('<Enter>',lambda e:self._show_ui_tooltip(buttons['down'],HISTORY_TEXT[self.prefs.get('language','fr')]['move_down'],key='history-down'));buttons['down'].bind('<Leave>',lambda e:self._hide_ui_tooltip())
         self._history_window_widgets={'tree':tree,'info':info,'buttons':buttons,'preview_host':preview_host,'preview_image_host':preview_image_host};self._apply_history_window_theme();self._refresh_history_center()
         w.update_idletasks();screen_w=w.winfo_screenwidth();screen_h=w.winfo_screenheight();width=min(1120,max(760,screen_w-40));height=min(500,max(340,screen_h-80));x=max(0,min(self.winfo_rootx()+60,screen_w-width));y=max(0,min(self.winfo_rooty()+60,screen_h-height));w.geometry(f'{width}x{height}+{x}+{y}')
 
@@ -1853,16 +1898,20 @@ class App(V15StableApp):
 
     def _history_selection_changed(self):
         state='normal' if self._history_selected_key() is not None else 'disabled'
-        for name in ('show','a','b','delete'):
+        for name in ('show','a','b','lock','delete'):
             button=self._history_window_widgets.get('buttons',{}).get(name)
             if button is not None:button.configure(state=state)
+        key=self._history_selected_key();keys=[entry_key for entry_key,_ in self._ordered_history_entries()]
+        index=keys.index(key) if key in keys else -1;buttons=self._history_window_widgets.get('buttons',{})
+        if buttons.get('up') is not None:buttons['up'].configure(state='normal' if index>0 else 'disabled')
+        if buttons.get('down') is not None:buttons['down'].configure(state='normal' if 0<=index<len(keys)-1 else 'disabled')
         self._refresh_history_preview();self._refresh_state_indicators()
 
     def _refresh_history_center(self,preferred_index=None):
         tree=self._history_tree
         if tree is None:return
         selected=self._history_selected_key();old_y=tree.yview()[0] if tree.get_children() else 0.0;tree.delete(*tree.get_children());self._history_center_lookup={};lang=self.prefs.get('language','fr');text=HISTORY_TEXT[lang]
-        for index,(key,out) in enumerate(self.session_cache.entries()):
+        for index,(key,out) in enumerate(self._ordered_history_entries()):
             meta=self.session_cache.metadata(key);origin=self._history_origin(key);origin_label=text.get(origin,origin)
             if isinstance(key,ImportedHistoryKey):map_label=meta.get('source_name',key.source_format);details=f'(.{key.source_format.lower()}) · {meta.get("side",out.state.side)}×{meta.get("side",out.state.side)} · {meta.get("players",len(out.state.starts))}P'
             else:map_label=f'Seed {key.seed}';details=f'{key.side}×{key.side} · {key.players}P · {MODE_LABELS[lang].get(key.mode,key.mode)} · {ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)}'
@@ -1899,7 +1948,8 @@ class App(V15StableApp):
         if getattr(self,'current',None) is out:reasons.append(text['main_view'])
         reasons.extend(f'Slot {slot}' for slot in slots)
         if reasons:parts.append(text['protected'].format(reasons=', '.join(reasons)))
-        entries=self.session_cache.entries();position=next((index+1 for index,(entry_key,_) in enumerate(entries) if entry_key==key),1);parts.append(text['mru'].format(position=position,total=len(entries)))
+        if any(value is out for value in self._manual_history_locks):reasons.append(text['manual_lock'])
+        entries=self._ordered_history_entries();position=next((index+1 for index,(entry_key,_) in enumerate(entries) if entry_key==key),1);parts.append(text['display_position'].format(position=position,total=len(entries)))
         self._history_preview_status.set('\n'.join(parts));source=self.session_cache.metadata(key).get('source_path');self._history_preview_source.set(text['source'].format(path=source) if source else '')
         if self._history_large_window is not None:self._history_refresh_large_preview()
 
@@ -2078,6 +2128,17 @@ class App(V15StableApp):
     def _history_center_assign(self,slot):
         key=self._history_selected_key();out=self.session_cache.peek(key) if key else None
         if out is not None:self._set_compare_output(slot,out);self._refresh_history()
+    def _history_center_toggle_manual_lock(self):
+        key=self._history_selected_key();out=self.session_cache.peek(key) if key else None
+        if out is None:return
+        locked=any(value is out for value in self._manual_history_locks);text=HISTORY_TEXT[self.prefs.get('language','fr')]
+        if locked:self._manual_history_locks=[value for value in self._manual_history_locks if value is not out];message=text['unlocked']
+        else:self._manual_history_locks.append(out);message=text['locked']
+        self._feedback_key=None;self._status_kind='info';self.status.set(message);self._sync_status_display();self._refresh_history()
+    def _history_center_move(self,step):
+        key=self._history_selected_key()
+        if key is None or not self._history_move_key(key,step):return
+        self._refresh_history();self._refresh_state_indicators()
     def _history_center_delete(self):
         key=self._history_selected_key()
         if key is None:return
@@ -2086,11 +2147,12 @@ class App(V15StableApp):
         reasons=[]
         if out is getattr(self,'current',None):reasons.append(text['main_view'])
         reasons.extend(f'Slot {slot}' for slot in slots)
+        if any(value is out for value in self._manual_history_locks):reasons.append(text['manual_lock'])
         if reasons and not messagebox.askyesno(text['title'],text['delete_assigned'].format(reasons=', '.join(reasons)),parent=self._history_window):return
         for slot in slots:
             self._compare_slots[slot]=None
             if self._compare_active==slot:self._compare_active=None
-        self.session_cache.remove(key);self._refresh_compare_label();self._refresh_history(preferred_index=index);self._feedback_key=None;self._status_kind='info';self.status.set(text['deleted']);self._sync_status_display();self._refresh_state_indicators()
+        self._manual_history_locks=[value for value in self._manual_history_locks if value is not out];self.session_cache.remove(key);self._refresh_compare_label();self._refresh_history(preferred_index=index);self._feedback_key=None;self._status_kind='info';self.status.set(text['deleted']);self._sync_status_display();self._refresh_state_indicators()
     def _history_center_clear(self):
         self._clear_history(confirm=True,parent=self._history_window)
 
@@ -2670,9 +2732,10 @@ class App(V15StableApp):
         text=HISTORY_TEXT[self.prefs.get('language','fr')];slots=[slot for slot,value in self._compare_slots.items() if value is not None];reasons=[]
         if self._output_in_history(getattr(self,'current',None)):reasons.append(text['main_view'])
         reasons.extend(f'Slot {slot}' for slot in slots)
+        if self._manual_history_locks:reasons.append(text['manual_lock'])
         prompt=text['confirm_clear_protected'].format(reasons=', '.join(reasons)) if reasons else text['confirm_clear']
         if confirm and not messagebox.askyesno(text['title'],prompt,parent=parent or self):return
-        self.session_cache.clear();self.session_stats_cache.clear();self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('')
+        self.session_cache.clear();self.session_stats_cache.clear();self._manual_history_locks=[];self._history_visual_order=[];self._history_lookup.clear();self.history_combo.configure(values=[]);self.history_var.set('')
         if slots:self._compare_slots={'A':None,'B':None};self._compare_active=None;self._refresh_compare_label()
         self._refresh_history_center();self._refresh_state_indicators();self._feedback('history_cleared','success')
     def _set_compare_slot(self,slot):
@@ -2768,6 +2831,11 @@ class App(V15StableApp):
                 text=HISTORY_TEXT[self.prefs.get('language','fr')];label=(_CONTEXT_TEXT[self.prefs.get('language','fr')][{'show':'shown','a':'assigned_a','b':'assigned_b'}[name]] if active else text[{'show':'show','a':'set_a','b':'set_b'}[name]])
                 try:button.configure(text=label,image=self._compare_led_on if active else self._compare_led_off,compound='left')
                 except tk.TclError:pass
+        lock_button=buttons.get('lock');manually_locked=out is not None and any(value is out for value in self._manual_history_locks)
+        if lock_button is not None:
+            text=HISTORY_TEXT[self.prefs.get('language','fr')]
+            try:lock_button.configure(text=text['unlock' if manually_locked else 'lock'],image=self._lock_open_icon if manually_locked else self._lock_closed_icon,compound='left')
+            except tk.TclError:pass
         for iid,entry_key in self._history_center_lookup.items():
             entry=self.session_cache.peek(entry_key);roles=self._history_roles_for_output(entry)
             try:self._history_tree.item(iid,image=self._history_role_image(roles))
