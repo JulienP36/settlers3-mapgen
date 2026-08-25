@@ -57,6 +57,8 @@ Check these hashes after significant tooling/UI/Stats work.
 - `TODO_MAPGEN.md`: roadmap / remaining work.
 - `VERSIONING.md`: detailed version/tag/release rules.
 - `references/SETTLERS3_PREGEN_READ_FIRST.md`: mandatory entry point before touching generation/map bytes.
+- `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`: consolidated history of accepted DEV decisions and significant failed experiments.
+- `DEV_CANDIDATE_NOTES.md`: single rolling Windows-test sheet while a candidate exists; overwrite it for each R, consolidate it at DEV closure, then remove it.
 - dated `SETTLERS3_SNAPSHOT_*`: historical checkpoints only.
 
 ## GitHub Issues
@@ -72,7 +74,7 @@ Check these hashes after significant tooling/UI/Stats work.
 1. Open branch `dev`.
 2. Read this workflow.
 3. Read `SETTLERS3_CURRENT_SNAPSHOT.md`.
-4. Read TODO + latest DEV notes.
+4. Read TODO, the consolidated development log and `DEV_CANDIDATE_NOTES.md` when a candidate is active.
 5. Verify current `dev` tip and protected hashes before making generation-sensitive changes.
 6. Continue from the "Next work" section of the living snapshot unless the user gives a newer explicit direction.
 

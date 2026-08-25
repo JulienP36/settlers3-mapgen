@@ -318,6 +318,7 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 - [x] Massifs/Lacs/Rivières : médailles légères top 3 sans recoloration du podium.
 - [x] **DEV_8_R1 → R4 validée — Raccourcis v2** : capture directe fondée sur les événements réellement observés, désactivation/réinitialisation par action, conflits inline, changements non appliqués visibles, AZERTY/QWERTY, commandes supplémentaires, aide dynamique et défilement compact horizontal/vertical. Migration entrée par entrée du JSON existant vers le schéma 2, sans second format de configuration.
 - [x] **DEV_8 clôturée sur R4 après validation Windows** : aucune dernière correction fonctionnelle nécessaire ; touches simples et vrais modificateurs Ctrl/Shift/Alt validés sans Alt fantôme.
+- [x] **Nettoyage des notes DEV après DEV_8** : les 39 notes dispersées sont consolidées dans `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`. Les futures candidates réutiliseront un unique `DEV_CANDIDATE_NOTES.md`, retiré après consolidation à la clôture de chaque DEV.
 - [ ] Étendre progressivement la config utilisateur persistante aux autres réglages utiles sans complexifier le format inutilement. Le verrouillage/réordonnancement manuel de l’historique reste le candidat prioritaire à ne pas trop repousser, mais ne doit pas être greffé à R1 sans besoin observé.
 
 ## DEV_9 — mini-polish retours DEV_8
