@@ -1,4 +1,4 @@
-SETTLERS III MAPGEN — v1.8 DEV_9_R1 — WINDOWS TEST CANDIDATE
+SETTLERS III MAPGEN — v1.8 DEV_9_R2 — WINDOWS TEST CANDIDATE
 
 FR
 1. Décompressez entièrement le ZIP dans un dossier normal.

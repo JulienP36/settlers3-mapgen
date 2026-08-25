@@ -1,4 +1,4 @@
-# v1.8 DEV_9_R1 — candidate Windows
+# v1.8 DEV_9_R2 — candidate Windows
 
 Date : 2026-08-25  
 Base : DEV_8_R4 validée sous Windows  
@@ -8,11 +8,13 @@ Moteur : v1.5 protégé, inchangé
 
 Première distribution Windows x64 autonome de Settlers III MapGen. Le ZIP contient un dossier `Settlers3MapGen` complet avec l’exécutable et ses dépendances privées ; aucune installation Python/pip n’est requise.
 
+R1 est rejetée : elle échouait dès le démarrage car `unittest` avait été exclu du bundle alors que SciPy l’importe via `numpy.testing`. R2 réintègre ce module et étend l’autodiagnostic pour charger toute la chaîne GUI normale ; cette classe de faux PASS est désormais couverte.
+
 ## Validation automatisée
 
 - 213 tests de régression PASS localement ; suite rejouée dans le workflow Windows ;
 - build PyInstaller `onedir` ;
-- exécution du véritable `Settlers3MapGen.exe --self-test` ;
+- exécution du véritable `Settlers3MapGen.exe --self-test`, incluant l’import du runtime GUI normal ;
 - lecture effective des profils, bibliothèque native, références/scaffolds et sprites J1–J20 ;
 - production d’un rapport JSON et du SHA-256 du ZIP ;
 - 49 validations moteur et checksum binaire PASS ; cinq hashes protégés inchangés (5/5).

@@ -23,10 +23,10 @@ def test_inspector_object_table_contains_known_ids():
 
 
 def test_window_title_is_fully_localized_for_v18_dev6():
-    assert WINDOW_TITLES['fr'] == 'Settlers III MapGen v1.8 DEV_9_R1 — moteur de génération v1.5'
-    assert WINDOW_TITLES['en'] == 'Settlers III MapGen v1.8 DEV_9_R1 — generation engine v1.5'
-    assert WINDOW_TITLES['de'] == 'Settlers III MapGen v1.8 DEV_9_R1 — Generierungs-Engine v1.5'
-    assert WINDOW_TITLES['es'] == 'Settlers III MapGen v1.8 DEV_9_R1 — motor de generación v1.5'
+    assert WINDOW_TITLES['fr'] == 'Settlers III MapGen v1.8 DEV_9_R2 — moteur de génération v1.5'
+    assert WINDOW_TITLES['en'] == 'Settlers III MapGen v1.8 DEV_9_R2 — generation engine v1.5'
+    assert WINDOW_TITLES['de'] == 'Settlers III MapGen v1.8 DEV_9_R2 — Generierungs-Engine v1.5'
+    assert WINDOW_TITLES['es'] == 'Settlers III MapGen v1.8 DEV_9_R2 — motor de generación v1.5'
 
 
 def test_feedback_text_has_human_status_and_locked_control_hint_in_both_languages():

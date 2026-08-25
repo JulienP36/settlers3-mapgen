@@ -127,8 +127,8 @@ Transformer l'onglet Statistiques en véritable outil d'analyse détaillé :
 - [x] **Raccourcis v2 — DEV_8_R4 validée sous Windows** : capture fondée exclusivement sur les événements d’appui/relâchement des modificateurs, sans état global Windows ni bits Tk ambigus ; actions supplémentaires, AZERTY/QWERTY, conflits non modaux, modifications en attente, désactivation/reset et migration du JSON existant.
 - [x] **Historique session amélioré — DEV_7_R10 validée sous Windows** : imports + Batch dans l’historique, capacité configurable, Centre dédié, rang stable lors des actions UI, aperçu sélectionné et grand aperçu aligné sur Batch, protections `V/A/B` explicites et indicateurs accessibles avec libellés contextuels. R9 a sécurisé le cycle de vie du Centre et finalisé les cinq états de loupe ; R10 empêche les aperçus temporaires de masquer leur miniature source sans contraindre les aperçus épinglés.
 - [ ] **Signalétique set/unset — future passe UI** : revoir le design des états Chargée/Affichée/Affectée afin que la différence set/unset se lise encore plus vite, au-delà du cercle coché et du seul changement de libellé ; conserver une information non fondée uniquement sur la couleur et vérifier clair/sombre ainsi que daltonisme.
-- [~] **Premier vrai `.exe` — DEV_9_R1 candidate** : packaging Windows x64 autonome `onedir`, ressources embarquées, chemins robustes, autodiagnostic du binaire, ZIP et SHA-256 automatisés. Validation Windows réelle encore requise.
-- [~] **Icône application/exe — infrastructure DEV_9_R1** : build prêt à adopter automatiquement `assets/Settlers3MapGen.ico`. R1 conserve l’icône neutre du programme ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
+- [~] **Premier vrai `.exe` — DEV_9_R2 candidate** : packaging Windows x64 autonome `onedir`, ressources embarquées, chemins robustes, autodiagnostic de démarrage du binaire, ZIP et SHA-256 automatisés. Validation Windows réelle encore requise.
+- [~] **Icône application/exe — infrastructure DEV_9_R2** : build prêt à adopter automatiquement `assets/Settlers3MapGen.ico`. La candidate conserve l’icône neutre du programme ; icône finale dessinée manuellement en pixel art par l’utilisateur. Aucune image IA.
 - [ ] **Passe d’iconographie UI dédiée** : petites icônes déterministes, dessinées ou validées manuellement, pour faciliter le repérage dans toute l’application ; à traiter comme focus d’une version ultérieure, sans urgence.
 - [~] **Registre de provenance des éléments visuels** : registre initial créé dans `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md` pour les références et assets actuellement utilisés ; le compléter avant chaque future intégration graphique externe.
 - [ ] **Passe Pixel Art faite main — option lointaine** : l'utilisateur pourra finalement choisir de créer ou retoucher lui-même une partie ou la totalité des icônes ; l'assistant peut aider à définir les idées, contraintes, tailles, états et cohérence visuelle, sans produire d'image non demandée. La modernisation manuelle éventuelle des marqueurs J1–J20 est explicitement reportée à cette passe.
@@ -331,11 +331,12 @@ Le premier exécutable Windows est remonté dans v1.8. Le numéro `v2.0` reste r
 
 ## DEV_9 — premier exécutable Windows autonome
 
-- [~] **DEV_9_R1** : distribution Windows x64 en dossier autonome avec `Settlers3MapGen.exe`, sans Python/pip chez l’utilisateur.
+- [~] **DEV_9_R2** : distribution Windows x64 en dossier autonome avec `Settlers3MapGen.exe`, sans Python/pip chez l’utilisateur. R1 rejetée après échec au démarrage : `unittest` avait été exclu alors que SciPy l’importe via `numpy.testing`.
 - [x] Résoudre les ressources par rapport au bundle PyInstaller, indépendamment du répertoire courant de lancement.
 - [x] Conserver les préférences dans `%APPDATA%/Settlers3MapGen/settings.json` et placer le dossier d’export par défaut à côté de l’exécutable.
 - [x] Embarquer profils, bibliothèque native, scaffolds EDM/MAP, référence Upgraded et sprites J1–J20 nécessaires au runtime.
 - [x] Ajouter un autodiagnostic du véritable exécutable packagé avant création du ZIP, plus un rapport JSON et un SHA-256.
+- [x] **R2** : faire importer à l’autodiagnostic toute la chaîne GUI normale, afin qu’une dépendance gelée manquante bloque automatiquement le build.
 - [x] Automatiser le build Windows via GitHub Actions sans créer prématurément de tag ou de Release.
 - [x] Préparer l’adoption facultative d’un `.ico` fourni manuellement ; conserver une icône neutre en son absence.
 - [ ] Valider sous Windows : extraction complète, premier lancement, SmartScreen, génération/import/export, Batch, thèmes/langues, préférences persistantes et lancement depuis plusieurs emplacements.

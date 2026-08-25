@@ -1,3 +1,10 @@
+## v1.8 DEV_9_R2 — 2026-08-25
+
+- Fixes the R1 startup failure caused by explicitly excluding Python's `unittest`, which SciPy reaches through `numpy.testing` during the normal GUI import chain.
+- Extends the packaged `--self-test` to import the real GUI runtime before checking resources, so missing frozen dependencies now fail the Windows build instead of appearing only on the user's machine.
+- Keeps the R1 `onedir` layout, protected-byte checks, APPDATA preferences and executable-adjacent output folder unchanged.
+- Generation engine v1.5, binary formats and protected assets remain unchanged.
+
 ## v1.8 DEV_9_R1 — 2026-08-25
 
 - Introduces the first autonomous Windows x64 package in PyInstaller `onedir` form: users no longer need Python, pip or a source checkout.

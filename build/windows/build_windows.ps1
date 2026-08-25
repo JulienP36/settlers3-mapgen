@@ -7,8 +7,8 @@ $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $DistRoot = Join-Path $ProjectRoot 'dist\Settlers3MapGen'
 $WorkRoot = Join-Path $ProjectRoot 'build\windows\work'
 $ArtifactRoot = Join-Path $ProjectRoot 'artifacts'
-$ZipPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R1_WINDOWS_X64.zip'
-$ReportPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R1_SELFTEST.json'
+$ZipPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R2_WINDOWS_X64.zip'
+$ReportPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R2_SELFTEST.json'
 
 Set-Location $ProjectRoot
 

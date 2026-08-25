@@ -31,10 +31,10 @@ VIEW_LABELS={
 }
 LANGUAGE_LABELS={'fr':'Français','en':'English','de':'Deutsch','es':'Español'}
 WINDOW_TITLES={
- 'fr':'Settlers III MapGen v1.8 DEV_9_R1 — moteur de génération v1.5',
- 'en':'Settlers III MapGen v1.8 DEV_9_R1 — generation engine v1.5',
- 'de':'Settlers III MapGen v1.8 DEV_9_R1 — Generierungs-Engine v1.5',
- 'es':'Settlers III MapGen v1.8 DEV_9_R1 — motor de generación v1.5',
+ 'fr':'Settlers III MapGen v1.8 DEV_9_R2 — moteur de génération v1.5',
+ 'en':'Settlers III MapGen v1.8 DEV_9_R2 — generation engine v1.5',
+ 'de':'Settlers III MapGen v1.8 DEV_9_R2 — Generierungs-Engine v1.5',
+ 'es':'Settlers III MapGen v1.8 DEV_9_R2 — motor de generación v1.5',
 }
 
 FEEDBACK_TEXT={

@@ -12,9 +12,9 @@ ROOT=Path(__file__).resolve().parent.parent
 
 
 def test_dev9_version_metadata():
-    assert APP_VERSION=='1.8 DEV_9_R1'
+    assert APP_VERSION=='1.8 DEV_9_R2'
     assert ENGINE_VERSION=='1.5'
-    assert WINDOWS_FILE_VERSION==(1,8,9,1)
+    assert WINDOWS_FILE_VERSION==(1,8,9,2)
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):
@@ -32,6 +32,7 @@ def test_source_package_self_test_reads_all_required_resources():
     assert report['status']=='PASS',report
     assert report['frozen'] is False
     assert set(report['checks'])=={
+        'gui_runtime_import',
         'legacy_profile','upgraded_profile','native_library','upgraded_reference',
         'edm_scaffold','map_scaffold','start_markers',
     }
@@ -47,6 +48,7 @@ def test_pyinstaller_spec_is_onedir_and_bundles_runtime_resources():
     assert 'COLLECT(' in spec
     assert "name='Settlers3MapGen'" in spec
     assert 'optional_icon' in spec
+    assert "'unittest'" not in spec
 
 
 def test_windows_workflow_runs_binary_self_test_before_upload():

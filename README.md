@@ -20,14 +20,14 @@ Le projet repose sur une règle importante : les **positions de départ des joue
 
 Les aperçus visuels sont toujours des rendus déterministes issus des vraies données de carte ; aucune image de carte fictive n'est utilisée.
 
-## État actuel — v1.8 DEV_9_R1 candidate Windows / moteur v1.5 stable
+## État actuel — v1.8 DEV_9_R2 candidate Windows / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
 
-DEV_9_R1 ajoute le premier package Windows x64 autonome sous forme d’un dossier compact : l’utilisateur décompresse le ZIP puis lance `Settlers3MapGen.exe`, sans installer Python, pip ou les dépendances. Les ressources nécessaires sont embarquées, les exports proposés par défaut restent visibles à côté de l’exécutable et les préférences existantes restent dans `%APPDATA%/Settlers3MapGen`. Le build exécute son propre diagnostic de ressources avant archivage. Cette première candidate n’est pas signée et attend une validation Windows réelle ; le moteur et les formats binaires validés sont inchangés.
+DEV_9_R2 ajoute le premier package Windows x64 autonome sous forme d’un dossier compact : l’utilisateur décompresse le ZIP puis lance `Settlers3MapGen.exe`, sans installer Python, pip ou les dépendances. Les ressources nécessaires sont embarquées, les exports proposés par défaut restent visibles à côté de l’exécutable et les préférences existantes restent dans `%APPDATA%/Settlers3MapGen`. Après l’échec de démarrage R1 dû à une dépendance standard exclue, le build charge désormais toute la chaîne GUI depuis le véritable `.exe` avant d’accepter l’archive. Cette candidate n’est pas signée et attend une validation Windows réelle ; le moteur et les formats binaires validés sont inchangés.
 
 ### Candidate Windows autonome
 

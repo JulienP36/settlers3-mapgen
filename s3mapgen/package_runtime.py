@@ -44,6 +44,21 @@ def inspect_package() -> dict:
     checks: dict[str, dict] = {}
     errors: list[str] = []
 
+    # Import the same runtime module used by normal startup.  This deliberately
+    # happens before the resource checks so a missing frozen dependency (for
+    # example a SciPy -> NumPy testing import) makes the packaged self-test fail.
+    try:
+        from . import gui_v16_runtime
+        checks['gui_runtime_import']={
+            'ok':callable(getattr(gui_v16_runtime,'main',None)),
+            'module':gui_v16_runtime.__name__,
+        }
+        if not checks['gui_runtime_import']['ok']:
+            errors.append('gui_runtime_import')
+    except Exception as exc:
+        checks['gui_runtime_import']={'ok':False,'error':repr(exc)}
+        errors.append('gui_runtime_import')
+
     for name,path in (
         ('legacy_profile',LEGACY_PROFILE),
         ('upgraded_profile',UPGRADED_PROFILE),
