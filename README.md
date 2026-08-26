@@ -48,7 +48,7 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v1.8 DEV_11 validée / moteur v1.5 stable
+## État actuel — v1.9 DEV_1 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
@@ -57,7 +57,7 @@ Référence moteur v1.5 :
 
 DEV_10 a finalisé le verrouillage manuel `M`, l’ordre visuel réorganisable et une capacité de cache strictement infranchissable. DEV_11_R1 a validé sous Windows la première tranche de maintenance : version visible centralisée, logique pure d’ordre/protection de l’historique isolée de Tk et ZIP source déterministe soumis à une validation complète puis à l’autodiagnostic depuis son propre dossier extrait.
 
-DEV_11 clôt la passe publication/maintenabilité : documents canoniques propres, entrée anglaise, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de la protection `V`. Les régressions automatisées et les contrôles Windows R1/R2 sont validés. Le moteur et les formats binaires validés sont inchangés ; la prochaine étape est la phase RC de v1.8.
+DEV_11 a clôturé la passe publication/maintenabilité. La v1.9 DEV_1 corrige maintenant l’import de certains EDM valides qui conservent un remplissage terminal d’alignement ; les deux fichiers fautifs fournis chargent sous Windows. La suite de v1.9 est consacrée principalement à la restructuration interne de la GUI et des couches moteur/générateur, à comportement constant. Le Data Mapping revient vers la fin de v1.9.
 
 DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `run_gui.bat` / `run_gui.py`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
 
@@ -85,7 +85,7 @@ Le contour SAV n'est plus une ellipse approximative : les coordonnées de dépar
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 
-La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** ouvre maintenant la passe Workflow / accessibilité / production (Batch Generation, exports, historique/configuration, langues et découvrabilité). Le paquet `.exe` portable et son updater seront finalisés pendant les RC de v1.8. Une v1.9 de transition est prévue pour l'archéologie/data mapping avant le retour profond au générateur en v1.10.
+La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a construit la passe Workflow / accessibilité / production. La **v1.9** consolide maintenant l’architecture interne avant de terminer par l’archéologie/data mapping. Le retour profond au générateur reste prévu pour la v1.10.
 
 ## Modes de génération
 

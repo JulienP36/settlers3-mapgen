@@ -5,7 +5,13 @@
 > Project-wide workflow is defined in root `PROJECT_WORKFLOW.md` and current resumable state in `references/SETTLERS3_CURRENT_SNAPSHOT.md`.
 >
 > Do not generate a map from conversation memory alone.
-> Before touching map bytes, read the canonical files below and reconcile the requested change against them.
+> Before generating, regenerating, patching or exporting map bytes, read the
+> canonical files below and reconcile the requested change against them.
+
+Reader-only parser/import changes that do not modify map bytes or the protected
+generation engine use a smaller route: read `PROJECT_WORKFLOW.md`, the living
+snapshot, this index and the relevant EDM/MAP or SAV format reference. They do
+not require loading every morphology/resource/height reference.
 
 ## A. Mandatory files — always read
 
@@ -32,9 +38,9 @@
 6. `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md`
    - Binary writer/checksum/Area semantics.
 
-7. `SETTLERS3_SAV_FORMAT_REFERENCE_v2_LONGPLAY.md`
-   - Runtime verification and 16-save long-play findings.
-   - Keep `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` as the original calibration baseline.
+7. `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md`
+   - Original SAV calibration baseline and current canonical file-format reference.
+   - Later runtime/start-territory findings are kept in `SETTLERS3_SAV_INITIAL_TERRITORY_V16.md` and the current reader implementation.
 
 8. `SETTLERS3_TODO_POSTCHECKPOINT_v4_LONGPLAY.md`
    - Current unresolved work. A TODO must never silently override a validated rule.

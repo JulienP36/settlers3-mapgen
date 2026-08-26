@@ -75,6 +75,8 @@ The rolling key is updated from **plaintext**.
 
 **Safe write rule:** decrypt known parts, preserve unknown bytes and payload sizes, re-encrypt in place, recalculate checksum, then re-read/validate.
 
+**CONFIRMED terminal alignment variant (2026-08-26):** two supplied editor-written EDM files end with the normal terminal part `type=0, total_size=8`, followed by respectively one opaque byte (`03`) and three opaque bytes (`01 00 00`). Both complete files are DWORD-aligned and have exact checksums. A read-only importer may therefore accept **1–3 opaque bytes after that terminal part only** when the complete file length is divisible by four. Do not assign semantics to those bytes, accept a tail without the terminal part, or silently discard such a tail during reconstruction. Detailed evidence: `SETTLERS3_EDM_TERMINAL_PADDING_20260826.md`.
+
 ## 3. Area — part type 6
 
 **CONFIRMED payload:**
@@ -352,6 +354,7 @@ Current writer is safest with unchanged known-part payload sizes. Adding/removin
 7. Validate payload shape.
 8. Require one unambiguous Area.
 9. Decode known parts only after validation.
+10. For read-only EDM/MAP import, accept 1–3 final opaque bytes only after `type=0, total_size=8` and only when the complete file is DWORD-aligned.
 10. Preserve all unknown data.
 ```
 
@@ -402,6 +405,7 @@ Never overwrite the only calibration/reference copy.
 - Starting Resource 8-byte stride + first 6 decoded bytes
 - conservative writer works on tested MAP and EDM
 - post-write checksum requirement
+- terminal `type=0 / size=8` followed by 1–3 opaque DWORD-alignment bytes in the two supplied EDM samples
 
 ### STRONG / continue testing
 - accessibility semantics for every object/state
@@ -440,6 +444,7 @@ The binary toolchain should maintain tests for:
 - no unintended output-size change
 - post-write checksum
 - byte-diff limited to intended encrypted parts + checksum
+- acceptance of 1/2/3-byte terminal DWORD padding and rejection without the terminal part
 - zero forbidden mountain 2×2 motifs on generated maps
 
 ## 19. Reference hierarchy

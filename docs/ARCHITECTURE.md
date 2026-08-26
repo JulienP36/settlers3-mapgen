@@ -1,6 +1,6 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current v1.8 runtime without redefining the validated generation rules. Before changing generation or binary-map behavior, read `references/SETTLERS3_PREGEN_READ_FIRST.md` and every reference it requires.
+This guide describes the current runtime without redefining the validated generation rules. v1.9 is dedicated primarily to replacing the historical compatibility structure with explicit responsibilities while preserving behavior. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
@@ -37,6 +37,16 @@ The current interface evolved incrementally and therefore retains a compatibilit
 5. `gui_v16_runtime.App` — binds the protected v1.5 generator and runtime resources.
 
 This structure is historical, not a recommendation to add another layer for every release. A future flattening must preserve behavior with tests before removing compatibility methods.
+
+Current restructuring hotspots measured at the start of v1.9:
+
+- `gui_v16.py`: about 3168 lines and most UI orchestration responsibilities;
+- `generator.py` and `engine.py`: about 776/770 lines, plus the protected
+  `generator_v15.py` compatibility/refinement layer;
+- versioned GUI inheritance and runtime shims that must be replaced by stable,
+  responsibility-based module names rather than another `gui_v17.py`.
+
+These measurements identify investigation targets, not pre-approved deletions.
 
 ## Main data flows
 

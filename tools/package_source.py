@@ -40,6 +40,7 @@ REQUIRED_SOURCE_PATHS = (
     "references/SETTLERS3_PREGEN_READ_FIRST.md",
     "references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md",
     "references/dev_notes/V1_8_DEVELOPMENT_LOG.md",
+    "references/dev_notes/V1_9_DEVELOPMENT_LOG.md",
 )
 
 FORBIDDEN_ARCHIVE_PARTS = {

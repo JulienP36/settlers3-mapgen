@@ -13,6 +13,32 @@ This file defines how the project is resumed, developed, validated, checkpointed
 
 Do not rely on conversation memory when the repository contains a newer canonical state.
 
+## Context and quota budget
+
+The repository is the canonical memory. Long conversations and old attached
+archives must not be used as a substitute for the current snapshot.
+
+- At session start, read only this workflow, the living snapshot and the exact
+  active TODO section. Open other references only when the touched subsystem
+  requires them.
+- Never search or replay old chats when the current repository already answers
+  the question. Ask for missing user evidence only when it is genuinely absent.
+- Prefer narrow `rg`/targeted ranges and summarized diagnostics. Do not dump
+  whole large files or unrestricted tool registries into the conversation.
+- During implementation, run focused tests. Run the complete pytest suite once
+  before a candidate, then the packaged/extracted self-test once. Repeat a full
+  suite only after code changed materially.
+- Do not rebuild, upload or preserve a new ZIP after every internal edit. Build
+  one archive for the candidate actually sent to Windows and one final archive
+  for a validated DEV checkpoint.
+- After every validated and published DEV checkpoint, refresh the living
+  snapshot and start the next substantial DEV in a fresh chat when practical.
+- Keep one active candidate sheet only. Consolidate it and remove it immediately
+  when the DEV is validated.
+- External LLM answers supplied by the owner are unverified research inputs.
+  Prefer one attached text/Markdown file per topic, extract only actionable
+  claims, and validate every claim against project evidence before adoption.
+
 ## Permanent branches
 - `main` = STABLE only.
 - `dev` = current development, avec publication des checkpoints **DEV complets uniquement** (`DEV_1`, `DEV_2`, etc.).

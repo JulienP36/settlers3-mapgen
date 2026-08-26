@@ -95,7 +95,7 @@ def test_source_zip_is_complete_clean_and_self_tests_after_extraction(tmp_path):
     )
     runtime_report = json.loads(result.stdout)
     assert runtime_report['status'] == 'PASS', runtime_report
-    assert runtime_report['app_version'] == '1.8 DEV_11'
+    assert runtime_report['app_version'] == '1.9 DEV_1'
 
 
 def test_publication_and_maintenance_docs_are_linked_and_packaged():

@@ -2,18 +2,21 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-26 — DEV_11 validée, passage en RC**
+> Dernière mise à jour : **2026-08-26 — v1.9 DEV_1 validée, restructuration suivante**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen`.
 - Branche de travail : `dev`.
-- Dernier checkpoint de développement : **v1.8 DEV_11**, validé et destiné à la branche `dev` sans suffixe de révision.
+- Dernier checkpoint de développement : **v1.9 DEV_1**, validé sous Windows et publiable sur `dev` sans suffixe de révision.
 - Dernière STABLE : **v1.7**, publiée sur `main`, tag `v1.7`, commit de promotion `780bc5e`.
 - **DEV_11 validée** : maintenance, ZIP source déterministe, documentation, README anglais, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de `V` terminés.
 - Validations : 231 tests pytest, autodiagnostic depuis le ZIP extrait, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; contrôles Windows R1 puis R2 validés.
 - Les candidates R1/R2 et le paquet `CAPTURE_ONLY` restent des artefacts locaux historiques. Aucune révision suffixée `R` n’est publiée ; la feuille de candidate roulante est retirée à la clôture.
-- Prochaine ligne de travail : **v1.8 RC** sur la branche `rc`, avec gel fonctionnel, packaging Windows portable et updater v2.
+- Réconciliation de branches terminée au commit `f56ee1a` : `dev` contient désormais `main` dans son ascendance sans modification de l’arbre DEV_11.
+- **v1.9 DEV_1 validée** : les deux EDM fautifs chargent sous Windows ; la candidate R1 est consolidée sans suffixe et sa feuille roulante retirée.
+- La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping vers la fin de la version.
+- La phase **v1.8 RC** reste différée pendant cette consolidation structurelle.
 
 ## 2. Socle validé à préserver
 
@@ -76,13 +79,24 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 
 ## 6. Problèmes connus et reports explicites
 
-### Priorité v1.9 DEV_1 — imports EDM partiellement défaillants
+### v1.9 DEV_1 — import EDM, Issue #4
 
-- Certains fichiers `.EDM` s’ouvrent correctement ; d’autres échouent.
-- Les `.MAP` et `.SAV` utilisés pendant le sanity check DEV_11_R1 fonctionnent.
-- Le défaut peut être ancien et devient urgent avant les tests contrôlés d’IDs de v1.9.
-- Conserver le futur screenshot utilisateur, les vrais fichiers concernés, leurs SHA-256 et le traceback complet.
-- Diagnostiquer en lecture seule ; ne pas inventer de structure binaire ni assouplir aveuglément les contrôles.
+- Deux vrais fichiers fautifs et le screenshot/traceback utilisateur ont été fournis.
+- Les deux sources sont en version 10 avec checksum exact et parties complètes.
+- Cause confirmée : après la partie terminale `type 0 / taille 8`, certains EDM conservent 1 à 3 octets opaques afin d’aligner la taille du fichier sur un DWORD.
+- Le lecteur accepte désormais uniquement ce cas borné ; une queue sans terminateur reste rejetée et le parseur de scaffolds/export reste strict.
+- Régressions automatisées : remplissages de 1, 2 et 3 octets, refus sans terminateur, import réel 256×256/20 départs et 768×768/10 départs.
+- Détails, hashes et offsets : `references/SETTLERS3_EDM_TERMINAL_PADDING_20260826.md`.
+- Validation Windows : les deux sources fautives chargent correctement. Issue #4 à fermer après publication du checkpoint final.
+
+### Restructuration v1.9 — périmètre actuel
+
+- `gui_v16.py` concentre environ 3168 lignes et trop de responsabilités.
+- La chaîne `gui.py → gui_v14.py → gui_v15.py → gui_v16.py` est un héritage à résorber, sans créer `gui_v17.py`.
+- `engine.py`, `generator.py` et `generator_v15.py` doivent être audités avant toute fusion/suppression ; le comportement et les hashes protégés restent la référence tant qu’une migration n’est pas explicitement validée.
+- Les petits modules ne sont pas mauvais par principe : fusionner seulement ceux qui représentent une abstraction artificielle ou dupliquée.
+- Commencer par inventaire des dépendances et tests de caractérisation, puis extractions mécaniques courtes à comportement constant.
+- Les réponses d’autres LLM seront reçues comme hypothèses complémentaires, tracées et vérifiées avant adoption.
 
 ### Limites non bloquantes
 
@@ -93,22 +107,22 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 
 ## 7. Suite de la roadmap
 
-- **RC v1.8** : gel des nouvelles fonctionnalités, mais corrections/polish/optimisation/documentation autorisés ; ZIP sources et ZIP Windows x64 portable séparés ; updater v2, SHA, rollback, préservation des settings et tests d’échec réseau/intégrité.
-- **v1.9** : d’abord corriger les imports EDM concernés, puis archéologie/Data Mapping, bornes Terrain/Object IDs, catégories runtime, couleurs effectives joueurs et tests contrôlés IDs 18/19.
+- **v1.9** : restructuration GUI puis audit des couches moteur/générateur et nettoyage des modules/tests/entrypoints ; Data Mapping seulement vers la fin.
+- **RC v1.8** : reste à planifier après cette correction urgente ; gel des nouvelles fonctionnalités, ZIP sources et Windows x64 portable, updater v2, SHA, rollback et préservation des settings.
 - **v1.10** : audit seed/RNG et diversité morphologique, détection objective des doublons/rotations, puis Continental multi-tailles 384 → 448 → 512 → 576 → 640 → 704 → 768.
 - Après Continental : Large Islands, puis Small Islands.
 - Comparaison multi-cartes 3+, Modifiers et éditeur intégré restent prévus plus tard sans numéro prématuré.
 
 ## 8. Prochaine action
 
-1. Créer/actualiser la branche `rc` depuis le checkpoint DEV_11 validé.
-2. Geler les nouvelles fonctionnalités tout en autorisant corrections, polish, optimisation et documentation.
-3. Construire séparément le ZIP sources et le ZIP Windows x64 portable `onedir`.
-4. Finaliser et tester l’updater v2, l’intégrité SHA-256, la préservation des settings et le rollback.
+1. Publier le checkpoint final `v1.9 DEV_1` sur `dev` et fermer l’Issue #4.
+2. Commencer la restructuration par un inventaire statique des responsabilités/dépendances et des tests de caractérisation, sans déplacer de code au premier passage.
+3. Proposer la première extraction GUI cohérente avec son contrat et sa checklist Windows avant implémentation.
+4. Reporter le Data Mapping vers les dernières DEV de v1.9.
 
 ## 9. Procédure de reprise
 
-1. Vérifier que `dev` contient le checkpoint final `DEV_11`, puis travailler sur `rc` pour la phase Release Candidate.
+1. Vérifier que `dev` contient le checkpoint final `v1.9 DEV_1` après publication.
 2. Lire `PROJECT_WORKFLOW.md`.
 3. Lire ce snapshot.
 4. Lire `TODO_MAPGEN.md`, puis `DEV_CANDIDATE_NOTES.md` si une candidate locale existe.

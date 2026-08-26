@@ -35,7 +35,15 @@ def checksum(buf:bytes|bytearray)->int:
         c=((c>>31)|((((c<<1)&0xffffffff)^v)&0xffffffff))&0xffffffff
     return c
 
-def parse_parts(path:Path|str):
+def parse_parts(path:Path|str, *, allow_terminal_padding:bool=False):
+    """Parse sequential EDM/MAP parts.
+
+    Some editor-written EDM files append one to three opaque bytes after the
+    terminal ``type=0, total_size=8`` part so the complete file ends on a
+    DWORD boundary.  Import readers may accept that confirmed file-level
+    padding.  Writers keep the historical strict default so an unknown tail is
+    never discarded while rebuilding a scaffold.
+    """
     b=Path(path).read_bytes(); version=struct.unpack_from('<I',b,4)[0]
     off=8; parts=[]
     while off+8<=len(b):
@@ -43,7 +51,12 @@ def parse_parts(path:Path|str):
         if total<8 or off+total>len(b): raise ValueError(f'Invalid part at {off}')
         parts.append([t,decrypt(b[off+8:off+total],t)])
         off += total
-    if off!=len(b): raise ValueError('Part scan did not end at EOF')
+    if off!=len(b):
+        tail=b[off:]
+        terminal=bool(parts and parts[-1][0]==0 and len(parts[-1][1])==0)
+        aligned=len(b)%4==0
+        if not (allow_terminal_padding and terminal and aligned and 1<=len(tail)<=3):
+            raise ValueError('Part scan did not end at EOF')
     return version,parts
 
 def _goods_default_for_state(state:MapState)->int:
@@ -100,7 +113,7 @@ def export_with_scaffold(state:MapState, scaffold:Path|str, output:Path|str):
 
 
 def read_area(path:Path|str)->MapState:
-    version,parts=parse_parts(path)
+    version,parts=parse_parts(path,allow_terminal_padding=True)
     for t,p in parts:
         if t==6 and len(p)>=4:
             side=struct.unpack_from('<I',p,0)[0]
@@ -111,7 +124,7 @@ def read_area(path:Path|str)->MapState:
     raise ValueError('Compatible Area part not found')
 def read_starts(path:Path|str)->list[tuple[int,int]]:
     try:
-        _,parts=parse_parts(path)
+        _,parts=parse_parts(path,allow_terminal_padding=True)
         for t,p in parts:
             if t==2 and len(p)>=45 and len(p)%45==0:
                 out=[]

@@ -30,17 +30,32 @@ Règle absolue : ne pas modifier le moteur v1.5 ni ses fichiers protégés sans 
 - [ ] Tester installation propre, mise à jour, absence réseau, téléchargement interrompu, mauvais checksum, rollback et conservation des préférences.
 - [ ] Mettre à jour README, notes, manifests, validation et snapshot avant promotion.
 
-## v1.9 — Archéologie / Data Mapping
+## v1.9 — Restructuration interne, puis Data Mapping
 
 ### DEV_1 — priorité urgente
 
-- [ ] **Corriger les imports `.EDM` partiellement défaillants** : certains fichiers s’ouvrent, d’autres non ; `.MAP` et `.SAV` testés fonctionnent.
-- [ ] Conserver le screenshot utilisateur, les vrais fichiers concernés, leurs SHA-256, provenance et tracebacks complets.
-- [ ] Comparer au moins un EDM fonctionnel structurellement proche ; diagnostic d’abord en lecture seule.
-- [ ] Identifier la régression ou l’hypothèse de format fautive, puis ajouter une régression minimale fondée uniquement sur des octets confirmés.
-- [ ] Terminer ce correctif avant les expériences contrôlées d’IDs.
+- [x] **Corriger les imports `.EDM` partiellement défaillants** : certains fichiers s’ouvraient, d’autres non ; `.MAP` et `.SAV` restent fonctionnels.
+- [x] Conserver le screenshot utilisateur, les vrais fichiers concernés, leurs SHA-256, provenance et tracebacks complets dans l’Issue #4 et la référence diagnostique.
+- [x] Comparer les deux EDM fautifs aux EDM fonctionnels du dépôt ; diagnostic effectué en lecture seule.
+- [x] Cause identifiée : 1–3 octets opaques après la partie terminale `type 0 / taille 8`, pour alignement DWORD du fichier ; checksums sources valides.
+- [x] Ajouter une régression minimale couvrant les trois longueurs de remplissage et le refus des queues non terminales.
+- [x] Validation Windows des deux fichiers réels dans `v1.9 DEV_1_R1` ; Issue #4 prête à fermer.
+- [x] Correctif terminé avant les expériences contrôlées d’IDs.
 
-### Mapping
+### Restructuration — priorité principale
+
+- [ ] Cartographier les responsabilités, dépendances, imports, tailles, points d’entrée et tests avant tout déplacement.
+- [ ] Ajouter des tests de caractérisation autour des comportements GUI encore protégés seulement par l’héritage historique.
+- [ ] Décomposer `gui_v16.py` (actuellement ~3168 lignes) par responsabilités cohérentes : tables/i18n/thèmes, fenêtres et contrôleurs, historique/comparaison, Batch, aperçu, paramètres/raccourcis et orchestration principale.
+- [ ] Résorber la chaîne historique `gui.py → gui_v14.py → gui_v15.py → gui_v16.py` sans créer une nouvelle couche versionnée.
+- [ ] Auditer `engine.py`, `generator.py` et `generator_v15.py` : documenter les frontières réelles, supprimer les doublons seulement après preuve, préserver le comportement v1.5 et garder des wrappers de compatibilité si nécessaire.
+- [ ] Auditer les petits modules pour fusionner uniquement les abstractions artificielles ; conserver les modules qui portent une vraie responsabilité indépendante.
+- [ ] Nettoyer les noms de tests figés sur d’anciennes DEV et organiser les tests par sous-système sans perdre de couverture.
+- [ ] Simplifier les entrypoints/runtime shims, imports et documentation d’architecture après stabilisation de la nouvelle structure.
+- [ ] Procéder par extractions mécaniques courtes, avec comportement inchangé, tests ciblés puis validation complète à chaque DEV terminée.
+- [ ] Intégrer les apports d’autres LLM comme hypothèses traçables et non comme vérité de référence.
+
+### Data Mapping — fin de v1.9
 
 - [ ] Déterminer les bornes réellement valides des Terrain IDs et Object IDs ; `0–255` reste une grille technique, pas une borne démontrée.
 - [ ] Compléter `SETTLERS3_TERRAIN_IDS_REFERENCE.md` et `SETTLERS3_OBJECT_IDS_REFERENCE.md` sans inventer les inconnus.

@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.9 DEV_1 — 2026-08-26
+
+- Consolidates the Windows-validated EDM terminal-padding fix from R1 into the publishable DEV_1 checkpoint without a revision suffix.
+- Confirms both supplied sources load in the Windows GUI: 256×256/20 starts and 768×768/10 starts.
+- Requalifies v1.9 around behavior-preserving internal restructuring first, with Data Mapping moved toward the end of the version.
+- Adds an explicit context/quota budget to the project workflow: targeted reads and tests, bounded tool output, one candidate archive per validation and fresh chats after validated DEV checkpoints.
+- Records the initial structural hotspots without pre-approving deletions: the 3168-line GUI monolith, historical GUI inheritance chain and three-layer engine/generator lineage.
+- Keeps the v1.5 engine and all protected assets unchanged.
+
+## v1.9 DEV_1_R1 — 2026-08-26
+
+- Fixes partial `.EDM` import failures tracked by Issue #4 without changing the protected generation engine v1.5.
+- Recognizes the confirmed file-level DWORD alignment used by two real editor-written EDM files: one to three opaque bytes may follow the terminal `type 0 / total size 8` part.
+- Keeps scaffold parsing strict so an export reconstruction can never silently discard an unknown source tail.
+- Adds regressions for all three valid padding lengths and rejects tails without the confirmed terminal part.
+- Records both source files, SHA-256 values, exact part boundaries, valid checksums and the original traceback in a dedicated diagnostic reference.
+- Repairs the mandatory PREGEN index after an obsolete SAV v2 reference had survived the documentation consolidation.
+- Candidate remains local pending Windows validation on the two supplied EDM files.
+
 ## v1.8 DEV_11 — 2026-08-26
 
 - Adds a reviewed English project entry point linked bidirectionally with the historical French README.
