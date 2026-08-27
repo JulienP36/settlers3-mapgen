@@ -43,10 +43,10 @@ jobs:
       - name: Upload Windows candidate
         uses: actions/upload-artifact@v4
         with:
-          name: SETTLERS3_MAPGEN_V1_8_DEV_9_R2_WINDOWS_X64
+          name: Settlers3MapGen-Windows-DEV-candidate
           path: |
-            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R2_WINDOWS_X64.zip
-            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R2_WINDOWS_X64.zip.sha256
-            artifacts/SETTLERS3_MAPGEN_V1_8_DEV_9_R2_SELFTEST.json
+            artifacts/SETTLERS3_MAPGEN_*_WINDOWS_X64.zip
+            artifacts/SETTLERS3_MAPGEN_*_WINDOWS_X64.zip.sha256
+            artifacts/SETTLERS3_MAPGEN_*_WINDOWS_X64_SELFTEST.json
           if-no-files-found: error
           compression-level: 0

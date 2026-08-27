@@ -1,6 +1,6 @@
 # Windows standalone build
 
-DEV_9_R2 uses PyInstaller 6.22.2 in `onedir` mode. The resulting folder is autonomous: users do not need Python, pip or the source tree.
+The build uses PyInstaller 6.22.2 in `onedir` mode. The resulting folder is autonomous: users do not need Python, pip or the source tree.
 
 ## Reproducible build
 
@@ -10,7 +10,7 @@ From a Windows x64 checkout with Python 3.12:
 build\windows\build_windows.bat
 ```
 
-The script installs runtime/build dependencies, creates the folder, runs the packaged executable's startup/resource self-test and writes the ZIP plus its SHA-256 file under `artifacts/`. Git attributes force the protected text resources to retain their repository LF bytes on Windows; the workflow verifies all five protected hashes before building, and the packaged self-test imports the normal GUI runtime before rechecking the three protected resources actually bundled.
+The script installs runtime/build dependencies, derives archive and Windows metadata from the runtime version, creates the folder, runs the packaged executable's startup/resource self-test and writes the ZIP plus its SHA-256 file under `artifacts/`. Git attributes force the protected text resources to retain their repository LF bytes on Windows; the workflow verifies all six protected hashes before building, and the packaged self-test imports the normal GUI runtime before rechecking the three protected resources actually bundled.
 
 An unsigned neutral executable is intentional until the owner supplies the final handmade pixel-art `.ico` at `assets/Settlers3MapGen.ico`. The spec automatically adopts that file when present.
 

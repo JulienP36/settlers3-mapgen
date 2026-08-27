@@ -7,15 +7,23 @@ $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $DistRoot = Join-Path $ProjectRoot 'dist\Settlers3MapGen'
 $WorkRoot = Join-Path $ProjectRoot 'build\windows\work'
 $ArtifactRoot = Join-Path $ProjectRoot 'artifacts'
-$ZipPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R2_WINDOWS_X64.zip'
-$ReportPath = Join-Path $ArtifactRoot 'SETTLERS3_MAPGEN_V1_8_DEV_9_R2_SELFTEST.json'
 
 Set-Location $ProjectRoot
+
+$AppVersion = python -c "from s3mapgen.version import APP_VERSION; print(APP_VERSION)"
+if ($LASTEXITCODE -ne 0) { throw 'Could not read the application version.' }
+$ArtifactVersion = $AppVersion -replace '[^A-Za-z0-9]+', '_'
+$ArtifactStem = "SETTLERS3_MAPGEN_V$ArtifactVersion`_WINDOWS_X64"
+$ZipPath = Join-Path $ArtifactRoot ($ArtifactStem + '.zip')
+$ReportPath = Join-Path $ArtifactRoot ($ArtifactStem + '_SELFTEST.json')
 
 if ($InstallDependencies) {
     python -m pip install --upgrade pip
     python -m pip install -r requirements.txt -r build\windows\requirements-build.txt
 }
+
+python build\windows\generate_version_info.py
+if ($LASTEXITCODE -ne 0) { throw 'Windows version metadata generation failed.' }
 
 if (Test-Path $DistRoot) { Remove-Item -LiteralPath $DistRoot -Recurse -Force }
 if (Test-Path $WorkRoot) { Remove-Item -LiteralPath $WorkRoot -Recurse -Force }

@@ -64,5 +64,26 @@ def test_windows_workflow_runs_binary_self_test_before_upload():
     assert '-Wait' in build_script
 
 
+def test_windows_build_uses_current_protected_paths_and_version_metadata():
+    protected_script=(ROOT/'build/windows/verify_protected_hashes.ps1').read_text(encoding='utf-8')
+    for relative_path, sha256 in (
+        ('s3mapgen/generation/base.py', '5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b'),
+        ('s3mapgen/generation/continental.py', '57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86'),
+        ('s3mapgen/generation/validated.py', 'aec27207b47d09134a5205a08d72a9b5e759f947d87080922dd61251c0c7ccce'),
+    ):
+        assert relative_path in protected_script
+        assert sha256 in protected_script
+    assert 'generator_v15.py' not in protected_script
+    assert 's3mapgen/generator.py' not in protected_script
+    assert 'PASS 6/6' in protected_script
+
+    build_script=(ROOT/'build/windows/build_windows.ps1').read_text(encoding='utf-8')
+    metadata_script=(ROOT/'build/windows/generate_version_info.py').read_text(encoding='utf-8')
+    assert 'generate_version_info.py' in build_script
+    assert 'APP_VERSION' in build_script
+    assert 'WINDOWS_FILE_VERSION' in metadata_script
+    assert 'V1_8_DEV_9_R2' not in build_script
+
+
 def test_runtime_report_is_json_serializable():
     json.dumps(inspect_package())

@@ -1,4 +1,4 @@
-SETTLERS III MAPGEN — v1.8 DEV_9_R2 — WINDOWS TEST CANDIDATE
+SETTLERS III MAPGEN — WINDOWS TEST CANDIDATE
 
 FR
 1. Décompressez entièrement le ZIP dans un dossier normal.
@@ -8,7 +8,8 @@ FR
 5. Les préférences restent dans %APPDATA%\Settlers3MapGen\settings.json.
 
 Cette candidate n'est pas signée numériquement : Windows SmartScreen peut demander
-une confirmation au premier lancement. L'updater pour l'exécutable est prévu en DEV_10.
+une confirmation au premier lancement. L'updater pour l'exécutable est prévu
+pour une future RC/STABLE, après la correction du générateur.
 
 EN
 1. Fully extract the ZIP to a normal folder.
@@ -18,4 +19,5 @@ EN
 5. Preferences remain in %APPDATA%\Settlers3MapGen\settings.json.
 
 This test candidate is not digitally signed, so Windows SmartScreen may ask for
-confirmation on first launch. The executable updater is planned for DEV_10.
+confirmation on first launch. The executable updater is planned for a future
+RC/STABLE after the generator correction.

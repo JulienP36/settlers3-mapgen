@@ -18,13 +18,15 @@
 - **v1.9 DEV_2 validée** : l’ancien monolithe et les modules versionnés sont
   remplacés par les couches `application/`, `generation/` et `map_data/`, avec
   contrôleurs par sous-système, fondation Tk unique et un seul factory moteur.
-  `main_window.py` passe de 3168 à 372 lignes ; 244 tests actuels passent, sans
+  `main_window.py` passe de 3168 à 372 lignes ; 245 tests actuels passent, sans
   doublon exact ni nom de révision historique. Les petits modules/entrypoints
   restants portent tous une responsabilité justifiée. `AGENTS.md` devient
   l’entrée courte auto-découverte pour limiter le contexte répété.
 - L’audit post-publication des 53 références conserve les documents spécialisés
   et preuves STABLE, retire deux reprises intégralement remplacées, compacte le
   journal v1.9 et verrouille les chemins du routeur PREGEN par un test.
+- Le contrôle Windows CI vérifie les six chemins protégés actuels et génère
+  désormais le nom du paquet et les métadonnées `.exe` depuis la version runtime.
 - La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping vers la fin de la version.
 - La v1.8 restera une série de checkpoints DEV sans RC ni Release : aucune
   nouvelle publication STABLE n’est prévue avant la correction de la génération

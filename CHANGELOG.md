@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.9 post-DEV_2 Windows CI repair — 2026-08-27
+
+- Updates the Windows protected-hash gate from the removed generator paths to
+  the six current canonical protected files.
+- Derives Windows archive names and executable version metadata from the
+  runtime version, eliminating the stale `DEV_9_R2` package label.
+- Adds a regression contract for the CI paths and metadata generator.
+
 ## v1.9 post-DEV_2 reference audit — 2026-08-27
 
 - Removes two unlinked documents fully superseded by the published architecture
