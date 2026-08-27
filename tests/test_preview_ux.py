@@ -1,7 +1,7 @@
 import numpy as np
-from s3mapgen.model import MapState
-from s3mapgen.constants import GRASS
-from s3mapgen.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, _synthetic_initial_claims, compose_start_markers, initial_territory_cells, initial_territory_boundary, render
+from s3mapgen.map_data.model import MapState
+from s3mapgen.map_data.constants import GRASS
+from s3mapgen.application.rendering.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, _synthetic_initial_claims, compose_start_markers, initial_territory_cells, initial_territory_boundary, render
 
 def _state(side=128):
     s=MapState.empty(side);s.terrain[:]=GRASS;s.height[:]=np.arange(side,dtype=np.uint8)[:,None];s.resources[8:12,8:12]=0x1f;s.claim[4:20,4:20]=0;return s

@@ -12,15 +12,15 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from s3mapgen.app_paths import (  # noqa: E402
+from s3mapgen.application.paths import (  # noqa: E402
     EDM_SCAFFOLD,
     LEGACY_PROFILE,
     LIBRARY,
     UPGRADED_PROFILE,
     UPGRADED_REFERENCE,
 )
-from s3mapgen.binary import checksum, export_with_scaffold  # noqa: E402
-from s3mapgen.generator_v15 import MapGenerator  # noqa: E402
+from s3mapgen.map_data.binary import checksum, export_with_scaffold  # noqa: E402
+from s3mapgen.generation import MapGenerator  # noqa: E402
 
 
 generator = MapGenerator(

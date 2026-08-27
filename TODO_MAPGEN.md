@@ -20,7 +20,12 @@ Règle absolue : ne pas modifier le moteur v1.5 ni ses fichiers protégés sans 
 - [x] Snapshot final, journal et changelog consolidés ; feuille de candidate retirée.
 - [x] Checkpoint **DEV_11** sans suffixe prêt pour publication sur `dev` ; aucune candidate `R` publiée.
 
-## v1.8 RC
+## Prochaine RC/STABLE — après v1.10
+
+La v1.8 reste une série de checkpoints DEV : aucune Release ne sera publiée
+tant que la génération réelle et la diversité morphologique ne sont pas
+corrigées en v1.10. Les tâches ci-dessous sont conservées pour la prochaine
+RC, quel que soit son numéro final.
 
 - [ ] Geler les nouvelles fonctionnalités ; corrections, polish, optimisation et documentation restent autorisés.
 - [ ] Produire deux artefacts séparés : ZIP sources/Python et ZIP Windows x64 portable `onedir`, sans installateur.
@@ -44,16 +49,31 @@ Règle absolue : ne pas modifier le moteur v1.5 ni ses fichiers protégés sans 
 
 ### Restructuration — priorité principale
 
-- [ ] Cartographier les responsabilités, dépendances, imports, tailles, points d’entrée et tests avant tout déplacement.
-- [ ] Ajouter des tests de caractérisation autour des comportements GUI encore protégés seulement par l’héritage historique.
-- [ ] Décomposer `gui_v16.py` (actuellement ~3168 lignes) par responsabilités cohérentes : tables/i18n/thèmes, fenêtres et contrôleurs, historique/comparaison, Batch, aperçu, paramètres/raccourcis et orchestration principale.
-- [ ] Résorber la chaîne historique `gui.py → gui_v14.py → gui_v15.py → gui_v16.py` sans créer une nouvelle couche versionnée.
-- [ ] Auditer `engine.py`, `generator.py` et `generator_v15.py` : documenter les frontières réelles, supprimer les doublons seulement après preuve, préserver le comportement v1.5 et garder des wrappers de compatibilité si nécessaire.
-- [ ] Auditer les petits modules pour fusionner uniquement les abstractions artificielles ; conserver les modules qui portent une vraie responsabilité indépendante.
-- [ ] Nettoyer les noms de tests figés sur d’anciennes DEV et organiser les tests par sous-système sans perdre de couverture.
-- [ ] Simplifier les entrypoints/runtime shims, imports et documentation d’architecture après stabilisation de la nouvelle structure.
+- [x] Cartographier les responsabilités, dépendances, imports, tailles, points d’entrée et tests avant tout déplacement.
+- [x] Ajouter des tests de caractérisation autour des comportements GUI déplacés hors de l’héritage historique.
+- [x] Décomposer `application/main_window.py` par responsabilités cohérentes : Viewer, Analyse, Exports, Imports, Raccourcis/Aide, Batch, Historique, Settings, Theme, Langue, Tâches et workflow applicatif de génération sont isolés ; le fichier restant porte le shell cohérent.
+- [x] Supprimer les noms et entrypoints GUI versionnés sans créer une nouvelle couche : la chaîne historique vit désormais sous des noms de responsabilité dans `application/`.
+- [x] Déplacer les trois couches moteur dans `generation/` sous des noms stables et prouver l’équivalence déterministe Legacy/Upgraded ; la suppression progressive de l’héritage interne reste à faire.
+- [x] Auditer les petits modules et entrypoints : aucun fragment artificiel à
+  fusionner ; les modules courts restants portent une frontière, une API de
+  paquet, un catalogue ou une responsabilité indépendante.
+- [x] Nettoyer les noms de fichiers de tests figés sur d’anciennes DEV et organiser les tests applicatifs par sous-système sans perdre la couverture comportementale utile.
+- [x] Auditer la pertinence de la suite après R7 : supprimer sept doublons ou
+  gardes obsolètes, neutraliser les versions historiques et interdire leur
+  retour dans les noms de tests.
+- [ ] Remplacer progressivement les assertions GUI fondées sur le texte source
+  par des contrats comportementaux ou de widgets ; commencer par Batch et
+  Historique, qui concentrent la majorité de ces caractérisations.
+- [x] Simplifier la chaîne des fenêtres et le runtime : une fondation Tk nommée, un `MainWindow` composé et un seul point de construction du générateur dans `runtime.App`.
+- [x] À la clôture de la restructuration, auditer le coût de contexte : raccourcir
+  les instructions projet, supprimer les doublons/états obsolètes et router
+  chaque tâche vers les seules références nécessaires.
 - [ ] Procéder par extractions mécaniques courtes, avec comportement inchangé, tests ciblés puis validation complète à chaque DEV terminée.
 - [ ] Intégrer les apports d’autres LLM comme hypothèses traçables et non comme vérité de référence.
+- [ ] Auditer toutes les références après publication de DEV_2 : conserver les
+  références spécialisées importantes, compacter les répétitions, puis
+  fusionner/renommer/supprimer uniquement avec preuve d’obsolescence et liens
+  entrants migrés.
 
 ### Data Mapping — fin de v1.9
 

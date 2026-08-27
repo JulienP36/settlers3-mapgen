@@ -1,2 +1,2 @@
-from s3mapgen.cli import main
+from s3mapgen.application.cli import main
 if __name__=='__main__':main()

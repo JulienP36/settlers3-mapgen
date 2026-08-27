@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from s3mapgen.binary import checksum, encrypt, parse_parts, read_area, read_starts
+from s3mapgen.map_data.binary import checksum, encrypt, parse_parts, read_area, read_starts
 
 
 def _part(part_type: int, payload: bytes = b"") -> bytes:

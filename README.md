@@ -180,6 +180,7 @@ La hiérarchie de validation du projet reste : parser/checksum → éditeur → 
 
 Les références principales sont dans `references/`. En particulier :
 
+- `AGENTS.md` — consignes courtes auto-découvertes pour reprendre le travail ;
 - `SETTLERS3_PREGEN_READ_FIRST.md` — point d'entrée obligatoire avant toute modification/génération ;
 - `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` — règles canoniques ;
 - `SETTLERS3_UPGRADED_RULE_MATRIX_v1.md` — correspondance règles Upgraded / implémentation / validators ;

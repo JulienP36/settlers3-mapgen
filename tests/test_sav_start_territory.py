@@ -1,5 +1,5 @@
 import struct
-from s3mapgen.binary import _extract_sav_starts_from_player_block
+from s3mapgen.map_data.binary import _extract_sav_starts_from_player_block
 
 def test_extract_original_starts_from_sav_player_block():
     b=bytearray(96+20*328)

@@ -2,21 +2,30 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-26 — v1.9 DEV_1 validée, restructuration suivante**
+> Dernière mise à jour : **2026-08-27 — v1.9 DEV_2 validée, prête pour publication sur `dev`**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen`.
 - Branche de travail : `dev`.
-- Dernier checkpoint de développement : **v1.9 DEV_1**, validé sous Windows et publiable sur `dev` sans suffixe de révision.
+- Dernier checkpoint de développement : **v1.9 DEV_2**, validé sous Windows et prêt pour publication sur `dev` sans suffixe de révision.
 - Dernière STABLE : **v1.7**, publiée sur `main`, tag `v1.7`, commit de promotion `780bc5e`.
 - **DEV_11 validée** : maintenance, ZIP source déterministe, documentation, README anglais, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de `V` terminés.
 - Validations : 231 tests pytest, autodiagnostic depuis le ZIP extrait, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; contrôles Windows R1 puis R2 validés.
 - Les candidates R1/R2 et le paquet `CAPTURE_ONLY` restent des artefacts locaux historiques. Aucune révision suffixée `R` n’est publiée ; la feuille de candidate roulante est retirée à la clôture.
 - Réconciliation de branches terminée au commit `f56ee1a` : `dev` contient désormais `main` dans son ascendance sans modification de l’arbre DEV_11.
 - **v1.9 DEV_1 validée** : les deux EDM fautifs chargent sous Windows ; la candidate R1 est consolidée sans suffixe et sa feuille roulante retirée.
+- **v1.9 DEV_2 validée** : l’ancien monolithe et les modules versionnés sont
+  remplacés par les couches `application/`, `generation/` et `map_data/`, avec
+  contrôleurs par sous-système, fondation Tk unique et un seul factory moteur.
+  `main_window.py` passe de 3168 à 372 lignes ; 243 tests actuels passent, sans
+  doublon exact ni nom de révision historique. Les petits modules/entrypoints
+  restants portent tous une responsabilité justifiée. `AGENTS.md` devient
+  l’entrée courte auto-découverte pour limiter le contexte répété.
 - La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping vers la fin de la version.
-- La phase **v1.8 RC** reste différée pendant cette consolidation structurelle.
+- La v1.8 restera une série de checkpoints DEV sans RC ni Release : aucune
+  nouvelle publication STABLE n’est prévue avant la correction de la génération
+  réelle et de la diversité morphologique en v1.10.
 
 ## 2. Socle validé à préserver
 
@@ -34,8 +43,9 @@
 
 ### Fichiers protégés
 
-- `s3mapgen/generator_v15.py` — `3bbc9180719ebfae2bc37b29d81025731dc821e861c7b0e66894f7460f296090`
-- `s3mapgen/generator.py` — `1b73f2536c6db75dfb3856a1667d0b619d3462d9c0efa14f406c78a05556be77`
+- `s3mapgen/generation/base.py` — `5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b`
+- `s3mapgen/generation/continental.py` — `57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86`
+- `s3mapgen/generation/validated.py` — `aec27207b47d09134a5205a08d72a9b5e759f947d87080922dd61251c0c7ccce`
 - `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
 - `config/upgraded_768_v1.json` — `11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`
@@ -91,9 +101,20 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 
 ### Restructuration v1.9 — périmètre actuel
 
-- `gui_v16.py` concentre environ 3168 lignes et trop de responsabilités.
-- La chaîne `gui.py → gui_v14.py → gui_v15.py → gui_v16.py` est un héritage à résorber, sans créer `gui_v17.py`.
-- `engine.py`, `generator.py` et `generator_v15.py` doivent être audités avant toute fusion/suppression ; le comportement et les hashes protégés restent la référence tant qu’une migration n’est pas explicitement validée.
+- La chaîne de noms versionnés puis la chaîne temporaire `base/settings/export`
+  ont disparu. `ShellWindow` est l’unique fondation Tk, `MainWindow` compose les
+  contrôleurs et `runtime.App` injecte seul le moteur.
+- Batch et Historique possèdent chacun un paquet et un contrôleur autonome ;
+  leurs mixins documentent le contrat d’état hôte pendant la transition.
+- Les trois couches moteur vivent sous `generation/base.py`, `continental.py`
+  et `validated.py`. Une matrice Legacy 4P / Upgraded 20P confirme une identité
+  exacte des octets, départs, validations et journaux par rapport à R3.
+- `application/main_window.py` contient environ 370 lignes cohérentes de
+  construction responsive, feedback et initialisation d’état.
+- La racine `s3mapgen/` ne contient plus que `__init__.py` et `version.py`.
+  `map_data/` porte uniquement le modèle, les constantes, HEX6 et les formats
+  binaires partagés. Des tests interdisent `map_data → application/generation`
+  et `generation → application`.
 - Les petits modules ne sont pas mauvais par principe : fusionner seulement ceux qui représentent une abstraction artificielle ou dupliquée.
 - Commencer par inventaire des dépendances et tests de caractérisation, puis extractions mécaniques courtes à comportement constant.
 - Les réponses d’autres LLM seront reçues comme hypothèses complémentaires, tracées et vérifiées avant adoption.
@@ -108,24 +129,28 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 ## 7. Suite de la roadmap
 
 - **v1.9** : restructuration GUI puis audit des couches moteur/générateur et nettoyage des modules/tests/entrypoints ; Data Mapping seulement vers la fin.
-- **RC v1.8** : reste à planifier après cette correction urgente ; gel des nouvelles fonctionnalités, ZIP sources et Windows x64 portable, updater v2, SHA, rollback et préservation des settings.
+- **Prochaine RC/STABLE** : seulement après la correction du générateur en
+  v1.10 ; elle reprendra alors le portable Windows, l’updater, les checksums et
+  la préservation des settings.
 - **v1.10** : audit seed/RNG et diversité morphologique, détection objective des doublons/rotations, puis Continental multi-tailles 384 → 448 → 512 → 576 → 640 → 704 → 768.
 - Après Continental : Large Islands, puis Small Islands.
 - Comparaison multi-cartes 3+, Modifiers et éditeur intégré restent prévus plus tard sans numéro prématuré.
 
 ## 8. Prochaine action
 
-1. Publier le checkpoint final `v1.9 DEV_1` sur `dev` et fermer l’Issue #4.
-2. Commencer la restructuration par un inventaire statique des responsabilités/dépendances et des tests de caractérisation, sans déplacer de code au premier passage.
-3. Proposer la première extraction GUI cohérente avec son contrat et sa checklist Windows avant implémentation.
-4. Reporter le Data Mapping vers les dernières DEV de v1.9.
+1. Commit/push du checkpoint `DEV_2` sur `dev`, puis fermer l’Issue #4.
+2. Auditer toutes les références : supprimer seulement les obsolètes prouvées,
+   compacter les répétitions et fusionner/renommer uniquement quand la
+   responsabilité et les informations importantes restent préservées.
+3. Poursuivre v1.9 par l’audit interne des couches de génération, sans modifier
+   le comportement protégé ; garder le Data Mapping vers les dernières DEV.
 
 ## 9. Procédure de reprise
 
-1. Vérifier que `dev` contient le checkpoint final `v1.9 DEV_1` après publication.
-2. Lire `PROJECT_WORKFLOW.md`.
-3. Lire ce snapshot.
-4. Lire `TODO_MAPGEN.md`, puis `DEV_CANDIDATE_NOTES.md` si une candidate locale existe.
-5. Consulter `references/dev_notes/V1_8_DEVELOPMENT_LOG.md` seulement pour l’historique accepté.
-6. Avant tout changement génération/format, lire `references/SETTLERS3_PREGEN_READ_FIRST.md` et ses références obligatoires.
-7. Mettre ce snapshot à jour après chaque DEV validée, chaque RC et chaque STABLE, avant le commit/package final correspondant.
+1. Lire `AGENTS.md`, puis `PROJECT_WORKFLOW.md` et ce snapshot.
+2. Lire uniquement la section active de `TODO_MAPGEN.md`, puis
+   `DEV_CANDIDATE_NOTES.md` si une candidate locale existe.
+3. Vérifier l’état réel de `dev`; ne consulter les journaux historiques que si
+   le snapshot ne suffit pas.
+4. Avant tout changement génération/format, suivre
+   `references/SETTLERS3_PREGEN_READ_FIRST.md`.

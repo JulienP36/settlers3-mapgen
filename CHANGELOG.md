@@ -1,5 +1,123 @@
 # Changelog
 
+## v1.9 DEV_2 — 2026-08-27
+
+- Consolidates the Windows-validated R2–R8 restructuring under the final
+  unsuffixed checkpoint.
+- Audits the post-restructuring test suite and removes seven duplicated or
+  obsolete tests while keeping every represented behavior covered.
+- Renames historical test functions by subsystem behavior and adds a contract
+  preventing revision-number test names from returning.
+- Replaces hard-coded old archive/title assertions with current version or
+  neutral package contracts.
+- Stops `ShellWindow` from constructing a disposable legacy header and hidden
+  progress bar before `MainWindow` builds the active controls.
+- Removes the obsolete task-dialog compatibility state and gives the remaining
+  overlay lifecycle its real name.
+- Leaves 243 passing cases with no historical test names or exact duplicate
+  bodies; the remaining source-shaped GUI characterization tests are tracked
+  for gradual behavioral replacement.
+- Confirms after a closing import/caller audit that the remaining short modules
+  own real package APIs, paths, profile loading, catalogues or subsystem
+  boundaries; no line-count-driven merge is performed.
+- Adds compact root `AGENTS.md` guidance, requires it in source archives and
+  reduces the recommended ChatGPT Project instruction to a repository pointer.
+- Keeps runtime behavior identical to the validated R8 candidate and changes
+  only version metadata, tests, documentation and packaging requirements.
+- Records that v1.8 remains DEV-only; the next RC/STABLE waits for the v1.10
+  generator morphology and diversity correction.
+
+## v1.9 DEV_2_R7 — 2026-08-26
+
+- Replaces the implicit `base_window → settings_window → export_window →
+  main_window` inheritance chain with one named `ShellWindow` foundation and
+  explicit feature controllers.
+- Removes the three obsolete window-layer files and the temporary generator
+  construction that occurred before the runtime injected the real engine.
+- Extracts import, task progress, application-level generation workflow,
+  settings, language switching and theme rendering into responsibility
+  packages; the strict engine remains exclusively under `generation/`.
+- Renames the composed GUI class to `MainWindow`; `application.runtime.App` is
+  now the sole public application composition root.
+- Reduces `application/main_window.py` from about 860 to about 400 lines while
+  preserving the complete behavioral suite and protected engine outputs.
+- Windows validation completed: the application and exercised functionality
+  remain operational; the final test-suite relevance audit now closes DEV_2.
+
+## v1.9 DEV_2_R6 — 2026-08-26
+
+- Extracts viewer interaction, statistics/graphs, map/statistics exports and
+  shortcuts/help from `application/main_window.py` into dedicated subsystem
+  controllers without changing their method bodies.
+- Moves shortcut normalization from the generic settings family into its own
+  `application/shortcuts/` package.
+- Reorganizes historical `test_v18_dev*` files by functional subsystem and
+  removes tests that required `main_window.py` to act as a compatibility
+  catalogue for unrelated modules.
+- Removes 48 obsolete imports and extraction gaps from the main window; its
+  size falls from about 1560 to about 860 lines while the complete behavioral
+  suite remains green.
+- Keeps the protected generation engine and binary-format code unchanged.
+  Windows behavior was validated by the project owner; this suffixed slice
+  remains local because DEV_2 continues.
+
+## v1.9 DEV_2_R5 — 2026-08-26
+
+- Classifies every runtime module under `application/`, `generation/` or the
+  deliberately shared `map_data/` lower layer; only package/version metadata
+  remains at the Python root.
+- Groups rendering, analysis, exports, settings, platform integration,
+  diagnostics and session state into named application families.
+- Moves modes, archetypes, profiles, rules and morphology into the strict
+  generation package without changing the validated pipeline.
+- Adds dependency-direction contracts and removes the obsolete statistics
+  compatibility facade.
+- Preserves exact R4 Legacy/Upgraded output identity. The owner validated the
+  application under Windows; the slice stays local because DEV_2 continues.
+
+## v1.9 DEV_2_R4 — 2026-08-26
+
+- Removes every active `gui_v*` and `generator_v*` filename in favor of stable
+  `application/` and `generation/` package boundaries.
+- Gives Batch and History/comparison their own subsystem packages and
+  behavior-preserving controller mixins.
+- Moves GUI/runtime, CLI, self-test, packaging and test imports to the new
+  canonical paths without a numbered compatibility facade.
+- Confirms identical generated map bytes, starts, validations and stage logs
+  against R3 for fixed Legacy 4P and Upgraded 20P references.
+- Windows behavior was validated by the project owner; further DEV_2 slices
+  will split viewer, analysis, exports, shortcuts/help and the remaining shell.
+
+## v1.9 DEV_2_R3 — 2026-08-26
+
+- Moves the complete UI translation/catalogue block out of `gui_v16.py` into
+  feature-scoped `ui/i18n` modules for shell, viewer, Batch, History, exports
+  and shortcuts.
+- Moves stable viewer option order and selector colors to
+  `ui/viewer/options.py` while preserving the temporary legacy `VIEWS` bridge.
+- Preserves all 22 compared catalogues exactly and adds module-ownership,
+  language-key, placeholder and option-order contracts.
+- Reduces `gui_v16.py` from 2982 to 2697 lines; Windows startup was validated
+  and DEV_2 continued without publishing the suffixed candidate.
+
+## v1.9 DEV_2_R2 — 2026-08-26
+
+- Starts the behavior-preserving GUI restructuring with stable `ui/theme`,
+  `ui/viewer` and `ui/widgets` package families.
+- Moves theme palettes, inspector labels, deterministic icons and
+  `ColorMenuSelect` out of `gui_v16.py` while keeping temporary compatibility
+  imports.
+- Adds mirrored UI tests and deterministic pixel-equivalence coverage; the
+  local candidate awaits Windows validation and is not publishable on `dev`.
+- Replaces rejected R1 after its Windows startup exposed a missing `ImageDraw`
+  import in the remaining theme-toggle drawing.
+- Restores the import, adds direct headless coverage of that path and introduces
+  a reproducible Ruff `F821` undefined-name gate for structural moves.
+- Uses a distinct `DEV_2_R2` version and archive root so cached R1 files cannot
+  be mistaken for the corrected candidate.
+- Windows functionality tested by the project owner is operational; the slice
+  is accepted locally and DEV_2 continues without publishing this suffix.
+
 ## v1.9 DEV_1 — 2026-08-26
 
 - Consolidates the Windows-validated EDM terminal-padding fix from R1 into the publishable DEV_1 checkpoint without a revision suffix.

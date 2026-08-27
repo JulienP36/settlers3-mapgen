@@ -1,4 +1,4 @@
-from s3mapgen.session_cache import SessionGenerationCache,GenerationCacheKey
+from s3mapgen.application.session.cache import SessionGenerationCache,GenerationCacheKey
 
 def key(i):return GenerationCacheKey(i,768,4,'upgraded','continental')
 def test_lru_hit_and_eviction():
@@ -7,7 +7,7 @@ def test_lru_hit_and_eviction():
 def test_cache_clear():
     c=SessionGenerationCache(8);c.put(key(1),'a');c.clear();assert len(c)==0
 
-from s3mapgen.session_cache import SessionStatsCache
+from s3mapgen.application.session.cache import SessionStatsCache
 
 class DummyState: pass
 

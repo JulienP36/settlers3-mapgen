@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ARCHIVE_TIMESTAMP = (2020, 1, 1, 0, 0, 0)
 
 REQUIRED_SOURCE_PATHS = (
+    "AGENTS.md",
     "run_gui.py",
     "run_gui.bat",
     "install_and_run.bat",
@@ -29,8 +30,14 @@ REQUIRED_SOURCE_PATHS = (
     "docs/screenshots/v1_8_statistics.png",
     "docs/screenshots/v1_8_charts.png",
     "docs/screenshots/v1_8_batch.png",
-    "s3mapgen/gui_v16_runtime.py",
-    "s3mapgen/generator_v15.py",
+    "s3mapgen/application/runtime.py",
+    "s3mapgen/application/diagnostics/package_runtime.py",
+    "s3mapgen/application/paths.py",
+    "s3mapgen/application/analysis/core.py",
+    "s3mapgen/application/ui/widgets/icons.py",
+    "s3mapgen/application/ui/i18n/shell.py",
+    "s3mapgen/generation/validated.py",
+    "s3mapgen/map_data/binary.py",
     "config/legacy_768_v1.json",
     "config/upgraded_768_v1.json",
     "data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz",

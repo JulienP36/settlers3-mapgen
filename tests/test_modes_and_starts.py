@@ -1,9 +1,9 @@
 import pytest
-from s3mapgen.app_paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY
-from s3mapgen.generator_v15 import MapGenerator
-from s3mapgen.rules import PIPELINE_STAGES
-from s3mapgen.modes import MODES
-from s3mapgen.archetypes import ARCHETYPES
+from s3mapgen.application.paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY
+from s3mapgen.generation import MapGenerator
+from s3mapgen.generation.rules import PIPELINE_STAGES
+from s3mapgen.generation.modes import MODES
+from s3mapgen.generation.archetypes import ARCHETYPES
 
 def gen():return MapGenerator(LEGACY_PROFILE,LIBRARY,UPGRADED_PROFILE,UPGRADED_REFERENCE)
 
@@ -27,7 +27,7 @@ def test_custom_still_fails_explicitly():
     with pytest.raises(NotImplementedError):gen().generate(4,2026081901,mode='custom',archetype='continental')
 
 def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal(upgraded4):
-    from s3mapgen.constants import SNOW,SNOW_TRANS
+    from s3mapgen.map_data.constants import SNOW,SNOW_TRANS
     import numpy as np
     snow=np.isin(upgraded4.state.terrain,[SNOW_TRANS,SNOW]);assert snow.any();assert np.all(upgraded4.state.accessibility[snow]==1)
     rules={v.rule_id:v for v in upgraded4.validations};assert rules['SNOW_ACCESS'].passed;assert rules['SWAMP_TRANSITIONS'].passed

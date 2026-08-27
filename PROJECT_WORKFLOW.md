@@ -15,8 +15,11 @@ Do not rely on conversation memory when the repository contains a newer canonica
 
 ## Context and quota budget
 
-The repository is the canonical memory. Long conversations and old attached
-archives must not be used as a substitute for the current snapshot.
+The repository is the canonical memory. `AGENTS.md` is the concise automatic
+entry point; this workflow owns the complete operational rules. Project-level
+ChatGPT instructions should point to these files instead of duplicating them.
+Long conversations and old attached archives must not substitute for the
+current snapshot.
 
 - At session start, read only this workflow, the living snapshot and the exact
   active TODO section. Open other references only when the touched subsystem
@@ -32,12 +35,18 @@ archives must not be used as a substitute for the current snapshot.
   one archive for the candidate actually sent to Windows and one final archive
   for a validated DEV checkpoint.
 - After every validated and published DEV checkpoint, refresh the living
-  snapshot and start the next substantial DEV in a fresh chat when practical.
+  snapshot and start the next distinct outcome in a fresh chat when practical.
 - Keep one active candidate sheet only. Consolidate it and remove it immediately
   when the DEV is validated.
 - External LLM answers supplied by the owner are unverified research inputs.
   Prefer one attached text/Markdown file per topic, extract only actionable
   claims, and validate every claim against project evidence before adoption.
+
+Recommended minimal ChatGPT Project instruction:
+
+> Répondre en français. Pour Settlers III MapGen, suivre `AGENTS.md`, puis le
+> workflow et le snapshot vivant qu'il désigne. La dernière instruction ou
+> validation explicite de l'utilisateur reste prioritaire.
 
 ## Permanent branches
 - `main` = STABLE only.
@@ -81,8 +90,9 @@ This standing authorization does **not** cover `main`, tags, GitHub Releases, fo
 
 ## Protected v1.5 baseline
 Do not alter these without an explicit generation-engine reason:
-- `s3mapgen/generator_v15.py` — `3bbc9180719ebfae2bc37b29d81025731dc821e861c7b0e66894f7460f296090`
-- `s3mapgen/generator.py` — `1b73f2536c6db75dfb3856a1667d0b619d3462d9c0efa14f406c78a05556be77`
+- `s3mapgen/generation/base.py` — `5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b`
+- `s3mapgen/generation/continental.py` — `57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86`
+- `s3mapgen/generation/validated.py` — `aec27207b47d09134a5205a08d72a9b5e759f947d87080922dd61251c0c7ccce`
 - `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
 - `config/upgraded_768_v1.json` — `11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`

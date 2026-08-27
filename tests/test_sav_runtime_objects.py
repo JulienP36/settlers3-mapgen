@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from s3mapgen.binary import encrypt, read_sav_state
+from s3mapgen.map_data.binary import encrypt, read_sav_state
 
 
 def _write_sav(tmp_path, cells):

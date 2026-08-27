@@ -103,6 +103,7 @@ French and English are the reviewed reference languages. German and Spanish were
 
 ## Technical documentation
 
+- [Concise contributor instructions](AGENTS.md)
 - [Project architecture](docs/ARCHITECTURE.md)
 - [Debugging and validation](docs/DEBUGGING.md)
 - [GitHub publication checklist](docs/GITHUB_PUBLICATION.md)

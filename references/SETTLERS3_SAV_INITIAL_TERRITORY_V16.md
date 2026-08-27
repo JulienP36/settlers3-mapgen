@@ -26,7 +26,7 @@ Analyse du corpus natif :
 - masque canonique : 3500 cellules ;
 - bord HEX6 : 210 cellules.
 
-Le masque exact est encodé dans `s3mapgen/preview.py` par 71 intervalles de lignes autour du start.
+Le masque exact est encodé dans `s3mapgen/application/rendering/preview.py` par 71 intervalles de lignes autour du start.
 
 ## Rendu
 
