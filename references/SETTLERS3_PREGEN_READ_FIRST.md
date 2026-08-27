@@ -2,14 +2,14 @@
 
 > **MANDATORY ENTRY POINT BEFORE EVERY MAP GENERATION, REGENERATION, PATCH OR EXPORT.**
 >
-> Project-wide workflow is defined in root `PROJECT_WORKFLOW.md` and current resumable state in `references/SETTLERS3_CURRENT_SNAPSHOT.md`.
+> Project-wide workflow is defined in root `../PROJECT_WORKFLOW.md` and current resumable state in `SETTLERS3_CURRENT_SNAPSHOT.md`.
 >
 > Do not generate a map from conversation memory alone.
 > Before generating, regenerating, patching or exporting map bytes, read the
 > canonical files below and reconcile the requested change against them.
 
 Reader-only parser/import changes that do not modify map bytes or the protected
-generation engine use a smaller route: read `PROJECT_WORKFLOW.md`, the living
+generation engine use a smaller route: read `../PROJECT_WORKFLOW.md`, the living
 snapshot, this index and the relevant EDM/MAP or SAV format reference. They do
 not require loading every morphology/resource/height reference.
 
@@ -42,18 +42,18 @@ not require loading every morphology/resource/height reference.
    - Original SAV calibration baseline and current canonical file-format reference.
    - Later runtime/start-territory findings are kept in `SETTLERS3_SAV_INITIAL_TERRITORY_V16.md` and the current reader implementation.
 
-8. `SETTLERS3_TODO_POSTCHECKPOINT_v4_LONGPLAY.md`
-   - Current unresolved work. A TODO must never silently override a validated rule.
+8. `../TODO_MAPGEN.md` — lire uniquement la section génération active.
+   - Roadmap vivante et travail non résolu. Un TODO ne remplace jamais une règle validée.
 
 ## B. Read when the feature is touched
 
 - Snow -> `SETTLERS3_SNOW_SUMMIT_REFERENCE_v1.md`
 - Continental quotas/profile -> `SETTLERS3_CONTINENTAL_PROFILE_REFERENCE_v1.md`
 - Native generator statistics / player scaling -> `SETTLERS3_NATIVE_GENERATOR_REFERENCE_v2.md`
-- River topology/length study -> `native_generator_rivers_starts_deep_dive_v4.txt`
-- Large Islands -> `SETTLERS3_LARGE_ISLANDS_PROFILE_REFERENCE_v1.md`
-- 21-SAV exact corpus validation -> `SETTLERS3_NATIVE_21_SAV_MANIFEST_SHA256.txt`
-- Recent long-game history -> `SETTLERS3_SNAPSHOT_20260818_LONGPLAY_V2.md`
+- River topology/length and player scaling -> `SETTLERS3_NATIVE_GENERATOR_REFERENCE_v2.md`
+- Large Islands -> section dédiée de `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` ; créer une référence de profil seulement au démarrage de cette implémentation.
+- 21-SAV corpus morphology -> `SETTLERS3_NATIVE_GENERATOR_REFERENCE_v2.md` et `SETTLERS3_NATIVE_MORPHOLOGY_REFERENCE_21_v3.md`
+- Recent long-game history -> `history/SETTLERS3_SNAPSHOT_20260818_LONGPLAY_V2.md`
 
 ## C. Supersession policy
 

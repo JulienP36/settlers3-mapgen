@@ -2,13 +2,13 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-27 — v1.9 DEV_2 validée, prête pour publication sur `dev`**
+> Dernière mise à jour : **2026-08-27 — v1.9 DEV_2 publiée, audit des références terminé**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen`.
 - Branche de travail : `dev`.
-- Dernier checkpoint de développement : **v1.9 DEV_2**, validé sous Windows et prêt pour publication sur `dev` sans suffixe de révision.
+- Dernier checkpoint de développement : **v1.9 DEV_2**, validé sous Windows et publié sur `dev` au commit `9494a6a`.
 - Dernière STABLE : **v1.7**, publiée sur `main`, tag `v1.7`, commit de promotion `780bc5e`.
 - **DEV_11 validée** : maintenance, ZIP source déterministe, documentation, README anglais, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de `V` terminés.
 - Validations : 231 tests pytest, autodiagnostic depuis le ZIP extrait, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; contrôles Windows R1 puis R2 validés.
@@ -18,10 +18,13 @@
 - **v1.9 DEV_2 validée** : l’ancien monolithe et les modules versionnés sont
   remplacés par les couches `application/`, `generation/` et `map_data/`, avec
   contrôleurs par sous-système, fondation Tk unique et un seul factory moteur.
-  `main_window.py` passe de 3168 à 372 lignes ; 243 tests actuels passent, sans
+  `main_window.py` passe de 3168 à 372 lignes ; 244 tests actuels passent, sans
   doublon exact ni nom de révision historique. Les petits modules/entrypoints
   restants portent tous une responsabilité justifiée. `AGENTS.md` devient
   l’entrée courte auto-découverte pour limiter le contexte répété.
+- L’audit post-publication des 53 références conserve les documents spécialisés
+  et preuves STABLE, retire deux reprises intégralement remplacées, compacte le
+  journal v1.9 et verrouille les chemins du routeur PREGEN par un test.
 - La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping vers la fin de la version.
 - La v1.8 restera une série de checkpoints DEV sans RC ni Release : aucune
   nouvelle publication STABLE n’est prévue avant la correction de la génération
@@ -97,7 +100,7 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 - Le lecteur accepte désormais uniquement ce cas borné ; une queue sans terminateur reste rejetée et le parseur de scaffolds/export reste strict.
 - Régressions automatisées : remplissages de 1, 2 et 3 octets, refus sans terminateur, import réel 256×256/20 départs et 768×768/10 départs.
 - Détails, hashes et offsets : `references/SETTLERS3_EDM_TERMINAL_PADDING_20260826.md`.
-- Validation Windows : les deux sources fautives chargent correctement. Issue #4 à fermer après publication du checkpoint final.
+- Validation Windows : les deux sources fautives chargent correctement. Issue #4 fermée après publication de DEV_2.
 
 ### Restructuration v1.9 — périmètre actuel
 
@@ -138,12 +141,10 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 
 ## 8. Prochaine action
 
-1. Commit/push du checkpoint `DEV_2` sur `dev`, puis fermer l’Issue #4.
-2. Auditer toutes les références : supprimer seulement les obsolètes prouvées,
-   compacter les répétitions et fusionner/renommer uniquement quand la
-   responsabilité et les informations importantes restent préservées.
-3. Poursuivre v1.9 par l’audit interne des couches de génération, sans modifier
+1. Poursuivre v1.9 par l’audit interne des couches de génération, sans modifier
    le comportement protégé ; garder le Data Mapping vers les dernières DEV.
+2. Remplacer progressivement les contrats GUI fondés sur le texte source par
+   des tests comportementaux, en commençant par Batch et Historique.
 
 ## 9. Procédure de reprise
 

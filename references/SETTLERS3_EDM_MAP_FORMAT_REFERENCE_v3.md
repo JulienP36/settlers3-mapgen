@@ -2,7 +2,7 @@
 
 > **CANONICAL REVERSE-ENGINEERING REFERENCE — READ BEFORE ANY FILE WRITE**
 >
-> Companion: `SETTLERS3_MAPGEN_REFERENCE_v10.md`.
+> Companion: `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md`.
 > This file documents **how the binary format works**; MapGen documents **what to generate**.
 >
 > Status: **CONFIRMED** = experimentally validated; **STRONG** = repeatedly observed/used; **PARTIAL** = usable structure with unknown fields; **TODO** = not established.
@@ -451,13 +451,13 @@ The binary toolchain should maintain tests for:
 
 Always consult both:
 
-1. **`SETTLERS3_EDM_MAP_FORMAT_REFERENCE.md`** — binary read/write truth.
-2. **`SETTLERS3_MAPGEN_REFERENCE.md`** — validated generation/gameplay parameters.
+1. **`SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md`** — binary read/write truth.
+2. **`SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md`** — validated generation/gameplay parameters.
 
 Useful code lineage:
-- `s3_map_writer.py`: minimal validated Area reader/writer.
-- `s3_map_writer_v2.py`: parts 2/6/7/8/9 and conservative record edits.
-- later `s3_map_writer_v*`: terrain/object calibration and experimental helpers.
+- Current implementation: `s3mapgen/map_data/binary.py`.
+- The historical `s3_map_writer*` lineage remains available through Git history
+  when archaeology is required; it is not part of the active source tree.
 
 Do not blindly trust stale code over validated findings. Example: an intermediate revision had height/terrain reversed.
 

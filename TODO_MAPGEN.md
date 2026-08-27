@@ -70,7 +70,7 @@ RC, quel que soit son numéro final.
   chaque tâche vers les seules références nécessaires.
 - [ ] Procéder par extractions mécaniques courtes, avec comportement inchangé, tests ciblés puis validation complète à chaque DEV terminée.
 - [ ] Intégrer les apports d’autres LLM comme hypothèses traçables et non comme vérité de référence.
-- [ ] Auditer toutes les références après publication de DEV_2 : conserver les
+- [x] Auditer toutes les références après publication de DEV_2 : conserver les
   références spécialisées importantes, compacter les répétitions, puis
   fusionner/renommer/supprimer uniquement avec preuve d’obsolescence et liens
   entrants migrés.

@@ -313,7 +313,9 @@ Result:
 - Terrain balance between islands is poor and must be redesigned per island.
 - P1 and P4 starts are invalid, likely from static objects too close to the start.
 - No in-game crash.
-- Dedicated reference: `SETTLERS3_LARGE_ISLANDS_PROFILE_REFERENCE_v1.md`.
+- No dedicated profile exists yet. This section is the retained prototype
+  evidence; create and validate a dedicated reference before implementing
+  Large Islands.
 
 ### Continental 768×768 / 10P scale stress-test
 

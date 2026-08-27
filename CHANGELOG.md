@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.9 post-DEV_2 reference audit — 2026-08-27
+
+- Removes two unlinked documents fully superseded by the published architecture
+  guide, current snapshot and development log.
+- Compacts the v1.9 development log around accepted outcomes and the R1 import
+  regression lesson; detailed candidate history remains in Git.
+- Keeps release-manifest evidence and specialist binary, morphology, terrain,
+  resource and gameplay references intact even when they are large or rarely
+  consulted.
+- Repairs the PREGEN router: the live TODO replaces an immutable historical
+  TODO, feature routes point only to existing canonical references, and a test
+  now rejects broken `.md`/`.txt` routes.
+- Updates stale EDM writer/reference names to the current `map_data` ownership
+  and records that Large Islands has no validated dedicated profile yet.
+
 ## v1.9 DEV_2 — 2026-08-27
 
 - Consolidates the Windows-validated R2–R8 restructuring under the final
