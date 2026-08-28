@@ -11,7 +11,7 @@ from ...map_data.model import MapState
 from ..paths import START_MARKER_SHEET
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
-PALETTE={GRASS:(72,148,69),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(76,101,56),SWAMP_TRANS:(94,119,67),GRASS_SWAMP_TRANS:(115,139,78),22:(147,112,72),28:(126,99,66),34:(116,116,108),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
+PALETTE={GRASS:(72,148,69),18:(101,166,78),19:(116,177,88),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(76,101,56),SWAMP_TRANS:(94,119,67),GRASS_SWAMP_TRANS:(115,139,78),22:(147,112,72),28:(126,99,66),34:(116,116,108),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
 
 # Settlers III player-color palette validated for v1.6 STABLE.
 # Order follows player slots P1..P20; P1 is the canonical S3 red.  The palette
@@ -76,8 +76,9 @@ HEATMAP_RESOURCES={
 
 START_TERRITORY_RADIUS=35
 
-# Exact canonical initial claim recovered from the native SAV corpus.
-# 145 independent 3500-cell regions with a 71x71 extent yielded the same mask.
+# Historical reconstruction reference only; this is not a native field.
+# 145 independent 3500-cell regions with a 71x71 extent yielded the same shape,
+# but the complete per-file mask is still intentionally not inferred here.
 # Each tuple is inclusive (min_dx,max_dx) for dy=-35..+35 around the original
 # start coordinates stored in the SAV v11 player block.
 INITIAL_TERRITORY_ROW_RANGES=(
@@ -112,6 +113,7 @@ def initial_territory_cells(start:tuple[int,int], side:int)->set[tuple[int,int]]
 def initial_territory_boundary(start:tuple[int,int], side:int)->set[tuple[int,int]]:
     cx,cy=start
     return {((cx+dx)%side,(cy+dy)%side) for dx,dy in _CANONICAL_BOUNDARY}
+
 
 def _global_rgb(state:MapState)->np.ndarray:
     T,O=state.terrain,state.objects;side=state.side
@@ -158,19 +160,37 @@ def _overlay_rgb(state:MapState,view:str,heatmap_resource:str='trees')->np.ndarr
         fish=water&((R&0xF0)==0)&((R&0x0F)>0);rgb[fish]=(70,210,240)
     elif view=='territories':
         rgb[:]=(65,65,65);palette=np.asarray(PLAYER_COLORS,np.uint8)
-        source_format=str(state.metadata.get('source_format','')).upper()
-        use_synthetic=source_format in ('EDM','MAP') or (not state.metadata.get('territories_available') and not np.any(C<len(palette)))
-        claims=_synthetic_initial_claims(state) if use_synthetic else C
+        # Only a claim raster present in the source may be rendered.  In
+        # particular, do not substitute the historical canonical shape for an
+        # EDM/MAP/SAV file that does not carry claims.
+        claims=C
         claimed=claims<len(palette)
         if claimed.any():rgb[claimed]=palette[claims[claimed]]
+    elif view=='initial_territory':
+        rgb[:]=(65,65,65);palette=np.asarray(PLAYER_COLORS,np.uint8)
+        # This view is intentionally stricter than ``territories``: it only
+        # paints coordinates explicitly supplied by the SAV decoder.  Missing
+        # direct cells stay neutral; no start/radius/canonical fallback is
+        # permitted.
+        claims=_direct_initial_claim_raster(state)
+        claimed=claims<len(palette)
+        if claimed.any():
+            rgb[claimed]=palette[claims[claimed]]
+            # A solid player-colour fill is too easy to confuse with the
+            # runtime Territories view.  Add deterministic white diagonal
+            # hatch marks only inside the direct mask, without changing any
+            # source cell or implying an additional gameplay field.
+            yy,xx=np.indices((side,side))
+            hatch=claimed & (((xx+yy)%8)<2)
+            rgb[hatch]=(245,245,245)
     elif view=='paths':
         # Paths view is intentionally restricted to runtime Terrain 28.
         # Terrain 22 is agricultural ground and belongs to the Crops view, not Paths.
         base=_global_rgb(state);rgb[:]=(base.astype(np.float32)*0.35).astype(np.uint8);rgb[T==28]=(235,175,85)
     elif view=='crops':
         base=_global_rgb(state);rgb[:]=(base.astype(np.float32)*0.28).astype(np.uint8)
-        wheat=(O>=85)&(O<=93);vine=(O>=94)&(O<=102);rice=(O>=103)&(O<=110)
-        rgb[wheat]=(235,205,75);rgb[vine]=(165,85,185);rgb[rice]=(80,205,110)
+        wheat=(O>=85)&(O<=93);vine=(O>=94)&(O<=102);rice=(O>=103)&(O<=110);bee_nests=(O>=247)&(O<=253)
+        rgb[wheat]=(235,205,75);rgb[vine]=(165,85,185);rgb[rice]=(80,205,110);rgb[bee_nests]=(205,118,24)
     elif view=='heatmap': return _heatmap_rgb(state,heatmap_resource)
     else:return _global_rgb(state)
     return rgb
@@ -180,24 +200,6 @@ def _blend(global_rgb,overlay_rgb,alpha):
     if a<=0:return global_rgb.copy()
     if a>=1:return overlay_rgb.copy()
     return np.rint(global_rgb.astype(np.float32)*(1-a)+overlay_rgb.astype(np.float32)*a).clip(0,255).astype(np.uint8)
-
-def _synthetic_initial_claims(state:MapState)->np.ndarray:
-    """Reconstruct initial EDM/MAP territories from the exact native mask.
-
-    EDM/MAP imports do not expose SAV runtime claims.  This display-only layer
-    uses the confirmed 3500-cell initial mask around every real start.  If two
-    imported starts overlap, nearest HEX6 distance wins; ties keep the lower
-    player slot.  No field in the source map or MapState is modified.
-    """
-    claims=np.full((state.side,state.side),255,dtype=np.uint8)
-    best=np.full((state.side,state.side),32767,dtype=np.int16)
-    for player,(sx,sy) in enumerate(state.starts[:len(PLAYER_COLORS)]):
-        for dx,dy in _CANONICAL_TERRITORY:
-            x,y=(sx+dx)%state.side,(sy+dy)%state.side
-            distance=hex_distance(0,0,dx,dy)
-            if distance<best[y,x]:
-                best[y,x]=distance;claims[y,x]=player
-    return claims
 
 def _project_point(x,y,source_height):return 2*x+(source_height-1-y),2*y
 
@@ -237,7 +239,11 @@ def _centered_marker_origin(marker:Image.Image,x:int,y:int)->tuple[int,int]:
     return int(x)-marker.width//2,int(y)-marker.height//2
 
 def _ordered_boundary_offsets(projected:bool)->tuple[tuple[int,int],...]:
-    """Return all 210 native boundary cells in deterministic visual order."""
+    """Return the historical reconstructed boundary in deterministic order.
+
+    Kept as an analysis reference only; rendering uses explicit direct cells
+    supplied by a format decoder instead of this table.
+    """
     def screen_point(offset):
         x,y=offset
         return (2*x-y,2*y) if projected else (x,y)
@@ -248,8 +254,7 @@ def _draw_square_start_markers(im:Image.Image,state:MapState,scale:int=1,include
         marker=_start_marker(i,False,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,False,opacity)
-            for dx,dy in _ordered_boundary_offsets(False):
-                bx,by=(x+dx)%state.side,(y+dy)%state.side
+            for bx,by in _ordered_direct_initial_boundary(state,i,False):
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,bx,by),boundary_marker)
         im.paste(marker,_centered_marker_origin(marker,x,y),marker)
 
@@ -258,8 +263,7 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
         marker=_start_marker(i,True,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,True,opacity)
-            for dx,dy in _ordered_boundary_offsets(True):
-                bx,by=(x+dx)%state.side,(y+dy)%state.side
+            for bx,by in _ordered_direct_initial_boundary(state,i,True):
                 X,Y=_project_point(bx,by,source_height)
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,X,Y),boundary_marker)
         X,Y=_project_point(x,y,source_height)
@@ -268,10 +272,72 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
 def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
     """Draw only the start-marker layer on an already rendered map image."""
     scale=max(1,int(scale))
+    include_boundaries=bool(include_boundaries and _has_direct_initial_mask(state))
     if projection=='parallelogram':
         _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity)
     else:
         _draw_square_start_markers(im,state,scale,include_boundaries,opacity)
+
+def _has_direct_initial_mask(state:MapState)->bool:
+    """Return whether the source supplied actual initial-mask cells.
+
+    A start coordinate, a runtime claim raster, and the historical canonical
+    shape are not sufficient evidence for the native mask.  The reader keeps
+    this opt-in until a format-specific decoder supplies the complete cells.
+    """
+    cells=state.metadata.get('initial_territory_direct_cells')
+    if not isinstance(cells,(list,tuple,dict)) or not cells:return False
+    return any(_direct_initial_mask_cells(state,i) for i in range(len(state.starts)))
+
+def _direct_initial_mask_cells(state:MapState,player_index:int)->set[tuple[int,int]]:
+    """Read exact absolute cells supplied by a future format decoder.
+
+    The metadata contract is intentionally strict: a mapping keyed by player
+    number (or a sequence parallel to ``state.starts``), containing explicit
+    ``(x, y)`` cells in map coordinates.  No shape, radius, count, or start
+    coordinate is used to fill missing cells.
+    """
+    raw=state.metadata.get('initial_territory_direct_cells')
+    value=None
+    if isinstance(raw,dict):
+        value=raw.get(player_index+1,raw.get(str(player_index+1)))
+    elif isinstance(raw,(list,tuple)) and player_index<len(raw):
+        value=raw[player_index]
+    if not isinstance(value,(list,tuple,set,frozenset)):return set()
+    out=set()
+    for cell in value:
+        if isinstance(cell,(list,tuple)) and len(cell)==2:
+            x,y=cell
+            if isinstance(x,(int,np.integer)) and isinstance(y,(int,np.integer)) and 0<=int(x)<state.side and 0<=int(y)<state.side:
+                out.add((int(x),int(y)))
+    return out
+
+
+def _direct_initial_claim_raster(state:MapState)->np.ndarray:
+    """Build a raster from the explicit direct-cell metadata only."""
+    claims=np.full((state.side,state.side),255,dtype=np.uint8)
+    for player_index in range(len(state.starts)):
+        cells=_direct_initial_mask_cells(state,player_index)
+        if cells:
+            ys=np.fromiter((y for _x,y in cells),dtype=np.intp,count=len(cells))
+            xs=np.fromiter((x for x,_y in cells),dtype=np.intp,count=len(cells))
+            claims[ys,xs]=player_index
+    return claims
+
+def _ordered_direct_initial_boundary(state:MapState,player_index:int,projected:bool)->tuple[tuple[int,int],...]:
+    cells=_direct_initial_mask_cells(state,player_index)
+    if not cells:return ()
+    boundary=frozenset(
+        (x,y) for x,y in cells
+        if any(((x+dx)%state.side,(y+dy)%state.side) not in cells for dx,dy in HEX6)
+    )
+    sx,sy=state.starts[player_index]
+    def screen_point(point):
+        x,y=point
+        dx=((x-int(sx)+state.side//2)%state.side)-state.side//2
+        dy=((y-int(sy)+state.side//2)%state.side)-state.side//2
+        return (2*dx-dy,2*dy) if projected else (dx,dy)
+    return tuple(sorted(boundary,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
 def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->Image.Image:
     """Return a copy of a marker-free raster with the start layer composed over it."""
@@ -294,7 +360,9 @@ def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overla
     """Project and decorate a cached square raster without mutating that base."""
     im=project_parallelogram(base) if projection=='parallelogram' else base.copy()
     draw_start_markers=(labels and view=='starts') or bool(start_markers)
-    draw_start_boundaries=labels and view=='starts'
+    # Never draw the historical reconstructed contour as if it were native.
+    # A future format-specific reader may opt in by attaching direct cells.
+    draw_start_boundaries=labels and view=='starts' and _has_direct_initial_mask(state)
     marker_opacity=overlay_alpha if draw_start_boundaries else 100
     if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
     return im

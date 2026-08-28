@@ -68,7 +68,7 @@ def test_all_feature_catalogues_keep_language_key_and_placeholder_parity():
 
 def test_view_option_owner_preserves_the_historical_order():
     assert list(VIEW_CHOICES) == [
-        'Global', 'Départs', 'Territoires', 'Élévation', 'Ressources',
+        'Global', 'Départs', 'Territoires', 'Masque initial', 'Élévation', 'Ressources',
         'Chemins', 'Cultures', 'Carte thermique',
     ]
     assert list(VIEW_CHOICES.values())[:3] == ["global", "starts", "territories"]

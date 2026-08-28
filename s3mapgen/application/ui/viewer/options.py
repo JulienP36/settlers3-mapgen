@@ -4,6 +4,7 @@ VIEW_CHOICES = {
     "Global": "global",
     "Départs": "starts",
     "Territoires": "territories",
+    "Masque initial": "initial_territory",
     "Élévation": "heightmap",
     "Ressources": "resources",
     "Chemins": "paths",
@@ -12,7 +13,7 @@ VIEW_CHOICES = {
 }
 
 VIEW_ICON_COLORS={
- 'global':'#2698e8','starts':'#cd1e10','heightmap':'#8f55d6','resources':'#ff9418','territories':'#31a354',
+ 'global':'#2698e8','starts':'#cd1e10','initial_territory':'#b66e2d','heightmap':'#8f55d6','resources':'#ff9418','territories':'#31a354',
  'paths':'#9a6438','crops':'#e4c83d','heatmap':'#d83737',
 }
 

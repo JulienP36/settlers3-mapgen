@@ -1,11 +1,18 @@
 # Settlers III — registre des IDs d’objet
 
-Baseline: **MapGen v1.7 STABLE**.
+Baseline: **MapGen v1.9 DEV_3 — cartographie contrôlée 2026-08-28**.
 
 - Domaine listé : IDs byte `0–255`.
 - `Inconnu` signifie uniquement : **pas de nom validé dans notre nomenclature actuelle**.
 - Les IDs 73–77 et 80–81 sont volontairement nommés seulement `Arbre adulte <ID>` : l’espèce exacte n’est pas validée.
 - ID 84 est `Pousse d’arbre / Tree sapling`.
+- Les IDs `208–214`, `216–222`, `224–230` et `232–255` ci-dessous sont
+  confirmés par calibration visuelle contrôlée. Les IDs `215`, `223` et `231`
+  ont provoqué un crash dans les cartes de test et restent hors nomenclature.
+- Les IDs `82` et `83` sont la paire encore à identifier. La calibration qui les
+  plaçait artificiellement est conservée comme contrôle historique, mais ne doit
+  pas servir de preuve : la recherche doit porter sur les cartes et SAV déjà
+  produits, hors objets volontairement injectés.
 - Cette liste est destinée à être complétée au fil du reverse-engineering.
 
 | ID | Nom FR | Nom EN | Statut |
@@ -218,51 +225,67 @@ Baseline: **MapGen v1.7 STABLE**.
 | 205 | Inconnu | Inconnu | À identifier |
 | 206 | Inconnu | Inconnu | À identifier |
 | 207 | Inconnu | Inconnu | À identifier |
-| 208 | Inconnu | Inconnu | À identifier |
-| 209 | Inconnu | Inconnu | À identifier |
-| 210 | Inconnu | Inconnu | À identifier |
-| 211 | Inconnu | Inconnu | À identifier |
-| 212 | Inconnu | Inconnu | À identifier |
-| 213 | Inconnu | Inconnu | À identifier |
-| 214 | Inconnu | Inconnu | À identifier |
-| 215 | Inconnu | Inconnu | À identifier |
-| 216 | Inconnu | Inconnu | À identifier |
-| 217 | Inconnu | Inconnu | À identifier |
-| 218 | Inconnu | Inconnu | À identifier |
-| 219 | Inconnu | Inconnu | À identifier |
-| 220 | Inconnu | Inconnu | À identifier |
-| 221 | Inconnu | Inconnu | À identifier |
-| 222 | Inconnu | Inconnu | À identifier |
-| 223 | Inconnu | Inconnu | À identifier |
-| 224 | Inconnu | Inconnu | À identifier |
-| 225 | Inconnu | Inconnu | À identifier |
-| 226 | Inconnu | Inconnu | À identifier |
-| 227 | Inconnu | Inconnu | À identifier |
-| 228 | Inconnu | Inconnu | À identifier |
-| 229 | Inconnu | Inconnu | À identifier |
-| 230 | Inconnu | Inconnu | À identifier |
-| 231 | Inconnu | Inconnu | À identifier |
-| 232 | Inconnu | Inconnu | À identifier |
-| 233 | Inconnu | Inconnu | À identifier |
-| 234 | Inconnu | Inconnu | À identifier |
-| 235 | Inconnu | Inconnu | À identifier |
-| 236 | Inconnu | Inconnu | À identifier |
-| 237 | Inconnu | Inconnu | À identifier |
-| 238 | Inconnu | Inconnu | À identifier |
-| 239 | Inconnu | Inconnu | À identifier |
-| 240 | Inconnu | Inconnu | À identifier |
-| 241 | Inconnu | Inconnu | À identifier |
-| 242 | Inconnu | Inconnu | À identifier |
-| 243 | Inconnu | Inconnu | À identifier |
-| 244 | Inconnu | Inconnu | À identifier |
-| 245 | Inconnu | Inconnu | À identifier |
-| 246 | Inconnu | Inconnu | À identifier |
-| 247 | Inconnu | Inconnu | À identifier |
-| 248 | Inconnu | Inconnu | À identifier |
-| 249 | Inconnu | Inconnu | À identifier |
-| 250 | Inconnu | Inconnu | À identifier |
-| 251 | Inconnu | Inconnu | À identifier |
-| 252 | Inconnu | Inconnu | À identifier |
-| 253 | Inconnu | Inconnu | À identifier |
-| 254 | Inconnu | Inconnu | À identifier |
-| 255 | Inconnu | Inconnu | À identifier |
+| 208 | Souche d’arbre — variante 1 | Tree stump — variant 1 | Confirmé en calibration |
+| 209 | Souche d’arbre — variante 2 | Tree stump — variant 2 | Confirmé en calibration |
+| 210 | Souche d’arbre — variante 3 | Tree stump — variant 3 | Confirmé en calibration |
+| 211 | Souche d’arbre — variante 4 | Tree stump — variant 4 | Confirmé en calibration |
+| 212 | Souche d’arbre — variante 5 | Tree stump — variant 5 | Confirmé en calibration |
+| 213 | Souche d’arbre — variante 6 | Tree stump — variant 6 | Confirmé en calibration |
+| 214 | Souche d’arbre — variante 7 | Tree stump — variant 7 | Confirmé en calibration |
+| 215 | — | — | Crash-prone, hors nomenclature |
+| 216 | Pousse d’arbre — stade 2 — variante 1 | Tree sapling — stage 2 — variant 1 | Confirmé en calibration |
+| 217 | Pousse d’arbre — stade 2 — variante 2 | Tree sapling — stage 2 — variant 2 | Confirmé en calibration |
+| 218 | Pousse d’arbre — stade 2 — variante 3 | Tree sapling — stage 2 — variant 3 | Confirmé en calibration |
+| 219 | Pousse d’arbre — stade 2 — variante 4 | Tree sapling — stage 2 — variant 4 | Confirmé en calibration |
+| 220 | Pousse d’arbre — stade 2 — variante 5 | Tree sapling — stage 2 — variant 5 | Confirmé en calibration |
+| 221 | Pousse de palmier — stade 2 | Palm sapling — stage 2 | Validé en partie égyptienne |
+| 222 | Pousse d’arbre — stade 2 — variante 7 | Tree sapling — stage 2 — variant 7 | Confirmé en calibration |
+| 223 | — | — | Crash-prone, hors nomenclature |
+| 224 | Pousse d’arbre — stade 1 — variante 1 | Tree sapling — stage 1 — variant 1 | Confirmé en calibration |
+| 225 | Pousse d’arbre — stade 1 — variante 2 | Tree sapling — stage 1 — variant 2 | Confirmé en calibration |
+| 226 | Pousse d’arbre — stade 1 — variante 3 | Tree sapling — stage 1 — variant 3 | Confirmé en calibration |
+| 227 | Pousse d’arbre — stade 1 — variante 4 | Tree sapling — stage 1 — variant 4 | Confirmé en calibration |
+| 228 | Pousse d’arbre — stade 1 — variante 5 | Tree sapling — stage 1 — variant 5 | Confirmé en calibration |
+| 229 | Pousse de palmier — stade 1 | Palm sapling — stage 1 | Validé en partie égyptienne |
+| 230 | Pousse d’arbre — stade 1 — variante 7 | Tree sapling — stage 1 — variant 7 | Confirmé en calibration |
+| 231 | — | — | Crash-prone, hors nomenclature |
+| 232 | Panneau de ressource — aucune | Resource panel — none | Confirmé en calibration |
+| 233 | Panneau de ressource — charbon | Resource panel — coal | Confirmé en calibration |
+| 234 | Panneau de ressource — charbon abondant | Resource panel — abundant coal | Confirmé en calibration |
+| 235 | Panneau de ressource — fer | Resource panel — iron | Confirmé en calibration |
+| 236 | Panneau de ressource — fer abondant | Resource panel — abundant iron | Confirmé en calibration |
+| 237 | Panneau de ressource — or | Resource panel — gold | Confirmé en calibration |
+| 238 | Panneau de ressource — or abondant | Resource panel — abundant gold | Confirmé en calibration |
+| 239 | Panneau de ressource — gemmes | Resource panel — gemstones | Confirmé en calibration |
+| 240 | Panneau de découverte de minerai 1 | Mineral discovery panel 1 | Confirmé en calibration |
+| 241 | Panneau de découverte de minerai 2 | Mineral discovery panel 2 | Confirmé en calibration |
+| 242 | Panneau de découverte de minerai 3 | Mineral discovery panel 3 | Confirmé en calibration |
+| 243 | Arbre en feu — stade 1 | Burning tree — stage 1 | Confirmé en calibration |
+| 244 | Arbre en feu — stade 2 | Burning tree — stage 2 | Confirmé en calibration |
+| 245 | Arbre en feu — stade 3 | Burning tree — stage 3 | Confirmé en calibration |
+| 246 | Arbre en feu — stade 4 | Burning tree — stage 4 | Confirmé en calibration |
+| 247 | Nid d’abeilles — stade 1 | Bee nest — stage 1 | Confirmé en SAV |
+| 248 | Nid d’abeilles — stade 2 | Bee nest — stage 2 | Confirmé en SAV |
+| 249 | Nid d’abeilles — stade 3 | Bee nest — stage 3 | Confirmé en SAV |
+| 250 | Nid d’abeilles — stade 4 | Bee nest — stage 4 | Confirmé en SAV |
+| 251 | Nid d’abeilles — stade 5 | Bee nest — stage 5 | Confirmé en SAV |
+| 252 | Nid d’abeilles — stade 6 | Bee nest — stage 6 | Confirmé en SAV |
+| 253 | Nid d’abeilles — stade 7 | Bee nest — stage 7 | Confirmé en SAV |
+| 254 | Borne de territoire rouge | Red territory marker | Confirmé en calibration |
+| 255 | Drapeau rouge | Red flag | Confirmé en calibration |
+
+## Preuves et limites de la passe 2026-08-28
+
+- Les lignes `208–239` proviennent de la calibration en grille : souches après
+  coupe, pousses stade 2, pousses stade 1 et panneaux de ressources. Les
+  colonnes conservent le même type d'arbre ; `221` et `229` sont les deux
+  pousses de palmier validées en partie égyptienne.
+- `240–255` sont les visuels de calibration déjà identifiés : panneaux de
+  minerai, arbre en feu, sept stades de nid, borne et drapeau rouges.
+- `82` et `83` restent la paire manquante, reportée à Datamining v2. Les SAV et
+  cartes réelles fournis à ce jour ne contiennent aucun de ces deux IDs ; la
+  carte `S3_ObjectCalibration_256_UNKNOWN_82_83_TERRAIN28.edm` ne fait que les
+  injecter volontairement et ne constitue pas une preuve d’usage.
+- `215`, `223` et `231` ont fait crasher les cartes de test. Ils sont conservés
+  uniquement comme trous documentaires et ne sont pas exposés comme objets
+  valides dans le catalogue applicatif.

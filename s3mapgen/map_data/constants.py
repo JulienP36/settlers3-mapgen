@@ -2,6 +2,21 @@ from __future__ import annotations
 
 WATER_IDS = tuple(range(8))
 GRASS = 16
+GRASS_DETAIL_IDS = (18, 19)
+GRASS_IDS = (GRASS, *GRASS_DETAIL_IDS)
+BEE_NEST_IDS = tuple(range(247, 254))
+ADULT_TREE_IDS = tuple(range(68, 78)) + (80, 81)
+PALM_TREE_IDS = (78, 79)
+# Confirmed object lifecycle groups from the 208–239 calibration.  The palm
+# saplings are kept explicit so aggregate graph categories can expose them
+# without losing their species-specific counts.
+PLANTATION_IDS = (84,)
+TREE_SAPLING_STAGE_2_IDS = (216, 217, 218, 219, 220, 222)
+PALM_SAPLING_STAGE_2_IDS = (221,)
+TREE_SAPLING_STAGE_1_IDS = (224, 225, 226, 227, 228, 230)
+PALM_SAPLING_STAGE_1_IDS = (229,)
+SAPLING_STAGE_2_IDS = TREE_SAPLING_STAGE_2_IDS + PALM_SAPLING_STAGE_2_IDS
+SAPLING_STAGE_1_IDS = TREE_SAPLING_STAGE_1_IDS + PALM_SAPLING_STAGE_1_IDS
 ROCK_TRANS_1 = 17
 GRASS_DESERT_TRANS = 20
 GRASS_SWAMP_TRANS = 21

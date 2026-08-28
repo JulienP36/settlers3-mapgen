@@ -6,7 +6,12 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS
-from ...map_data.constants import GRASS, ROCKY, DESERT, SWAMP, SHORE
+from ...map_data.constants import (
+    BEE_NEST_IDS, GRASS, GRASS_DETAIL_IDS, ADULT_TREE_IDS, PALM_TREE_IDS,
+    TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
+    TREE_SAPLING_STAGE_1_IDS, PALM_SAPLING_STAGE_1_IDS, PLANTATION_IDS,
+    ROCKY, DESERT, SWAMP, SHORE,
+)
 
 CHART_KEYS = (
     'terrain_families','mineral_stock','building_stones','forestry','height','agriculture','nearest_starts',
@@ -17,25 +22,25 @@ CHART_KEYS = (
 CHART_LABELS = {
     'fr': {
         'terrain_families':'Familles de terrain','mineral_stock':'Stock minier','building_stones':'Stock des pierres de construction',
-        'forestry':'Ressources forestières','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
+        'forestry':'Arbres et pousses','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
         'player_trees_r30':'Arbres proches','player_stone_r30':'Pierres proches','player_fish_r30':'Poissons proches','player_mining_r40':'Stock minier proche',
         'mountain_components':'Taille des massifs','lake_components':'Taille des lacs','river_components':'Taille des rivières','ab_summary':'Comparaison A/B',
     },
     'en': {
         'terrain_families':'Terrain families','mineral_stock':'Mining stock','building_stones':'Building stone stock',
-        'forestry':'Forestry resources','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
+        'forestry':'Trees and saplings','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
         'player_trees_r30':'Nearby trees','player_stone_r30':'Nearby stone stock','player_fish_r30':'Nearby fish stock','player_mining_r40':'Nearby mining stock',
         'mountain_components':'Mountain sizes','lake_components':'Lake sizes','river_components':'River sizes','ab_summary':'A/B comparison',
     },
     'de': {
         'terrain_families':'Geländefamilien','mineral_stock':'Mineralvorrat','building_stones':'Bausteinvorrat',
-        'forestry':'Forstressourcen','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
+        'forestry':'Bäume und Setzlinge','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
         'player_trees_r30':'Bäume in der Nähe','player_stone_r30':'Steinvorrat in der Nähe','player_fish_r30':'Fischvorrat in der Nähe','player_mining_r40':'Mineralvorrat in der Nähe',
         'mountain_components':'Gebirgsgrößen','lake_components':'Seegrößen','river_components':'Flussgrößen','ab_summary':'A/B-Vergleich',
     },
     'es': {
         'terrain_families':'Familias de terreno','mineral_stock':'Reservas minerales','building_stones':'Reservas de piedra de construcción',
-        'forestry':'Recursos forestales','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
+        'forestry':'Árboles y retoños','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
         'player_trees_r30':'Árboles cercanos','player_stone_r30':'Piedra cercana','player_fish_r30':'Peces cercanos','player_mining_r40':'Minerales cercanos',
         'mountain_components':'Tamaño de macizos','lake_components':'Tamaño de lagos','river_components':'Tamaño de ríos','ab_summary':'Comparación A/B',
     },
@@ -48,6 +53,7 @@ CHART_THEME = {
 
 TERRAIN_COLORS = {
     'grass': PALETTE.get(GRASS,(72,148,69)),
+    'grass_detail': (101,166,78),
     'mountain': PALETTE.get(ROCKY,(109,109,103)),
     'desert': PALETTE.get(DESERT,(211,177,80)),
     'swamp': PALETTE.get(SWAMP,(76,101,56)),
@@ -58,11 +64,23 @@ TERRAIN_COLORS = {
 }
 TERRAIN_CHART_ORDER = ('grass','mountain','desert','swamp','mud','shore','river','water')
 MINERAL_COLORS = {'coal':(55,55,55),'iron':(255,148,0),'gold':(235,202,35),'gems':(206,0,0),'sulfur':(196,178,92)}
-AGRI_COLORS = {'wheat':(235,205,75),'vine':(165,85,185),'rice':(80,205,110)}
+AGRI_COLORS = {'wheat':(235,205,75),'vine':(165,85,185),'rice':(80,205,110),'bee_nests':(205,118,24)}
+
+# Forest graph order follows the validated lifecycle: adult trees are darkest,
+# then stage 2, stage 1, plantations, and adult palms retain their established
+# yellow-green colour.  Palm saplings are included in their corresponding stage
+# totals and listed separately in the tooltip IDs.
+FORESTRY_COLORS = {
+    'adult_trees': (45, 125, 60),
+    'saplings_stage_2': (72, 155, 72),
+    'saplings_stage_1': (105, 185, 88),
+    'plantations': (150, 210, 112),
+    'adult_palms': (155, 175, 65),
+}
 
 DRY_GRASS = 24
 TERRAIN_ID_GROUPS = {
-    'grass_green': (16,), 'grass_dry': (24,),
+    'grass_green': (16,), 'grass_detail': GRASS_DETAIL_IDS, 'grass_dry': (24,),
     'rock_open': (17, 32, 33, 34), 'snow': (35, 128, 129),
     'desert': (20, 64, 65), 'swamp': (21, 80, 81), 'mud': (23, 144, 145),
     'shore': (48,), 'river': (96, 97, 98, 99), 'water': tuple(range(8)),
@@ -325,16 +343,70 @@ def _simple_groups(items,colors=None):
     return [{'label':label,'segments':[(value,colors[i%len(colors)],'')]} for i,(label,value) in enumerate(items)]
 
 
+def _forestry_segments(stats, lang='fr'):
+    """Return the cumulative, lifecycle-ordered tree graph segments.
+
+    The stage totals deliberately include the validated palm-sapling IDs, while
+    their tooltip lines remain separate so the uncommon Egyptian variants are
+    visible instead of being silently folded into ordinary tree IDs.
+    """
+    lang = lang if lang in CHART_LABELS else 'en'
+    fr = lang == 'fr'
+    tr = lambda a, b, c, d: _t(lang, a, b, c, d)
+    v = stats.get('vegetation', {})
+    stage_2 = int(v.get('saplings_stage_2',
+                       v.get('tree_saplings_stage_2', 0)
+                       + v.get('palm_saplings_stage_2', 0)))
+    stage_1 = int(v.get('saplings_stage_1',
+                       v.get('tree_saplings_stage_1', 0)
+                       + v.get('palm_saplings_stage_1', 0)))
+    plantations = int(v.get('plantations', v.get('saplings', 0)))
+    return [
+        (
+            int(v.get('adult_wood_trees', 0)),
+            FORESTRY_COLORS['adult_trees'],
+            tr('Arbres adultes', 'Adult trees', 'Ausgewachsene Bäume', 'Árboles adultos'),
+            [_id_line('object', ADULT_TREE_IDS, fr, lang)],
+        ),
+        (
+            stage_2,
+            FORESTRY_COLORS['saplings_stage_2'],
+            tr('Pousses stade 2', 'Stage 2 saplings', 'Setzlinge Stufe 2', 'Retoños etapa 2'),
+            [
+                _id_line('object', TREE_SAPLING_STAGE_2_IDS, fr, lang),
+                _id_line('object', PALM_SAPLING_STAGE_2_IDS, fr, lang),
+            ],
+        ),
+        (
+            stage_1,
+            FORESTRY_COLORS['saplings_stage_1'],
+            tr('Pousses stade 1', 'Stage 1 saplings', 'Setzlinge Stufe 1', 'Retoños etapa 1'),
+            [
+                _id_line('object', TREE_SAPLING_STAGE_1_IDS, fr, lang),
+                _id_line('object', PALM_SAPLING_STAGE_1_IDS, fr, lang),
+            ],
+        ),
+        (
+            plantations,
+            FORESTRY_COLORS['plantations'],
+            tr('Plantations', 'Plantations', 'Pflanzungen', 'Plantaciones'),
+            [_id_line('object', PLANTATION_IDS, fr, lang)],
+        ),
+        (
+            int(v.get('families', {}).get('palm', 0)),
+            FORESTRY_COLORS['adult_palms'],
+            tr('Palmiers adultes', 'Adult palms', 'Ausgewachsene Palmen', 'Palmeras adultas'),
+            [_id_line('object', PALM_TREE_IDS, fr, lang)],
+        ),
+    ]
+
+
 
 def build_ab_metrics(a,b,fr=True,lang=None):
     """Build compact A/B comparison rows with semantic segment composition."""
     lang=lang or ('fr' if fr else 'en');fr=lang=='fr';tr=lambda a,b,c,d:_t(lang,a,b,c,d)
     def ore_segments(st):
         return [(st['resources']['minerals'][key]['stock'],MINERAL_COLORS[key],MINERAL_NAMES_I18N[lang][key],[_resource_id_line(MINERAL_NAMES_I18N[lang][key],RESOURCE_IDS[key],fr,lang)]) for key in ('coal','iron','gold','gems','sulfur')]
-
-    def forest_segments(st):
-        v=st['vegetation']
-        return [(v['adult_wood_trees'],(45,125,60),tr('Arbres adultes','Adult trees','Ausgewachsene Bäume','Árboles adultos'),[_id_line('object',(68,69,70,71,72,73,74,75,76,77,80,81),fr,lang)]),(v['families']['palm'],(155,175,65),tr('Palmiers','Palms','Palmen','Palmeras'),[_id_line('object',(78,79),fr,lang)]),(v['saplings'],(105,205,90),tr('Pousses','Saplings','Setzlinge','Retoños'),[_id_line('object',(84,),fr,lang)])]
 
     def water_segments(st):
         g=st['general'];ids=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)];return [(g.get('ocean_cells',0),WATER_COLORS[5],tr('Mer','Ocean','Meer','Océano'),ids),(g.get('inland_water_cells',0),WATER_COLORS[1],tr('Lacs','Lakes','Seen','Lagos'),ids)]
@@ -343,13 +415,13 @@ def build_ab_metrics(a,b,fr=True,lang=None):
         g=st['general'];return [(g.get('mountain_non_snow_cells',0),PALETTE.get(ROCKY,(109,109,103)),tr('Roche','Rocky','Fels','Roca'),[_id_line('terrain',TERRAIN_ID_GROUPS['rock_open'],fr,lang)]),(g.get('snow_family_cells',0),(220,222,218),tr('Neige','Snow','Schnee','Nieve'),[_id_line('terrain',TERRAIN_ID_GROUPS['snow'],fr,lang)])]
 
     def agri_segments(st):
-        ag=st['agriculture'];return [(ag['wheat'],AGRI_COLORS['wheat'],tr('Blé','Wheat','Weizen','Trigo'),[_id_line('object',range(85,94),fr,lang)]),(ag['vine'],AGRI_COLORS['vine'],tr('Vigne','Vine','Weinreben','Vid'),[_id_line('object',range(94,103),fr,lang)]),(ag['rice'],AGRI_COLORS['rice'],tr('Riz','Rice','Reis','Arroz'),[_id_line('object',range(103,111),fr,lang)])]
+        ag=st['agriculture'];return [(ag['wheat'],AGRI_COLORS['wheat'],tr('Blé','Wheat','Weizen','Trigo'),[_id_line('object',range(85,94),fr,lang)]),(ag['vine'],AGRI_COLORS['vine'],tr('Vigne','Vine','Weinreben','Vid'),[_id_line('object',range(94,103),fr,lang)]),(ag['rice'],AGRI_COLORS['rice'],tr('Riz','Rice','Reis','Arroz'),[_id_line('object',range(103,111),fr,lang)]),(ag.get('bee_nests',0),AGRI_COLORS['bee_nests'],tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),[_id_line('object',BEE_NEST_IDS,fr,lang)])]
 
     specs=[
         (tr('Terre','Land','Land','Tierra'),lambda st:st['general']['land_cells'],lambda st:[(st['general']['land_cells'],PALETTE.get(GRASS,(72,148,69)),tr('Cases terrestres','Land cells','Landzellen','Celdas terrestres'))]),
         (tr('Eau','Water','Wasser','Agua'),lambda st:st['general']['water_cells'],water_segments),
         (tr('Montagne','Mountain','Gebirge','Montaña'),lambda st:st['general']['mountain_cells'],mountain_segments),
-        (tr('Ressources forestières','Forestry resources','Forstressourcen','Recursos forestales'),lambda st:sum(seg[0] for seg in forest_segments(st)),forest_segments),
+        (tr('Arbres et pousses','Trees and saplings','Bäume und Setzlinge','Árboles y retoños'),lambda st:sum(seg[0] for seg in _forestry_segments(st, lang)),lambda st:_forestry_segments(st, lang)),
         (tr('Stock pierre','Stone stock','Steinvorrat','Reserva de piedra'),lambda st:st['building_stones']['stock_total'],lambda st:[(st['building_stones']['stock_total'],(125,125,120),tr('Pierre','Stone','Stein','Piedra'),[_id_line('object',range(115,128),fr,lang)])]),
         (tr('Stock minier','Mining stock','Mineralvorrat','Reservas minerales'),lambda st:sum(seg[0] for seg in ore_segments(st)),ore_segments),
         (tr('Stock poisson','Fish stock','Fischvorrat','Reserva de peces'),lambda st:st['resources']['fish_stock'],lambda st:[(st['resources']['fish_stock'],WATER_COLORS[2],tr('Poisson','Fish','Fisch','Pez'),[_id_line('resource',range(1,16),fr,lang)])]),
@@ -370,10 +442,10 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             if not r:continue
             name=TERRAIN_NAMES_I18N.get(lang,{}).get(key,r['name_fr' if fr else 'name_en'])
             if key=='grass':
-                green=g.get('green_grass_cells',r['cells']);dry=g.get('dry_grass_cells',0)
-                green_label=tr('Herbe verte','Green grass','Grünes Gras','Hierba verde');dry_label=tr('Herbe sèche','Dry grass','Trockenes Gras','Hierba seca')
-                groups.append({'label':name,'segments':[(green,TERRAIN_COLORS['grass'],green_label),(dry,(177,157,82),dry_label)],
-                               'tooltip_details':{green_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_green'],fr,lang)],dry_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_dry'],fr,lang)]}})
+                green=g.get('green_grass_cells',r['cells']);detail=g.get('grass_detail_cells',max(0,r['cells']-green-g.get('dry_grass_cells',0)));dry=g.get('dry_grass_cells',0)
+                green_label=tr('Herbe verte','Green grass','Grünes Gras','Hierba verde');detail_label=tr('Détails d’herbe','Grass details','Grasdetails','Detalles de hierba');dry_label=tr('Herbe sèche','Dry grass','Trockenes Gras','Hierba seca')
+                groups.append({'label':name,'segments':[(green,TERRAIN_COLORS['grass'],green_label),(detail,TERRAIN_COLORS['grass_detail'],detail_label),(dry,(177,157,82),dry_label)],
+                               'tooltip_details':{green_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_green'],fr,lang)],detail_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_detail'],fr,lang)],dry_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_dry'],fr,lang)]}})
             elif key=='water':
                 sea=tr('Mer','Ocean','Meer','Océano');lakes=tr('Lacs','Lakes','Seen','Lagos');detail=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)]
                 groups.append({'label':name,'segments':[(g.get('ocean_cells',r['cells']),WATER_COLORS[5],sea),(g.get('inland_water_cells',0),WATER_COLORS[1],lakes)],'tooltip_details':{sea:detail,lakes:detail}})
@@ -406,18 +478,20 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
         for group,row in zip(groups,rows):group['tooltip_details']={'':[_id_line('object',(row['object_id'],),fr,lang)]}
         return _vertical_chart(groups,title,width,height,dark,tr('piles','piles','Haufen','pilas'),return_regions=return_regions)
     if chart_key=='forestry':
-        v=stats['vegetation'];items=[(tr('Arbres adultes','Adult trees','Ausgewachsene Bäume','Árboles adultos'),v['adult_wood_trees']),(tr('Palmiers','Palms','Palmen','Palmeras'),v['families']['palm']),(tr('Pousses','Saplings','Setzlinge','Retoños'),v['saplings'])]
-        groups=_simple_groups(items,[(45,125,60),(155,175,65),(105,205,90)])
-        ids=((68,69,70,71,72,73,74,75,76,77,80,81),(78,79),(84,))
-        for group,obj_ids in zip(groups,ids):group['tooltip_details']={'':[_id_line('object',obj_ids,fr,lang)]}
+        segments = _forestry_segments(stats, lang)
+        groups = [
+            {'label': label, 'segments': [(value, color, '')],
+             'tooltip_details': {'': details}}
+            for value, color, label, details in segments
+        ]
         return _vertical_chart(groups,title,width,height,dark,tr('objets','objects','Objekte','objetos'),return_regions=return_regions)
     if chart_key=='height':
         h=stats['height'].get('land_distribution',stats['height']['distribution']);keys=('p10','p25','median','p75','p90','p95','p99','max');names=tuple(tr(a,b,c,d) for a,b,c,d in [('P10 bas','P10 low','P10 niedrig','P10 bajo'),('P25 bas','P25 low','P25 niedrig','P25 bajo'),('Médiane','Median','Median','Mediana'),('P75 haut','P75 high','P75 hoch','P75 alto'),('P90 haut','P90 high','P90 hoch','P90 alto'),('P95 haut','P95 high','P95 hoch','P95 alto'),('P99 haut','P99 high','P99 hoch','P99 alto'),('Maximum','Maximum','Maximum','Máximo')]);items=[(names[i],float(h[k])) for i,k in enumerate(keys)]
         return _vertical_chart(_simple_groups(items,_gradient_colors(len(items),(226,236,220),(92,88,79))),title,width,height,dark,tr('hauteur','height','Höhe','altura'),return_regions=return_regions)
     if chart_key=='agriculture':
-        ag=stats['agriculture'];items=[(tr('Blé','Wheat','Weizen','Trigo'),ag['wheat']),(tr('Vigne','Vine','Weinreben','Vid'),ag['vine']),(tr('Riz','Rice','Reis','Arroz'),ag['rice'])]
-        groups=_simple_groups(items,[AGRI_COLORS['wheat'],AGRI_COLORS['vine'],AGRI_COLORS['rice']])
-        ids=(range(85,94),range(94,103),range(103,111))
+        ag=stats['agriculture'];items=[(tr('Blé','Wheat','Weizen','Trigo'),ag['wheat']),(tr('Vigne','Vine','Weinreben','Vid'),ag['vine']),(tr('Riz','Rice','Reis','Arroz'),ag['rice']),(tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),ag.get('bee_nests',0))]
+        groups=_simple_groups(items,[AGRI_COLORS['wheat'],AGRI_COLORS['vine'],AGRI_COLORS['rice'],AGRI_COLORS['bee_nests']])
+        ids=(range(85,94),range(94,103),range(103,111),BEE_NEST_IDS)
         for group,obj_ids in zip(groups,ids):group['tooltip_details']={'':[_id_line('object',obj_ids,fr,lang)]}
         return _vertical_chart(groups,title,width,height,dark,tr('cases','cells','Zellen','celdas'),return_regions=return_regions)
     if chart_key=='nearest_starts':
@@ -432,7 +506,11 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
     if chart_key in ('player_trees_r30','player_stone_r30','player_fish_r30'):
         key={'player_trees_r30':'trees','player_stone_r30':'stone','player_fish_r30':'fish'}[chart_key];raw=[]
         def metric(m):
-            if key=='trees':return int(m.get('adult_trees',0)+m.get('saplings',0))
+            if key=='trees':
+                return int(m.get('tree_lifecycle', m.get('adult_trees',0)
+                           + m.get('saplings_stage_2',0)
+                           + m.get('saplings_stage_1',0)
+                           + m.get('saplings',0)))
             return int(m.get('building_stone_stock',0) if key=='stone' else m.get('fish_stock',0))
         for row in stats.get('players',{}).get('local_resources',[]):
             near=metric(row['radii'].get('50',{}));total100=metric(row['radii'].get('100',{}));far=max(0,total100-near);raw.append((row['player'],near,far,total100))

@@ -46,7 +46,7 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — validated v1.9 DEV_1 / stable v1.5 engine
+## Current state — validated v1.9 DEV_3 / stable v1.5 engine
 
 The protected v1.5 engine remains the validated generation checkpoint and must not change without an explicit engine reason. The latest published stable application is v1.7, which added the Statistics and Charts analysis foundation above that engine.
 
@@ -55,7 +55,7 @@ The current v1.8 development line adds workflow, accessibility and production to
 - Legacy and Upgraded Continental 768×768 generation;
 - `.EDM`, `.MAP` and read-only `.SAV` imports;
 - validated 768×768 `.EDM`/`.MAP` export and unchanged source `.SAV` copying;
-- Global, Starts, Territories, Elevation, Resources, Paths, Crops and Heatmap views;
+- Global, Starts, Territories, Initial mask, Elevation, Resources, Paths, Crops and Heatmap views;
 - structured statistics, full Terrain/Object ID inventories and interactive charts;
 - light/dark themes, square/parallelogram projections, zoom, drag and exact cell inspection;
 - French, English, German and Spanish interfaces with persistent live switching;
@@ -64,7 +64,11 @@ The current v1.8 development line adds workflow, accessibility and production to
 - grouped map and chart exports;
 - configurable shortcuts and dynamic help.
 
-DEV_11 closed the publication/maintainability pass. v1.9 DEV_1 now fixes imports for valid EDM files carrying terminal DWORD-alignment bytes; both supplied failing files load on Windows. The main v1.9 work is internal restructuring of the GUI and engine/generator layers while preserving behavior. Data Mapping returns near the end of v1.9.
+DEV_11 closed the publication/maintainability pass. v1.9 DEV_1 fixed imports
+for valid EDM files carrying terminal DWORD-alignment bytes; both supplied
+failing files load on Windows. DEV_3 now consolidates the demonstrated player
+SAV data, direct initial-mask field, confirmed object/terrain catalogues and
+vegetation charts without changing the protected v1.5 engine.
 
 ## Install and run on Windows
 
@@ -93,6 +97,10 @@ The main Python dependencies are NumPy, SciPy and Pillow. A separate installatio
 - Generation is currently calibrated only for Continental 768×768.
 - Sizes other than 768 may be shown in the UI but are not ready for generation.
 - The project has no `.SAV` writer. Imported saves are read for supported data and may only be copied unchanged.
+- The native initial territory mask is read directly from type-3 byte 8 of an
+  immediate SAV when the confirmed signature is present; no start-based shape
+  reconstruction is used. EDM/MAP claim-less sources remain neutral in that
+  view.
 - The partial `.EDM` import failure was fixed and Windows-validated in v1.9 DEV_1. The parser accepts only the confirmed terminal DWORD-alignment case and keeps reconstruction paths strict.
 - Current seeds produce only three base morphologies, then rotations and occasional mirrors. The seed/RNG audit and objective diversification are planned for v1.10.
 - Automated validators are regression guards; they do not replace validation in the official editor, View Map, a runtime `.SAV`, or long-play.

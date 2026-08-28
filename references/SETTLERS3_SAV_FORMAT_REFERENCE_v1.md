@@ -224,9 +224,61 @@ SAV byte 8 contains:
 ```
 
 This is strongly consistent with player territory/claim initialization.
-Exact claim semantics and why player 4 owns 4000 instead of 3500 cells remain TODO.
+Exact claim semantics and the reason per-player counts vary between maps remain
+TODO; the direct 4P triplet below provides a second observed distribution.
 
-## 5. Static versus runtime copies
+### Direct initial-mask confirmation — supplied 4P immediate save
+
+**CONFIRMED for the supplied triplet**
+
+The follow-up triplet
+`S3_Continental_Legacy_4P_768x768_seed_2026081901_MapGenV1_8.{edm,map,sav}`
+settles the storage question without any geometric reconstruction:
+
+- the generated EDM Area claim byte is `255` on all `589824` cells;
+- the editor-exported MAP Area claim byte is also `255` on all `589824` cells;
+- the SAV captured immediately at game start contains the complete claim raster
+  in type-3 **byte 8**, with counts `P1=3500`, `P2=3500`, `P3=4000`,
+  `P4=4000`, and `574824` unclaimed cells.
+
+The four original starts read from the native type-6 block are
+`(652,652)`, `(424,46)`, `(54,324)` and `(212,710)`.  Copying the byte-8
+coordinates directly gives the exact per-player masks; the first two have a
+`71×71` bounding box and the latter two a `77×77` bounding box.  No radius,
+shape table, wrapping, interpolation or nearest-start assignment is involved.
+
+The reader therefore exposes this raster only when the strict observed
+immediate-save signature is present (each active player has 3500 or 4000 cells
+and no other claim value occurs).  Later SAVs continue to expose byte 8 as the
+current runtime claim raster, but are not labelled as an initial mask when that
+signature has evolved.
+
+## 5. SAV type-6 player block
+
+**CONFIRMED structure on the current native corpus; semantics deliberately
+limited**
+
+The tested type-6 payload is exactly `84 + 20×328 = 6644` bytes. The native
+record offsets are:
+
+```text
+record +0   uint32  active flag (1 human / 2 computer for active slots; 0 unused)
+record +4   uint32  repeated race/faction code candidate
+record +16  uint32  original start X
+record +20  uint32  original start Y
+```
+
+The current reader uses the active flag and the two coordinates to recover
+starts. The race/faction value is exported as a candidate numeric field only;
+no tribe name, effective player colour, mana current value or mana maximum is
+assigned from the remaining opaque bytes. The validated viewer colour shown in
+reports is the slot palette, not a value decoded from this block.
+
+An older synthetic unit fixture uses a `96 + 20×328` layout with contiguous
+`<player_id,start_x,start_y>` tuples. The reader accepts that fixture for
+backwards compatibility but does not treat it as native SAV evidence.
+
+## 6. Static versus runtime copies
 
 Several SAV cell bytes appear to duplicate or transform map information.
 
@@ -241,7 +293,7 @@ Important distinction established by calibration:
 
 Do not overwrite the exact/static field with a guessed dynamic counterpart.
 
-## 6. Additional large grid-like parts
+## 7. Additional large grid-like parts
 
 The sequential SAV parser also finds later large parts.
 
@@ -298,7 +350,7 @@ It is not a simple fixed one-byte / two-byte / four-byte per-cell grid.
 Its decrypted header contains structured values and ASCII data.
 Further decomposition is TODO.
 
-## 7. Known part sequence landmarks
+## 8. Known part sequence landmarks
 
 The calibration SAV parses completely into 820 sequential parts.
 
@@ -334,7 +386,7 @@ and end immediately before type 4 at:
 
 This entire region is therefore the main 24-byte-per-cell runtime map grid.
 
-## 8. Calibration observations around player starts
+## 9. Calibration observations around player starts
 
 The four PlayerInfo coordinates used by the MAP were retained:
 
@@ -354,7 +406,7 @@ At game initialization:
 
 This gives a useful signature for future start-position reverse engineering.
 
-## 9. Safe SAV reader baseline
+## 10. Safe SAV reader baseline
 
 A first conservative reader should:
 
@@ -376,7 +428,7 @@ A first conservative reader should:
 Do not write SAV files yet. Reading is sufficiently established; writing has not been
 validated against the game.
 
-## 10. Confidence ledger
+## 11. Confidence ledger
 
 ### CONFIRMED
 
@@ -396,12 +448,15 @@ validated against the game.
 - fish are dynamically changed
 - type 70 = exact 4-byte-per-cell payload
 - type 65 = 4-byte prefix + exact 1-byte-per-cell payload
+- type-6 player payload on the native corpus = `84 + 20×328` bytes
+- type-6 record `+0` active flag and `+16/+20` original start coordinates
 
 ### STRONG
 
 - byte 8 = runtime player claim/territory
 - terrain 28 around starts is a player-start/runtime terrain state
 - byte 7 is an object-related dynamic field
+- type-6 record `+4` is a repeated race/faction-code candidate, not a proven name
 
 ### TODO
 
@@ -410,7 +465,7 @@ validated against the game.
 - exact meaning of type 65 and type 70 grids
 - decode type 58 and remaining dynamic parts
 - settlers/buildings runtime records
-- player state structures
+- opaque player-state fields beyond the confirmed type-6 offsets
 - fog/visibility
 - game tick/time and RNG state
 - teams/diplomacy
@@ -418,7 +473,7 @@ validated against the game.
 - safe SAV writing
 - compare multiple saves from the same game at controlled time deltas
 
-## 11. Next recommended calibration experiments
+## 12. Next recommended calibration experiments
 
 To decode dynamic fields efficiently, create controlled SAV pairs from the **same MAP**:
 
@@ -432,4 +487,3 @@ To decode dynamic fields efficiently, create controlled SAV pairs from the **sam
 
 Binary diffs between such paired SAVs will isolate dynamic parts far more efficiently
 than comparing unrelated games.
-

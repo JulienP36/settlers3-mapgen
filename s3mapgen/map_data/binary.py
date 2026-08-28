@@ -134,22 +134,143 @@ def read_starts(path:Path|str)->list[tuple[int,int]]:
     except Exception:
         pass
     return []
-def _extract_sav_starts_from_player_block(payload:bytes|bytearray, side:int, max_players:int=20)->list[tuple[int,int]]:
-    """Recover original player start coordinates from the confirmed SAV v11 player block.
+SAV_PLAYER_BLOCK_NATIVE_PREFIX = 84
+SAV_PLAYER_BLOCK_LEGACY_PREFIX = 96
+SAV_PLAYER_RECORD_STRIDE = 328
+SAV_PLAYER_RECORD_COUNT = 20
 
-    Native corpus layout: 96-byte prefix, then 20 records of 328 bytes.
-    Each active record starts with <III> = player_id, start_x, start_y.
-    The sequence is contiguous from player 0; parsing stops at the first nonmatching id.
+# The supplied immediate-save corpus gives a direct, format-level signature
+# for the native initial territory raster: every active player owns either
+# 3,500 or 4,000 cells in type-3 byte 8, and no other claim value is present.
+# The cells themselves are always copied from the SAV; these values are only a
+# conservative gate that prevents a later, expanded runtime claim raster from
+# being advertised as an initial mask.
+SAV_INITIAL_MASK_CELL_COUNTS = frozenset((3500, 4000))
+
+
+def _sav_player_block_prefix(payload:bytes|bytearray)->int|None:
+    """Return the exact prefix size for a known fixed-record player block.
+
+    The native SAV corpus supplied for the mapping work is ``84 + 20×328``
+    bytes.  A small synthetic fixture used by the original regression suite
+    predates that observation and is ``96 + 20×328``; accepting it here keeps
+    the reader backwards compatible without treating the old layout as native.
     """
+    size=len(payload)
+    for prefix in (SAV_PLAYER_BLOCK_NATIVE_PREFIX, SAV_PLAYER_BLOCK_LEGACY_PREFIX):
+        if size>=prefix and (size-prefix)%SAV_PLAYER_RECORD_STRIDE==0:
+            return prefix
+    return None
+
+
+def _extract_sav_player_records(payload:bytes|bytearray, side:int, max_players:int=20)->list[dict]:
+    """Decode only the player fields demonstrated by SAV v11 samples.
+
+    Native records have the following confirmed/strongly supported positions:
+
+    * ``+0``: active flag (``1`` human / ``2`` computer in active records,
+      ``0`` in unused slots);
+    * ``+4``: a repeated race/faction code, retained as a *candidate*;
+    * ``+16`` / ``+20``: original start ``x`` / ``y`` coordinates.
+
+    The remainder of the 328-byte record is deliberately left opaque.  In
+    particular, no offset is labelled mana or effective colour until an
+    independent corpus proves that meaning.  The legacy 96-byte fixture stores
+    contiguous ``<player_id,start_x,start_y>`` tuples and is decoded only for
+    compatibility with the old unit test.
+    """
+    prefix=_sav_player_block_prefix(payload)
+    if prefix is None:
+        return []
+    count=min(max(0,int(max_players)), SAV_PLAYER_RECORD_COUNT, (len(payload)-prefix)//SAV_PLAYER_RECORD_STRIDE)
+    records=[]
+    if prefix==SAV_PLAYER_BLOCK_LEGACY_PREFIX:
+        # Historical synthetic layout: records are contiguous and terminate at
+        # the first record whose id is no longer the expected slot number.
+        for slot in range(count):
+            off=prefix+slot*SAV_PLAYER_RECORD_STRIDE
+            rec_pid,x,y=struct.unpack_from('<III',payload,off)
+            if rec_pid!=slot:
+                break
+            valid=0<=x<side and 0<=y<side
+            records.append({
+                'player':slot+1,'slot':slot+1,'active':bool(valid),
+                'active_flag':1 if valid else 0,
+                'start_x':int(x) if valid else None,'start_y':int(y) if valid else None,
+                'tribe_code_candidate':None,'layout':'legacy_fixture',
+                'record_offset':off,
+            })
+        return records
+
+    for slot in range(count):
+        off=prefix+slot*SAV_PLAYER_RECORD_STRIDE
+        active_flag=struct.unpack_from('<I',payload,off)[0]
+        tribe_code=struct.unpack_from('<I',payload,off+4)[0]
+        x,y=struct.unpack_from('<II',payload,off+16)
+        valid=0<=x<side and 0<=y<side
+        # Native v11 uses 1 for a human-controlled active slot and 2 for a
+        # computer-controlled active slot.  Both records carry an original
+        # start and participate in the byte-8 territory raster.
+        active=active_flag in (1,2)
+        records.append({
+            'player':slot+1,'slot':slot+1,'active':active,'active_flag':int(active_flag),
+            'start_x':int(x) if active and valid else None,
+            'start_y':int(y) if active and valid else None,
+            'tribe_code_candidate':int(tribe_code) if tribe_code<=255 else None,
+            'layout':'native_v11','record_offset':off,
+        })
+    return records
+
+
+def _extract_sav_initial_territory_direct_cells(claim: "np.ndarray", player_records: list[dict]) -> dict|None:
+    """Return exact native initial-mask cells when the SAV has the known signature.
+
+    This function deliberately performs no radius, shape, wrapping, or
+    interpolation.  It only copies coordinates of cells whose type-3 byte 8
+    value is one of the active players.  A later SAV whose claims have grown or
+    been otherwise modified simply fails the strict immediate-save signature
+    and remains available through ``MapState.claim`` as the current runtime
+    raster.
+    """
+    import numpy as np
+
+    active = [
+        int(row['player']) - 1
+        for row in player_records
+        if row.get('active') and row.get('start_x') is not None and row.get('start_y') is not None
+    ]
+    if not active:
+        return None
+    active_set = set(active)
+    present = {int(value) for value in np.unique(claim) if int(value) != 255}
+    if present != active_set:
+        return None
+    counts = {pid: int(np.count_nonzero(claim == pid)) for pid in active}
+    if any(count not in SAV_INITIAL_MASK_CELL_COUNTS for count in counts.values()):
+        return None
+
+    cells: dict[str, list[list[int]]] = {}
+    for pid in active:
+        # np.argwhere returns (y, x); metadata is stored as the map's public
+        # (x, y) coordinates, matching starts and all other map APIs.
+        ys, xs = np.where(claim == pid)
+        cells[str(pid + 1)] = [[int(x), int(y)] for y, x in zip(ys, xs)]
+    return {
+        'cells': cells,
+        'player_cell_counts': {str(pid + 1): counts[pid] for pid in active},
+        'total_cells': int(sum(counts.values())),
+        'source': 'sav_type3_byte8_direct_initial_claims',
+        'signature': 'active_player_counts_3500_or_4000',
+    }
+
+
+def _extract_sav_starts_from_player_block(payload:bytes|bytearray, side:int, max_players:int=20)->list[tuple[int,int]]:
+    """Recover original player start coordinates from a SAV v11 player block."""
     out=[]
-    prefix=96; stride=328
-    for pid in range(max_players):
-        off=prefix+pid*stride
-        if off+12>len(payload): break
-        rec_pid,x,y=struct.unpack_from('<III',payload,off)
-        if rec_pid!=pid: break
-        if not (0<=x<side and 0<=y<side): break
-        out.append((int(x),int(y)))
+    for row in _extract_sav_player_records(payload,side,max_players):
+        x,y=row.get('start_x'),row.get('start_y')
+        if row.get('active') and x is not None and y is not None:
+            out.append((int(x),int(y)))
     return out
 
 
@@ -189,14 +310,48 @@ def read_sav_state(path:Path|str)->MapState:
         area[:,x,3]=a[:,8]
         area[:,x,5]=a[:,17]
     starts=[]
+    best_player_records=[]
+    best_player_layout=None
     for block in player_blocks:
-        candidate=_extract_sav_starts_from_player_block(block,side)
-        if len(candidate)>len(starts): starts=candidate
+        records=_extract_sav_player_records(block,side)
+        candidate=[(int(row['start_x']),int(row['start_y'])) for row in records if row.get('active') and row.get('start_x') is not None and row.get('start_y') is not None]
+        if len(candidate)>len(starts) or (records and not best_player_records):
+            starts=candidate
+            best_player_records=records
+            best_player_layout=_sav_player_block_prefix(block)
     st=MapState(side,area); st.starts=starts
+    direct_initial_mask = _extract_sav_initial_territory_direct_cells(area[:,:,3], best_player_records)
     st.metadata.update({
         'source_format':'SAV','source_path':str(path),'sav_version':version,
         'territories_available':True,'runtime_terrain_preserved':True,'runtime_objects_preserved':True,
         'sav_original_starts_available':bool(starts),
         'start_territory_source':'sav_player_block_type6' if starts else 'unavailable',
+        # Byte 8 is the exact current runtime claim raster for every SAV.  A
+        # second, opt-in field is attached only when the complete raster also
+        # matches the observed immediate-save signature above.
+        'runtime_claim_source':'sav_type3_byte8',
+        'initial_territory_mask_status':'direct' if direct_initial_mask else 'not_detected',
+        'initial_territory_mask_source':direct_initial_mask['source'] if direct_initial_mask else None,
+        'initial_territory_direct_cells':direct_initial_mask['cells'] if direct_initial_mask else None,
+        'initial_territory_direct_counts':direct_initial_mask['player_cell_counts'] if direct_initial_mask else None,
+        'initial_territory_direct_total_cells':direct_initial_mask['total_cells'] if direct_initial_mask else 0,
+        'initial_territory_direct_signature':direct_initial_mask['signature'] if direct_initial_mask else None,
+        # These values are structural facts of the native corpus, not guesses
+        # about the opaque fields that follow each player record.
+        'sav_player_block': {
+            'part_type':6, 'prefix_bytes':best_player_layout,
+            'record_stride':SAV_PLAYER_RECORD_STRIDE,
+            'record_count':len(best_player_records),
+            'active_count':sum(1 for row in best_player_records if row.get('active')),
+        } if best_player_records else None,
+        'sav_player_records':best_player_records,
+        'sav_player_metadata_status': {
+            'start_coordinates':'confirmed',
+            'active_flag':'confirmed',
+            'tribe_code':'candidate',
+            'effective_color':'not_decoded',
+            'mana_current':'not_decoded',
+            'mana_maximum':'not_decoded',
+        },
     })
     return st

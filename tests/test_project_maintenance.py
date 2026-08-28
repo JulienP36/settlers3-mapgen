@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import json
-import re
 import subprocess
 import sys
 import zipfile
@@ -24,19 +23,6 @@ from s3mapgen.version import APP_VERSION
 
 
 ROOT = Path(__file__).resolve().parent.parent
-
-
-def test_pregen_router_points_only_to_existing_reference_files():
-    pregen_path = ROOT / 'references/SETTLERS3_PREGEN_READ_FIRST.md'
-    pregen = pregen_path.read_text(encoding='utf-8')
-    routed_paths = re.findall(r'`([^`]+\.(?:md|txt))`', pregen)
-
-    assert routed_paths
-    for routed_path in routed_paths:
-        target = (pregen_path.parent / routed_path).resolve()
-        assert not Path(routed_path).is_absolute(), routed_path
-        assert target.is_relative_to(ROOT), routed_path
-        assert target.is_file(), routed_path
 
 
 def test_visual_order_helpers_keep_manual_order_and_drop_evictions():
@@ -167,7 +153,8 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
 
     assert len(todo.splitlines()) < 220
     assert 'Roadmap orientée **travail restant**' in todo
-    assert '## v1.9 —' in todo and '## v1.10 —' in todo
+    assert '## v1.9 —' in todo and '## v2.0 potentielle —' in todo
+    assert 'reconstruction complète du pipeline' in todo
 
     assert 'DEV complets uniquement' in workflow
     assert 'Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**' in workflow

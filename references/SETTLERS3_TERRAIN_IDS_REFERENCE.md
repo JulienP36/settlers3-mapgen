@@ -2,6 +2,11 @@
 
 Baseline: **MapGen v1.7 STABLE**.
 
+Les IDs **18** et **19** sont validés comme détails d’herbe : ils apparaissent
+uniquement sous forme de blobs d’une cellule, entourés exclusivement d’herbe
+ordinaire (ID 16). Ils appartiennent donc à la famille `Herbe`; leur distinction
+1/2 reste uniquement visuelle.
+
 - Domaine listé : IDs byte `0–255`.
 - `Inconnu` signifie uniquement : **pas de nom validé dans notre nomenclature actuelle**.
 - Cette liste est volontairement conservative : aucune sémantique n’est inventée.
@@ -27,8 +32,8 @@ Baseline: **MapGen v1.7 STABLE**.
 | 15 | Inconnu | Inconnu | À identifier |
 | 16 | Herbe | Grass | Connu |
 | 17 | Transition roche 1 | Rock transition 1 | Connu |
-| 18 | Détail herbe 1 | Grass detail 1 | Observé — nom provisoire |
-| 19 | Détail herbe 2 | Grass detail 2 | Observé — nom provisoire |
+| 18 | Détail herbe 1 | Grass detail 1 | Confirmé — blob singleton entouré d’herbe |
+| 19 | Détail herbe 2 | Grass detail 2 | Confirmé — blob singleton entouré d’herbe |
 | 20 | Transition herbe/désert | Grass/desert transition | Connu |
 | 21 | Transition herbe/marais | Grass/swamp transition | Connu |
 | 22 | Agriculture runtime | Runtime agriculture | Connu |

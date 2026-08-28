@@ -1,6 +1,6 @@
 from s3mapgen.application.ui.i18n.shell import FEEDBACK_TEXT, WINDOW_TITLES
 from s3mapgen.application.ui.i18n.viewer import HEATMAP_LABELS, VIEW_LABELS
-from s3mapgen.application.ui.viewer import OBJECT_NAMES
+from s3mapgen.application.ui.viewer import OBJECT_NAMES, TERRAIN_NAMES
 from s3mapgen.version import APP_VERSION, ENGINE_VERSION
 
 
@@ -23,6 +23,18 @@ def test_inspector_object_table_contains_known_ids():
     assert OBJECT_NAMES[103]=='Rice 1'
     assert OBJECT_NAMES[111]=='Reef 1'
     assert OBJECT_NAMES[127]=='Building Stone 13'
+    assert OBJECT_NAMES[208]=='Tree stump — variant 1'
+    assert OBJECT_NAMES[221]=='Palm sapling — stage 2'
+    assert OBJECT_NAMES[229]=='Palm sapling — stage 1'
+    assert OBJECT_NAMES[239]=='Resource panel — gemstones'
+    assert OBJECT_NAMES[253]=='Bee nest — stage 7'
+    # The three probes that crashed the calibration maps remain unresolved.
+    assert 215 not in OBJECT_NAMES and 223 not in OBJECT_NAMES and 231 not in OBJECT_NAMES
+
+
+def test_inspector_terrain_table_contains_validated_grass_details():
+    assert TERRAIN_NAMES[18] == 'Grass detail 1'
+    assert TERRAIN_NAMES[19] == 'Grass detail 2'
 
 
 def test_window_title_is_fully_localized_and_versioned():

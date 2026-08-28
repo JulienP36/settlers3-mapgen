@@ -16,6 +16,9 @@ def selector_icon_image(color, kind="dot", size=18):
         d.ellipse((3, 2, size - 4, size - 5), fill=c, outline="#111111", width=1)
         d.ellipse((7, 6, size - 8, size - 9), fill="#fff2df")
         d.polygon(((size // 2, size - 2), (size // 2 - 3, size - 7), (size // 2 + 3, size - 7)), fill=c, outline="#111111")
+    elif kind == "initial_territory":
+        d.polygon([(size // 2, 2), (size - 3, 5), (size - 4, size - 5), (size // 2, size - 2), (3, size - 5), (2, 5)], fill=c, outline="#111111")
+        d.line((5, 7, 8, 11, 12, 6, 15, 10), fill="#fff1d2", width=2)
     elif kind == "heightmap":
         d.polygon([(2, size - 3), (size // 2, 2), (size - 3, size - 3)], fill=c, outline="#111111")
         d.line((size // 2, 4, size // 2 - 3, 9), fill="#f2eaff", width=2)

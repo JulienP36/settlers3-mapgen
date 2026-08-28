@@ -48,7 +48,7 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v1.9 DEV_1 validée / moteur v1.5 stable
+## État actuel — v1.9 DEV_3 validée / moteur v1.5 stable
 
 **v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
@@ -57,7 +57,13 @@ Référence moteur v1.5 :
 
 DEV_10 a finalisé le verrouillage manuel `M`, l’ordre visuel réorganisable et une capacité de cache strictement infranchissable. DEV_11_R1 a validé sous Windows la première tranche de maintenance : version visible centralisée, logique pure d’ordre/protection de l’historique isolée de Tk et ZIP source déterministe soumis à une validation complète puis à l’autodiagnostic depuis son propre dossier extrait.
 
-DEV_11 a clôturé la passe publication/maintenabilité. La v1.9 DEV_1 corrige maintenant l’import de certains EDM valides qui conservent un remplissage terminal d’alignement ; les deux fichiers fautifs fournis chargent sous Windows. La suite de v1.9 est consacrée principalement à la restructuration interne de la GUI et des couches moteur/générateur, à comportement constant. Le Data Mapping revient vers la fin de v1.9.
+DEV_11 a clôturé la passe publication/maintenabilité. La v1.9 DEV_1 a corrigé
+l’import de certains EDM valides qui conservent un remplissage terminal
+d’alignement ; les deux fichiers fautifs fournis chargent sous Windows. La
+restructuration interne de la GUI et des couches moteur/générateur est suivie de
+la DEV_3, qui consolide le Data Mapping joueur, le masque initial SAV direct,
+les objets/terrains confirmés et les graphes de végétation, sans modifier le
+moteur v1.5 protégé.
 
 DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `run_gui.bat` / `run_gui.py`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
 
@@ -65,23 +71,33 @@ La GUI v1.6 comprend notamment :
 
 - génération Legacy / Upgraded Continental 768×768 via le moteur v1.5 ;
 - import EDM / MAP / SAV et export EDM+MAP 768 ;
-- vues Global / Départs / Territoires / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
+- vues Global / Départs / Territoires / Masque initial / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
 - FR/EN/DE/ES persistants avec bascule dynamique et repli anglais de sécurité ;
 - inspecteur exact de cellule ;
 - historique LRU unifié et configurable (4/8/12/16, 8 par défaut), centre de gestion, ordre visuel manuel, verrouillage `M` et comparaison A/B légère ;
 - génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
 - centres d’export multi-format : EDM/MAP 768, copie SAV source inchangée lorsqu’elle existe, PNG Global/vue courante et Graphiques JSON/CSV/PNG ;
-- vue Global épurée, Vue Départs dédiée avec 210 petits marqueurs sur le contour initial exact et opacité réglable ; miniatures Batch avec marqueurs masqués, petits ou normaux via un réglage persistant ;
+- vue Global épurée, Vue Départs dédiée avec le contour initial uniquement
+  lorsqu'il est lu directement dans un SAV, et opacité réglable ; miniatures
+  Batch avec marqueurs masqués, petits ou normaux via un réglage persistant ;
 - raccourcis configurables/persistants avec détection de conflits et aide F1 ;
 - palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
-- **lecture des starts d'origine d'un SAV v11** et contour initial fondé sur le masque natif exact de 3500 cellules.
+- **lecture des starts d'origine d'un SAV v11** et du masque initial natif quand
+  le SAV immédiat expose directement ses cellules en type-3 byte 8 ; aucune
+  reconstruction géométrique n'est utilisée. Les EDM/MAP dont le claim vaut
+  `255` partout restent neutres dans la vue Masque initial.
 
 ### Qualité des traductions
 
 Les interfaces **française et anglaise** sont les versions linguistiques de référence, relues et considérées comme correctes. Les traductions **allemande et espagnole** ont été produites automatiquement puis seulement partiellement revues ; elles peuvent donc contenir des formulations imparfaites ou un vocabulaire à affiner. Cette règle s’appliquera également aux futures langues tant qu’une relecture humaine compétente ne les aura pas validées. Les corrections proposées par des locuteurs sont les bienvenues.
 
-Le contour SAV n'est plus une ellipse approximative : les coordonnées de départ sont lues dans le bloc joueur du SAV et le masque initial canonique a été reconstruit à partir de 145 régions natives identiques. DEV_4_R4 place un marqueur minimal sans chevauchement sur chacune des 210 cellules de cette frontière. Territoires affiche les claims runtime réels d'un SAV ; pour un EDM/MAP, elle reconstitue uniquement à l'écran les zones initiales exactes de 3500 cellules autour des starts, sans prétendre lire cette information dans le fichier.
+Les coordonnées de départ sont lues dans le bloc joueur du SAV. L'ancienne
+forme canonique de 145 régions et 3 500 cellules est conservée uniquement comme
+trace d'analyse historique ; elle ne sert jamais à remplir un masque. La vue
+Masque initial affiche exclusivement les coordonnées directes du byte 8 d'un
+SAV immédiat reconnu, tandis que Territoires affiche les claims runtime
+réellement lus dans le SAV.
 
 > Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
 

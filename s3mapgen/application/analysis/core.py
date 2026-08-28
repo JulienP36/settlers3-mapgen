@@ -11,11 +11,16 @@ import io
 import numpy as np
 
 from ...map_data.constants import (
-    WATER_IDS, GRASS, GRASS_DESERT_TRANS, GRASS_SWAMP_TRANS, ROCKY,
+    WATER_IDS, GRASS, GRASS_DETAIL_IDS, BEE_NEST_IDS, PLANTATION_IDS,
+    TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
+    TREE_SAPLING_STAGE_1_IDS, PALM_SAPLING_STAGE_1_IDS,
+    SAPLING_STAGE_2_IDS, SAPLING_STAGE_1_IDS,
+    GRASS_DESERT_TRANS, GRASS_SWAMP_TRANS, ROCKY,
     ROCK_TRANS_1, ROCK_TRANS_2, ROCK_SNOW_TRANS, SHORE, DESERT,
     DESERT_TRANS, SWAMP, SWAMP_TRANS, RIVER_IDS, SNOW, SNOW_TRANS,
     MOUNTAIN_IDS, DESERT_IDS, SWAMP_IDS,
 )
+from ..rendering.preview import PLAYER_COLORS
 from ...map_data.hexgrid import component_labels, hex_distance, neighbor_count
 
 
@@ -38,12 +43,65 @@ TREE_FAMILIES = {
     'other_adult': ((73, 74, 75, 76, 77, 80, 81), 'Autres arbres adultes', 'Other adult trees'),
     'palm': ((78, 79), 'Palmiers', 'Palm'),
 }
-SAPLING_IDS = (84,)
+# Backward-compatible name for the original plantation/sapling object.  The
+# later lifecycle stages are exposed separately below instead of replacing
+# this existing stats field.
+SAPLING_IDS = PLANTATION_IDS
 MUD_IDS = (23, 144, 145)
 MOUNTAIN_ANALYSIS_IDS = tuple(sorted(set(MOUNTAIN_IDS + (34,))))
 
 LOCAL_RADII = (10, 20, 30, 40, 50, 100)
 DRY_GRASS = 24
+
+
+def _player_metadata_rows(state) -> list[dict[str, Any]]:
+    """Expose player fields without guessing opaque SAV semantics.
+
+    ``read_sav_state`` supplies records decoded from the native type-6 block.
+    Only the active flag, original start and a repeated race/faction code are
+    currently demonstrated.  The viewer colour below is explicitly the
+    validated slot palette used by the renderer; it is not presented as a
+    colour field recovered from the SAV.  Mana and effective colour remain
+    ``None`` until a corpus with a controlled change proves their offsets.
+    """
+    records=state.metadata.get('sav_player_records')
+    if not isinstance(records,list):
+        records=[]
+    # Generated maps have starts but no SAV player block.  Keep a small,
+    # source-labelled row for them so the schema remains useful without
+    # fabricating race/mana values.
+    if not records and state.starts:
+        records=[{
+            'player':index+1,'slot':index+1,'active':True,
+            'active_flag':1,
+            'start_x':int(x),'start_y':int(y),
+            'tribe_code_candidate':None,'layout':'generated',
+        } for index,(x,y) in enumerate(state.starts)]
+    rows=[]
+    for index,record in enumerate(records):
+        slot=int(record.get('player',record.get('slot',index+1)) or index+1)
+        rgb=PLAYER_COLORS[slot-1] if 1<=slot<=len(PLAYER_COLORS) else None
+        row={
+            'player':slot,
+            'active':bool(record.get('active',False)),
+            'active_flag':record.get('active_flag'),
+            'start_x':record.get('start_x'), 'start_y':record.get('start_y'),
+            'tribe_code_candidate':record.get('tribe_code_candidate'),
+            'tribe':'unknown',
+            'effective_color':None,
+            'effective_color_status':'not_decoded_from_sav',
+            'mana_current':None, 'mana_maximum':None,
+            'mana_status':'not_decoded_from_sav',
+            'viewer_color_rgb':list(rgb) if rgb is not None else None,
+            'viewer_color_hex':('#%02X%02X%02X'%rgb) if rgb is not None else None,
+            'viewer_color_source':'validated_slot_palette' if rgb is not None else None,
+            'source_layout':record.get('layout'),
+            'record_offset':record.get('record_offset'),
+        }
+        rows.append(row)
+    # Stats/report surfaces should focus on occupied slots; the complete 20-slot
+    # record list remains available in state.metadata for diagnostics.
+    return [row for row in rows if row['active']]
 
 
 def _hex_distance_grid(side: int, x0: int, y0: int) -> np.ndarray:
@@ -121,7 +179,11 @@ def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resourc
         dx=xx + x0 - x; dy=yy + y0 - y
         dist=np.where((dx*dy)>=0,np.maximum(np.abs(dx),np.abs(dy)),np.abs(dx)+np.abs(dy)).astype(np.int16)
         mountain=np.isin(t,MOUNTAIN_ANALYSIS_IDS); desert=np.isin(t,DESERT_IDS); swamp=np.isin(t,SWAMP_IDS); water=np.isin(t,WATER_IDS)
-        adult=np.isin(o,ADULT_TREE_IDS) | np.isin(o,TREE_FAMILIES['palm'][0]); saplings=np.isin(o,SAPLING_IDS)
+        adult=np.isin(o,ADULT_TREE_IDS) | np.isin(o,TREE_FAMILIES['palm'][0])
+        plantations=np.isin(o,PLANTATION_IDS)
+        saplings_stage_2=np.isin(o,SAPLING_STAGE_2_IDS)
+        saplings_stage_1=np.isin(o,SAPLING_STAGE_1_IDS)
+        tree_lifecycle=adult | plantations | saplings_stage_2 | saplings_stage_1
         stone_anchor=(o>=115)&(o<=127); stone_units=np.where(stone_anchor,np.maximum(0,127-o.astype(np.int16)),0)
         fish=water & ((r&0xF0)==0) & ((r&0x0F)>0); fish_qty=np.where(fish,r&0x0F,0)
         # Local mining availability is a gameplay-oriented metric: ore hidden under
@@ -133,7 +195,15 @@ def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resourc
         for radius in LOCAL_RADII:
             m=dist<=radius
             metrics={
-                'cells':int(m.sum()), 'adult_trees':int((adult&m).sum()), 'saplings':int((saplings&m).sum()),
+                'cells':int(m.sum()), 'adult_trees':int((adult&m).sum()),
+                # ``saplings`` remains the historical ID84 metric for
+                # backwards-compatible local-resource exports.  The two
+                # validated growth stages are exposed alongside it.
+                'saplings':int((plantations&m).sum()),
+                'plantations':int((plantations&m).sum()),
+                'saplings_stage_2':int((saplings_stage_2&m).sum()),
+                'saplings_stage_1':int((saplings_stage_1&m).sum()),
+                'tree_lifecycle':int((tree_lifecycle&m).sum()),
                 'building_stone_anchors':int((stone_anchor&m).sum()), 'building_stone_stock':int(stone_units[m].sum()),
                 'fish_cells':int((fish&m).sum()), 'fish_stock':int(fish_qty[m].sum()),
                 'mountain_cells':int((mountain&m).sum()), 'desert_cells':int((desert&m).sum()),
@@ -148,7 +218,9 @@ def _local_player_stats(state, terrain: np.ndarray, objects: np.ndarray, resourc
 
 TERRAIN_FAMILIES = (
     ('water', WATER_IDS, 'Eau', 'Water'),
-    ('grass', (GRASS, DRY_GRASS), 'Herbe', 'Grass'),
+    # IDs 18/19 are validated singleton grass-detail blobs: each occurrence
+    # is isolated and surrounded by ordinary grass (ID 16).
+    ('grass', (GRASS, *GRASS_DETAIL_IDS, DRY_GRASS), 'Herbe', 'Grass'),
     ('desert', DESERT_IDS, 'Désert', 'Desert'),
     ('mountain', MOUNTAIN_ANALYSIS_IDS, 'Montagne', 'Mountain'),
     ('snow', (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW), 'Neige', 'Snow'),
@@ -162,6 +234,7 @@ TERRAIN_FAMILIES = (
 
 TERRAIN_NAMES = {
     16: ('Herbe', 'Grass'), 17: ('Transition roche 1', 'Rock transition 1'),
+    18: ('Détail herbe 1', 'Grass detail 1'), 19: ('Détail herbe 2', 'Grass detail 2'),
     20: ('Transition herbe/désert', 'Grass/desert transition'),
     21: ('Transition herbe/marais', 'Grass/swamp transition'),
     22: ('Agriculture runtime', 'Runtime agriculture'), 23: ('Boue', 'Mud'), 24: ('Herbe sèche', 'Dry grass'),
@@ -193,6 +266,45 @@ for i in range(94, 103): OBJECT_NAMES[i] = (f'Vigne {i-93}', f'Vine {i-93}')
 for i in range(103, 111): OBJECT_NAMES[i] = (f'Riz {i-102}', f'Rice {i-102}')
 for i in range(111, 115): OBJECT_NAMES[i] = (f'Récif {i-110}', f'Reef {i-110}')
 for i in range(115, 128): OBJECT_NAMES[i] = (f'Pierre de construction {i-114}', f'Building Stone {i-114}')
+
+# Controlled data-mapping results.  IDs 215, 223 and 231 were the three
+# probes that made the calibration maps crash and stay intentionally unnamed.
+for i in range(208, 215):
+    OBJECT_NAMES[i] = (f'Souche d’arbre — variante {i-207}', f'Tree stump — variant {i-207}')
+for i in range(216, 221):
+    OBJECT_NAMES[i] = (f'Pousse d’arbre — stade 2 — variante {i-215}', f'Tree sapling — stage 2 — variant {i-215}')
+OBJECT_NAMES[221] = ('Pousse de palmier — stade 2', 'Palm sapling — stage 2')
+OBJECT_NAMES[222] = ('Pousse d’arbre — stade 2 — variante 7', 'Tree sapling — stage 2 — variant 7')
+for i in range(224, 229):
+    OBJECT_NAMES[i] = (f'Pousse d’arbre — stade 1 — variante {i-223}', f'Tree sapling — stage 1 — variant {i-223}')
+OBJECT_NAMES[229] = ('Pousse de palmier — stade 1', 'Palm sapling — stage 1')
+OBJECT_NAMES[230] = ('Pousse d’arbre — stade 1 — variante 7', 'Tree sapling — stage 1 — variant 7')
+OBJECT_NAMES.update({
+    232: ('Panneau de ressource — aucune', 'Resource panel — none'),
+    233: ('Panneau de ressource — charbon', 'Resource panel — coal'),
+    234: ('Panneau de ressource — charbon abondant', 'Resource panel — abundant coal'),
+    235: ('Panneau de ressource — fer', 'Resource panel — iron'),
+    236: ('Panneau de ressource — fer abondant', 'Resource panel — abundant iron'),
+    237: ('Panneau de ressource — or', 'Resource panel — gold'),
+    238: ('Panneau de ressource — or abondant', 'Resource panel — abundant gold'),
+    239: ('Panneau de ressource — gemmes', 'Resource panel — gemstones'),
+    240: ('Panneau de découverte de minerai 1', 'Mineral discovery panel 1'),
+    241: ('Panneau de découverte de minerai 2', 'Mineral discovery panel 2'),
+    242: ('Panneau de découverte de minerai 3', 'Mineral discovery panel 3'),
+    243: ('Arbre en feu — stade 1', 'Burning tree — stage 1'),
+    244: ('Arbre en feu — stade 2', 'Burning tree — stage 2'),
+    245: ('Arbre en feu — stade 3', 'Burning tree — stage 3'),
+    246: ('Arbre en feu — stade 4', 'Burning tree — stage 4'),
+    247: ('Nid d’abeilles — stade 1', 'Bee nest — stage 1'),
+    248: ('Nid d’abeilles — stade 2', 'Bee nest — stage 2'),
+    249: ('Nid d’abeilles — stade 3', 'Bee nest — stage 3'),
+    250: ('Nid d’abeilles — stade 4', 'Bee nest — stage 4'),
+    251: ('Nid d’abeilles — stade 5', 'Bee nest — stage 5'),
+    252: ('Nid d’abeilles — stade 6', 'Bee nest — stage 6'),
+    253: ('Nid d’abeilles — stade 7', 'Bee nest — stage 7'),
+    254: ('Borne de territoire rouge', 'Red territory marker'),
+    255: ('Drapeau rouge', 'Red flag'),
+})
 
 
 def _pct(part: int | float, total: int | float) -> float:
@@ -229,16 +341,29 @@ def _object_family_counts(objects: np.ndarray) -> dict[str, int]:
     out: dict[str, int] = {}
     for key, (ids, _fr, _en) in TREE_FAMILIES.items():
         out[key] = int(np.isin(objects, ids).sum())
-    out['saplings'] = int(np.isin(objects, SAPLING_IDS).sum())
+    out['plantations'] = int(np.isin(objects, PLANTATION_IDS).sum())
+    # Preserve the established ``saplings`` key for ID84 consumers while
+    # exposing the two newly validated growth stages explicitly.
+    out['saplings'] = out['plantations']
+    out['tree_saplings_stage_2'] = int(np.isin(objects, TREE_SAPLING_STAGE_2_IDS).sum())
+    out['palm_saplings_stage_2'] = int(np.isin(objects, PALM_SAPLING_STAGE_2_IDS).sum())
+    out['tree_saplings_stage_1'] = int(np.isin(objects, TREE_SAPLING_STAGE_1_IDS).sum())
+    out['palm_saplings_stage_1'] = int(np.isin(objects, PALM_SAPLING_STAGE_1_IDS).sum())
+    out['saplings_stage_2'] = int(np.isin(objects, SAPLING_STAGE_2_IDS).sum())
+    out['saplings_stage_1'] = int(np.isin(objects, SAPLING_STAGE_1_IDS).sum())
     out['building_stones'] = int(((objects >= 115) & (objects <= 127)).sum())
     out['reefs'] = int(((objects >= 111) & (objects <= 114)).sum())
     out['wheat'] = int(((objects >= 85) & (objects <= 93)).sum())
     out['vine'] = int(((objects >= 94) & (objects <= 102)).sum())
     out['rice'] = int(((objects >= 103) & (objects <= 110)).sum())
+    out['bee_nests'] = int(np.isin(objects, BEE_NEST_IDS).sum())
     known = np.zeros(objects.shape, dtype=bool)
     for ids, _, _ in TREE_FAMILIES.values(): known |= np.isin(objects, ids)
-    known |= np.isin(objects, SAPLING_IDS)
+    known |= np.isin(objects, PLANTATION_IDS)
+    known |= np.isin(objects, SAPLING_STAGE_2_IDS)
+    known |= np.isin(objects, SAPLING_STAGE_1_IDS)
     known |= ((objects >= 85) & (objects <= 127))
+    known |= np.isin(objects, BEE_NEST_IDS)
     out['other_nonzero'] = int(((objects != 0) & ~known).sum())
     return out
 
@@ -338,9 +463,14 @@ def analyze_map(state) -> dict[str, Any]:
     mountain_details = _component_details(np.isin(T, MOUNTAIN_ANALYSIS_IDS))
     swamp_details = _component_details(np.isin(T, SWAMP_IDS))
     desert_details = _component_details(np.isin(T, DESERT_IDS))
-    forest_details = _component_details(np.isin(O, ADULT_TREE_IDS + TREE_FAMILIES['palm'][0] + SAPLING_IDS))
+    forest_details = _component_details(np.isin(
+        O,
+        ADULT_TREE_IDS + TREE_FAMILIES['palm'][0] + PLANTATION_IDS
+        + SAPLING_STAGE_2_IDS + SAPLING_STAGE_1_IDS,
+    ))
     mineral_component_details = {key: _component_details((R & 0xF0) == family) for key, (family, _fr, _en) in MINERALS.items()}
     local_players = _local_player_stats(state, T, O, R) if state.starts else []
+    player_metadata = _player_metadata_rows(state)
 
     claims = C[C != 255]
     claim_counts = Counter(map(int, claims.tolist())) if claims.size else Counter()
@@ -375,7 +505,9 @@ def analyze_map(state) -> dict[str, Any]:
             'land_cells': land_n, 'water_cells': int(water.sum()),
             'ocean_cells': ocean_cells, 'inland_water_cells': inland_water_cells,
             'land_pct': _pct(land_n, n), 'water_pct': _pct(int(water.sum()), n),
-            'green_grass_cells': int((T == GRASS).sum()), 'dry_grass_cells': int((T == DRY_GRASS).sum()),
+            'green_grass_cells': int((T == GRASS).sum()),
+            'grass_detail_cells': int(np.isin(T, GRASS_DETAIL_IDS).sum()),
+            'dry_grass_cells': int((T == DRY_GRASS).sum()),
             'mountain_cells': support_n, 'mountain_pct_land': _pct(support_n, land_n),
             'mountain_non_snow_cells': int(mountain_non_snow_mask.sum()), 'snow_family_cells': int(snow_family_mask.sum()),
             'desert_cells': int(np.isin(T, DESERT_IDS).sum()), 'swamp_cells': int(np.isin(T, SWAMP_IDS).sum()),
@@ -386,7 +518,18 @@ def analyze_map(state) -> dict[str, Any]:
         'objects': {'ids': object_ids, 'families': object_families},
         'vegetation': {
             'adult_wood_trees': int(tree_adults), 'adult_trees_including_palms': int(tree_all_adults),
+            # ID84 is the established plantation metric.  Keep its legacy
+            # alias and expose every validated growth stage separately.
+            'plantations': int(object_families['plantations']),
             'saplings': int(object_families['saplings']),
+            'saplings_stage_2': int(object_families['saplings_stage_2']),
+            'saplings_stage_1': int(object_families['saplings_stage_1']),
+            'tree_saplings_stage_2': int(object_families['tree_saplings_stage_2']),
+            'palm_saplings_stage_2': int(object_families['palm_saplings_stage_2']),
+            'tree_saplings_stage_1': int(object_families['tree_saplings_stage_1']),
+            'palm_saplings_stage_1': int(object_families['palm_saplings_stage_1']),
+            'tree_saplings': int(object_families['tree_saplings_stage_2'] + object_families['tree_saplings_stage_1']),
+            'palm_saplings': int(object_families['palm_saplings_stage_2'] + object_families['palm_saplings_stage_1']),
             'sapling_label_fr': "Pousses d’arbre", 'sapling_label_en': 'Tree saplings',
             'families': {k: object_families[k] for k in ('birch','elm','oak','other_adult','palm')},
             'adult_density_per_1000_land': round(1000.0 * tree_all_adults / land_n, 4) if land_n else 0.0,
@@ -409,6 +552,7 @@ def analyze_map(state) -> dict[str, Any]:
             'wheat': int(((O >= 85) & (O <= 93)).sum()),
             'vine': int(((O >= 94) & (O <= 102)).sum()),
             'rice': int(((O >= 103) & (O <= 110)).sum()),
+            'bee_nests': int(np.isin(O, BEE_NEST_IDS).sum()),
         },
         # Normalized debug metrics. Each denominator matches the gameplay support
         # of the measured resource instead of blindly using total map cells.
@@ -419,7 +563,7 @@ def analyze_map(state) -> dict[str, Any]:
             'building_stone_stock_per_1000_land': round(1000.0 * stone_stock / land_n, 4) if land_n else 0.0,
             'fish_stock_per_1000_water': round(1000.0 * (int(fish_qty.sum()) if fish_qty.size else 0) / int(water.sum()), 4) if water.any() else 0.0,
             'mineral_stock_per_1000_mountain': round(1000.0 * sum(v['stock'] for v in minerals.values()) / support_n, 4) if support_n else 0.0,
-            'agriculture_cells_per_1000_land': round(1000.0 * (int(((O >= 85) & (O <= 110)).sum())) / land_n, 4) if land_n else 0.0,
+            'agriculture_cells_per_1000_land': round(1000.0 * (int(((O >= 85) & (O <= 110)).sum()) + int(np.isin(O, BEE_NEST_IDS).sum())) / land_n, 4) if land_n else 0.0,
         },
         'height': {'distribution': _percentiles(H.ravel()), 'land_distribution': _percentiles(H[land])},
         'hydrology': {
@@ -443,6 +587,9 @@ def analyze_map(state) -> dict[str, Any]:
             'starts': starts, 'claims': {str(k+1): int(v) for k, v in sorted(claim_counts.items())},
             'nearest_start': nearest, 'pair_distance_distribution': _percentiles(np.asarray(pair_distances, dtype=np.int32)),
             'local_radii': list(LOCAL_RADII), 'local_resources': local_players,
+            'metadata': player_metadata,
+            'sav_block': state.metadata.get('sav_player_block'),
+            'field_status': state.metadata.get('sav_player_metadata_status',{}),
         },
     }
     return result
@@ -469,8 +616,16 @@ def stats_csv(stats: dict[str, Any]) -> str:
         w.writerow(['building_stone', 'anchors', row['object_id'], row['anchors']]); w.writerow(['building_stone', 'stock', row['object_id'], row['stock']])
     for key, value in stats['vegetation']['families'].items(): w.writerow(['vegetation', 'count', key, value])
     w.writerow(['vegetation', 'count', 'saplings', stats['vegetation']['saplings']])
+    for key in ('plantations', 'saplings_stage_2', 'saplings_stage_1',
+                'tree_saplings_stage_2', 'palm_saplings_stage_2',
+                'tree_saplings_stage_1', 'palm_saplings_stage_1'):
+        w.writerow(['vegetation', 'count', key, stats['vegetation'].get(key, 0)])
     for key, value in stats['agriculture'].items(): w.writerow(['agriculture', 'cells', key, value])
     for key, value in stats.get('densities', {}).items(): w.writerow(['density', 'per_1000', key, value])
+    for row in stats.get('players',{}).get('metadata',[]):
+        key=row.get('player')
+        for metric in ('active','active_flag','start_x','start_y','tribe_code_candidate','tribe','effective_color_status','mana_current','mana_maximum','mana_status','viewer_color_hex','viewer_color_source','source_layout','record_offset'):
+            w.writerow(['player_metadata',metric,key,'' if row.get(metric) is None else row.get(metric)])
     for player in stats.get('players', {}).get('local_resources', []):
         for radius, metrics in player['radii'].items():
             prefix=f"P{player['player']}_r{radius}"
@@ -497,6 +652,7 @@ def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
     lines.append((f"Fische: {r['fish_cells']:,} Zellen | Vorrat {r['fish_stock']:,}" if de else f"Peces: {r['fish_cells']:,} celdas | reserva {r['fish_stock']:,}"))
     lines+=['','FORSTRESSOURCEN & STEINE' if de else 'RECURSOS FORESTALES Y PIEDRAS','-'*72]
     lines.append((f"Ausgewachsene Bäume: {v['adult_wood_trees']:,} | Palmen: {v['families']['palm']:,} | Setzlinge: {v['saplings']:,}" if de else f"Árboles adultos: {v['adult_wood_trees']:,} | Palmeras: {v['families']['palm']:,} | Retoños: {v['saplings']:,}"))
+    lines.append((f"Wachstumsstufen: Stufe 2 {v.get('saplings_stage_2',0):,} | Stufe 1 {v.get('saplings_stage_1',0):,} | Pflanzungen {v.get('plantations',v.get('saplings',0)):,}" if de else f"Crecimiento: etapa 2 {v.get('saplings_stage_2',0):,} | etapa 1 {v.get('saplings_stage_1',0):,} | plantaciones {v.get('plantations',v.get('saplings',0)):,}"))
     lines.append((f"Bausteine: {bs['anchors_total']:,} Haufen ({bs['anchors_exhausted_127']:,} erschöpft) | Vorrat {bs['stock_total']:,}" if de else f"Piedras de construcción: {bs['anchors_total']:,} pilas ({bs['anchors_exhausted_127']:,} agotadas) | reserva {bs['stock_total']:,}"))
     if d1000:
         lines+=['','NORMALISIERTE DICHTEN / 1000' if de else 'DENSIDADES NORMALIZADAS / 1000','-'*72]
@@ -510,10 +666,18 @@ def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
         ms=sp['mountains']['summary'];ds=sp['deserts']['summary'];ss=sp['swamps']['summary'];fs=sp['forests']['summary']
         lines.append((f"Komponenten: Gebirge {ms['count']} (max {int(ms['size_distribution']['max']):,}) | Wüsten {ds['count']} | Sümpfe {ss['count']} | Wälder {fs['count']}" if de else f"Componentes: macizos {ms['count']} (máx {int(ms['size_distribution']['max']):,}) | desiertos {ds['count']} | pantanos {ss['count']} | bosques {fs['count']}"))
     if any(ag.values()):
-        lines+=['','LANDWIRTSCHAFT' if de else 'AGRICULTURA','-'*72,(f"Weizen {ag['wheat']:,} | Weinreben {ag['vine']:,} | Reis {ag['rice']:,}" if de else f"Trigo {ag['wheat']:,} | Vid {ag['vine']:,} | Arroz {ag['rice']:,}")]
+        lines+=['','LANDWIRTSCHAFT' if de else 'AGRICULTURA','-'*72,(f"Weizen {ag['wheat']:,} | Weinreben {ag['vine']:,} | Reis {ag['rice']:,} | Bienennester {ag.get('bee_nests',0):,}" if de else f"Trigo {ag['wheat']:,} | Vid {ag['vine']:,} | Arroz {ag['rice']:,} | Nidos de abejas {ag.get('bee_nests',0):,}")]
     if p['starts']:
         lines+=['','SPIELER / STARTPOSITIONEN' if de else 'JUGADORES / INICIOS','-'*72]
         for row in p['nearest_start']:lines.append((f"P{row['player']}: nächster Gegner = {row['distance']} HEX" if de else f"P{row['player']}: oponente más cercano = {row['distance']} HEX"))
+        if p.get('metadata'):
+            lines+=['','SPIELERFELDER (SAV)' if de else 'CAMPOS DE JUGADOR (SAV)','-'*72]
+            for row in p['metadata']:
+                status='aktiv' if row.get('active') else 'inaktiv' if de else ('activo' if row.get('active') else 'inactivo')
+                color=row.get('viewer_color_hex') or '—';tribe=row.get('tribe_code_candidate')
+                tribe_text=str(tribe) if tribe is not None else 'unbekannt' if de else 'desconocido'
+                mana='nicht dekodiert' if de else 'no decodificado'
+                lines.append((f"P{row['player']}: {status} | Anzeigefarbe {color} (Slot-Palette) | Rassen-/Fraktionscode-Kandidat {tribe_text} | Mana {mana}" if de else f"P{row['player']}: {status} | color de interfaz {color} (paleta de ranura) | código de raza/facción candidato {tribe_text} | maná {mana}"))
         if p.get('local_resources'):
             lines+=['','LOKALE RESSOURCEN — 0–50 / 50–100' if de else 'RECURSOS LOCALES — 0–50 / 50–100','-'*72]
             for row in p['local_resources']:
@@ -546,6 +710,7 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
     lines.append('')
     lines.append('RESSOURCES FORESTIÈRES & PIERRES' if fr else 'FORESTRY RESOURCES & STONES'); lines.append('-' * 72)
     lines.append((f"Arbres adultes : {v['adult_wood_trees']:,} | Palmiers : {v['families']['palm']:,} | Pousses d’arbre : {v['saplings']:,}" if fr else f"Adult trees: {v['adult_wood_trees']:,} | Palms: {v['families']['palm']:,} | Tree saplings: {v['saplings']:,}"))
+    lines.append((f"Croissance : stade 2 {v.get('saplings_stage_2',0):,} | stade 1 {v.get('saplings_stage_1',0):,} | plantations {v.get('plantations',v.get('saplings',0)):,}" if fr else f"Growth: stage 2 {v.get('saplings_stage_2',0):,} | stage 1 {v.get('saplings_stage_1',0):,} | plantations {v.get('plantations',v.get('saplings',0)):,}"))
     lines.append((f"Pierres de construction : {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} épuisées) | stock {bs['stock_total']:,}" if fr else f"Building stones: {bs['anchors_total']:,} piles ({bs['anchors_exhausted_127']:,} exhausted) | stock {bs['stock_total']:,}"))
     d1000=stats.get('densities', {})
     if d1000:
@@ -579,11 +744,24 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
             lines.append(f"Components: mountains {ms['count']} (max {int(ms['size_distribution']['max']):,}) | deserts {ds['count']} | swamps {ss['count']} | forests {fs['count']}")
     if any(ag.values()):
         lines.append(''); lines.append('AGRICULTURE' if fr else 'AGRICULTURE'); lines.append('-' * 72)
-        lines.append((f"Blé {ag['wheat']:,} | Vigne {ag['vine']:,} | Riz {ag['rice']:,}" if fr else f"Wheat {ag['wheat']:,} | Vine {ag['vine']:,} | Rice {ag['rice']:,}"))
+        lines.append((f"Blé {ag['wheat']:,} | Vigne {ag['vine']:,} | Riz {ag['rice']:,} | Nids d’abeilles {ag.get('bee_nests',0):,}" if fr else f"Wheat {ag['wheat']:,} | Vine {ag['vine']:,} | Rice {ag['rice']:,} | Bee nests {ag.get('bee_nests',0):,}"))
     if p['starts']:
         lines.append(''); lines.append('JOUEURS / STARTS' if fr else 'PLAYERS / STARTS'); lines.append('-' * 72)
         for row in p['nearest_start']:
             lines.append((f"P{row['player']}: adversaire le plus proche = {row['distance']} HEX" if fr else f"P{row['player']}: nearest opponent = {row['distance']} HEX"))
+        if p.get('metadata'):
+            lines += ['', 'INFORMATIONS JOUEURS (SAV)' if fr else 'PLAYER FIELDS (SAV)', '-' * 72]
+            for row in p['metadata']:
+                if fr:
+                    status='actif' if row.get('active') else 'inactif'
+                    color=row.get('viewer_color_hex') or '—';tribe=row.get('tribe_code_candidate')
+                    tribe_text=str(tribe) if tribe is not None else 'inconnu'
+                    lines.append(f"P{row['player']}: {status} | couleur d’affichage {color} (palette de slot) | code race/faction candidat {tribe_text} | mana non décodé")
+                else:
+                    status='active' if row.get('active') else 'inactive'
+                    color=row.get('viewer_color_hex') or '—';tribe=row.get('tribe_code_candidate')
+                    tribe_text=str(tribe) if tribe is not None else 'unknown'
+                    lines.append(f"P{row['player']}: {status} | viewer color {color} (slot palette) | candidate race/faction code {tribe_text} | mana not decoded")
         if p.get('local_resources'):
             lines.append(''); lines.append('RESSOURCES LOCALES — 0–50 / 50–100' if fr else 'LOCAL RESOURCES — 0–50 / 50–100'); lines.append('-' * 72)
             for row in p['local_resources']:

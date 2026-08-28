@@ -89,6 +89,54 @@ def test_all_validated_adult_tree_ids_are_counted_and_named_semantically():
     assert all(by_id[oid]['name_fr'].startswith('Arbre adulte') for oid in ids)
 
 
+def test_controlled_data_mapping_names_non_crash_object_ids():
+    st=sample_state()
+    for col, oid in enumerate((208, 221, 229, 239, 253), start=1):
+        st.objects[11, col] = oid
+    s=analyze_map(st)
+    by_id={row['id']:row for row in s['objects']['ids']}
+    assert by_id[208]['name_fr'] == 'Souche d’arbre — variante 1'
+    assert by_id[221]['name_fr'] == 'Pousse de palmier — stade 2'
+    assert by_id[229]['name_fr'] == 'Pousse de palmier — stade 1'
+    assert by_id[239]['name_fr'] == 'Panneau de ressource — gemmes'
+    assert by_id[253]['name_fr'] == 'Nid d’abeilles — stade 7'
+
+
+def test_tree_growth_stages_are_counted_and_charted_in_validated_order():
+    st=sample_state()
+    for col, oid in enumerate((216, 221, 224, 229, 84, 78, 79), start=1):
+        st.objects[11, col] = oid
+    s=analyze_map(st)
+    v=s['vegetation']
+    assert v['saplings_stage_2'] == 2
+    assert v['saplings_stage_1'] == 2
+    assert v['tree_saplings_stage_2'] == 1
+    assert v['palm_saplings_stage_2'] == 1
+    assert v['tree_saplings_stage_1'] == 1
+    assert v['palm_saplings_stage_1'] == 1
+    assert v['plantations'] == v['saplings'] == 2
+    from s3mapgen.application.analysis.charts import FORESTRY_COLORS, _forestry_segments
+    segments=_forestry_segments(s, 'fr')
+    assert [segment[1] for segment in segments] == [
+        FORESTRY_COLORS['adult_trees'], FORESTRY_COLORS['saplings_stage_2'],
+        FORESTRY_COLORS['saplings_stage_1'], FORESTRY_COLORS['plantations'],
+        FORESTRY_COLORS['adult_palms'],
+    ]
+    _im, regions=render_stats_chart(s, 'forestry', lang='fr', dark=True,
+                                    width=640, height=420, return_regions=True)
+    labels=[r['label'] for r in regions]
+    assert labels == [
+        'Arbres adultes', 'Pousses stade 2', 'Pousses stade 1',
+        'Plantations', 'Palmiers adultes',
+    ]
+    stage2=next(r for r in regions if r['label']=='Pousses stade 2')
+    stage1=next(r for r in regions if r['label']=='Pousses stade 1')
+    assert any('216–220, 222' in line for line in stage2['details'])
+    assert any('221' in line for line in stage2['details'])
+    assert any('224–228, 230' in line for line in stage1['details'])
+    assert any('229' in line for line in stage1['details'])
+
+
 def test_terrain_families_include_transition_cells_and_mud_family():
     st=sample_state()
     # Desert family: grass/desert transition + desert transition + desert.
@@ -124,6 +172,24 @@ def test_local_player_stats_use_hex_radii_and_real_stocks():
     assert p1['radii']['10']['building_stone_stock'] >= 0
     assert s['players']['local_radii'] == [10,20,30,40,50,100]
     assert p1['radii']['50']['cells'] <= p1['radii']['100']['cells']
+
+
+def test_player_metadata_keeps_confirmed_fields_and_marks_unknowns_explicitly():
+    st=sample_state();st.metadata.update({
+        'source_format':'SAV',
+        'sav_player_records':[{
+            'player':1,'active':True,'start_x':2,'start_y':2,
+            'tribe_code_candidate':3,'layout':'native_v11',
+        }],
+    })
+    s=analyze_map(st);row=s['players']['metadata'][0]
+    assert row['tribe_code_candidate']==3
+    assert row['viewer_color_hex']=='#CD1E10'
+    assert row['effective_color'] is None and row['effective_color_status']=='not_decoded_from_sav'
+    assert row['mana_current'] is None and row['mana_maximum'] is None
+    assert row['mana_status']=='not_decoded_from_sav'
+    csv=stats_csv(s)
+    assert 'player_metadata,viewer_color_hex,1,#CD1E10' in csv
 
 
 def test_component_analysis_exposes_shape_metrics():
@@ -193,8 +259,8 @@ def test_ab_rows_are_compact_and_semantically_segmented():
     assert sum(seg[0] for seg in by_label['Montagne'][3]) == by_label['Montagne'][1]
     assert len(by_label['Stock minier'][3])==5
     assert sum(seg[0] for seg in by_label['Stock minier'][3]) == by_label['Stock minier'][1]
-    assert len(by_label['Ressources forestières'][3])==3
-    assert sum(seg[0] for seg in by_label['Ressources forestières'][3]) == by_label['Ressources forestières'][1]
+    assert len(by_label['Arbres et pousses'][3])==5
+    assert sum(seg[0] for seg in by_label['Arbres et pousses'][3]) == by_label['Arbres et pousses'][1]
 
 
 def test_comparison_refresh_preserves_import_semantics():
@@ -333,6 +399,24 @@ def test_dry_grass_is_part_of_grass_and_segmented():
     assert any('16' in line for line in green[0].get('details',[]))
 
 
+def test_grass_detail_ids_are_named_counted_and_charted():
+    st=sample_state()
+    st.terrain[4,10]=18
+    st.terrain[4,11]=19
+    s=analyze_map(st)
+    fam={r['key']:r for r in s['terrain']['families']}
+    assert s['general']['grass_detail_cells'] == 2
+    assert fam['grass']['cells'] == (s['general']['green_grass_cells'] +
+                                     s['general']['grass_detail_cells'] +
+                                     s['general']['dry_grass_cells'])
+    by_id={r['id']:r for r in s['terrain']['ids']}
+    assert by_id[18]['name_fr'] == 'Détail herbe 1'
+    assert by_id[19]['name_fr'] == 'Détail herbe 2'
+    _im,regions=render_stats_chart(s,'terrain_families',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    detail=[r for r in regions if 'Détails d’herbe' in r['label']]
+    assert detail and any('18–19' in line for line in detail[0].get('details',[]))
+
+
 def test_mining_tooltips_include_resource_and_segment_terrain_ids():
     st=sample_state()
     # Put coal under pure snow as well as on open rock.
@@ -355,6 +439,20 @@ def test_object_and_agriculture_tooltip_ids():
     _im,agri=render_stats_chart(s,'agriculture',lang='fr',dark=True,width=640,height=420,return_regions=True)
     wheat=next(r for r in agri if r['label']=='Blé')
     assert any('85' in line and '93' in line for line in wheat['details'])
+
+
+def test_bee_nests_are_counted_in_agriculture_and_not_forestry():
+    st=sample_state()
+    st.objects[10,10]=247
+    st.objects[10,11]=253
+    s=analyze_map(st)
+    assert s['agriculture']['bee_nests'] == 2
+    assert s['objects']['families']['bee_nests'] == 2
+    _im,forest=render_stats_chart(s,'forestry',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    assert not any('Nid' in r['label'] for r in forest)
+    _im,agri=render_stats_chart(s,'agriculture',lang='fr',dark=True,width=640,height=420,return_regions=True)
+    nests=next(r for r in agri if r['label']=='Nids d’abeilles')
+    assert any('247–253' in line for line in nests['details'])
 
 
 def test_statistics_report_is_bilingual_user_facing_surface():

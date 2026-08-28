@@ -8,6 +8,7 @@
 - [x] **v1.6 STABLE** : UI/outillage, import EDM/MAP/SAV, vues, inspecteur, thèmes, préférences et A/B.
 - [x] **v1.7 STABLE** : Statistiques/Graphiques et exports d’analyse.
 - [x] **v1.8 DEV_1 à DEV_11** : workflow, responsive, Batch, vues joueurs, exports, quatre langues, historique, raccourcis v2, preuve `.exe`, verrou `M`, capacité dure, publication et maintenabilité.
+- [x] **v1.9 DEV_3** : Data Mapping ciblé, masque initial SAV direct, champs joueurs démontrés, catalogue objets confirmé, terrains `18/19`, nids `247–253` et graphes de végétation cumulés.
 
 Règle absolue : ne pas modifier le moteur v1.5 ni ses fichiers protégés sans raison explicite. Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute modification génération/format.
 
@@ -70,7 +71,7 @@ RC, quel que soit son numéro final.
   chaque tâche vers les seules références nécessaires.
 - [ ] Procéder par extractions mécaniques courtes, avec comportement inchangé, tests ciblés puis validation complète à chaque DEV terminée.
 - [ ] Intégrer les apports d’autres LLM comme hypothèses traçables et non comme vérité de référence.
-- [x] Auditer toutes les références après publication de DEV_2 : conserver les
+- [ ] Auditer toutes les références après publication de DEV_2 : conserver les
   références spécialisées importantes, compacter les répétitions, puis
   fusionner/renommer/supprimer uniquement avec preuve d’obsolescence et liens
   entrants migrés.
@@ -78,16 +79,57 @@ RC, quel que soit son numéro final.
 ### Data Mapping — fin de v1.9
 
 - [ ] Déterminer les bornes réellement valides des Terrain IDs et Object IDs ; `0–255` reste une grille technique, pas une borne démontrée.
-- [ ] Compléter `SETTLERS3_TERRAIN_IDS_REFERENCE.md` et `SETTLERS3_OBJECT_IDS_REFERENCE.md` sans inventer les inconnus.
+- [x] Compléter la première passe des objets contrôlés : souches `208–214`, pousses
+  stade 2 `216–222`, pousses stade 1 `224–230`, panneaux `232–242`, arbres en
+  feu `243–246`, nids `247–253` et marqueurs `254–255` sont catalogués. Les
+  probes `215`, `223` et `231` sont documentées comme crash-prone et restent
+  hors nomenclature sémantique.
+- [x] Abandonner la cartographie large `128–207` : la zone mélange des éléments
+  de placement/éditeur et des probes qui crashent ; aucune nouvelle campagne
+  n'est planifiée sur cette plage.
+- [x] Consolider le catalogue confirmé dans les statistiques, exports,
+  tooltips, inspecteur et le graphique **Arbres et pousses** : adultes, pousses
+  stade 2, pousses stade 1, plantations et palmiers adultes ; les pousses de
+  palmier `221/229` restent incluses dans leurs stades respectifs.
+- [ ] Compléter `SETTLERS3_TERRAIN_IDS_REFERENCE.md` et
+  `SETTLERS3_OBJECT_IDS_REFERENCE.md` sans inventer les inconnus.
 - [ ] Clarifier trous/réservés, transitions et catégories SAV : settlers, marchandises, outils, ressources transformées, bâtiments, armes, etc.
-- [ ] Consolider les tables utilisées par Statistiques, Graphiques, tooltips et inspecteur.
-- [ ] Vérifier si EDM/MAP/SAV expose l’identité ou la couleur effective des joueurs ; utiliser l’information seulement si elle est démontrée.
-- [ ] Tester les Terrain IDs 18/19, provisoirement `Détail herbe 1/2`, isolés puis en groupes, dans l’éditeur et en jeu.
-- [ ] Identifier les nids d’abeilles amazones dans des SAV joués avant tout support Agriculture.
+- [x] Consolider les tables utilisées par Statistiques, Graphiques, tooltips et inspecteur.
+- [ ] Vérifier si EDM/MAP/SAV expose l’identité ou la couleur effective des joueurs ; utiliser l’information seulement si elle est démontrée. La palette de slot du viewer est affichée séparément ; aucun champ SAV de couleur effective n’est encore prouvé.
+- [ ] Cartographier les informations joueurs indépendantes de la carte dans les SAV :
+  couleur effective, niveau de mana (courant et maximum si disponibles), tribu,
+  statut, nom/équipe, ressources de départ et autres champs démontrables ;
+  rester en lecture ciblée, sans writer SAV.
+  - [x] Bloc type 6 natif, drapeau actif, départs et offsets documentés ; code
+    race/faction exposé comme candidat numérique.
+  - [x] Décoder directement le masque initial complet du SAV immédiat : type-3
+    byte 8, coordonnées copiées cellule par cellule ; ne jamais le reconstruire
+    à partir des coordonnées de départ. La signature confirmée est
+    `3500/3500/4000/4000` pour le triplet 4P fourni.
+  - [ ] Décoder couleur effective, mana courant/maximum, tribu nominale,
+    nom/équipe et ressources de départ sur un corpus contrôlé.
+- [x] Valider les Terrain IDs 18/19 comme détails d’herbe : blobs d’une cellule
+  entourés exclusivement d’herbe ID16 ; ils sont intégrés à la famille `Herbe`,
+  aux statistiques, au graphique et à l’inspecteur.
+- [x] Reporter les objets `82` et `83` à **Datamining v2** : aucune occurrence
+  naturelle n’a été trouvée dans le corpus actuel, et la carte qui les injecte
+  volontairement ne constitue pas une preuve.
+- [x] Brancher les nids `247–253` sur les surfaces Agriculture/Cultures et leurs
+  tooltips ; la teinte miel est distincte du blé et les nids restent absents du
+  graphique forestier.
 
-## v1.10 — retour au générateur
+## v2.0 potentielle — reconstruction du générateur
 
-### Audit seed et diversité morphologique — priorité majeure
+Le générateur actuel ne produit pas encore une diversité morphologique réelle.
+La reconstruction complète du pipeline, de la seed et des étapes stochastiques
+est donc reportée après la cartographie immédiate et pourra justifier une v2.0.
+
+### Datamining v2 — objets différés
+
+- [ ] Reprendre l’identification des objets `82/83` sur un corpus élargi de
+  cartes/parties réelles, sans injection artificielle.
+
+### Génération réelle et diversité morphologique — chantier majeur
 
 - [ ] Vérifier que la seed complète pilote toutes les étapes stochastiques et qu’aucune réduction, collision ou réinitialisation involontaire ne limite les résultats.
 - [ ] Distinguer explicitement génération recalculée et résultat de cache.
@@ -96,7 +138,7 @@ RC, quel que soit son numéro final.
 - [ ] Conserver comme preuve `references/SETTLERS3_V1_10_SEED_DIVERSITY_EVIDENCE_20260822.png` et ses seeds `69122063`, `958607757`, `1446058262`, `2085415098`.
 - [ ] Si la diversité est réellement insuffisante, élargir fortement silhouettes, masses, orientations et organisations sans casser les règles validées.
 
-### Continental multi-tailles
+### Continental multi-tailles — après reconstruction
 
 - [ ] 384×384
 - [ ] 448×448

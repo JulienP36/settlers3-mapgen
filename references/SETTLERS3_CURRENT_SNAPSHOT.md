@@ -2,13 +2,16 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-27 — v1.9 DEV_2 publiée, audit des références terminé**
+> Dernière mise à jour : **2026-08-28 — v1.9 DEV_3 validée sous Windows et promue sur `dev`**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen`.
 - Branche de travail : `dev`.
-- Dernier checkpoint de développement : **v1.9 DEV_2**, validé sous Windows et publié sur `dev` au commit `9494a6a`.
+- Dernier checkpoint validé : **v1.9 DEV_3**, validé sous Windows et promu sur
+  `dev`. Il consolide R1–R7 : catalogue contrôlé, graphes de végétation,
+  champs joueurs SAV, masque direct type-3 byte 8 et contrôles automatisés ;
+  aucune candidate suffixée n'est active.
 - Dernière STABLE : **v1.7**, publiée sur `main`, tag `v1.7`, commit de promotion `780bc5e`.
 - **DEV_11 validée** : maintenance, ZIP source déterministe, documentation, README anglais, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de `V` terminés.
 - Validations : 231 tests pytest, autodiagnostic depuis le ZIP extrait, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; contrôles Windows R1 puis R2 validés.
@@ -18,19 +21,13 @@
 - **v1.9 DEV_2 validée** : l’ancien monolithe et les modules versionnés sont
   remplacés par les couches `application/`, `generation/` et `map_data/`, avec
   contrôleurs par sous-système, fondation Tk unique et un seul factory moteur.
-  `main_window.py` passe de 3168 à 372 lignes ; 245 tests actuels passent, sans
+  `main_window.py` passe de 3168 à 372 lignes ; 243 tests actuels passent, sans
   doublon exact ni nom de révision historique. Les petits modules/entrypoints
   restants portent tous une responsabilité justifiée. `AGENTS.md` devient
   l’entrée courte auto-découverte pour limiter le contexte répété.
-- L’audit post-publication des 53 références conserve les documents spécialisés
-  et preuves STABLE, retire deux reprises intégralement remplacées, compacte le
-  journal v1.9 et verrouille les chemins du routeur PREGEN par un test.
-- Le contrôle Windows CI vérifie les six chemins protégés actuels et génère
-  désormais le nom du paquet et les métadonnées `.exe` depuis la version runtime.
-- La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping vers la fin de la version.
-- La v1.8 restera une série de checkpoints DEV sans RC ni Release : aucune
-  nouvelle publication STABLE n’est prévue avant la correction de la génération
-  réelle et de la diversité morphologique en v1.10.
+- La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping ciblé est clôturé dans DEV_3.
+- La v1.8 reste une série de checkpoints DEV sans RC ni Release ; aucune STABLE
+  n’est prévue avant la reconstruction réelle du générateur, potentiellement v2.0.
 
 ## 2. Socle validé à préserver
 
@@ -61,7 +58,9 @@ Ne modifier aucun de ces fichiers sans raison explicite liée au moteur et lectu
 
 - **DEV_1–2** : titre i18n, reset A/B, responsive/header fonctionnel et Status/Feedback v1.
 - **DEV_3** : Batch 1–4 cartes, paramètres indépendants, seeds communes/individuelles, historique, miniatures réelles et affectation A/B.
-- **DEV_4** : vues Départs/Territoires, palette J1–J20, frontière exacte de 210 cellules, marqueurs et calques de rendu optimisés.
+- **DEV_4** : vues Départs/Territoires, palette J1–J20, marqueurs et calques de
+  rendu optimisés ; les frontières initiales sont désormais limitées aux
+  cellules natives directes d'un SAV.
 - **DEV_5** : centres d’export cartes et Graphiques multi-format.
 - **DEV_6** : interface dynamique FR/EN/DE/ES ; FR/EN relues, DE/ES automatiques et partiellement revues.
 - **DEV_7** : historique unifié, capacités 4/8/12/16, protections V/A/B, aperçus et cycle de vie Tk sécurisé.
@@ -102,7 +101,7 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 - Le lecteur accepte désormais uniquement ce cas borné ; une queue sans terminateur reste rejetée et le parseur de scaffolds/export reste strict.
 - Régressions automatisées : remplissages de 1, 2 et 3 octets, refus sans terminateur, import réel 256×256/20 départs et 768×768/10 départs.
 - Détails, hashes et offsets : `references/SETTLERS3_EDM_TERMINAL_PADDING_20260826.md`.
-- Validation Windows : les deux sources fautives chargent correctement. Issue #4 fermée après publication de DEV_2.
+- Validation Windows : les deux sources fautives chargent correctement. Issue #4 à fermer après publication du checkpoint final.
 
 ### Restructuration v1.9 — périmètre actuel
 
@@ -131,22 +130,43 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 - Génération calibrée uniquement pour Continental 768×768.
 - SAV : lecture ciblée et copie inchangée uniquement, aucun writer.
 
+### DEV_3 — Data Mapping joueur, masque SAV, catalogue et végétation
+
+- Le bloc SAV type 6 natif (`84 + 20×328`), ses départs et le candidat
+  race/faction sont documentés ; rapports JSON/CSV exposent aussi les inconnus.
+- Le triplet immédiat 4P confirme le masque direct type-3 byte 8 (`3500/3500/4000/4000`) ; aucune reconstruction n'est utilisée. La vue **Masque initial** ajoute un hachurage blanc et reste neutre sans champ direct.
+- Aucun fichier de génération protégé n'a été modifié. Les objets `208–214`,
+  `216–222`, `224–230` et `232–255` sont nommés ; `215/223/231` restent
+  crash-prone et hors nomenclature.
+- Les nids `247–253` sont comptés dans Agriculture, présents dans la vue
+  Cultures avec une teinte miel distincte du blé, et absents du graphique
+  forestier.
+- Les objets `82/83` sont explicitement reportés à **Datamining v2** : aucune
+  occurrence naturelle n’a été trouvée dans le corpus actuel et l’injection de
+  calibration est exclue comme preuve. Les terrains `18/19` sont validés comme
+  détails d’herbe singleton entourés d’herbe ID16 et
+  intégrés à la famille Herbe, aux statistiques, au graphique et à l’inspecteur.
+- Les statistiques distinguent désormais plantations `84`, pousses stade 1/2 et variantes de palmier `229`/`221`. Le graphique **Arbres et pousses** suit l'ordre adultes → stade 2 → stade 1 → plantations → palmiers adultes, avec tooltips et couleurs graduées.
+- Validation Windows de la candidate cumulative R7 confirmée ; le checkpoint
+  complet **DEV_3** est maintenant promu sur `dev`.
+
 ## 7. Suite de la roadmap
 
-- **v1.9** : restructuration GUI puis audit des couches moteur/générateur et nettoyage des modules/tests/entrypoints ; Data Mapping seulement vers la fin.
-- **Prochaine RC/STABLE** : seulement après la correction du générateur en
-  v1.10 ; elle reprendra alors le portable Windows, l’updater, les checksums et
-  la préservation des settings.
-- **v1.10** : audit seed/RNG et diversité morphologique, détection objective des doublons/rotations, puis Continental multi-tailles 384 → 448 → 512 → 576 → 640 → 704 → 768.
+- **v1.9 DEV_3** : Data Mapping ciblé et consolidation du checkpoint terminés ;
+  pas de nouvel audit de génération dans cette ligne.
+- **Prochaine RC/STABLE** : après la reconstruction majeure du générateur,
+  potentiellement v2.0 ; elle reprendra alors le portable Windows et l'updater.
+- **v2.0 potentielle** : reconstruction réelle du générateur, seed/RNG et
+  diversité morphologique ; l'ancien « audit v1.10 » est reporté car le moteur
+  actuel ne produit pas encore une vraie diversité.
 - Après Continental : Large Islands, puis Small Islands.
 - Comparaison multi-cartes 3+, Modifiers et éditeur intégré restent prévus plus tard sans numéro prématuré.
 
 ## 8. Prochaine action
 
-1. Poursuivre v1.9 par l’audit interne des couches de génération, sans modifier
-   le comportement protégé ; garder le Data Mapping vers les dernières DEV.
-2. Remplacer progressivement les contrats GUI fondés sur le texte source par
-   des tests comportementaux, en commençant par Batch et Historique.
+1. Garder objets `82/83`, couleur SAV, mana et tribu nominale pour Datamining v2,
+   sur corpus contrôlé et sans writer SAV.
+2. N'ouvrir le chantier suivant qu'après décision explicite : reconstruction réelle du générateur/diversité morphologique, potentiellement v2.0.
 
 ## 9. Procédure de reprise
 

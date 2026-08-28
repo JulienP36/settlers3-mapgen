@@ -1,27 +1,66 @@
 # Changelog
 
-## v1.9 post-DEV_2 Windows CI repair — 2026-08-27
+## v1.9 DEV_3 — 2026-08-28
 
-- Updates the Windows protected-hash gate from the removed generator paths to
-  the six current canonical protected files.
-- Derives Windows archive names and executable version metadata from the
-  runtime version, eliminating the stale `DEV_9_R2` package label.
-- Adds a regression contract for the CI paths and metadata generator.
+- Consolide la candidate cumulative `DEV_3_R7` après validation Windows ;
+  aucune fonctionnalité validée de `DEV_3_R1` à `R7` n'est retirée.
+- Ajoute aux statistiques, exports et analyses locales les plantations `84`,
+  les pousses d'arbre de stade 1/2 (`216–220`, `222`, `224–228`, `230`) et les
+  pousses de palmier `221`/`229`.
+- Rétablit le graphique **Arbres et pousses** dans l'ordre adultes, stade 2,
+  stade 1, plantations, palmiers adultes, avec couleurs graduées et tooltips
+  listant les IDs de chaque groupe.
+- Conserve les nids `247–253` dans Agriculture/Cultures, les terrains `18/19`
+  dans la famille Herbe et les éléments de joueurs/masque déjà validés.
+- Validation locale et depuis le ZIP extrait : **258 tests réussis**, autodiagnostic
+  du runtime PASS ; les six hashes protégés restent inchangés.
+- Validation Windows utilisateur confirmée ; `DEV_3` est promue sur la branche
+  `dev`. Les objets crash-prone `215/223/231`, les IDs `82/83` et la génération
+  réelle restent explicitement hors de ce checkpoint.
 
-## v1.9 post-DEV_2 reference audit — 2026-08-27
+## v1.9 DEV_3_R6 — 2026-08-28
 
-- Removes two unlinked documents fully superseded by the published architecture
-  guide, current snapshot and development log.
-- Compacts the v1.9 development log around accepted outcomes and the R1 import
-  regression lesson; detailed candidate history remains in Git.
-- Keeps release-manifest evidence and specialist binary, morphology, terrain,
-  resource and gameplay references intact even when they are large or rarely
-  consulted.
-- Repairs the PREGEN router: the live TODO replaces an immutable historical
-  TODO, feature routes point only to existing canonical references, and a test
-  now rejects broken `.md`/`.txt` routes.
-- Updates stale EDM writer/reference names to the current `map_data` ownership
-  and records that Large Islands has no validated dedicated profile yet.
+- Consigne dans les catalogues les objets confirmés par les calibrations
+  `208–214`, `216–222`, `224–230` et `232–255`.
+- Valide les terrains `18/19` comme détails d’herbe singleton entourés d’herbe
+  ID16 et les intègre à la famille Herbe, aux statistiques, au graphique et à
+  l’inspecteur, avec un segment graphique dédié.
+- Conserve `215`, `223` et `231` hors nomenclature sémantique après les crashes
+  observés ; ne leur attribue aucun nom de gameplay.
+- Laisse uniquement `82/83` à identifier, reportés à Datamining v2 ; les
+  terrains `18/19` sont désormais validés comme détails d’herbe.
+- Intègre les nids `247–253` à Agriculture et à la vue Cultures, avec une
+  teinte miel distincte du blé, sans les remettre dans le graphique forestier.
+- Validation locale après intégration : **257 tests réussis**.
+- Le chantier de diversité/générateur est reporté à une reconstruction majeure,
+  potentiellement v2.0, au lieu d'un audit v1.10 superficiel.
+
+## v1.9 DEV_3_R5 — 2026-08-28
+
+## v1.9 DEV_3_R5 — 2026-08-28
+
+- Corrects native SAV type-6 player parsing to the observed `84 + 20×328`
+  layout while retaining the old synthetic fixture for regression coverage.
+- Exposes confirmed player activity/start fields and the repeated race/faction
+  value as a clearly labelled candidate in statistics, JSON and CSV exports.
+- Shows the validated slot-palette colour separately from the still-undecoded
+  SAV effective colour; current/max mana and nominal tribe remain explicitly
+  unknown rather than guessed.
+- Adds the native player-block reference notes and real-SAV smoke coverage.
+- Confirms the native initial-territory raster in the supplied immediate 4P SAV:
+  type-3 byte 8 contains the exact cells (`3500/3500/4000/4000`), while the
+  generated EDM and editor MAP carry no claim cells (`255` everywhere).
+- Re-enables a **Masque initial** viewer based only on those explicit SAV
+  coordinates; no canonical/radius reconstruction is used. Later SAVs retain
+  their current runtime claims without being mislabelled as an initial mask.
+- Treats native type-6 flags `1` and `2` as active human/computer slots so all
+  four starts in the supplied SAV are recovered.
+- Adds white diagonal hatching inside the direct initial-mask cells so this
+  view is visually distinct from the solid-color runtime Territories view.
+- Local candidate only: tests pass; Windows validation remains required before
+  consolidating `DEV_3`.
+- Validation Windows utilisateur : le fonctionnement de R5 est confirmé ; la
+  cartographie R6 ci-dessus reste à compléter avant la clôture de DEV_3.
 
 ## v1.9 DEV_2 — 2026-08-27
 
