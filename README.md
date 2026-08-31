@@ -48,9 +48,55 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v1.9 DEV_3 validée / moteur v1.5 stable
+## État actuel — v2.0 DEV_1 / Continental Legacy procédural
 
-**v1.5 reste le checkpoint moteur validé et ne doit pas être modifié sans raison explicite.** La v1.7 ajoute au-dessus de ce moteur un socle complet Statistiques / Graphiques : analyses exactes, inventaires debug, densités normalisées, graphiques sémantiques, comparaison A/B et tooltips contextuels.
+`v2.0 DEV_1` poursuit le chemin Legacy Continental avec un générateur réel :
+il synthétise la carte depuis `taille`, `joueurs` et `seed`, sans lire la
+bibliothèque terrain native v1.5, une SAV, une image ou une carte précédente
+pendant une génération. La côte 768 utilise toutefois une petite bibliothèque
+de silhouettes dérivées hors ligne des SAV de calibration ; elle ne contient
+que des contours remplis, pas les terrains ni les données de partie. Les
+tailles inférieures gardent le chemin procédural de secours. Les étapes sont
+séparées par responsabilité afin qu’un futur
+générateur Upgraded puisse dériver de parties identifiées sans les confondre.
+
+La R6 conserve toutes les avancées de R5 et ajoute une passe bathymétrique
+dédiée : le gradient `Shore48 → Water0 → … → Water7` reste la règle, puis les
+IDs d'eau sont localement décalés par des résidus cohérents calibrés sur les 16
+SAV de référence. La rive `Shore48` n'est jamais supprimée ni retouchée : une
+validation dure interdit toute transition directe eau-vers-herbe (et tout
+terrain terrestre non-rive, hors embouchure de rivière). Cette passe intervient
+après les lacs et avant les rivières, sans modifier les fichiers v1.5 protégés.
+
+Legacy Continental est maintenant générable en `384`, `448`, `512`, `576`,
+`640`, `704` et `768`, dans les limites de joueurs natives. Le calibrage visuel
+reste une passe active de DEV_1. R16 teste la reconstruction simplifiée des
+minerais Legacy : zones HEX6 indépendantes, rayons 3/4/5, remplissage tiré
+entre un minimum provisoire et 100 %, pixels sélectionnés aléatoirement, puis
+peinture séquentielle charbon → fer → or → gemmes → souffre avec écrasement
+naturel. Le support est la montagne intérieure et la cible d'occupation est
+environ 53 %, sans halo autour des départs. Poissons, règles Upgraded et
+transitions terrain restent dans leurs branches séparées. La méthode et ses
+limites sont documentées dans
+`references/SETTLERS3_LEGACY_MINERAL_R16_RANDOM_HEX_REFERENCE_v1.md`.
+
+R17 conserve la géométrie minérale R16 mais ramène les quantités Legacy à un
+tirage natif uniforme de `1..15` par case, pour les minerais comme pour les
+poissons. Les proportions de familles et le nombre de cases restent inchangés.
+Le détail de la comparaison avec les SAV est consigné dans
+`references/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
+
+La génération simple est exécutée dans un worker séparé et relaie sa
+progression à l'interface ; une carte 768 coûte environ 13–16 secondes sur la
+machine de référence, mais ne bloque plus la fenêtre en état Windows « Ne
+répond pas ». Les contrôles de placement qui protègent les départs restent
+bornés et validés.
+
+**Le chemin historique v1.5, conservé pour la compatibilité Upgraded, reste
+protégé et ne doit pas être modifié sans raison explicite liée à ce moteur.**
+La v1.7 ajoute au-dessus de ce socle un ensemble complet Statistiques /
+Graphiques : analyses exactes, inventaires debug, densités normalisées,
+graphiques sémantiques, comparaison A/B et tooltips contextuels.
 
 Référence moteur v1.5 :
 `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
@@ -69,7 +115,8 @@ DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afi
 
 La GUI v1.6 comprend notamment :
 
-- génération Legacy / Upgraded Continental 768×768 via le moteur v1.5 ;
+- génération Continental Legacy procédurale sur les sept tailles natives ;
+- compatibilité Upgraded v1.5 768×768 conservée séparément dans l’attente de son dérivé v2 ;
 - import EDM / MAP / SAV et export EDM+MAP 768 ;
 - vues Global / Départs / Territoires / Masque initial / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
 - thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
@@ -99,7 +146,7 @@ Masque initial affiche exclusivement les coordonnées directes du byte 8 d'un
 SAV immédiat reconnu, tandis que Territoires affiche les claims runtime
 réellement lus dans le SAV.
 
-> Les tailles autres que 768 restent visibles mais leur génération n'est pas encore calibrée. Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé.
+> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP restent dépendants d’un scaffold de la taille concernée ; la génération/aperçu des sept tailles est disponible dès DEV_1_R6.
 
 La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a construit la passe Workflow / accessibilité / production. La **v1.9** consolide maintenant l’architecture interne avant de terminer par l’archéologie/data mapping. Le retour profond au générateur reste prévu pour la v1.10.
 
@@ -117,7 +164,11 @@ La matrice détaillée est disponible dans `references/SETTLERS3_UPGRADED_RULE_M
 
 ### Custom
 
-Mode futur permettant d'exposer les paramètres de génération à l'utilisateur. Il est actuellement réservé et non implémenté.
+Mode futur permettant d'exposer les paramètres de génération à l'utilisateur. Il
+reste réservé pour l'instant : son premier objectif sera un laboratoire de
+réglage séparé, avec presets exportables, génération par lot et garde-fous
+critiques conservés. La liste complète des paramètres sera définie avant son
+implémentation afin de ne pas mélanger ses essais avec le preset Legacy.
 
 ## Archétypes
 

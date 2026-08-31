@@ -1,0 +1,222 @@
+{
+  "profile_name": "Continental Legacy v2 — native-calibrated",
+  "profile_version": 2,
+  "runtime_contract": {
+    "reads_native_corpus": false,
+    "reads_template_library": false,
+    "reads_derived_morphology_library": true,
+    "inputs": ["side", "players", "seed"]
+  },
+  "supported_sizes": {
+    "384": {"max_players": 8, "water_fraction": {"mean": 0.3823, "min": 0.3732, "max": 0.3971}, "river_practical_max_cells": 44},
+    "448": {"max_players": 11, "water_fraction": {"mean": 0.3246, "min": 0.3156, "max": 0.3419}, "river_practical_max_cells": 47},
+    "512": {"max_players": 15, "water_fraction": {"mean": 0.2967, "min": 0.2726, "max": 0.3381}, "river_practical_max_cells": 48},
+    "576": {"max_players": 19, "water_fraction": {"mean": 0.2539, "min": 0.2395, "max": 0.2693}, "river_practical_max_cells": 49},
+    "640": {"max_players": 20, "water_fraction": {"mean": 0.2292, "min": 0.2223, "max": 0.2332}, "river_practical_max_cells": 47},
+    "704": {"max_players": 20, "water_fraction": {"mean": 0.2149, "min": 0.2075, "max": 0.2286}, "river_practical_max_cells": 53},
+    "768": {"max_players": 20, "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 55}
+  },
+  "macro": {
+    "shore_edge_distance": {"min": 24, "max": 29},
+    "hard_edge_margin": 12,
+    "hard_edge_jitter": 8.0,
+    "soft_edge_offset": 8.0,
+    "soft_edge_jitter": 6.0,
+    "soft_edge_falloff": 48.0,
+    "soft_edge_pressure": 0.65,
+    "coast_detail_weight": 0.13,
+    "coast_broad_weight": 0.42,
+    "coast_contour_weight": 0.40,
+    "coast_harmonic_weight": 1.15,
+    "coast_score_smoothing": 0.75,
+    "morphology_library": {
+      "path": "data/SETTLERS3_CONTINENTAL_COAST_MORPHOLOGY_V2.npz",
+      "density_split_players": 8,
+      "deformation_band_cells": 36.0,
+      "deformation_amplitude": 5.5
+    },
+    "coastal_profile_base": 15.0,
+    "coastal_profile_variation": 45.0,
+    "coastal_profile_min": 12.0,
+    "coastal_profile_max": 88.0,
+    "coastal_profile_cutoff": 8.0,
+    "coastal_profile_pressure": 0.65,
+    "coastal_cove_count_by_side": {"384": 1, "448": 1, "512": 1, "576": 1, "640": 2, "704": 2, "768": 2},
+    "coastal_cove_width_min": 18,
+    "coastal_cove_width_max": 64,
+    "coastal_cove_depth_min": 42,
+    "coastal_cove_depth_max": 138,
+    "coastal_cove_pressure": 0.72,
+    "coastal_cove_cutoff": 6.0,
+    "coastal_cove_small_count_by_side": {"384": 4, "448": 5, "512": 6, "576": 7, "640": 8, "704": 10, "768": 12},
+    "coastal_cove_small_width_min": 7,
+    "coastal_cove_small_width_max": 22,
+    "coastal_cove_small_depth_min": 24,
+    "coastal_cove_small_depth_max": 62,
+    "coastal_cove_small_pressure": 0.60,
+    "coastal_cove_small_cutoff": 4.0,
+    "coastal_inlet_count_by_side": {"384": 2, "448": 2, "512": 3, "576": 3, "640": 4, "704": 4, "768": 5},
+    "coastal_inlet_length_min": 22,
+    "coastal_inlet_length_max": 84,
+    "coastal_inlet_width_min": 3,
+    "coastal_inlet_width_max": 8,
+    "coastal_inlet_pressure": 0.38,
+    "coastal_inlet_branch_chance": 0.45,
+    "shore_edge_jitter": 0.0,
+    "shore_edge_detail": 0.0,
+    "satellite_island_fraction": 0.0018,
+    "satellite_component_count": 7,
+    "satellite_min_distance": 6,
+    "satellite_max_distance": 52,
+    "coastal_bay_fraction": 0.0,
+    "coastal_bay_max_depth": 44,
+    "coastal_bay_count_by_side": {"384": 4, "448": 5, "512": 5, "576": 6, "640": 7, "704": 7, "768": 8}
+  },
+  "coastal_bands": {
+    "enabled": true,
+    "bathymetry_library": {
+      "path": "data/SETTLERS3_CONTINENTAL_COAST_BATHYMETRY_V1.npz",
+      "density_split_players": 8
+    },
+    "fallback_deepened_fraction": 0.024
+  },
+  "terrain": {
+    "water_height": 0,
+    "water_accessibility": 1,
+    "forbid_inland_water_components_leq": 4
+  },
+  "biomes": {
+    "mountain": {
+      "fraction_land": {"mean": 0.1771, "stddev": 0.00223},
+      "significant_components_by_side": {"384": 7, "448": 10, "512": 13, "576": 16, "640": 19, "704": 22, "768": 24},
+      "micro_components_by_side": {"384": 15, "448": 20, "512": 25, "576": 30, "640": 35, "704": 40, "768": 45},
+      "micro_cells_by_side": {"384": 40, "448": 55, "512": 70, "576": 90, "640": 110, "704": 135, "768": 160},
+      "major_min": 120,
+      "major_max": 50000,
+      "major_sigma": 1.05,
+      "micro_max": 12,
+      "aspect_range": [1.35, 4.20],
+      "major_separation": true,
+      "minimum_water_distance": 28
+    },
+    "desert": {
+      "fraction_land_by_side": {"384": 0.02842, "448": 0.03724, "512": 0.03712, "576": 0.03414, "640": 0.03948, "704": 0.04197, "768": 0.03896},
+      "significant_components_by_side": {"384": 12, "448": 18, "512": 25, "576": 31, "640": 37, "704": 44, "768": 51},
+      "micro_components_by_side": {"384": 60, "448": 90, "512": 120, "576": 150, "640": 190, "704": 230, "768": 280},
+      "micro_cells_by_side": {"384": 100, "448": 135, "512": 170, "576": 220, "640": 265, "704": 325, "768": 390},
+      "major_min": 18,
+      "major_max": 4500,
+      "major_sigma": 0.70,
+      "micro_max": 12,
+      "aspect_range": [1.00, 2.80],
+      "major_separation": true
+    },
+    "swamp": {
+      "fraction_land_by_side": {"384": 0.00267, "448": 0.00548, "512": 0.00416, "576": 0.00533, "640": 0.00498, "704": 0.00440, "768": 0.00458},
+      "significant_components_by_side": {"384": 7, "448": 11, "512": 15, "576": 18, "640": 21, "704": 23, "768": 25},
+      "micro_components_by_side": {"384": 35, "448": 55, "512": 75, "576": 100, "640": 130, "704": 170, "768": 220},
+      "micro_cells_by_side": {"384": 165, "448": 220, "512": 280, "576": 360, "640": 430, "704": 525, "768": 650},
+      "major_min": 12,
+      "major_max": 480,
+      "major_sigma": 0.55,
+      "micro_max": 12,
+      "aspect_range": [1.00, 2.30],
+      "major_separation": true
+    }
+  },
+  "relief": {
+    "grass_height_by_water_distance": {"0_2": 6.11, "3_5": 11.64, "6_10": 24.68, "11_20": 44.37, "21_40": 64.26, "41_80": 77.10, "81_160": 79.85},
+    "mountain_height_by_depth": {"1_2": 115.96, "3_4": 125.55, "5_8": 137.13, "9_16": 153.65, "17_32": 171.37, "33_plus": 181.33}
+  },
+  "snow": {
+    "massif_height_percentile": 80,
+    "minimum_height": 135,
+    "minimum_mountain_depth": 4,
+    "minimum_raw_component_cells": 18
+  },
+  "rivers": {
+    "width_shares": {"96": 0.8122, "97": 0.1594, "98": 0.0250, "99": 0.0035},
+    "fraction_map_by_side": {"384": 0.0342, "448": 0.0250, "512": 0.0243, "576": 0.0213, "640": 0.0203, "704": 0.0195, "768": 0.01648},
+    "source_min_height": 30,
+    "target_length_mean": 22,
+    "target_length_stddev": 8,
+    "source_outlet_distance_min": 8,
+    "source_outlet_distance_max": 42,
+    "source_min_mountain_distance": 4,
+    "source_max_mountain_distance": 22,
+    "source_min_separation": 5,
+    "system_target_by_side": {"384": 48, "448": 58, "512": 70, "576": 82, "640": 94, "704": 106, "768": 430},
+    "target_fraction_scale": 1.0,
+    "fish_allowed": false,
+    "must_connect_to_water_or_shore": true
+  },
+  "lakes": {
+    "fraction_map_by_side": {"384": 0.01171, "448": 0.01086, "512": 0.01950, "576": 0.01822, "640": 0.01739, "704": 0.01973, "768": 0.02151},
+    "minimum_component_cells": 5,
+    "component_target_by_side": {"384": 7, "448": 10, "512": 17, "576": 24, "640": 27, "704": 28, "768": 31},
+    "noise_scales": [0.050, 0.115, 0.210]
+  },
+  "legacy_content": {
+    "trees": {
+      "grass_adult_ids": [68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 80, 81],
+      "grass_adult_weights": [236, 226, 191, 200, 187, 185, 202, 195, 193, 213, 351, 356],
+      "desert_palm_ids": [78, 79],
+      "grass_adult_target_768": 2736,
+      "desert_palm_target_768": 8
+    },
+    "resources": {
+      "density_split_players": 8,
+      "mineral_targets_768_by_density": {
+        "low": {
+          "16": {"cells": 20181, "component_count": 1177, "component_size_median": 2, "component_size_p75": 7, "component_size_p90": 46, "component_size_p95": 88, "component_size_p99": 247, "component_size_max": 658},
+          "32": {"cells": 8634, "component_count": 520, "component_size_median": 3, "component_size_p75": 21, "component_size_p90": 54, "component_size_p95": 75, "component_size_p99": 138, "component_size_max": 280},
+          "48": {"cells": 5731, "component_count": 289, "component_size_median": 5, "component_size_p75": 30, "component_size_p90": 60, "component_size_p95": 76, "component_size_p99": 131, "component_size_max": 232},
+          "64": {"cells": 2093, "component_count": 104, "component_size_median": 6, "component_size_p75": 32, "component_size_p90": 55, "component_size_p95": 68, "component_size_p99": 88, "component_size_max": 171},
+          "80": {"cells": 3220, "component_count": 137, "component_size_median": 10, "component_size_p75": 39, "component_size_p90": 60, "component_size_p95": 73, "component_size_p99": 105, "component_size_max": 217}
+        },
+        "high": {
+          "16": {"cells": 20291, "component_count": 1213, "component_size_median": 2, "component_size_p75": 7, "component_size_p90": 45, "component_size_p95": 87, "component_size_p99": 228, "component_size_max": 850},
+          "32": {"cells": 8739, "component_count": 533, "component_size_median": 3, "component_size_p75": 21, "component_size_p90": 53, "component_size_p95": 72, "component_size_p99": 129, "component_size_max": 340},
+          "48": {"cells": 6054, "component_count": 319, "component_size_median": 5, "component_size_p75": 29, "component_size_p90": 56, "component_size_p95": 75, "component_size_p99": 118, "component_size_max": 250},
+          "64": {"cells": 2085, "component_count": 115, "component_size_median": 5, "component_size_p75": 30, "component_size_p90": 54, "component_size_p95": 66, "component_size_p99": 89, "component_size_max": 134},
+          "80": {"cells": 2892, "component_count": 151, "component_size_median": 8, "component_size_p75": 34, "component_size_p90": 58, "component_size_p95": 71, "component_size_p99": 93, "component_size_max": 139}
+        }
+      },
+      "mineral_hexes_768_by_density": {
+        "low": {
+          "16": {"hex_count": 229, "raw_p25": 3, "raw_median": 22, "raw_p75": 79, "raw_p90": 223, "raw_p95": 428, "raw_p99": 1063, "raw_max": 2237, "fill_curve": [0.10, 0.20, 0.30, 0.43, 0.52, 0.55], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.45},
+          "32": {"hex_count": 197, "raw_p25": 10, "raw_median": 31, "raw_p75": 59, "raw_p90": 103, "raw_p95": 148, "raw_p99": 253, "raw_max": 386, "fill_curve": [0.16, 0.26, 0.38, 0.45, 0.54, 0.58], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.23},
+          "48": {"hex_count": 134, "raw_p25": 15, "raw_median": 33, "raw_p75": 58, "raw_p90": 88, "raw_p95": 118, "raw_p99": 178, "raw_max": 375, "fill_curve": [0.18, 0.29, 0.40, 0.46, 0.56, 0.58], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.11},
+          "64": {"hex_count": 56, "raw_p25": 18, "raw_median": 34, "raw_p75": 51, "raw_p90": 70, "raw_p95": 85, "raw_p99": 106, "raw_max": 205, "fill_curve": [0.20, 0.28, 0.40, 0.46, 0.55, 0.60], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.08},
+          "80": {"hex_count": 80, "raw_p25": 20, "raw_median": 37, "raw_p75": 54, "raw_p90": 75, "raw_p95": 97, "raw_p99": 133, "raw_max": 218, "fill_curve": [0.22, 0.29, 0.42, 0.47, 0.56, 0.60], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.02}
+        },
+        "high": {
+          "16": {"hex_count": 244, "raw_p25": 4, "raw_median": 22, "raw_p75": 76, "raw_p90": 226, "raw_p95": 401, "raw_p99": 892, "raw_max": 2237, "fill_curve": [0.10, 0.20, 0.30, 0.43, 0.52, 0.55], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.45},
+          "32": {"hex_count": 192, "raw_p25": 11, "raw_median": 32, "raw_p75": 60, "raw_p90": 102, "raw_p95": 140, "raw_p99": 240, "raw_max": 386, "fill_curve": [0.16, 0.26, 0.38, 0.45, 0.54, 0.58], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.23},
+          "48": {"hex_count": 147, "raw_p25": 14, "raw_median": 33, "raw_p75": 54, "raw_p90": 84, "raw_p95": 113, "raw_p99": 175, "raw_max": 375, "fill_curve": [0.18, 0.29, 0.40, 0.46, 0.56, 0.58], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.11},
+          "64": {"hex_count": 61, "raw_p25": 14, "raw_median": 31, "raw_p75": 51, "raw_p90": 68, "raw_p95": 78, "raw_p99": 110, "raw_max": 205, "fill_curve": [0.20, 0.28, 0.40, 0.46, 0.55, 0.60], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.08},
+          "80": {"hex_count": 84, "raw_p25": 17, "raw_median": 33, "raw_p75": 52, "raw_p90": 71, "raw_p95": 86, "raw_p99": 133, "raw_max": 218, "fill_curve": [0.22, 0.29, 0.42, 0.47, 0.56, 0.60], "fill_jitter": 0.09, "size_spread": 0.65, "paint_multiplier": 1.02}
+        }
+      },
+      "fish_target_768_by_density": {"low": 46071, "high": 43737},
+      "mineral_support_ids": [32, 33, 34, 35, 128, 129],
+      "mineral_mountain_occupancy_target": 0.53,
+      "mineral_hex_radius_choices": [3, 4, 5],
+      "mineral_hex_radius_weights": [0.30, 0.50, 0.20],
+      "mineral_zone_fill_min_by_family": {"16": 0.20, "32": 0.26, "48": 0.29, "64": 0.28, "80": 0.29},
+      "mineral_zone_fill_max": 1.0,
+      "mineral_zone_fill_distribution": "uniform",
+      "mineral_zone_attempt_limit_factor": 8,
+      "quantity_multiplier": 1.0,
+      "quantity_cap": 15
+    },
+    "building_stones": {
+      "global_anchor_target_768": 1683,
+      "global_stock_target_768": 10892,
+      "active_ids": [115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126],
+      "exhausted_id": 127,
+      "anchor_min_hex_distance": 4,
+      "footprint": [[-1, -1], [0, -1], [-1, 0], [0, 0], [1, 0], [0, 1], [1, 1]]
+    }
+  }
+}

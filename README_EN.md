@@ -46,13 +46,57 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — validated v1.9 DEV_3 / stable v1.5 engine
+## Current state — v2.0 DEV_1 / procedural Continental Legacy
 
-The protected v1.5 engine remains the validated generation checkpoint and must not change without an explicit engine reason. The latest published stable application is v1.7, which added the Statistics and Charts analysis foundation above that engine.
+`v2.0 DEV_1` continues the first real Continental Legacy generator. It
+synthesises a map from `side`, `players` and `seed`; it does not read the v1.5
+terrain NPZ library, a SAV, a PNG, a cache or a previously generated map at
+runtime. The 768 coast uses a small silhouette library derived offline from
+the calibration SAVs; it contains only filled outlines, never interior terrain
+or game-state data. Smaller sizes retain the procedural fallback. Macro
+topology, starts, biomes, lakes, relief, rivers, resources and objects are
+distinct stages so a later Upgraded derivative can reuse explicit parts
+without becoming a monolithic generator.
+
+R6 retains all R5 work and adds a dedicated bathymetry pass: the
+`Shore48 → Water0 → … → Water7` gradient remains the rule, then water IDs are
+locally shifted by coherent residuals calibrated from the 16 reference SAVs.
+The `Shore48` rim is never removed or rewritten. A hard validation rejects any
+direct water-to-grass transition (and any other non-shore land at water, apart
+from river mouths). The pass runs after lakes and before rivers, without
+modifying protected v1.5 files.
+
+Continental Legacy now generates on all seven native sizes (`384` through
+`768`) within their native player limits. Visual Legacy calibration remains an
+active DEV_1 pass. R16 tests a simplified Legacy mineral reconstruction:
+independent HEX6 zones, radii 3/4/5, fill sampled between a provisional minimum
+and 100%, random cells inside each zone, then sequential coal → iron → gold →
+gems → sulfur painting with natural overwrites. The support is the inner
+mountain family and the occupancy target is about 53%, with no start halo. Fish,
+Upgraded rules and terrain transitions remain in their separate branches. The
+method and its limits are documented in
+`references/SETTLERS3_LEGACY_MINERAL_R16_RANDOM_HEX_REFERENCE_v1.md`.
+
+R17 keeps R16's mineral geometry but restores native-like uniform `1..15`
+quantities per Legacy mineral and fish cell. Family proportions and occupied
+cell counts are unchanged. The comparison against the native SAV corpus is
+recorded in
+`references/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
+
+Single-map generation now runs in a worker and relays progress to the UI. A
+768 map now takes about 13–16 seconds on the reference machine, and the window
+no longer enters Windows' “Not Responding” state. Start-protection placement
+checks remain bounded and validated.
+
+The historical v1.5 path, retained for Upgraded compatibility, remains
+protected and must not change without an explicit engine reason. The latest
+published stable application is v1.7, which added the Statistics and Charts
+analysis foundation above that compatibility path.
 
 The current v1.8 development line adds workflow, accessibility and production tooling:
 
-- Legacy and Upgraded Continental 768×768 generation;
+- procedural Continental Legacy generation on all seven native sizes;
+- separate v1.5 Upgraded 768×768 compatibility pending its own v2 derivative;
 - `.EDM`, `.MAP` and read-only `.SAV` imports;
 - validated 768×768 `.EDM`/`.MAP` export and unchanged source `.SAV` copying;
 - Global, Starts, Territories, Initial mask, Elevation, Resources, Paths, Crops and Heatmap views;
@@ -94,15 +138,17 @@ The main Python dependencies are NumPy, SciPy and Pillow. A separate installatio
 
 ## Important limits
 
-- Generation is currently calibrated only for Continental 768×768.
-- Sizes other than 768 may be shown in the UI but are not ready for generation.
+- Legacy generation/preview is available for all native sizes. EDM/MAP export
+  still requires a validated scaffold for the selected size.
 - The project has no `.SAV` writer. Imported saves are read for supported data and may only be copied unchanged.
 - The native initial territory mask is read directly from type-3 byte 8 of an
   immediate SAV when the confirmed signature is present; no start-based shape
   reconstruction is used. EDM/MAP claim-less sources remain neutral in that
   view.
 - The partial `.EDM` import failure was fixed and Windows-validated in v1.9 DEV_1. The parser accepts only the confirmed terminal DWORD-alignment case and keeps reconstruction paths strict.
-- Current seeds produce only three base morphologies, then rotations and occasional mirrors. The seed/RNG audit and objective diversification are planned for v1.10.
+- Legacy v2 uses named independent seed streams; its 768 coast calibration is
+  morphology-derived while the other sizes use the procedural fallback.
+  Visual comparison against native maps remains necessary before a release.
 - Automated validators are regression guards; they do not replace validation in the official editor, View Map, a runtime `.SAV`, or long-play.
 
 ## Translation status

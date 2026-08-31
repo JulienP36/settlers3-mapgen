@@ -6,8 +6,11 @@ import numpy as np
 from scipy import ndimage
 
 from ..map_data.constants import WATER_IDS, ROCKY, ROCK_SNOW_TRANS, SNOW_TRANS, SNOW, HEX6
+from .base import GenerationOutput
 from .continental import MapGenerator as _AuditedMapGenerator
 from ..map_data.hexgrid import neighbor_count
+from .core import GenerationRequest
+from .generators.legacy import generate as generate_legacy
 
 
 _HEX_STRUCTURE = np.array([[1,1,0],[1,1,1],[0,1,1]], dtype=bool)
@@ -92,7 +95,68 @@ def _grow_ovoid_no_gap(region_mask, occupied, target_size, aspect, angle, rng, p
 
 
 class MapGenerator(_AuditedMapGenerator):
-    """v1.5 runtime generator with final audited generation constraints."""
+    """Application facade for Legacy v2 and the protected Upgraded path.
+
+    Legacy is dispatched to the standalone procedural pipeline. Upgraded keeps
+    the historical audited implementation until its own migration is explicit.
+    """
+
+    def generate(
+        self,
+        players: int,
+        seed: int,
+        mode: str = 'legacy',
+        archetype: str = 'continental',
+        side: int = 768,
+        progress_callback=None,
+    ) -> GenerationOutput:
+        """Generate through the mode-specific engine with one app contract."""
+
+        if mode == 'legacy':
+            if archetype != 'continental':
+                raise NotImplementedError(
+                    f'Legacy v2 ne prend actuellement en charge que Continental: {archetype}'
+                )
+
+            request = GenerationRequest(
+                side=int(side),
+                players=int(players),
+                seed=int(seed),
+            )
+            callback = progress_callback if progress_callback is not None else self.progress_callback
+            events = []
+
+            def report(stage: str, detail: str = '') -> None:
+                events.append(stage + (f' — {detail}' if detail else ''))
+                if callback is not None:
+                    try:
+                        callback(stage, detail, len(events))
+                    except Exception:
+                        # Progress reporting must never alter a deterministic map.
+                        pass
+
+            report('continental_v2.begin', 'générateur Legacy procédural')
+            state, validations = generate_legacy(request, progress=report)
+            report('continental_v2.complete', 'validation terminée')
+            self.stage_log = list(events)
+            self.current_mode = 'legacy'
+            return GenerationOutput(state, validations, list(events))
+
+        if int(side) != 768:
+            raise ValueError('Le chemin Upgraded historique reste calibré pour 768×768')
+
+        previous_callback = self.progress_callback
+        if progress_callback is not None:
+            self.progress_callback = progress_callback
+        try:
+            return super().generate(
+                int(players),
+                int(seed),
+                mode=mode,
+                archetype=archetype,
+            )
+        finally:
+            self.progress_callback = previous_callback
 
     def _generate_minerals(self, state, rng, pr):
         # Legacy must keep its separate native-like resource path.

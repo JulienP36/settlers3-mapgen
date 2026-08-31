@@ -12,6 +12,9 @@ output/
 # Local user files / saves
 *.sav
 
+# The exhaustive audit cell table is kept lossless but split into numbered parts.
+references/native_resource_object_audit/native_resource_object_audit_16_768_2p20p_resource_cells.csv
+
 # OS / IDE
 .DS_Store
 Thumbs.db

@@ -40,7 +40,7 @@ from .ui.widgets import (
 )
 
 class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
-    """Composed desktop shell running the unchanged validated v1.5 generator."""
+    """Composed desktop shell running the validated generation facade."""
     def __init__(self):
         self.prefs=load_settings();self._preview_base=None;self._preview_key=None
         self._zoom_after=None

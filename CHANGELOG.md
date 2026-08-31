@@ -1,5 +1,290 @@
 # Changelog
 
+## v2.0 DEV_1 — 2026-08-31 — checkpoint Legacy validé
+
+- Consolide les travaux R10 à R17 dans le premier checkpoint publiable de la
+  reconstruction procédurale Continental Legacy v2.
+- La génération des minerais et des poissons est validée : occupation et
+  composition des familles minérales proches des SAV, quantités natives
+  uniformes `1..15`, aucune modification des transitions, de la géométrie ou
+  de la branche Upgraded.
+- Relie enfin la façade utilisée par le GUI et `run_cli.py` au pipeline Legacy
+  v2 ; le chemin historique Upgraded reste isolé et calibré séparément.
+- Le checkpoint est désormais versionné sans suffixe `R`, conformément à la
+  convention du projet ; les validations Windows/éditeur/jeu restent la
+  prochaine étape d’homologation externe.
+
+## v2.0 DEV_1_R17 — 2026-08-30 — quantités Legacy natives
+
+- Conserve intégralement la géométrie minérale R16 : zones HEX6, rayons 3/4/5,
+  remplissages, occupation montagneuse, ordre charbon → fer → or → gemmes →
+  souffre et écrasements séquentiels.
+- Corrige uniquement le low nibble des minerais et des poissons Legacy
+  procéduraux : tirage uniforme des quantités `1..15`, avec plafond `15`.
+- Remplace le multiplicateur `1,3` du profil `continental_legacy_v2` par
+  `1,0`, conformément aux 16 SAV natifs audités ; les profils historiques
+  protégés et la branche Upgraded restent inchangés.
+- Confirme que la composition spatiale R16/R17 reste proche du natif : environ
+  50 % charbon, 22 % fer, 14–15 % or, 5 % gemmes et 8 % soufre.
+- Ajoute la mesure comparative dans
+  `references/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
+
+## v2.0 DEV_1_R16 — 2026-08-30 — zones minérales aléatoires séquentielles
+
+- Remplace la mécanique R15 de poches groupées, d'ancrage, de cohérence locale
+  et de biais de compacité par des zones HEX6 indépendantes peintes directement.
+- Applique explicitement l'ordre Legacy charbon → fer → or → gemmes → souffre ;
+  chaque famille suivante peut recouvrir la précédente.
+- Tire les rayons uniquement dans la palette mesurée 3/4/5 (diamètres 7/9/11)
+  et le remplissage uniformément entre un minimum provisoire par famille et
+  100 %. Les pixels retenus dans une zone sont aléatoires.
+- Recalibre le support sur la montagne intérieure `32/33/34/35/128/129` et
+  vise environ 53 % d'occupation, conforme à l'audit natif ; aucun halo autour
+  des départs n'est ajouté.
+- Ajoute des compteurs de couverture, d'écrasement, de remplissage,
+  d'occupation Rocky32 et des limites d'essais pour diagnostiquer chaque seed.
+- Ne modifie ni Upgraded v1.5/v7, ni les poissons, ni les règles de transition
+  des terrains.
+
+## v2.0 DEV_1_R15 — 2026-08-30 — amas minéraux localement cohérents
+
+- Remplace la sélection quasi indépendante de R14 par un bruit aléatoire
+  faiblement corrélé aux voisins HEX6 : les trous restent irréguliers, mais les
+  cellules voisines forment de nouveau des amas lisibles comme dans les SAV.
+- Fixe l'ancrage de chaque poche logique pendant la pose de ses HEX élémentaires
+  afin d'éviter la dérive en chaînes longues et en traînées.
+- Paramètres de cette candidate : cohérence locale `0,50` et biais de
+  compacité `0,38`, sans revenir au noyau radial dominant de R13.
+- Conserve les rayons 3/4/5, les taux de remplissage, les tailles de poches,
+  les quotas, l'ordre charbon → fer → or → gemmes → soufre et les écrasements
+  inter-familles. Aucun changement dans Upgraded, les transitions ou les poissons.
+
+## v2.0 DEV_1_R14 — 2026-08-30 — remplissage interne quasi aléatoire
+
+- Réduit fortement le biais radial introduit en R13 : les cellules manquantes
+  sont maintenant réparties presque uniformément à l’intérieur de l’enveloppe
+  HEX, avec seulement une cohérence locale très légère.
+- Conserve les tailles de poches, la compacité générale, les rayons 3/4/5,
+  l’ordre charbon → fer → or → gemmes → soufre et les quotas Legacy.
+- Upgraded v1.5/v7 no-gap, les transitions terrain et les règles de poissons
+  restent inchangés.
+
+## v2.0 DEV_1_R13 — 2026-08-30 — remplissage compact et variable des minerais Legacy
+
+- Remplace le tirage uniforme des cellules dans les enveloppes minérales par
+  une sélection radiale bruitée autour d'un noyau : les gisements forment des
+  masses compactes et irrégulières au lieu d'îlots dispersés.
+- Rétablit une variation plus large des tailles de poches groupées (`0.65`),
+  réduit la fenêtre de chaînage à `6` et conserve le bruit de sélection à
+  `0.60`, valeurs calibrées sur les composantes de soufre des 16 SAV.
+- Conserve les totaux, les rayons élémentaires 3/4/5, l'ordre
+  charbon → fer → or → gemmes → soufre et les écrasements entre familles.
+- Aucun changement dans le chemin Upgraded v7 no-gap ; les transitions terrain,
+  les starts et les règles Legacy poissons restent séparés.
+- Ajoute la mesure de remplissage et de fragmentation dans
+  `references/SETTLERS3_LEGACY_MINERAL_FILL_RECHECK_v1.md`.
+
+## v2.0 DEV_1_R12 — 2026-08-30 — géométrie minérale Legacy discrète
+
+- Remplace la conversion directe des tailles groupées en rayons par une
+  palette d’hexagones élémentaires de rayons 3, 4 et 5 (diamètres 7, 9 et 11).
+  Le rayon 6, non démontré dans les SAV, n’est pas utilisé.
+- Construit les grosses poches comme des chaînes de petits hexagones proches,
+  avec des enveloppes susceptibles de se recouvrir ; un garde-centre évite
+  seulement les doublons exacts d’une même famille.
+- Rend le remplissage local plus variable et indépendant du rayon, sans
+  modifier l’ordre Legacy charbon → fer → or → gemmes → soufre ni les
+  écrasements entre familles.
+- Ajoute des métadonnées et tests de contrôle des rayons, des shortfalls et de
+  la conversion poche groupée → hexagones élémentaires. Le chemin Upgraded
+  v7 no-gap reste inchangé.
+
+## v2.0 DEV_1_R11 — 2026-08-30 — candidate rayons minéraux resserrés
+
+- Amortit fortement la dispersion des tailles de patchs avant conversion en
+  enveloppes HEX : les écarts visuels doivent venir surtout du remplissage et
+  des recouvrements séquentiels, pas de rayons individuels gigantesques.
+- Conserve l’ordre charbon → fer → or → gemmes → soufre, les écrasements entre
+  familles et les quantités Legacy ; première validation 768×768 2P PASS.
+- Restaure les fallbacks d’affichage : contour calculé et mini-balises dans
+  Départs sans masque SAV direct, territoire de base calculé dans Territoires
+  pour les cartes générées/EDM/MAP, claims SAV réels prioritaires.
+
+## v2.0 DEV_1_R10 — 2026-08-30 — hexagones minéraux séquentiels
+
+- Rejette le modèle R9 de champs minéraux exclusifs, qui fusionnait des zones
+  et ne reproduisait pas le motif observé.
+- Peint désormais les familles dans l’ordre charbon → fer → or → gemmes →
+  soufre. Chaque famille pose des patchs HEX indépendants sur le support
+  montagneux ; une famille suivante peut écraser les cellules précédentes.
+- Calibre séparément le nombre de patchs, la distribution de cellules peintes
+  et le remplissage. Les petits patchs sont plus creux ; le remplissage monte
+  progressivement pour les grands patchs, conformément aux mesures des SAV.
+- Sépare les patchs d’une même famille pour conserver des hexagones lisibles,
+  tout en laissant les recouvrements entre familles. Les quotas finaux restent
+  proches des médianes natives et les quantités conservent le multiplicateur
+  Legacy R8.
+- Mesures et limites consignées dans
+  `references/SETTLERS3_LEGACY_MINERAL_HEX_REFERENCE_v1.md`.
+- Réorganise le code en séparant le catalogue `generation/archetypes/` des
+  moteurs `generation/generators/`. Le moteur actif est sous
+  `generation/generators/legacy/`, sans copie des archétypes ni changement de
+  comportement du pipeline Legacy ou du chemin de compatibilité v1.5.
+
+## v2.0 DEV_1_R9 — 2026-08-30 — candidate minéraux rejetée
+
+- Essai intermédiaire de champs minéraux larges, irréguliers et partiellement
+  vides. Rejeté après comparaison visuelle : les zones fusionnaient et ne
+  reproduisaient pas les hexagones superposables observés dans les SAV.
+- La forme des champs est une aire HEX compacte découpée par le relief réel,
+  ce qui autorise un même gisement à recouvrir des lobes de montagne proches
+  sans créer les lignes denses produites par un simple flood-fill.
+- Le paramétrage initial vient des SAV 768 : à une jonction de quatre
+  hexagones, les quatre premières cartes Legacy 2P mesurées ont une médiane
+  de 14 champs minéraux significatifs et un remplissage médian de 38 %.
+  Cette mesure reste à étendre aux autres tailles.
+- Ne modifie ni poissons, ni rivières, ni terrains, ni règle de proximité des
+  départs. Les validations terrain restent toutes dures et inchangées.
+
+## v2.0 DEV_1_R8 — 2026-08-30 — candidate intermédiaire
+
+- Écarte les deux règles R7 qui ne décrivaient pas le Legacy : aucun rayon
+  d’exclusion de ressources autour des starts et aucun filtre de poisson par
+  distance à la Shore. Les poissons Legacy sont sélectionnés dans toute eau
+  Water0..7 valide, toujours hors rivières.
+- Remplace la distribution minérale générique par des profils par famille et
+  densité de joueurs, construits depuis les quantiles de tailles de composantes
+  mesurés dans les 16 SAV 768.
+- Réoriente les rivières 768 vers une bande côtière de sources plus dense,
+  des chemins courts et une préférence de virage ; la séparation entre tracés
+  est protégée. La calibration reste ouverte : le volume et la forme locale
+  des rivières ne sont pas encore simultanément assez fidèles.
+- Aperçu déterministe produit : Continental Legacy 768×768, 2P,
+  seed `2026083108`, validations dures PASS. Cette candidate ne valide pas
+  encore la répartition globale des terrains, qui reste le prochain chantier.
+
+## v2.0 DEV_1_R7 — 2026-08-30
+
+- Commence le point 5 d’amélioration Legacy par la couche la mieux mesurée :
+  ressources, sans modifier les terrains, la bathymétrie, les côtes ni les
+  réservations visuelles des starts.
+- Calibre les cibles 768 depuis les médianes des 16 SAV Legacy : environ
+  39,9k cellules de minerais, avec profils séparés 2P/20P par famille, et
+  46 071 / 43 737 cellules de poissons. Les composants de minerais utilisent
+  désormais une distribution petites poches + longue traîne plutôt qu’un quota
+  uniforme de blobs.
+- Autorise les sept supports minéraux observés (`17,32,33,34,35,128,129`),
+  dont `17/33/34` étaient exclus à tort.
+- Réserve `r≤25` **uniquement pour les ressources** autour des starts : aucun
+  nouveau halo de terrain ou de décor n’est créé. Ajoute le validateur dur
+  `START_RESOURCE_CLEARANCE`.
+- Préserve la règle historique de stock +30 % par cellule et les quantités
+  plafonnées à 15 ; cette candidate affine l’occupation Legacy native, pas
+  l’équilibrage long-play.
+- Les poissons sont tirés sans remise avec un poids décroissant selon la
+  distance à la rive (1–3, 4–6, 7–9, 10–12), toujours hors rivières et après
+  l’hydrologie finale.
+- Sondes déterministes 768 : 2P `39 859 minerais / 46 071 poissons`, 20P
+  `40 061 minerais / 43 737 poissons`, 20/20 validations dures PASS ;
+  génération 12,8–16,2 s selon la densité de joueurs.
+
+## v2.0 DEV_1_R6 — 2026-08-29
+
+- Conserve cumulativement le générateur Continental Legacy procédural de R5,
+  ses sept tailles natives, ses silhouettes côtières calibrées par densité de
+  joueurs, ses starts protégés, ses transitions, ses lacs et ses rivières.
+- Ajoute une passe bathymétrique dédiée après la reconstruction des lacs : les
+  résidus d'IDs Water0..7 des 16 SAV (8 cartes 2 joueurs et 8 cartes 20
+  joueurs) reproduisent les variations locales d'épaisseur des bandes d'eau.
+  La rive Shore48 est conservée intégralement ; aucune interruption visuelle
+  n'est fabriquée en supprimant des cellules de plage.
+- Fige le contrat de transition : toute terre en contact avec l'eau doit être
+  Shore48, sauf les IDs River96..99 aux embouchures. Les validations dures
+  `WATER_SHORE_TRANSITIONS` et `NO_WATER_GRASS_DIRECT` refusent toute sortie
+  Eau→Herbe avant export.
+- Ajoute un tampon autour des footprints de départ afin que la reconstruction
+  des lacs ne puisse pas créer Eau→Herbe contre une zone de départ protégée.
+- Corrige le ralentissement de génération 768 : le contrôle des composants qui
+  entourent un départ est vectorisé sans changer sa décision, ce qui ramène le
+  benchmark local 768×768 / 4 joueurs de ~38–40 s à ~19 s. Les tentatives de
+  placement restent bornées.
+- Rend la génération simple non bloquante pour Tk : le moteur travaille dans
+  un worker dédié, les étapes sont relayées à l'interface par file d'événements
+  et les paramètres sont verrouillés pendant la requête. Cela évite l'état
+  Windows « Ne répond pas » pendant les étapes coûteuses.
+- Optimise ensuite les champs de bruit des formes internes avec une
+  interpolation quadratique très proche du champ cubique, et évite les champs
+  génériques inutilisés quand la banque de silhouettes 768 est disponible :
+  le benchmark 768 descend encore vers 13–16 s, sans modifier la règle de
+  transitions ni le masque océanique principal.
+- Consigne l'audit du point 4 dans
+  `references/SETTLERS3_LEGACY_PIPELINE_AUDIT_v1.md` : les garde-fous
+  Eau→Shore→terrain et les chaînes HEX6 sont confirmés, tandis que Shore48,
+  les quotas/supports Legacy, les rivières, les décorations et la proximité
+  économique des starts restent les écarts prioritaires. L'ordre start-first
+  du projet est conservé ; l'ordre interne exact du jeu reste inconnu.
+- Prépare le futur mode Custom comme laboratoire de réglage séparé ; aucun
+  paramètre utilisateur n'est exposé tant que sa liste et ses garde-fous ne
+  sont pas définis dans une discussion dédiée.
+- Validation candidate : 267 tests, matrice des sept tailles natives jusqu'aux
+  limites joueurs, autodiagnostic runtime, ZIP source déterministe et aperçus
+  768 4P/20P avec validations dures PASS ; validation Windows/éditeur/jeu
+  encore requise avant clôture de DEV_1.
+
+## v2.0 DEV_1_R5 — 2026-08-29
+
+- Réduit la réservation visible des starts à leur footprint exact : les
+  massifs et autres familles ne sont plus découpés par un halo hexagonal, et
+  chaque composant qui entourerait un start est rejeté puis resynthétisé.
+- Renforce les contours côtiers avec un signal de détail indépendant pour
+  éviter les longues sections droites contre la limite de la carte.
+- Rend les rivières moins rectilignes grâce à une dérive latérale multi-échelle
+  et à une préférence contrôlée pour les changements de direction, tout en
+  conservant la connexion obligatoire à l'eau.
+- Protège explicitement le footprint des starts pendant la reconstruction des
+  berges et ajoute la validation dure `START_FOOTPRINT_GRASS`.
+- Validation locale : 265 tests, matrice multi-tailles/joueurs et
+  autodiagnostic du paquet PASS.
+
+## v2.0 DEV_1_R4 — 2026-08-29
+
+- Réordonne le vrai pipeline Legacy : océan/continent, starts, montagnes et
+  neige, lacs/rivières, marais, autres terrains, objets de ressources,
+  décorations, puis poissons/minerais.
+- Reconstruit la macro-forme autour d’un continent principal unique : bord
+  océanique irrégulier, baies côtières, îlots limités et absence de ré-ajout
+  de cellules qui transformait la côte en archipel.
+- Corrige l’ordre des transitions des familles Montagne, Désert et Marais ;
+  les anneaux sont maintenant peints du bord vers le cœur.
+- Isole l’hydrologie des massifs, limite les sources aux contreforts, borne les
+  systèmes de rivières et reconstruit les profondeurs des lacs.
+- Ajoute des validateurs durs pour toutes les chaînes de terrain, les trous de
+  famille et les plages isolées. Les quotas objets/poissons/minerais restent
+  inchangés pendant cette passe morphologique.
+
+## v2.0 DEV_1_R3 — 2026-08-29
+
+- Introduit le premier générateur **Continental — Héritage (Legacy)** réellement
+  procédural : aucune génération Legacy ne lit de SAV, de PNG, de NPZ de
+  références, de cache ou de silhouette stockée à l’exécution.
+- Sépare les étapes dans `generation/generators/continental/legacy/` :
+  macroforme, starts, biomes, lacs, relief/neige, rivières, ressources,
+  objets et validations. Cette structure est le socle des futurs dérivés,
+  notamment Upgraded, sans créer de générateur monolithique.
+- Rend Continental Legacy disponible dans l’application pour les sept tailles
+  natives `384…768` et leurs limites de joueurs ; les appels simple et batch
+  passent explicitement la taille au même chemin de génération.
+- Corrige le contrat de progression : le callback reçoit toujours
+  `(étape, détail, index)`, ce qui empêche le crash de Génération simple tout
+  en conservant la progression Batch.
+- Calibre les premières formes sur le corpus hors runtime : continent irrégulier
+  et baies, massifs rugueux, lacs internes non microscopiques, rivières
+  herbe-only reliées à une berge réelle, chaînes de transitions et relief.
+  Les quotas poissons/minerais sont conservés dans leur couche dédiée.
+- Validation locale : génération déterministe 384 et 768, 4 et maximum joueurs,
+  contrôles d’eau/accessibilité/transitions/rivières/objets ; affinage visuel
+  Legacy à poursuivre avant tout modificateur ou archétype additionnel.
+
 ## v1.9 DEV_3 — 2026-08-28
 
 - Consolide la candidate cumulative `DEV_3_R7` après validation Windows ;

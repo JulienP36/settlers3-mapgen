@@ -2,29 +2,69 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-28 — v1.9 DEV_3 validée sous Windows et promue sur `dev`**
+> Dernière mise à jour : **2026-08-31 — v2.0 DEV_1 validée, quantités Legacy natives**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen`.
 - Branche de travail : `dev`.
-- Dernier checkpoint validé : **v1.9 DEV_3**, validé sous Windows et promu sur
-  `dev`. Il consolide R1–R7 : catalogue contrôlé, graphes de végétation,
-  champs joueurs SAV, masque direct type-3 byte 8 et contrôles automatisés ;
-  aucune candidate suffixée n'est active.
+- Dernier checkpoint validé : **v2.0 DEV_1**, validé par l'utilisateur le
+  31 août 2026 et promu sur `dev`. Il consolide les passes Legacy R10 à R17,
+  dont la génération des minerais et poissons ; les validations Windows,
+  éditeur et jeu restent l'homologation externe à faire.
+- Ligne active publiée : **v2.0 DEV_1**. Le chemin Continental Legacy procédural
+  reste indépendant et ne lit ni corpus, NPZ, SAV, PNG, cache ni carte précédente
+  à l'exécution. R7 est explicitement rejetée : l’exclusion économique `r≤25`
+  des starts et le filtre côtier des poissons ne reproduisent pas le Legacy.
+  R10 repart donc des composantes natives, sans réserve de ressources autour
+  des starts ; les poissons Legacy occupent toute l’eau valide hors rivières.
+  Les rivières sont en cours de recalibration vers des systèmes courts, plus
+  nombreux et plus côtiers. R6 ajoutait une bathymétrie côtière dérivée des
+  16 SAV fournis : la rive Shore48 reste intacte, seuls les IDs Water0..7
+  varient localement ; les transitions Eau→Herbe / Eau→terrain sans rive sont des invariants durs. Les starts et footprints passent les contrôles ; les poissons Legacy restent sur toute l'eau valide, et R16 apporte une candidate directe pour les minerais.
+- Réorganisation R10 validée localement : `generation/archetypes/` et
+  `generation/generators/` sont désormais deux branches sœurs ; le moteur actif
+  vit dans `generation/generators/legacy/` et l’API
+  `s3mapgen.generation.archetypes` reste compatible. Aucun comportement de
+  génération n’a été modifié ; la compatibilité v1.5 reste dans ses fichiers
+  historiques jusqu’à une passe dédiée.
+- Correctif R6 : contrôle des composants vectorisé sans relâcher la protection
+  des départs ; génération simple hors du thread Tk. Les champs de bruit
+  internes sont accélérés sans toucher à la macro-côte de référence. Le
+  benchmark 768×768 exact passe de ~38–40 s à **13,2 s** (20P 14,4 s), hard
+  checks OK.
+- Points 1 et 2 de la v2.0 : première tranche de **16 SAV natifs 768×768**
+  (8×2P, 8×20P) analysée pour les terrains, composantes, positions, relief,
+  transitions HEX6, starts, distances, footprints et masque type-3 byte 8.
+- Point 3 première tranche : minerais/poissons et objets proches des starts
+  sont mesurés dans `references/native_resource_object_audit/`. Byte 14 est
+  séparé du byte 7 runtime ; le byte 9 SAV reste inconnu et n'est pas traité
+  comme une accessibilité/hitbox. R17 a modifié uniquement le profil quantitatif
+  du générateur Legacy v2, puis cette correction a été validée dans DEV_1.
+- Point 4 terminé : `references/SETTLERS3_LEGACY_PIPELINE_AUDIT_v1.md` compare
+  l'ordre R6 aux références natives, confirme les garde-fous de transitions et
+  classe les règles. Le pipeline reste start-first ; l'ordre interne natif est
+  inconnu. Les écarts prioritaires restent Shore48 trop peu abondante, rivières
+  sous la cible et décorations encore absentes ; la structure minérale R16/R17 reste
+  à valider visuellement dans le jeu.
 - Dernière STABLE : **v1.7**, publiée sur `main`, tag `v1.7`, commit de promotion `780bc5e`.
-- **DEV_11 validée** : maintenance, ZIP source déterministe, documentation, README anglais, quatre captures Windows réelles, About/Topics GitHub, architecture/diagnostic et clarification de `V` terminés.
-- Validations : 231 tests pytest, autodiagnostic depuis le ZIP extrait, 49 validations moteur, checksum binaire et cinq hashes protégés PASS ; contrôles Windows R1 puis R2 validés.
+- Validations candidate R6 : 267 tests PASS, matrice des sept tailles natives
+  jusqu'aux limites joueurs PASS, autodiagnostic runtime PASS, ZIP source
+  déterministe PASS et aperçus 768 4P/20P avec validations dures PASS. Les
+  essais Windows/éditeur/jeu restent à faire avant clôture de DEV_1. Les sondes
+  intermédiaires R8/R9 restent historiques ; l’archive R10 restructurée est une
+  candidate locale à vérifier sous Windows. La suite pytest devra être rejouée
+  dans un environnement qui la fournit.
+- Validation structurelle DEV_1 : la nouvelle passe minérale est bornée,
+  sans shortfall sur les contrôles 768×768 2P/20P, et vise environ 53 % du
+  support montagneux intérieur. Les rayons restent limités à 3/4/5 ; les
+  quantités Legacy sont uniformes sur `1..15`, comme dans les SAV ;
+  la suite `pytest` n’est pas installée dans l’environnement courant.
 - Les candidates R1/R2 et le paquet `CAPTURE_ONLY` restent des artefacts locaux historiques. Aucune révision suffixée `R` n’est publiée ; la feuille de candidate roulante est retirée à la clôture.
 - Réconciliation de branches terminée au commit `f56ee1a` : `dev` contient désormais `main` dans son ascendance sans modification de l’arbre DEV_11.
 - **v1.9 DEV_1 validée** : les deux EDM fautifs chargent sous Windows ; la candidate R1 est consolidée sans suffixe et sa feuille roulante retirée.
-- **v1.9 DEV_2 validée** : l’ancien monolithe et les modules versionnés sont
-  remplacés par les couches `application/`, `generation/` et `map_data/`, avec
-  contrôleurs par sous-système, fondation Tk unique et un seul factory moteur.
-  `main_window.py` passe de 3168 à 372 lignes ; 243 tests actuels passent, sans
-  doublon exact ni nom de révision historique. Les petits modules/entrypoints
-  restants portent tous une responsabilité justifiée. `AGENTS.md` devient
-  l’entrée courte auto-découverte pour limiter le contexte répété.
+- **v1.9 DEV_2 validée** : architecture `application/`, `generation/` et
+  `map_data/` séparée par responsabilités ; `AGENTS.md` est l’entrée courte.
 - La v1.9 est requalifiée : restructuration interne prioritaire ; Data Mapping ciblé est clôturé dans DEV_3.
 - La v1.8 reste une série de checkpoints DEV sans RC ni Release ; aucune STABLE
   n’est prévue avant la reconstruction réelle du générateur, potentiellement v2.0.
@@ -32,6 +72,18 @@
 ## 2. Socle validé à préserver
 
 ### Génération
+
+- Générateur actif : **Continental Legacy v2**, pipeline modulaire commun
+  `eau → continent → starts → montagnes/neige → lacs/rivières → marais →
+  autres terrains → objets de ressources → décorations → poissons/minerais →
+  validators`.
+- Chaque phase terrain écrit uniquement dans son masque de cellules encore
+  compatibles ; elle ne recouvre pas une famille existante et ne crée pas de
+  trou. Les objets et ressources restent après les passes de terrain ; le
+  validateur final confirme les transitions avant export.
+- Entrées runtime Legacy : uniquement `side`, `players`, `seed`.
+- Le v1.5 reste une compatibilité historique et un corpus de calibration ; il
+  n’est pas consulté durant une génération Legacy v2.
 
 - Moteur de référence : **v1.5**, Continental 768×768.
 - Référence : `S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`.
@@ -47,7 +99,9 @@
 
 - `s3mapgen/generation/base.py` — `5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b`
 - `s3mapgen/generation/continental.py` — `57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86`
-- `s3mapgen/generation/validated.py` — `aec27207b47d09134a5205a08d72a9b5e759f947d87080922dd61251c0c7ccce`
+- `s3mapgen/generation/validated.py` — dispatcher modifié explicitement pour
+  brancher le générateur Legacy v2 ; le hash v1.5 historique est conservé dans
+  le journal de v1.9, pas comme contrainte du nouveau moteur.
 - `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
 - `config/upgraded_768_v1.json` — `11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`
@@ -79,29 +133,7 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 - **Exception observée et acceptée :** une génération simple affiche automatiquement son nouveau résultat et déplace donc `V`. L’ancienne carte affichée perd alors cette protection et peut être évincée si la capacité est pleine et que les autres entrées restent protégées.
 - L’aide et l’infobulle du cadenas expliquent cette exception ; la politique d’éviction elle-même reste inchangée.
 
-## 5. DEV_11 — résultat validé
-
-- Version runtime et packaging centralisée en `1.8 DEV_11`.
-- Règles d’ordre/protection isolées en helpers purs ; cache documenté sans changement de contrat.
-- ZIP source déterministe avec racine unique, exclusions, fichiers obligatoires et autodiagnostic depuis l’extraction.
-- Documents canoniques nettoyés et rôles séparés ; snapshot obligatoire après chaque DEV/RC/STABLE validée.
-- README anglais et quatre captures Windows réelles intégrés avec provenance.
-- Description About et neuf Topics appliqués au dépôt GitHub.
-- Guides architecture/diagnostic et commentaires de frontières ajoutés sans instrumentation ni coût runtime permanent.
-- Protection `V` expliquée dans l’aide et l’infobulle, comportement d’éviction inchangé.
-- Contrôles Windows R1 et R2 validés ; le détail historique est consolidé dans `references/dev_notes/V1_8_DEVELOPMENT_LOG.md`.
-
-## 6. Problèmes connus et reports explicites
-
-### v1.9 DEV_1 — import EDM, Issue #4
-
-- Deux vrais fichiers fautifs et le screenshot/traceback utilisateur ont été fournis.
-- Les deux sources sont en version 10 avec checksum exact et parties complètes.
-- Cause confirmée : après la partie terminale `type 0 / taille 8`, certains EDM conservent 1 à 3 octets opaques afin d’aligner la taille du fichier sur un DWORD.
-- Le lecteur accepte désormais uniquement ce cas borné ; une queue sans terminateur reste rejetée et le parseur de scaffolds/export reste strict.
-- Régressions automatisées : remplissages de 1, 2 et 3 octets, refus sans terminateur, import réel 256×256/20 départs et 768×768/10 départs.
-- Détails, hashes et offsets : `references/SETTLERS3_EDM_TERMINAL_PADDING_20260826.md`.
-- Validation Windows : les deux sources fautives chargent correctement. Issue #4 à fermer après publication du checkpoint final.
+## 5. Problèmes connus et reports explicites
 
 ### Restructuration v1.9 — périmètre actuel
 
@@ -150,25 +182,38 @@ Le détail accepté de DEV_1 à DEV_10 appartient à `references/dev_notes/V1_8_
 - Validation Windows de la candidate cumulative R7 confirmée ; le checkpoint
   complet **DEV_3** est maintenant promu sur `dev`.
 
-## 7. Suite de la roadmap
+## 6. Suite de la roadmap
 
 - **v1.9 DEV_3** : Data Mapping ciblé et consolidation du checkpoint terminés ;
   pas de nouvel audit de génération dans cette ligne.
-- **Prochaine RC/STABLE** : après la reconstruction majeure du générateur,
-  potentiellement v2.0 ; elle reprendra alors le portable Windows et l'updater.
-- **v2.0 potentielle** : reconstruction réelle du générateur, seed/RNG et
-  diversité morphologique ; l'ancien « audit v1.10 » est reporté car le moteur
-  actuel ne produit pas encore une vraie diversité.
+- **Audits v2.0 — première tranche et point 4 terminés** : terrains, joueurs, ressources
+  Legacy et proximité des objets sont documentés pour les 16 SAV 768. La
+  densité statique autour des starts ne montre pas de halo vide fixe de 14 hex ;
+  les petits décors peuvent être très proches, sans que leur hitbox soit encore
+  démontrée. L'extension aux autres tailles et l'audit exhaustif des objets
+  restent à faire avant de figer les profils. Le rapport du point 4 confirme
+  que les transitions sont sûres, mais que Shore48, ressources, rivières et
+  décorations doivent encore être améliorées.
+- **Règles/générateur** : conserver les transitions dures et l'architecture
+  start-first ; ne pas déplacer les starts à la fin sur une inférence. La
+  prochaine passe Legacy doit corriger les écarts mesurés avant le Custom.
+- **RC/STABLE** : seulement après validation Windows/jeu du Legacy v2 ; le
+  portable Windows et l’updater reviennent à cette étape.
 - Après Continental : Large Islands, puis Small Islands.
 - Comparaison multi-cartes 3+, Modifiers et éditeur intégré restent prévus plus tard sans numéro prématuré.
 
-## 8. Prochaine action
+## 7. Prochaine action
 
-1. Garder objets `82/83`, couleur SAV, mana et tribu nominale pour Datamining v2,
-   sur corpus contrôlé et sans writer SAV.
-2. N'ouvrir le chantier suivant qu'après décision explicite : reconstruction réelle du générateur/diversité morphologique, potentiellement v2.0.
+1. Rejouer la suite complète `pytest` dans un environnement équipé, puis
+   utiliser l’archive source DEV_1 pour la validation Windows.
+2. Comparer visuellement DEV_1 aux références 768 2P/20P : occupation du noyau
+   montagneux, rayons 3/4/5, remplissage aléatoire et écrasements séquentiels ;
+   ajuster seulement avec une nouvelle mesure.
+3. Étendre, si nécessaire, les audits aux SAV natifs des autres tailles et
+   conserver les séries 2P/20P séparées ; ensuite corriger Shore48, rivières et
+   décorations avant le générateur Custom.
 
-## 9. Procédure de reprise
+## 8. Procédure de reprise
 
 1. Lire `AGENTS.md`, puis `PROJECT_WORKFLOW.md` et ce snapshot.
 2. Lire uniquement la section active de `TODO_MAPGEN.md`, puis

@@ -1,12 +1,12 @@
 """Vectorized HEX6 distance, neighborhood and component operations."""
 
 from __future__ import annotations
-from collections import deque
 import numpy as np
 from scipy import ndimage
 from .constants import HEX6
 
 HEX_STRUCTURE = np.array([[1,1,0],[1,1,1],[0,1,1]], dtype=bool)
+HEX_DISTANCE_METRIC = np.array([[1,1,0],[1,0,1],[0,1,1]], dtype=np.int8)
 
 def hex_distance(x1:int,y1:int,x2:int,y2:int)->int:
     dx=x2-x1; dy=y2-y1
@@ -21,21 +21,49 @@ def neighbor_count(mask:np.ndarray)->np.ndarray:
         out[y0:y1,x0:x1]+=mask[sy0:sy1,sx0:sx1]
     return out
 
-def distance_from(mask:np.ndarray, max_distance:int|None=None)->np.ndarray:
-    h,w=mask.shape
-    inf=32767
-    d=np.full(mask.shape,inf,np.int16)
-    q=deque()
-    for y,x in np.argwhere(mask):
-        d[y,x]=0; q.append((int(x),int(y)))
-    while q:
-        x,y=q.popleft(); nd=int(d[y,x])+1
-        if max_distance is not None and nd>max_distance: continue
-        for dx,dy in HEX6:
-            xx,yy=x+dx,y+dy
-            if 0<=xx<w and 0<=yy<h and nd<d[yy,xx]:
-                d[yy,xx]=nd; q.append((xx,yy))
-    return d
+def touching(mask:np.ndarray)->np.ndarray:
+    """Return the HEX6 rim adjacent to ``mask`` without including it."""
+
+    return neighbor_count(mask)>0
+
+
+def distance_from(
+    mask:np.ndarray,
+    max_distance:int|None=None,
+    passable:np.ndarray|None=None,
+)->np.ndarray:
+    """Return an exact HEX6 distance field.
+
+    The unconstrained case uses SciPy's C-level chamfer transform with the
+    exact HEX6 metric. ``passable`` optionally constrains propagation for
+    bounded routing such as Legacy rivers.
+    """
+
+    inf=np.int16(32767)
+    source=np.asarray(mask,dtype=bool)
+    if passable is None:
+        distance=ndimage.distance_transform_cdt(
+            ~source,
+            metric=HEX_DISTANCE_METRIC,
+        ).astype(np.int16)
+        if max_distance is not None:
+            distance[distance > int(max_distance)] = inf
+        return distance
+
+    distance=np.full(mask.shape,inf,dtype=np.int16)
+    frontier=source.copy()
+    allowed=np.asarray(passable,dtype=bool)|source
+    frontier&=allowed
+    distance[frontier]=0
+    level=0
+    while frontier.any():
+        if max_distance is not None and level>=max_distance:break
+        frontier=touching(frontier)&(distance==inf)
+        frontier&=allowed
+        if not frontier.any():break
+        level+=1
+        distance[frontier]=level
+    return distance
 
 def component_labels(mask:np.ndarray):
     return ndimage.label(mask, structure=HEX_STRUCTURE)

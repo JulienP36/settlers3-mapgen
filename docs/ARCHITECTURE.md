@@ -1,6 +1,6 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the validated generation rules. v1.9 is dedicated primarily to replacing the historical compatibility structure with explicit responsibilities while preserving behavior. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the validated generation rules. v2.0 DEV_1 adds the procedural Continental Legacy pipeline while retaining the protected historical Upgraded path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
@@ -28,7 +28,7 @@ The hashes and exact protected paths are canonical in `PROJECT_WORKFLOW.md`.
 | `tools/package_source.py` | Builds and validates a deterministic source ZIP. |
 
 `application.runtime.App` is the composition root. It injects the validated
-v1.5 `generation.MapGenerator` into the desktop application.
+mode-dispatching `generation.MapGenerator` facade into the desktop application.
 
 ## Current application composition
 

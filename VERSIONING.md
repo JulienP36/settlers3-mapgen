@@ -35,8 +35,9 @@ Le workflow projet global est défini dans `PROJECT_WORKFLOW.md`. Le point de re
 ## Current development
 
 - Latest published STABLE: `v1.7`.
-- Active development line: `v1.9 DEV_3`.
+- Active development line: `v2.0 DEV_1`.
 - Suffixed candidates (`DEV_X_R1`, `R2`, etc.) are local Windows-test/recovery artifacts. Publish only the completed `DEV_X` checkpoint without a revision suffix on `dev`.
 - Every validated DEV candidate, RC or STABLE stage must refresh `references/SETTLERS3_CURRENT_SNAPSHOT.md` before its final archive, commit or push. Validating a local `DEV_X_Rn` updates recovery state but never authorizes publishing that suffix.
-- v1.9 is primarily the internal architecture/restructuring line; data archaeology returns near its end. v1.10 remains the next generator-focused line.
-- Do not force a `v2.0` milestone until a genuinely structural evolution justifies it.
+- v2.0 DEV_1 is the genuine structural generator reconstruction line. R-suffixed
+  archives remain local Windows-test candidates; only the completed unsuffixed
+  DEV may be promoted to `dev`.
