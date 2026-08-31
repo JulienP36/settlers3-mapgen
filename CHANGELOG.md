@@ -10,6 +10,9 @@
   de la branche Upgraded.
 - Relie enfin la façade utilisée par le GUI et `run_cli.py` au pipeline Legacy
   v2 ; le chemin historique Upgraded reste isolé et calibré séparément.
+- Corrige le gate de hash Windows : les cinq fichiers de la baseline v1.5
+  restent vérifiés, tandis que `validated.py`, devenue la façade du Legacy v2,
+  n'est plus comparée à son ancien hash v1.5.
 - Le checkpoint est désormais versionné sans suffixe `R`, conformément à la
   convention du projet ; les validations Windows/éditeur/jeu restent la
   prochaine étape d’homologation externe.
