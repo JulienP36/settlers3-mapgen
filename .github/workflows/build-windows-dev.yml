@@ -6,14 +6,18 @@ on:
     branches: [dev]
     paths:
       - '.github/workflows/build-windows-dev.yml'
+      - 'AGENTS.md'
       - 'build/windows/**'
+      - 'CHANGELOG.md'
       - 'config/**'
       - 'data/**'
       - 'references/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png'
+      - 'references/SETTLERS3_CURRENT_SNAPSHOT.md'
       - 'requirements.txt'
       - 'run_gui.py'
       - 's3mapgen/**'
       - 'tests/**'
+      - 'TODO_MAPGEN.md'
 
 jobs:
   build:
