@@ -6,7 +6,7 @@ import traceback
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
-from ...generation.base import GenerationOutput
+from ...generation.contracts import GenerationOutput
 from ...map_data.binary import read_area, read_sav_state, read_starts
 
 

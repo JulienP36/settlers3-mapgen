@@ -48,92 +48,38 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_1 / Continental Legacy procédural
+## État actuel — v2.0 DEV_2 / reconstruction native Legacy
 
-`v2.0 DEV_1` poursuit le chemin Legacy Continental avec un générateur réel :
-il synthétise la carte depuis `taille`, `joueurs` et `seed`, sans lire la
-bibliothèque terrain native v1.5, une SAV, une image ou une carte précédente
-pendant une génération. La côte 768 utilise toutefois une petite bibliothèque
-de silhouettes dérivées hors ligne des SAV de calibration ; elle ne contient
-que des contours remplis, pas les terrains ni les données de partie. Les
-tailles inférieures gardent le chemin procédural de secours. Les étapes sont
-séparées par responsabilité afin qu’un futur
-générateur Upgraded puisse dériver de parties identifiées sans les confondre.
+La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. DEV_2 repart
+sur une base propre : l'ancien générateur Legacy procédural, ses profils,
+helpers et bibliothèques dérivées sont retirés, ainsi que l'ancien chemin
+Legacy v1.5 qui ne produisait pas une génération exploitable. Le mode Legacy
+reste réservé dans l'interface et l'API, mais sa génération est explicitement
+désactivée pendant la reconstruction native.
 
-La R6 conserve toutes les avancées de R5 et ajoute une passe bathymétrique
-dédiée : le gradient `Shore48 → Water0 → … → Water7` reste la règle, puis les
-IDs d'eau sont localement décalés par des résidus cohérents calibrés sur les 16
-SAV de référence. La rive `Shore48` n'est jamais supprimée ni retouchée : une
-validation dure interdit toute transition directe eau-vers-herbe (et tout
-terrain terrestre non-rive, hors embouchure de rivière). Cette passe intervient
-après les lacs et avant les rivières, sans modifier les fichiers v1.5 protégés.
+Le seul moteur génératif conservé est le chemin **Upgraded** de compatibilité,
+calibré sur Continental 768×768. Ses règles, son profil, ses validations et
+ses références restent séparés et protégés. L'archétype Continental continue à
+définir la macro-forme ; le futur générateur Legacy définira ensuite ses
+propres couches de relief, terrains, hydrologie, ressources, objets, départs
+et validations à partir de l'audit natif.
 
-Legacy Continental est maintenant générable en `384`, `448`, `512`, `576`,
-`640`, `704` et `768`, dans les limites de joueurs natives. Le calibrage visuel
-reste une passe active de DEV_1. R16 teste la reconstruction simplifiée des
-minerais Legacy : zones HEX6 indépendantes, rayons 3/4/5, remplissage tiré
-entre un minimum provisoire et 100 %, pixels sélectionnés aléatoirement, puis
-peinture séquentielle charbon → fer → or → gemmes → souffre avec écrasement
-naturel. Le support est la montagne intérieure et la cible d'occupation est
-environ 53 %, sans halo autour des départs. Poissons, règles Upgraded et
-transitions terrain restent dans leurs branches séparées. La méthode et ses
-limites sont documentées dans
-`references/SETTLERS3_LEGACY_MINERAL_R16_RANDOM_HEX_REFERENCE_v1.md`.
+La comparaison des minerais a été faite avant la suppression : l'ancien
+générateur avait un mix global proche des SAV natifs, mais des composants et
+des tailles de gisements nettement trop fragmentés. Ces quotas et heuristiques
+ne sont donc pas conservés comme règles. Le détail reproductible est dans
+`references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
-R17 conserve la géométrie minérale R16 mais ramène les quantités Legacy à un
-tirage natif uniforme de `1..15` par case, pour les minerais comme pour les
-poissons. Les proportions de familles et le nombre de cases restent inchangés.
-Le détail de la comparaison avec les SAV est consigné dans
-`references/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
+Le chantier DEV_2 est maintenant la reconstruction du noyau Legacy natif,
+puis de l'archétype Continental v1. Les audits de l'algorithme de génération
+restent la source de vérité ; aucun résultat provisoire ne doit être présenté
+comme une implémentation exacte avant validation sur les cartes du jeu.
 
-La génération simple est exécutée dans un worker séparé et relaie sa
-progression à l'interface ; une carte 768 coûte environ 13–16 secondes sur la
-machine de référence, mais ne bloque plus la fenêtre en état Windows « Ne
-répond pas ». Les contrôles de placement qui protègent les départs restent
-bornés et validés.
-
-**Le chemin historique v1.5, conservé pour la compatibilité Upgraded, reste
-protégé et ne doit pas être modifié sans raison explicite liée à ce moteur.**
-La v1.7 ajoute au-dessus de ce socle un ensemble complet Statistiques /
-Graphiques : analyses exactes, inventaires debug, densités normalisées,
-graphiques sémantiques, comparaison A/B et tooltips contextuels.
-
-Référence moteur v1.5 :
-`S3_V1_5_V7NOGAP_CORRECTED_UPGRADED_4P_768x768_seed_2026082202`
-
-DEV_10 a finalisé le verrouillage manuel `M`, l’ordre visuel réorganisable et une capacité de cache strictement infranchissable. DEV_11_R1 a validé sous Windows la première tranche de maintenance : version visible centralisée, logique pure d’ordre/protection de l’historique isolée de Tk et ZIP source déterministe soumis à une validation complète puis à l’autodiagnostic depuis son propre dossier extrait.
-
-DEV_11 a clôturé la passe publication/maintenabilité. La v1.9 DEV_1 a corrigé
-l’import de certains EDM valides qui conservent un remplissage terminal
-d’alignement ; les deux fichiers fautifs fournis chargent sous Windows. La
-restructuration interne de la GUI et des couches moteur/générateur est suivie de
-la DEV_3, qui consolide le Data Mapping joueur, le masque initial SAV direct,
-les objets/terrains confirmés et les graphes de végétation, sans modifier le
-moteur v1.5 protégé.
-
-DEV_9 a validé la faisabilité d’un paquet Windows x64 autonome `onedir`. Afin de garder le développement quotidien propre et fondé sur `run_gui.bat` / `run_gui.py`, ce paquet n’est plus reconstruit à chaque DEV : il reviendra pendant les Release Candidates avec deux distributions séparées, sources Python et Windows portable sans installation.
-
-La GUI v1.6 comprend notamment :
-
-- génération Continental Legacy procédurale sur les sept tailles natives ;
-- compatibilité Upgraded v1.5 768×768 conservée séparément dans l’attente de son dérivé v2 ;
-- import EDM / MAP / SAV et export EDM+MAP 768 ;
-- vues Global / Départs / Territoires / Masque initial / Élévation / Ressources / Chemins / Cultures / Carte thermique ;
-- thème clair/sombre, projection Carrée/Parallélogramme, zoom/drag/recentrage ;
-- FR/EN/DE/ES persistants avec bascule dynamique et repli anglais de sécurité ;
-- inspecteur exact de cellule ;
-- historique LRU unifié et configurable (4/8/12/16, 8 par défaut), centre de gestion, ordre visuel manuel, verrouillage `M` et comparaison A/B légère ;
-- génération par lot de 1 à 4 cartes avec paramètres indépendants, file séquentielle, historique et affectation A/B ;
-- centres d’export multi-format : EDM/MAP 768, copie SAV source inchangée lorsqu’elle existe, PNG Global/vue courante et Graphiques JSON/CSV/PNG ;
-- vue Global épurée, Vue Départs dédiée avec le contour initial uniquement
-  lorsqu'il est lu directement dans un SAV, et opacité réglable ; miniatures
-  Batch avec marqueurs masqués, petits ou normaux via un réglage persistant ;
-- raccourcis configurables/persistants avec détection de conflits et aide F1 ;
-- palette P1..P20 centralisée, recalée sur référence in-game (P9 quasi blanc, palette validée en R4) ;
-- **lecture des starts d'origine d'un SAV v11** et du masque initial natif quand
-  le SAV immédiat expose directement ses cellules en type-3 byte 8 ; aucune
-  reconstruction géométrique n'est utilisée. Les EDM/MAP dont le claim vaut
-  `255` partout restent neutres dans la vue Masque initial.
+La GUI et l'outillage validés restent disponibles : import EDM / MAP / SAV en
+lecture, export EDM/MAP 768 avec scaffold, vues d'analyse et d'inspection,
+statistiques, graphiques, historique, comparaison A/B, génération par lot,
+thèmes et langues FR/EN/DE/ES. Les aperçus restent des rendus déterministes de
+données réelles ou de sorties identifiées du moteur conservé.
 
 ### Qualité des traductions
 
@@ -146,7 +92,7 @@ Masque initial affiche exclusivement les coordonnées directes du byte 8 d'un
 SAV immédiat reconnu, tandis que Territoires affiche les claims runtime
 réellement lus dans le SAV.
 
-> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP restent dépendants d’un scaffold de la taille concernée ; la génération/aperçu des sept tailles est disponible dès DEV_1_R6.
+> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP restent dépendants d’un scaffold de la taille concernée ; la génération active conservée est calibrée sur Upgraded 768×768.
 
 La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a construit la passe Workflow / accessibilité / production. La **v1.9** consolide maintenant l’architecture interne avant de terminer par l’archéologie/data mapping. Le retour profond au générateur reste prévu pour la v1.10.
 
@@ -154,7 +100,7 @@ La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a const
 
 ### Legacy
 
-Mode orienté fidélité au générateur original de Settlers III et au corpus natif analysé. Il sert aussi de baseline de comparaison pour le reverse-engineering.
+Mode réservé à la fidélité au générateur original de Settlers III et au corpus natif analysé. Il sert de cible du reverse-engineering, mais sa génération est désactivée pendant la reconstruction DEV_2.
 
 ### Upgraded
 
@@ -168,7 +114,7 @@ Mode futur permettant d'exposer les paramètres de génération à l'utilisateur
 reste réservé pour l'instant : son premier objectif sera un laboratoire de
 réglage séparé, avec presets exportables, génération par lot et garde-fous
 critiques conservés. La liste complète des paramètres sera définie avant son
-implémentation afin de ne pas mélanger ses essais avec le preset Legacy.
+implémentation afin de ne pas mélanger ses essais avec le preset Upgraded.
 
 ## Archétypes
 

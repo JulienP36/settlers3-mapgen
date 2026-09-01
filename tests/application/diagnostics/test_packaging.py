@@ -12,9 +12,9 @@ ROOT=Path(__file__).resolve().parents[3]
 
 
 def test_current_version_metadata():
-    assert APP_VERSION=='2.0 DEV_1'
+    assert APP_VERSION=='2.0 DEV_2'
     assert ENGINE_VERSION=='2.0'
-    assert WINDOWS_FILE_VERSION==(2,0,1,0)
+    assert WINDOWS_FILE_VERSION==(2,0,2,0)
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):
@@ -22,7 +22,6 @@ def test_source_paths_are_independent_from_current_working_directory(monkeypatch
     assert app_paths.BASE==ROOT
     assert app_paths.APP_DIR==ROOT
     assert app_paths.OUTPUT==ROOT/'output'
-    assert app_paths.LEGACY_PROFILE.is_file()
     assert app_paths.LIBRARY.is_file()
     assert app_paths.START_MARKER_SHEET.is_file()
 
@@ -33,11 +32,11 @@ def test_source_package_self_test_reads_all_required_resources():
     assert report['frozen'] is False
     assert set(report['checks'])=={
         'gui_runtime_import',
-        'legacy_profile','upgraded_profile','native_library','upgraded_reference',
+        'upgraded_profile','native_library','upgraded_reference',
         'edm_scaffold','map_scaffold','start_markers',
     }
     assert all(check['ok'] for check in report['checks'].values())
-    for key in ('legacy_profile','upgraded_profile','native_library'):
+    for key in ('upgraded_profile','native_library'):
         assert report['checks'][key]['sha256']==report['checks'][key]['expected_sha256']
 
 

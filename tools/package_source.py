@@ -38,7 +38,6 @@ REQUIRED_SOURCE_PATHS = (
     "s3mapgen/application/ui/i18n/shell.py",
     "s3mapgen/generation/validated.py",
     "s3mapgen/map_data/binary.py",
-    "config/legacy_768_v1.json",
     "config/upgraded_768_v1.json",
     "data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz",
     "data/scaffold_768.edm",

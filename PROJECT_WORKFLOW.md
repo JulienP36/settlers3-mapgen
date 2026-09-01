@@ -88,20 +88,18 @@ After every functional change, run the relevant validations and verify protected
 
 This standing authorization does **not** cover `main`, tags, GitHub Releases, force-pushes, history rewrites, repository or branch deletion, repository settings, secrets/credentials, personal data, license changes, or publication of external assets whose provenance or rights are uncertain. Those actions always require explicit authorization.
 
-## Protected v1.5 baseline
-Do not alter these without an explicit generation-engine reason:
-- `s3mapgen/generation/base.py` — `5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b`
-- `s3mapgen/generation/continental.py` — `57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86`
-- `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
+## Protected Upgraded compatibility baseline
+Do not alter these retained Upgraded compatibility files without an explicit
+generation-engine reason. The former v1.5 Legacy profile and the procedural
+Legacy generator are intentionally absent after the DEV_2 reset:
+- `s3mapgen/generation/base.py` — `b2df5cc0329be2e63ba27b06501a5661547ce23f2b2ea739d3ec23de497bce88`
+- `s3mapgen/generation/continental.py` — `29d2413a742e4b5f446fed0cb4eed5b362b1ead431632d4a0397c3f4ea32c4d2`
+- `s3mapgen/generation/validated.py` — `cabcc24fc8a5eac99d2a9a9a5009d41addc1cc49d05815d2d3567e105f8277c5`
 - `config/upgraded_768_v1.json` — `11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`
 
-Check these hashes after significant tooling/UI/Stats work.
-
-The former v1.5 `validated.py` hash remains a historical Git record. Since
-v2.0 DEV_1, that file is the runtime facade for the Legacy pipeline and is
-intentionally outside this v1.5 baseline gate; changes to it still require an
-explicit generation-engine reason.
+Check these hashes after significant tooling/UI/Stats work. These values are
+the computed DEV_2 baseline.
 
 ## Validation discipline
 - Run automated regression tests before checkpointing a meaningful build.

@@ -330,7 +330,7 @@ class BatchController:
             self._batch_i18n['count_label'].configure(text=bt['count']);self._batch_randomize_button.configure(text=bt['randomize']);self._batch_apply_seed_button.configure(text=bt['apply_seed'])
             self._batch_i18n['hint_label'].configure(text=BATCH_HINTS.get(lang,BATCH_HINTS['en']))
             for row in self._batch_rows:
-                mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
+                mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'upgraded');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
                 row['frame'].configure(text=bt['map'].format(index=row['index']))
                 for key,label in row['group_labels'].items():label.configure(text=bt[key])
                 row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
@@ -385,7 +385,7 @@ class BatchController:
             error=None
             try:side=int(row['size_var'].get())
             except (TypeError,ValueError):side=0
-            mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy')
+            mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'upgraded')
             archetype=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
             try:players=int(row['players_var'].get())
             except (TypeError,ValueError):players=0
@@ -398,7 +398,7 @@ class BatchController:
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
                 errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
-            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision='v1.5-stable')
+            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision='v2.0-dev2-upgraded-only')
             requests.append({'row':row,'key':key})
         if errors:raise ValueError('\n'.join(errors))
         return requests

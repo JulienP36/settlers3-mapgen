@@ -1,45 +1,40 @@
 from __future__ import annotations
 from pathlib import Path
-from dataclasses import dataclass
 from collections import deque
-import math, random
+import random
 import numpy as np
 from scipy import ndimage
 
 from ..map_data.model import MapState
+from .contracts import GenerationOutput
 from .profile import load_profile
 from ..map_data.binary import read_area
 from ..map_data.constants import *
 from ..map_data.hexgrid import hex_distance, neighbor_count, component_labels, component_sizes, depth, dilate
 from .rules import ValidationResult, PIPELINE_STAGES
-from .modes import get_mode
 from .archetypes import get_archetype
 
-@dataclass
-class GenerationOutput:
-    state: MapState
-    validations: list[ValidationResult]
-    stage_log: list[str]
+class UpgradedGenerator:
+    """Validated Upgraded compatibility generator kept during Legacy rebuild.
 
-class MapGenerator:
-    """Checkpoint-safe v1 Continental generator.
-
-    V1 deliberately uses complete native 768 terrain/height templates as its morphology source.
-    This keeps all terrain-family shapes/transitions/bathymetry native-like while later stages
-    rebuild our custom gameplay layers. More varied morphology can be added behind this interface.
+    The former shared class mixed the obsolete v1.5/DEV_1 Legacy paths with
+    the Upgraded rules. DEV_2 deliberately keeps only this compatibility
+    implementation; the native Legacy implementation will be rebuilt as a
+    separate generator once the reverse-engineering audit is complete.
     """
 
-    def __init__(self, profile_path:Path|str, native_library_path:Path|str, upgraded_profile_path:Path|str|None=None, upgraded_reference_path:Path|str|None=None, progress_callback=None):
-        self.legacy_profile=load_profile(profile_path)
-        self.upgraded_profile=load_profile(upgraded_profile_path) if upgraded_profile_path else self.legacy_profile
-        self.profile=self.legacy_profile
+    def __init__(self, upgraded_profile_path:Path|str, native_library_path:Path|str, upgraded_reference_path:Path|str|None=None, progress_callback=None):
+        self.upgraded_profile=load_profile(upgraded_profile_path)
+        self.profile=self.upgraded_profile
+        if self.profile.get('profile_kind') != 'upgraded':
+            raise ValueError('UpgradedGenerator requires an upgraded profile')
         if self.profile['side'] != 768:
-            raise ValueError('MapGen v1.2 is calibrated for 768 only')
+            raise ValueError('Upgraded compatibility is calibrated for 768 only')
         self.lib=np.load(native_library_path,allow_pickle=True)
         self.upgraded_reference=read_area(upgraded_reference_path) if upgraded_reference_path else None
         self.side=768
         self.stage_log=[]
-        self.current_mode='legacy'
+        self.current_mode='upgraded'
         self.progress_callback=progress_callback
 
     def log(self, stage:str, detail:str=''):
@@ -48,25 +43,17 @@ class MapGenerator:
             try:self.progress_callback(stage, detail, len(self.stage_log))
             except Exception:pass
 
-    def generate(self, players:int, seed:int, mode:str='legacy', archetype:str='continental')->GenerationOutput:
-        mode_spec=get_mode(mode); arch_spec=get_archetype(archetype)
-        if not mode_spec.implemented:
-            raise NotImplementedError(f"Le mode {mode_spec.label} est réservé dans l'architecture mais pas encore implémenté.")
+    def generate(self, players:int, seed:int, archetype:str='continental')->GenerationOutput:
+        arch_spec=get_archetype(archetype)
         if not arch_spec.implemented:
             raise NotImplementedError(f"L'archétype {arch_spec.label} est réservé dans l'architecture mais pas encore implémenté.")
         if players not in self.profile['supported_players']:
             raise ValueError(f'Unsupported player count: {players}')
         self.stage_log=[]
-        self.current_mode=mode
-        self.profile=self.upgraded_profile if mode=='upgraded' else self.legacy_profile
+        self.current_mode='upgraded'
+        self.profile=self.upgraded_profile
         rng=np.random.default_rng(seed); pr=random.Random(seed)
-        # Archetype = macro-forme. Legacy uses native templates; Upgraded/Continental
-        # currently uses the canonical validated 768 checkpoint as its executable
-        # morphology reference until the archetype-local shape library is generalized.
-        if mode=='upgraded':
-            state=self._morphology_from_upgraded_reference(rng,pr)
-        else:
-            state=self._morphology_from_native(rng,pr)
+        state=self._morphology_from_upgraded_reference(rng,pr)
         self.log('archetype.macro_layout',f'{arch_spec.label}')
         # Les starts sont placés immédiatement après le macro-layout, AVANT les couches détaillées.
         self._place_starts(state,players,rng)
@@ -84,27 +71,10 @@ class MapGenerator:
         self._place_building_stones(state,rng,pr)
         self._final_accessibility(state)
         vals=self.validate(state)
-        state.metadata.update(seed=int(seed),players=int(players),mode=mode_spec.label,mode_key=mode,archetype=arch_spec.label,archetype_key=archetype,profile=self.profile['profile_name'],pipeline=list(PIPELINE_STAGES),starts_placed_early=True)
+        state.metadata.update(seed=int(seed),players=int(players),mode='Upgraded',mode_key='upgraded',archetype=arch_spec.label,archetype_key=archetype,profile=self.profile['profile_name'],pipeline=list(PIPELINE_STAGES),starts_placed_early=True)
         return GenerationOutput(state,vals,list(self.stage_log))
 
     # ---------- morphology ----------
-    def _morphology_from_native(self,rng,pr)->MapState:
-        terrain=self.lib['terrain']; height=self.lib['height']
-        idx=pr.randrange(len(terrain)); transform=pr.randrange(4)
-        t=terrain[idx].copy(); h=height[idx].copy()
-        if transform==1:
-            t=np.rot90(t,2).copy();h=np.rot90(h,2).copy()
-        elif transform==2:
-            t=t.T.copy();h=h.T.copy()
-        elif transform==3:
-            t=np.rot90(t.T,2).copy();h=np.rot90(h.T,2).copy()
-        state=MapState.empty(self.side)
-        state.terrain[:]=t;state.height[:]=h
-        state.objects[:]=0;state.resources[:]=0;state.accessibility[:]=0;state.claim[:]=255
-        state.metadata['native_template_index']=idx;state.metadata['native_transform']=transform
-        self.log('morphology.native_template',f'template={idx} transform={transform}')
-        return state
-
     def _morphology_from_upgraded_reference(self,rng,pr)->MapState:
         if self.upgraded_reference is None:
             raise RuntimeError('Upgraded reference checkpoint is unavailable')
@@ -181,13 +151,12 @@ class MapGenerator:
         T[stray]=GRASS
         actual_shore=(~water)&touching&np.isin(T,[GRASS,SHORE])
         T[actual_shore]=SHORE
-        if self.current_mode=='upgraded':
-            # External map edge is deep Water7. This does not derive a shallow
-            # gradient from the rectangular map boundary; it only normalizes the
-            # already-ocean edge cells to the locked deep-water state.
-            T[0,:]=7;T[-1,:]=7;T[:,0]=7;T[:,-1]=7
-            H[0,:]=0;H[-1,:]=0;H[:,0]=0;H[:,-1]=0
-            A[0,:]=1;A[-1,:]=1;A[:,0]=1;A[:,-1]=1
+        # External map edge is deep Water7. This does not derive a shallow
+        # gradient from the rectangular map boundary; it only normalizes the
+        # already-ocean edge cells to the locked deep-water state.
+        T[0,:]=7;T[-1,:]=7;T[:,0]=7;T[:,-1]=7
+        H[0,:]=0;H[-1,:]=0;H[:,0]=0;H[:,-1]=0
+        A[0,:]=1;A[-1,:]=1;A[:,0]=1;A[:,-1]=1
         self.log('hydrology.bathymetry',f'water={int(np.isin(T,WATER_IDS).sum())} shore={int((T==SHORE).sum())}')
 
 
@@ -381,51 +350,6 @@ class MapGenerator:
         self.log('snow.summit_rebuild',f'cells={int(snow.sum())}')
 
     # ---------- resources ----------
-    def _grow_blob(self,available,start,target,rng):
-        h,w=available.shape;chosen=[];seen={start};front=[start]
-        while front and len(chosen)<target:
-            idx=int(rng.integers(len(front)));x,y=front.pop(idx)
-            if not available[y,x]:continue
-            chosen.append((x,y))
-            neigh=list(HEX6);rng.shuffle(neigh)
-            for dx,dy in neigh:
-                X,Y=x+dx,y+dy
-                if 0<=X<w and 0<=Y<h and available[Y,X] and (X,Y) not in seen:
-                    seen.add((X,Y));front.append((X,Y))
-        return chosen
-
-    def _generate_minerals(self,state,rng,pr):
-        T,R=state.terrain,state.resources;R[:]=0
-        support=np.isin(T,[ROCKY,ROCK_SNOW_TRANS,SNOW_TRANS,SNOW])
-        cfg=self.profile['minerals'];families={int(k):v for k,v in cfg['families'].items()}
-        need=sum(v['cells'] for v in families.values())
-        if support.sum()<need:raise RuntimeError(f'Mineral support too small: {support.sum()} < {need}')
-        available=support.copy()
-        # families are generated as many compact elementary blobs; blobs may touch/merge naturally.
-        for fam,fcfg in families.items():
-            remaining=fcfg['cells'];blob_target=fcfg['blobs'];placed_blobs=0
-            while remaining>0:
-                pts=np.argwhere(available)
-                if not len(pts):raise RuntimeError(f'Ran out of mineral support for family {fam:#x}')
-                y,x=map(int,pts[int(rng.integers(len(pts)))])
-                # choose native-calibrated elementary size, last blob exact remainder.
-                avg=max(cfg['blob_size_min'],min(cfg['blob_size_max'],round(fcfg['cells']/max(1,blob_target))))
-                size=int(np.clip(round(rng.normal(avg,max(3,avg*.25))),cfg['blob_size_min'],cfg['blob_size_max']))
-                size=min(size,remaining)
-                cells=self._grow_blob(available,(x,y),size,rng)
-                if not cells:
-                    available[y,x]=False;continue
-                # if growth is too small, accept only near end; otherwise try elsewhere.
-                if len(cells)<min(5,size) and remaining>10:
-                    for X,Y in cells:available[Y,X]=False
-                    continue
-                q0=rng.integers(1,16,len(cells),dtype=np.uint8)
-                q1=np.minimum(cfg['quantity_cap'],np.floor(q0.astype(float)*cfg['quantity_multiplier']+0.5)).astype(np.uint8)
-                for (X,Y),q in zip(cells,q1):R[Y,X]=fam|int(q);available[Y,X]=False
-                remaining-=len(cells);placed_blobs+=1
-            state.metadata[f'mineral_blobs_{fam:02x}']=placed_blobs
-        self.log('resources.minerals_v7_nogap',f'cells={need}')
-
     def _water_shore_distance(self,state):
         T=state.terrain;water=np.isin(T,WATER_IDS)
         # IMPORTANT: the map edge is NOT a shore. Seed distance only from Water cells adjacent to actual Shore48.
@@ -455,10 +379,9 @@ class MapGenerator:
                 ids=rng.choice(len(pts),k,replace=False);p=pts[ids];selected[p[:,0],p[:,1]]=1
         target=cfg['target_cells']
         eligible=water&(d>=1)&(d<=cfg['max_shore_hex_distance'])
-        if self.current_mode=='upgraded':
-            border=np.zeros_like(water);border[[0,-1],:]=1;border[:,[0,-1]]=1
-            eligible &= ~border
-            selected &= ~border
+        border=np.zeros_like(water);border[[0,-1],:]=1;border[:,[0,-1]]=1
+        eligible &= ~border
+        selected &= ~border
         cur=int(selected.sum())
         if cur<target:
             pts=np.argwhere(eligible&~selected);add=target-cur
@@ -749,22 +672,17 @@ class MapGenerator:
         add('START_TERRAIN_CLEARANCE',bad_terrain==0,f'bad_cells={bad_terrain}')
         add('START_WATER_CLEARANCE',bad_water==0,f'bad_cells={bad_water}')
         add('START_OBJECT_CLEARANCE',bad_objects==0,f'bad_cells={bad_objects}')
-        if self.current_mode=='upgraded':
-            add('UPGRADED_FISH_CELL_TARGET',int(fish.sum())==self.profile['fish']['target_cells'],f'{int(fish.sum())}/{self.profile["fish"]["target_cells"]}')
-            desert_decor=np.count_nonzero(np.isin(O,self.profile['decor']['desert_ids'])&np.isin(T,DESERT_IDS))
-            swamp_reeds=np.count_nonzero(np.isin(O,self.profile['decor']['swamp_reed_ids'])&np.isin(T,SWAMP_IDS))
-            pure_stones=np.count_nonzero((O>=1)&(O<=28))
-            reefs=np.count_nonzero((O>=111)&(O<=114))
-            add('UPGRADED_DESERT_DECOR',desert_decor==self.profile['decor']['desert_target'],f'{desert_decor}/{self.profile["decor"]["desert_target"]}')
-            add('UPGRADED_SWAMP_DECOR',swamp_reeds==self.profile['decor']['swamp_target'],f'{swamp_reeds}/{self.profile["decor"]["swamp_target"]}')
-            add('UPGRADED_DECOR_STONES',pure_stones==self.profile['decor']['decorative_stone_target'],f'{pure_stones}/{self.profile["decor"]["decorative_stone_target"]}')
-            add('UPGRADED_REEFS',reefs==self.profile['decor']['reef_target'],f'{reefs}/{self.profile["decor"]["reef_target"]}')
-            edge_all=np.concatenate([T[0,:],T[-1,:],T[:,0],T[:,-1]])
-            add('UPGRADED_DEEP_EDGE',np.count_nonzero(edge_all!=7)==0,f'non_water7_edge={np.count_nonzero(edge_all!=7)}')
-            add('UPGRADED_START_BONUS_OUTSIDE_GLOBAL',True,'separate tree/stone bonus pools encoded')
+        add('UPGRADED_FISH_CELL_TARGET',int(fish.sum())==self.profile['fish']['target_cells'],f'{int(fish.sum())}/{self.profile["fish"]["target_cells"]}')
+        desert_decor=np.count_nonzero(np.isin(O,self.profile['decor']['desert_ids'])&np.isin(T,DESERT_IDS))
+        swamp_reeds=np.count_nonzero(np.isin(O,self.profile['decor']['swamp_reed_ids'])&np.isin(T,SWAMP_IDS))
+        pure_stones=np.count_nonzero((O>=1)&(O<=28))
+        reefs=np.count_nonzero((O>=111)&(O<=114))
+        add('UPGRADED_DESERT_DECOR',desert_decor==self.profile['decor']['desert_target'],f'{desert_decor}/{self.profile["decor"]["desert_target"]}')
+        add('UPGRADED_SWAMP_DECOR',swamp_reeds==self.profile['decor']['swamp_target'],f'{swamp_reeds}/{self.profile["decor"]["swamp_target"]}')
+        add('UPGRADED_DECOR_STONES',pure_stones==self.profile['decor']['decorative_stone_target'],f'{pure_stones}/{self.profile["decor"]["decorative_stone_target"]}')
+        add('UPGRADED_REEFS',reefs==self.profile['decor']['reef_target'],f'{reefs}/{self.profile["decor"]["reef_target"]}')
+        edge_all=np.concatenate([T[0,:],T[-1,:],T[:,0],T[:,-1]])
+        add('UPGRADED_DEEP_EDGE',np.count_nonzero(edge_all!=7)==0,f'non_water7_edge={np.count_nonzero(edge_all!=7)}')
+        add('UPGRADED_START_BONUS_OUTSIDE_GLOBAL',True,'separate tree/stone bonus pools encoded')
         self.log('validators.hard',f'pass={sum(v.passed for v in out)}/{len(out)}')
         return out
-
-
-# Backward-compatible alias for v1 callers/tests.
-Continental768Generator = MapGenerator

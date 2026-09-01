@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.0 DEV_2 — 2026-09-01 — reset du générateur Legacy
+
+- Retire le pipeline procédural Continental Legacy DEV_1, ses profils et ses
+  bibliothèques de silhouettes dérivées : ils étaient calibrés sur des
+  résultats, mais ne reproduisaient pas l’algorithme natif.
+- Retire également l’ancien chemin Legacy v1.5 qui ne constituait pas un
+  générateur natif exploitable.
+- Isole le chemin de compatibilité Upgraded et conserve ses profils, sa
+  bibliothèque native de morphologie et ses règles validées.
+- Compare les minerais avant suppression : volumes et mix proches des SAV,
+  géométrie des amas trop fragmentée. Le relevé est conservé dans
+  `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
+- Prépare le prochain générateur Legacy à partir de l’audit décompilé, sans
+  recycler les quotas ou les heuristiques de DEV_1.
+
 ## v2.0 DEV_1 — 2026-08-31 — checkpoint Legacy validé
 
 - Consolide les travaux R10 à R17 dans le premier checkpoint publiable de la

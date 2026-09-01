@@ -10,8 +10,8 @@ class GenerationMode:
 
 MODES = {
     'legacy': GenerationMode(
-        'legacy', 'Legacy', True,
-        'Fidélité maximale au générateur Settlers III ; baseline reverse-engineering.'
+        'legacy', 'Legacy', False,
+        'Reconstruction native en cours ; le générateur DEV_1 a été retiré.'
     ),
     'upgraded': GenerationMode(
         'upgraded', 'Upgraded', True,

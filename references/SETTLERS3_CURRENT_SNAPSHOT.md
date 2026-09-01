@@ -2,40 +2,30 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-08-31 — v2.0 DEV_1 validée, quantités Legacy natives**
+> Dernière mise à jour : **2026-09-01 — v2.0 DEV_2, reset du générateur Legacy**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen` ; branche de travail : `dev`.
-- Dernier checkpoint validé : **v2.0 DEV_1**, validé le 31 août 2026 et
-  promu sur `dev`. Il consolide les passes Legacy R10 à R17, dont la
-  génération des minerais et poissons. Les validations Windows, éditeur et
-  jeu restent à faire.
-- Le générateur actif est **Continental Legacy v2**. Il est procédural,
-  indépendant du corpus natif à l'exécution et ne lit ni SAV, PNG, NPZ, cache
-  ni carte précédente. Ses entrées sont uniquement `side`, `players`, `seed`.
-- Le pipeline publié suit l'ordre `eau → continent → starts →
-  montagnes/neige → lacs/rivières → marais → autres terrains → objets de
-  ressources → décorations → poissons/minerais → validators`.
-- R7 est rejetée : pas d'exclusion économique autour des starts et pas de
-  filtre côtier pour les poissons Legacy. Les poissons occupent toute l'eau
-  valide hors rivières. Les rivières sont encore à recalibrer vers des
-  systèmes plus courts, nombreux et côtiers.
-- R17 conserve la géométrie minérale R16 : zones HEX6 indépendantes, rayons
-  3/4/5, remplissage variable, occupation du support montagneux intérieur et
-  écrasement séquentiel charbon → fer → or → gemmes → soufre. Les quantités
-  Legacy sont tirées uniformément dans `1..15`.
-- Les transitions Eau → Shore48 → Water0..7 → terrain, les chaînes HEX6, les
-  footprints de départ et l'interdiction des étangs de 1 à 4 cellules restent
-  des invariants durs. La structure minérale et les écarts Shore48/rivières/
-  décorations doivent encore être vérifiés visuellement dans le jeu.
-- La réorganisation interne est validée : `generation/archetypes/` et
-  `generation/generators/` sont deux branches sœurs ; le moteur actif vit sous
-  `generation/generators/legacy/`, avec l'API publique conservée.
-- Le gate Windows v1.5 vérifie désormais cinq fichiers de référence. Le
-  `validated.py` historique est la façade du Legacy v2 depuis DEV_1 et reste
-  hors de cette baseline ; toute modification de cette façade doit rester
-  explicitement liée au moteur.
+- Dernier checkpoint publié : **v2.0 DEV_1**, validé et poussé sur `dev`. Le
+  travail local courant prépare **v2.0 DEV_2** ; il n'est pas encore poussé.
+- DEV_2 retire complètement l'ancien chemin Legacy v1.5 et le générateur
+  Legacy procédural DEV_1, avec leurs profils, helpers, tests spécifiques et
+  bibliothèques de silhouettes. Le mode Legacy reste réservé dans l'API, mais
+  ne génère plus de carte pendant la reconstruction native.
+- Le seul moteur de génération conservé est **Upgraded Continental 768×768**.
+  Son profil, ses règles, ses validations et ses références restent isolés.
+- La comparaison des minerais a été archivée avant suppression dans
+  `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md` : le mix familial
+  de DEV_1 était proche du corpus natif, mais la géométrie des gisements était
+  trop fragmentée ; aucune de ses heuristiques n'est reconduite.
+- La prochaine implémentation devra séparer l'archétype Continental (macro-
+  forme) du générateur Legacy natif (relief, terrains, hydrologie, ressources,
+  objets, départs et validations), conformément à l'audit décompilé.
+- Le gate Windows protège désormais cinq éléments du chemin Upgraded : les
+  trois modules Python de génération conservés, le profil Upgraded et la
+  bibliothèque statique native. Les hashes canoniques sont dans
+  `PROJECT_WORKFLOW.md`.
 
 ## 2. Audits natifs et socle à préserver
 
@@ -52,14 +42,14 @@
 - Les terrains `18/19` sont des détails d'herbe singleton entourés d'herbe
   ID16. Les nids `247–253` appartiennent à Agriculture/Cultures, avec une
   teinte miel distincte et sans présence dans le graphe forestier.
-- Le moteur de référence historique est v1.5, Continental 768×768. Legacy et
-  Upgraded restent séparés ; la géométrie Upgraded v7 no-gap est verrouillée.
-- Le moteur v1.5 et les cinq fichiers suivants restent protégés :
-  `s3mapgen/generation/base.py`, `s3mapgen/generation/continental.py`,
-  `config/legacy_768_v1.json`, `config/upgraded_768_v1.json` et
-  `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz`. Leurs hashes canoniques
-  sont ceux de `PROJECT_WORKFLOW.md` et doivent être revérifiés après tout
-  travail significatif.
+- L'audit natif du générateur reste la source de vérité ; les documents de
+  reverse-engineering décrivent encore des branches partielles et ne valent
+  pas implémentation tant qu'elles ne sont pas validées sur des sorties du jeu.
+- La compatibilité Upgraded 768×768 et sa géométrie v7 no-gap restent le socle
+  exécutable conservé. Les anciens fichiers Legacy supprimés sont historiques
+  dans Git, mais ne font plus partie du runtime ni de l'archive source.
+- La comparaison minière conservée est une mesure de proximité, pas une règle
+  de génération : les volumes étaient proches, les formes ne l'étaient pas.
 - Aucun asset visuel généré par IA n'est autorisé. Les aperçus doivent rester
   des rendus déterministes de données EDM/MAP/SAV réelles.
 
@@ -76,28 +66,29 @@
 
 ## 4. Problèmes connus et reports
 
-- La génération est calibrée principalement sur Continental 768×768. Le
-  dérivé Upgraded, les modificateurs, les autres archétypes et le mode Custom
-  attendent la stabilisation du Legacy.
+- La génération active est calibrée sur Upgraded Continental 768×768. Le
+  Legacy natif, les modificateurs, les autres archétypes et le mode Custom
+  attendent la reconstruction et la validation de leur socle respectif.
 - L'extension des audits aux autres tailles reste ouverte. L'audit exhaustif
   des objets, dont `82/83`, reste reporté.
-- Le rapport du point 4 confirme les garde-fous de transitions et l'architecture
-  start-first, mais classe Shore48 sous-produite, rivières sous la cible,
-  décorations absentes et validation visuelle des ressources comme écarts
-  prioritaires.
+- Les écarts de formes Legacy DEV_1 sont volontairement abandonnés ; il ne faut
+  pas les corriger par petites touches avant d'avoir porté l'algorithme natif.
 - SAV : lecture ciblée et copie inchangée uniquement ; aucun writer SAV.
 
 ## 5. Suite de la roadmap
 
-- **Amélioration Legacy** : comparer DEV_1 à plusieurs SAV/PNG déterministes
-  dans l'éditeur et le jeu, puis mesurer séparément Shore48, rivières,
-  décorations et ressources avant toute nouvelle règle.
+- **Audit natif** : achever les branches nécessaires à la génération, en
+  donnant la priorité au noyau terrain puis en documentant précisément l'ordre
+  complet.
+- **Implémentation** : construire le générateur Legacy natif séparément de
+  l'archétype Continental v1, puis ajouter starts, ressources, objets,
+  validations et export à partir des mesures confirmées.
 - **Validation** : rejouer la suite pytest dans l'environnement équipé,
   exécuter le smoke-test moteur et valider l'archive Windows sous Windows.
 - **Après Continental** : dérivés Large Islands puis Small Islands ; le Custom
   et l'éditeur intégré restent ultérieurs.
 - Aucune RC, Release ou promotion sur `main` avant validation Windows/jeu du
-  Legacy v2. `main` reste réservé à la STABLE.
+  nouveau Legacy. `main` reste réservé à la STABLE.
 
 ## 6. Procédure de reprise
 

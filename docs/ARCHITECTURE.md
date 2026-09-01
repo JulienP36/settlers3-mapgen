@@ -1,12 +1,13 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the validated generation rules. v2.0 DEV_1 adds the procedural Continental Legacy pipeline while retaining the protected historical Upgraded path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_2 removes the obsolete Legacy generators and keeps only the isolated Upgraded compatibility path while the native Legacy implementation is rebuilt. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
 The application is deliberately split into a protected generation core and an evolving UI/tooling shell.
 
-- **Protected generation:** `s3mapgen/generation/`, the two validated profiles and the native static library.
+- **Generation:** `s3mapgen/generation/`, with the Upgraded compatibility path
+  active and the native Legacy path under reconstruction.
 - **Shared map data:** `s3mapgen/map_data/` owns the byte constants, `MapState`,
   HEX6 geometry and EDM/MAP/SAV binary boundary. It depends on neither the
   application nor generation.
@@ -49,8 +50,9 @@ Current follow-up hotspots after DEV_2:
   responsive layout, feedback and top-level state initialization;
 - `application/shell/foundation.py`: shared Tk state/body only; it no longer
   constructs disposable header controls before the active header;
-- `generation/base.py` and `generation/continental.py`: about 770 lines each;
-  their internal inheritance is behaviorally protected but can be split later;
+- `generation/base.py`, `generation/continental.py` and `generation/validated.py`:
+  the retained Upgraded compatibility implementation and its application
+  facade; the Legacy generator is intentionally not present in this tree;
 - `application/history/controller.py` and `application/batch/controller.py`:
   the two largest UI subsystem controllers; both are already isolated from the
   main window and can be subdivided by window/state responsibility later.

@@ -28,17 +28,17 @@ python run_gui.py --self-test
 Their roles are distinct:
 
 - pytest covers UI helpers, formats, analysis, cache behavior and regression contracts;
-- `tests/run_smoke.py` generates the protected v1.5 reference case, checks all hard validators and verifies the exported binary checksum;
+- `tests/run_smoke.py` generates the retained Upgraded compatibility case, checks all hard validators and verifies the exported binary checksum;
 - `--self-test` imports the real GUI runtime chain and reads every required packaged resource.
 
-After significant UI/tooling work, verify the five protected hashes listed in `PROJECT_WORKFLOW.md`. A local PASS never replaces Windows/UI or official editor/game validation where those layers are relevant.
+After significant UI/tooling work, verify the Upgraded compatibility hashes listed in `PROJECT_WORKFLOW.md`. A local PASS never replaces Windows/UI or official editor/game validation where those layers are relevant.
 
 ## Deterministic source package
 
 Build a candidate with one explicit root folder:
 
 ```text
-python tools/package_source.py --output ../SETTLERS3_MAPGEN_V1_8_DEV_11_SOURCE.zip --root-name mapgen_v1_8_DEV_11
+python tools/package_source.py --output ../SETTLERS3_MAPGEN_V2_0_DEV_2_20260901.zip --root-name mapgen_v2_0_DEV_2
 ```
 
 The builder rejects missing required files, unsafe paths, multiple roots, corruption and known local-output paths. For release confidence, extract into a new directory and rerun both pytest and `run_gui.py --self-test` from that extracted copy.

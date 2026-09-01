@@ -29,7 +29,7 @@ class ShellWindow(tk.Tk):
         self._build();self._size_changed()
 
     def _build_foundation(self):
-        self.mode=tk.StringVar(value='Legacy')
+        self.mode=tk.StringVar(value='Upgraded')
         self.arch=tk.StringVar(value='Continental')
         self.size=tk.StringVar(value='768')
         self.players=tk.IntVar(value=4)

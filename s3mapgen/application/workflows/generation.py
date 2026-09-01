@@ -26,7 +26,7 @@ class GenerationWorkflowController:
         for labels in MODE_LABELS.values():
             for key,label in labels.items():
                 if label==value:return key
-        return next((k for k,v in MODES.items() if v.label==value),'legacy')
+        return next((k for k,v in MODES.items() if v.label==value),'upgraded')
 
     def _arch_key(self):
         value=self.arch.get()
@@ -79,7 +79,7 @@ class GenerationWorkflowController:
         self.update_idletasks()
 
     def _cache_key(self):
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v1.5-stable')
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v2.0-dev2-upgraded-only')
 
     def generate(self):
         try:

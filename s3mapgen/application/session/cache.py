@@ -14,7 +14,7 @@ class GenerationCacheKey:
     mode: str
     archetype: str
     modifiers: tuple = ()
-    engine_revision: str = "v1.5"
+    engine_revision: str = "v2.0-dev2-upgraded-only"
 
 
 @dataclass(frozen=True)

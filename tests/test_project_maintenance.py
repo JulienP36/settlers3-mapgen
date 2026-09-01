@@ -153,7 +153,7 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
 
     assert len(todo.splitlines()) < 220
     assert 'Roadmap orientée **travail restant**' in todo
-    assert '## v1.9 —' in todo and '## v2.0 potentielle —' in todo
+    assert '## v1.9 —' in todo and '## v2.0 — reconstruction native Legacy, puis Custom' in todo
     assert 'reconstruction complète du pipeline' in todo
 
     assert 'DEV complets uniquement' in workflow

@@ -1,11 +1,11 @@
 import pytest
-from s3mapgen.application.paths import LEGACY_PROFILE,UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY
+from s3mapgen.application.paths import UPGRADED_PROFILE,UPGRADED_REFERENCE,LIBRARY
 from s3mapgen.generation import MapGenerator
 from s3mapgen.generation.rules import PIPELINE_STAGES
 from s3mapgen.generation.modes import MODES
 from s3mapgen.generation.archetypes import ARCHETYPES
 
-def gen():return MapGenerator(LEGACY_PROFILE,LIBRARY,UPGRADED_PROFILE,UPGRADED_REFERENCE)
+def gen():return MapGenerator(UPGRADED_PROFILE,LIBRARY,UPGRADED_REFERENCE)
 
 @pytest.fixture(scope='module')
 def upgraded4():return gen().generate(4,2026082202,mode='upgraded',archetype='continental')
@@ -13,7 +13,7 @@ def upgraded4():return gen().generate(4,2026082202,mode='upgraded',archetype='co
 def upgraded20():return gen().generate(20,2026082203,mode='upgraded',archetype='continental')
 
 def test_architecture_names_are_separate():
-    assert set(MODES)=={'legacy','upgraded','custom'};assert 'continental' in ARCHETYPES;assert MODES['legacy'].implemented;assert MODES['upgraded'].implemented;assert not MODES['custom'].implemented
+    assert set(MODES)=={'legacy','upgraded','custom'};assert 'continental' in ARCHETYPES;assert not MODES['legacy'].implemented;assert MODES['upgraded'].implemented;assert not MODES['custom'].implemented
 
 def test_starts_are_early_in_pipeline():assert PIPELINE_STAGES.index('starts.maximin_early') < PIPELINE_STAGES.index('hydrology.micro_water_cleanup')
 
@@ -25,6 +25,10 @@ def test_upgraded_20p_starts_survive_full_pipeline(upgraded20):
 
 def test_custom_still_fails_explicitly():
     with pytest.raises(NotImplementedError):gen().generate(4,2026081901,mode='custom',archetype='continental')
+
+def test_legacy_is_explicitly_disabled_until_native_rebuild():
+    with pytest.raises(NotImplementedError, match='reconstruction native DEV_2'):
+        gen().generate(4,2026081901,mode='legacy',archetype='continental')
 
 def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal(upgraded4):
     from s3mapgen.map_data.constants import SNOW,SNOW_TRANS

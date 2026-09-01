@@ -9,8 +9,9 @@
   historiques.
 - Avant toute modification de génération, EDM/MAP/SAV, export ou données
   natives, lire `references/SETTLERS3_PREGEN_READ_FIRST.md` et vérifier les
-  hashes protégés de `PROJECT_WORKFLOW.md`. Ne jamais modifier le moteur v1.5
-  sans demande explicite.
+  hashes protégés de `PROJECT_WORKFLOW.md`. Le reset DEV_2 autorise la
+  suppression de l'ancien Legacy ; les fichiers de compatibilité Upgraded
+  restent protégés.
 - Ne jamais inventer une règle, un ID, une structure binaire ou un résultat de
   validation. Toute carte/preview doit être un rendu déterministe de données
   EDM/MAP/SAV réelles. Aucun asset visuel généré par IA.

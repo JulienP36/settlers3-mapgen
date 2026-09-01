@@ -2,7 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 
-from .base import MapGenerator as _BaseMapGenerator
+from .base import UpgradedGenerator as _BaseUpgradedGenerator
 from ..map_data.model import MapState
 from .morphology import ArchetypeMorphologyLibrary
 from ..map_data.constants import *
@@ -19,22 +19,25 @@ _MUD_FAMILY = (23, 145, 144)
 _YELLOW_GRASS = 24
 
 
-class MapGenerator(_BaseMapGenerator):
-    """App-facing generator implementing the audited Legacy/Upgraded split."""
+class UpgradedGenerator(_BaseUpgradedGenerator):
+    """Upgraded Continental compatibility generator.
+
+    Legacy is intentionally absent from this class. Its native reconstruction
+    will be implemented beside it once the reverse-engineering audit is
+    complete.
+    """
 
     def __init__(
         self,
-        profile_path: Path | str,
+        upgraded_profile_path: Path | str,
         native_library_path: Path | str,
-        upgraded_profile_path: Path | str | None = None,
-        upgraded_morphology_source_path: Path | str | None = None,
+        upgraded_reference_path: Path | str | None = None,
         progress_callback=None,
     ):
         super().__init__(
-            profile_path,
-            native_library_path,
             upgraded_profile_path,
-            None,
+            native_library_path,
+            upgraded_reference_path,
             progress_callback=progress_callback,
         )
         self.archetype_morphology = ArchetypeMorphologyLibrary(
@@ -58,13 +61,11 @@ class MapGenerator(_BaseMapGenerator):
         elif transform == 3:
             t = np.rot90(t.T, 2).copy(); h = np.rot90(h.T, 2).copy()
 
-        mud_removed = yellow_removed = 0
-        if self.current_mode == 'upgraded':
-            mud = np.isin(t, _MUD_FAMILY)
-            yellow = t == _YELLOW_GRASS
-            mud_removed = int(mud.sum())
-            yellow_removed = int(yellow.sum())
-            t[mud | yellow] = GRASS
+        mud = np.isin(t, _MUD_FAMILY)
+        yellow = t == _YELLOW_GRASS
+        mud_removed = int(mud.sum())
+        yellow_removed = int(yellow.sum())
+        t[mud | yellow] = GRASS
 
         state = MapState.empty(self.side)
         state.terrain[:] = t
@@ -88,23 +89,11 @@ class MapGenerator(_BaseMapGenerator):
         )
         return state
 
-    def _morphology_from_native(self, rng, pr) -> MapState:
-        return self._continental_morphology(pr)
-
     def _morphology_from_upgraded_reference(self, rng, pr) -> MapState:
         return self._continental_morphology(pr)
 
-    # ---------- audited hydrology split ----------
-    def _cleanup_micro_water(self, state, rng):
-        if self.current_mode == 'legacy':
-            self.log('hydrology.micro_water_cleanup', 'legacy=native components preserved')
-            return
-        return super()._cleanup_micro_water(state, rng)
-
+    # ---------- audited hydrology ----------
     def _cleanup_rivers(self, state):
-        if self.current_mode == 'legacy':
-            self.log('hydrology.river_cleanup', 'legacy=native paths preserved')
-            return
         cfg = self.profile['river']
         old = cfg['practical_max_cells']
         cfg['practical_max_cells'] = int(round(
@@ -118,8 +107,6 @@ class MapGenerator(_BaseMapGenerator):
 
     # ---------- audited biome split ----------
     def _expand_upgraded_swamps(self, state, rng):
-        if self.current_mode != 'upgraded':
-            return 0
         T = state.terrain
         family = np.isin(T, SWAMP_IDS)
         initial = int(family.sum())
@@ -150,9 +137,6 @@ class MapGenerator(_BaseMapGenerator):
         return grown
 
     def _place_start_swamps(self, state, rng, pr):
-        if self.current_mode == 'legacy':
-            self.log('biomes.start_mini_swamps', 'legacy=disabled')
-            return
         grown = self._expand_upgraded_swamps(state, rng)
         self.log('biomes.global_swamp_upgrade', f'added={grown}')
         return super()._place_start_swamps(state, rng, pr)
@@ -172,54 +156,6 @@ class MapGenerator(_BaseMapGenerator):
                 for dx, dy in HEX6
             ):
                 T[y, x] = 34
-
-    # ---------- audited mineral split ----------
-    def _generate_minerals(self, state, rng, pr):
-        if self.current_mode != 'upgraded':
-            return super()._generate_minerals(state, rng, pr)
-
-        T = state.terrain
-        cfg = self.profile['minerals']
-        old34 = T == 34
-        T[old34] = ROCKY
-        support = np.isin(T, [ROCKY, ROCK_SNOW_TRANS, SNOW_TRANS, SNOW])
-        occupancy = float(cfg.get('rocky_accessible_occupancy_target', .90))
-        target_total = int(round(int(support.sum()) * occupancy))
-
-        families = {int(k): v for k, v in cfg['families'].items()}
-        shares = {int(k): float(v) for k, v in cfg.get('shares', {}).items()}
-        if not shares:
-            old_total = sum(int(v['cells']) for v in families.values())
-            shares = {k: int(v['cells']) / old_total for k, v in families.items()}
-        norm = sum(shares.values())
-        order = list(families)
-        targets = {}
-        used = 0
-        for fam in order[:-1]:
-            targets[fam] = int(round(target_total * shares[fam] / norm))
-            used += targets[fam]
-        targets[order[-1]] = target_total - used
-
-        oldvals = {}
-        for fam, f in families.items():
-            oldvals[fam] = (f['cells'], f['blobs'])
-            oc = max(1, int(f['cells']))
-            ob = max(1, int(f['blobs']))
-            f['cells'] = targets[fam]
-            f['blobs'] = max(1, round(targets[fam] * ob / oc))
-        try:
-            super()._generate_minerals(state, rng, pr)
-        finally:
-            T[old34] = 34
-            for fam, f in families.items():
-                f['cells'], f['blobs'] = oldvals[fam]
-
-        state.metadata['upgraded_mineral_target_total'] = target_total
-        state.metadata['upgraded_mineral_targets'] = {
-            f'{k:02x}': int(v) for k, v in targets.items()
-        }
-        state.metadata['upgraded_mineral_support_cells'] = int(support.sum())
-        state.metadata['upgraded_mineral_occupancy_target'] = occupancy
 
     # ---------- audited decorations ----------
     def _place_decorations(self, state, rng, pr):
@@ -685,7 +621,8 @@ class MapGenerator(_BaseMapGenerator):
         scfg = self.profile['building_stones']
         old_units = scfg.get('start_bonus_units', None)
         start_n = int(scfg.get('start_bonus_anchor_target', 0))
-        # Compatibility shim for historical base validator; v1.5 overrides the result below.
+        # Compatibility shim for the retained Upgraded base validator; the
+        # application facade adjusts the result below.
         scfg['start_bonus_units'] = [1] * start_n
         try:
             out = super().validate(state)
@@ -767,9 +704,4 @@ class MapGenerator(_BaseMapGenerator):
             f'blocked_exhausted_anchors={bad_exhausted_access}',
         ))
 
-        if self.current_mode == 'legacy':
-            for rule in ('MICRO_WATER_1_4', 'RIVER_ORPHANS', 'RIVER_STOPS_AT_WATER', 'RIVER_LENGTH_CAP'):
-                if rule in by:
-                    by[rule].passed = True
-                    by[rule].message = 'Legacy native behaviour preserved by audit'
         return out

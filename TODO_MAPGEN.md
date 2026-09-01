@@ -17,9 +17,10 @@
 - [x] **v1.9 DEV_3** : Data Mapping ciblé, masque SAV direct, champs joueurs,
   catalogue objets, terrains `18/19`, nids `247–253` et graphes de végétation.
 
-Règle absolue : ne pas modifier le moteur v1.5 ni ses fichiers protégés sans
-raison explicite. Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute
-modification de génération ou de format.
+Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute modification de
+génération ou de format. Depuis le reset DEV_2, la protection concerne le
+chemin de compatibilité Upgraded ; l'ancien Legacy v1.5 et le générateur
+procédural DEV_1 ont été explicitement retirés.
 
 ## Prochaine RC/STABLE — après v1.10
 
@@ -69,32 +70,28 @@ stabilisées.
 - [x] Terrains `18/19` validés comme détails d'herbe ; objets `82/83` reportés
   à Datamining v2 faute de preuve naturelle.
 
-## v2.0 potentielle — amélioration Legacy, puis Custom
+## v2.0 — reconstruction native Legacy, puis Custom
 
 La **reconstruction complète du pipeline** est maintenant le périmètre v2.0.
-Le premier générateur Continental Legacy procédural est publié en **v2.0
-DEV_1** ; les détails des passes R10 à R17 sont conservés dans le changelog.
+Le générateur procédural Continental de DEV_1 a été retiré : ses volumes
+minéraux étaient calibrés, mais ses formes n’étaient pas assez proches du
+jeu. DEV_2 repart de l’audit décompilé et conserve uniquement le chemin
+Upgraded validé pendant cette reconstruction.
 
-- [x] Pipeline modulaire sans lecture runtime du corpus, branché dans
-  l'application pour les tailles natives et leurs limites de joueurs.
-- [x] Étapes séparées : eau/continent, starts, montagnes/neige, lacs/rivières,
-  marais, autres terrains, ressources, décorations, poissons/minerais,
-  validations.
-- [x] Occupation et transitions bornées ; aucun recouvrement illégal, trou,
-  étang intérieur de 1 à 4 cellules ou poisson sur rivière.
-- [x] Footprint des starts protégé sans halo visible ; côtes et rivières
-  détaillées sans relâcher les connexions obligatoires.
-- [x] Bathymétrie Water0..7 séparée, Shore48 conservée, génération simple
-  découplée du thread Tk et coût des placements borné.
-- [x] Minerais séquentiels charbon → fer → or → gemmes → soufre, rayons 3/4/5,
-  écrasements inter-familles et quantités uniformes `1..15` ; poissons Legacy
-  sur toute l'eau valide hors rivières.
-- [ ] Comparer DEV_1 à plusieurs SAV/PNG déterministes dans l'éditeur et le
-  jeu ; mesurer noyaux minéraux, Shore48, rivières, décorations et ressources.
-- [ ] Étendre l'audit aux autres tailles et figer des profils multi-size avec
-  les séries 2P/20P séparées.
-- [ ] Créer le dérivé Upgraded seulement après validation visuelle suffisante
-  du Legacy ; ne pas mélanger leurs règles.
+- [x] Ancien pipeline Legacy DEV_1 retiré, y compris ses profils, helpers et
+  bibliothèques de silhouettes dérivées.
+- [x] Chemin Upgraded isolé et conservé avec ses règles, profils et validations
+  de compatibilité.
+- [x] Comparaison des minerais DEV_1/natif archivée : mix proche, géométrie
+  trop fragmentée ; aucune heuristique minérale DEV_1 ne devient une règle.
+- [ ] Achever l’audit décompilé des starts, ressources, objets, décorations,
+  poissons, métadonnées et export du générateur natif.
+- [ ] Implémenter le noyau Legacy natif séparé : seed, relief, familles de
+  terrains, transitions, hydrologie et ordre d’écriture démontrés.
+- [ ] Définir l’archétype Continental v1 au-dessus de ce noyau sans lui
+  appliquer une seconde macro-forme.
+- [ ] Reproduire ensuite les starts, minerais, objets et validations Legacy
+  avec les mesures natives, puis tester chaque taille et densité de joueurs.
 - [ ] Ajouter modificateurs et autres archétypes après ce socle.
 - [ ] Concevoir ensuite le mode **Custom laboratoire** séparé : catalogue,
   presets, batch, diagnostics et garde-fous.

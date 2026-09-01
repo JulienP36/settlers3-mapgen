@@ -28,7 +28,7 @@ class Var:
         self.value = value
 
 
-def row(index, *, mode="Héritage (Legacy)", archetype="Continental", side="768", players="4", seed="100"):
+def row(index, *, mode="Amélioré (Upgraded)", archetype="Continental", side="768", players="4", seed="100"):
     return {
         "index": index,
         "mode_var": Var(mode),
@@ -60,14 +60,14 @@ def test_batch_is_bilingual_and_replaces_the_reserved_placeholder():
 
 def test_batch_collects_one_to_four_independent_generation_keys():
     dummy = batch_dummy([
-        row(1, mode="Héritage (Legacy)", players="4", seed="101"),
+        row(1, mode="Amélioré (Upgraded)", players="4", seed="101"),
         row(2, mode="Amélioré (Upgraded)", players="8", seed="202"),
     ])
     requests = MainWindow._batch_collect_requests(dummy)
     assert [request["key"].seed for request in requests] == [101, 202]
     assert [request["key"].players for request in requests] == [4, 8]
-    assert [request["key"].mode for request in requests] == ["legacy", "upgraded"]
-    assert all(request["key"].engine_revision == "v1.5-stable" for request in requests)
+    assert [request["key"].mode for request in requests] == ["upgraded", "upgraded"]
+    assert all(request["key"].engine_revision == "v2.0-dev2-upgraded-only" for request in requests)
 
 
 def test_batch_rejects_uncalibrated_sizes_before_starting():

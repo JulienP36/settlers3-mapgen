@@ -14,7 +14,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from s3mapgen.application.paths import (  # noqa: E402
     EDM_SCAFFOLD,
-    LEGACY_PROFILE,
     LIBRARY,
     UPGRADED_PROFILE,
     UPGRADED_REFERENCE,
@@ -24,9 +23,8 @@ from s3mapgen.generation import MapGenerator  # noqa: E402
 
 
 generator = MapGenerator(
-    LEGACY_PROFILE,
-    LIBRARY,
     UPGRADED_PROFILE,
+    LIBRARY,
     UPGRADED_REFERENCE,
 )
 result = generator.generate(
@@ -43,7 +41,7 @@ failures = [
 if failures:
     raise SystemExit("\n".join(failures))
 
-print(f"4P v1.5 engine: {len(result.validations)} validations PASS")
+print(f"4P Upgraded compatibility engine: {len(result.validations)} validations PASS")
 with tempfile.TemporaryDirectory() as temporary_directory:
     output_path = Path(temporary_directory) / "smoke.edm"
     export_with_scaffold(result.state, EDM_SCAFFOLD, output_path)

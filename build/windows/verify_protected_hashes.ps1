@@ -1,8 +1,8 @@
 $ErrorActionPreference = 'Stop'
 $Expected = @{
-    's3mapgen/generation/base.py' = '5d828abe18c8b84f9845221f588eb8e6583fad99955465ce940cc09ce914ee4b'
-    's3mapgen/generation/continental.py' = '57cb7ce7c45a05906ef60b2d9b1c4306fae40a26c60fa93cde2e481823976e86'
-    'config/legacy_768_v1.json' = 'bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85'
+    's3mapgen/generation/base.py' = 'b2df5cc0329be2e63ba27b06501a5661547ce23f2b2ea739d3ec23de497bce88'
+    's3mapgen/generation/continental.py' = '29d2413a742e4b5f446fed0cb4eed5b362b1ead431632d4a0397c3f4ea32c4d2'
+    's3mapgen/generation/validated.py' = 'cabcc24fc8a5eac99d2a9a9a5009d41addc1cc49d05815d2d3567e105f8277c5'
     'config/upgraded_768_v1.json' = '11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441'
     'data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz' = 'fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d'
 }
@@ -13,4 +13,4 @@ foreach ($Path in $Expected.Keys) {
         throw "Protected hash mismatch: $Path ($Actual)"
     }
 }
-Write-Host 'Protected hashes PASS 5/5'
+Write-Host 'Upgraded compatibility hashes PASS 5/5'
