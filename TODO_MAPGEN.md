@@ -84,8 +84,16 @@ Upgraded validé pendant cette reconstruction.
   de compatibilité.
 - [x] Comparaison des minerais DEV_1/natif archivée : mix proche, géométrie
   trop fragmentée ; aucune heuristique minérale DEV_1 ne devient une règle.
-- [ ] Achever l’audit décompilé des starts, ressources, objets, décorations,
-  poissons, métadonnées et export du générateur natif.
+- [x] Première passe de l'audit non-terrain ajoutée : ordre Area/bâtiments/
+  colons/départs/ressources de départ/métadonnées, cellules runtime, couches
+  ressources/objets et filtre exact des positions de départ.
+- [x] Deuxième passe approfondie : layout exact du type 9 et de son registre,
+  catalogue paramétrique `0x51B010/0x51B1A0`, compteurs d'essais distincts,
+  chemin `GameDataSave::Save` et records SAV générés.
+- [ ] Achever l'audit non-terrain : retrouver le producteur aléatoire type 9,
+  relier l'export des objets runtime au byte 2 Area, décoder les empreintes et
+  tables d'offsets, nommer les métadonnées et identifier le writer EDM/MAP ; voir
+  `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`.
 - [ ] Implémenter le noyau Legacy natif séparé : seed, relief, familles de
   terrains, transitions, hydrologie et ordre d’écriture démontrés.
 - [ ] Définir l’archétype Continental v1 au-dessus de ce noyau sans lui

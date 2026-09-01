@@ -13,6 +13,18 @@
   Legacy procédural DEV_1, avec leurs profils, helpers, tests spécifiques et
   bibliothèques de silhouettes. Le mode Legacy reste réservé dans l'API, mais
   ne génère plus de carte pendant la reconstruction native.
+- L'audit non-terrain du binaire est maintenant approfondi et archivé
+  dans `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`, avec une
+  transcription comportementale progressive dans
+  `references/S3_EXE_NON_TERRAIN_RECONSTRUCTION_20260901.cpp`. Elle couvre le
+  flot Area -> bâtiments -> colons/départs -> ressources de départ ->
+  métadonnées, la séparation des couches runtime, le filtre des starts, le
+  layout du registre type 9, le catalogue paramétrique des objets statiques et
+  le writer `GameDataSave::Save` des principaux records SAV. La convention
+  d'appel du noyau et la réinitialisation du PRNG avant les couches de partie
+  sont également confirmées ; les sous-records SAV type 2 sont séparés du
+  futur writer EDM/MAP. Le producteur aléatoire type 9, le catalogue métier
+  complet et le writer EDM/MAP exact restent ouverts.
 - Le seul moteur de génération conservé est **Upgraded Continental 768×768**.
   Son profil, ses règles, ses validations et ses références restent isolés.
 - La comparaison des minerais a été archivée avant suppression dans
@@ -45,6 +57,11 @@
 - L'audit natif du générateur reste la source de vérité ; les documents de
   reverse-engineering décrivent encore des branches partielles et ne valent
   pas implémentation tant qu'elles ne sont pas validées sur des sorties du jeu.
+- L'audit non-terrain confirme que le byte ressource de l'Area, le byte objet
+  statique, les ressources type 9 et les entités runtime sont des couches
+  distinctes. Les producteurs initiaux `0x51AD40`, `0x518A08`, `0x51B010` et
+  `0x51B1A0`, le loader `0x504420` et la sérialisation SAV `0x509995` sont
+  reliés ; les règles non démontrées restent explicitement interdites.
 - La compatibilité Upgraded 768×768 et sa géométrie v7 no-gap restent le socle
   exécutable conservé. Les anciens fichiers Legacy supprimés sont historiques
   dans Git, mais ne font plus partie du runtime ni de l'archive source.
@@ -73,13 +90,15 @@
   des objets, dont `82/83`, reste reporté.
 - Les écarts de formes Legacy DEV_1 sont volontairement abandonnés ; il ne faut
   pas les corriger par petites touches avant d'avoir porté l'algorithme natif.
-- SAV : lecture ciblée et copie inchangée uniquement ; aucun writer SAV.
+- SAV : le writer natif a été localisé et documenté statiquement, mais notre
+  application ne l'implémente toujours pas ; lecture ciblée et copie inchangée
+  restent les seules opérations applicatives autorisées.
 
 ## 5. Suite de la roadmap
 
-- **Audit natif** : achever les branches nécessaires à la génération, en
-  donnant la priorité au noyau terrain puis en documentant précisément l'ordre
-  complet.
+- **Audit natif** : poursuivre la partie non-terrain restante : remonter le
+  producteur type 9, décoder les tables d'empreintes/offsets et identifier le
+  writer EDM/MAP ; ne pas implémenter sur la seule base d'une analogie SAV.
 - **Implémentation** : construire le générateur Legacy natif séparément de
   l'archétype Continental v1, puis ajouter starts, ressources, objets,
   validations et export à partir des mesures confirmées.

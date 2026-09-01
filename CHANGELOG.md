@@ -12,7 +12,19 @@
 - Compare les minerais avant suppression : volumes et mix proches des SAV,
   géométrie des amas trop fragmentée. Le relevé est conservé dans
   `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
-- Prépare le prochain générateur Legacy à partir de l’audit décompilé, sans
+- Ajoute la première passe de l'audit non-terrain de `S3.EXE` : ordre de
+  matérialisation, séparation des couches Area/runtime, starts, bâtiments,
+  colons, ressources de départ, métadonnées et transcription comportementale.
+- Relie dans le noyau aléatoire les producteurs initiaux des ressources de sol
+  (`0x51AD40`, poissons `0x518A08`) et des familles d'objets statiques
+  (`0x51B010`, `0x51B1A0`). Approfondit ensuite l'audit avec le layout exact du
+  registre type 9, les essais distincts des deux helpers, le catalogue de leurs
+  paramètres et le writer natif `GameDataSave::Save` (`0x509995`) pour les
+  records SAV principaux. Confirme aussi l'ordre des paramètres du noyau,
+  le re-seed PRNG entre terrain et couches de partie, les sous-records SAV type
+  2 et la séparation des appels de gameplay ; le producteur type 9, les noms
+  métier et le writer EDM/MAP restent à décoder.
+- Prépare le prochain générateur Legacy à partir de l'audit décompilé, sans
   recycler les quotas ou les heuristiques de DEV_1.
 
 ## v2.0 DEV_1 — 2026-08-31 — checkpoint Legacy validé
