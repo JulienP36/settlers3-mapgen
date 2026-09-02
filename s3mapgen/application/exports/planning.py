@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
+from ...generation.core import NATIVE_PLAYER_LIMITS
+
 
 MAP_EXPORT_KEYS=('edm','map','sav','png_global','png_current')
 STATS_EXPORT_KEYS=('json','csv','png')
@@ -21,7 +23,10 @@ def safe_export_basename(value:str)->str:
 
 def map_export_capabilities(side:int,source_path:Path|str|None)->dict[str,bool]:
     source=Path(source_path) if source_path else None
-    binary=int(side)==768
+    # The 768 scaffold is a format template. The binary writer replaces its
+    # Area payload with the requested native size, so every generated native
+    # size can be exported for editor/game compatibility testing.
+    binary=int(side) in NATIVE_PLAYER_LIMITS
     return {
         'edm':binary,
         'map':binary,

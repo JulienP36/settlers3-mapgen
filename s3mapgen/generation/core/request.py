@@ -9,6 +9,8 @@ from dataclasses import dataclass
 
 
 NATIVE_PLAYER_LIMITS: dict[int, int] = {
+    256: 4,
+    320: 6,
     384: 8,
     448: 11,
     512: 15,
@@ -16,7 +18,26 @@ NATIVE_PLAYER_LIMITS: dict[int, int] = {
     640: 20,
     704: 20,
     768: 20,
+    832: 20,
+    896: 20,
+    960: 20,
+    1024: 20,
 }
+
+NATIVE_GAME_MIN_SIDE = 384
+NATIVE_GAME_MAX_SIDE = 768
+EDITOR_EXTENDED_SIDES = (832, 896, 960, 1024)
+
+
+def native_size_warning_kind(side: int) -> str | None:
+    """Return the neutral viability warning category for a supported size."""
+
+    side = int(side)
+    if side < NATIVE_GAME_MIN_SIDE:
+        return "small"
+    if side > NATIVE_GAME_MAX_SIDE:
+        return "extended"
+    return None
 
 
 @dataclass(frozen=True, slots=True)

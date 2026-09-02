@@ -1,13 +1,13 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_2 removes the obsolete Legacy generators and keeps only the isolated Upgraded compatibility path while the native Legacy implementation is rebuilt. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_2 removes the obsolete Legacy generators and keeps the native Legacy v1 reconstruction in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
 The application is deliberately split into a protected generation core and an evolving UI/tooling shell.
 
-- **Generation:** `s3mapgen/generation/`, with the Upgraded compatibility path
-  active and the native Legacy path under reconstruction.
+- **Generation:** `s3mapgen/generation/`, with the native Legacy v1 and
+  Upgraded compatibility paths isolated from one another.
 - **Shared map data:** `s3mapgen/map_data/` owns the byte constants, `MapState`,
   HEX6 geometry and EDM/MAP/SAV binary boundary. It depends on neither the
   application nor generation.
@@ -51,8 +51,13 @@ Current follow-up hotspots after DEV_2:
 - `application/shell/foundation.py`: shared Tk state/body only; it no longer
   constructs disposable header controls before the active header;
 - `generation/base.py`, `generation/continental.py` and `generation/validated.py`:
-  the retained Upgraded compatibility implementation and its application
-  facade; the Legacy generator is intentionally not present in this tree;
+  the retained Upgraded compatibility implementation;
+- `generation/archetypes/continental.py`: neutral Continental context and
+  six-channel state assembly; it does not own native resource or object rules;
+- `generation/generators/legacy/`: the native Legacy implementation, split into
+  terrain, global content, starts/transition handling, profile and validators;
+- `generation/facade.py`: dispatches Legacy to that package and keeps Upgraded
+  on the protected compatibility implementation;
 - `application/history/controller.py` and `application/batch/controller.py`:
   the two largest UI subsystem controllers; both are already isolated from the
   main window and can be subdivided by window/state responsibility later.
@@ -65,6 +70,15 @@ Dependency direction is enforced by tests:
 3. `application` may orchestrate both lower layers.
 
 These measurements identify investigation targets, not pre-approved deletions.
+
+### Generation ownership
+
+The Continental archetype owns only macro-geographic context and neutral state
+assembly. The Legacy generator owns the recovered PRNG, relief, terrain
+families, hydrology, global fish/mineral/object/decorative content, and its
+validators. Player-start objects/resources, settlers and SAV writing remain
+outside the current MAP/EDM generation scope. This boundary prevents a future
+Upgraded or Custom engine from inheriting Legacy-specific rules by accident.
 
 The DEV_2 closing audit also reviewed the short modules and public entrypoints.
 Their small size is not accidental fragmentation: they hold package APIs,
@@ -81,7 +95,9 @@ behavioral widget coverage for their Tk host-state contracts.
 2. A real cache hit reuses `GenerationOutput`; otherwise the protected generator runs synchronously.
 3. `GenerationOutput` contains a `MapState`, validations and a stage log.
 4. The result is displayed, analysed, rendered and offered to the session history.
-5. Export uses validated scaffolds only when the map size and requested format are supported.
+5. Export uses the validated 768 scaffold as a deliberately test-oriented
+   envelope for every currently supported native size; editor/game validation
+   is still required for sizes outside 768×768.
 
 ### EDM/MAP import
 

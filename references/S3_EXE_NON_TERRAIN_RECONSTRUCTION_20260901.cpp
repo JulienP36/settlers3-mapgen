@@ -14,13 +14,14 @@
 #include <cstddef>
 #include <algorithm>
 #include <utility>
+#include <vector>
 
 // Behavioral interfaces. The real runtime types are not reconstructed here.
 struct NativeStartSlot;
 struct NativeWorld;
 bool native_4d99e0(
-    NativeWorld&, int x, int y, int footprint_mode,
-    int player_or_context, int variant);
+    NativeWorld&, int x, int y, int pattern_kind,
+    int player_slot_or_context, int variant);
 void native_place_start_batch(
     NativeWorld&, int player, int x, int y,
     int type_or_mode, int count_or_value, int profile);
@@ -64,6 +65,120 @@ std::uint16_t native_prng_step(NativePrngState& state) {
         (static_cast<std::uint32_t>(next_c) >> 1)
         | (static_cast<std::uint32_t>(next_c) << 15));
     return output;
+}
+
+// 0x516530. The runtime bank is generated once per world context. It is not
+// a chunk grid: it is a deterministic ordering of hexagonal offsets reused by
+// start selection, resource placement and structured footprints.
+struct NativeHexOffset {
+    std::int32_t dx;
+    std::int32_t dy;
+    std::int32_t ring_marker;
+    std::int32_t orientation;
+};
+
+// Raw normal Continental start pattern, key 15 (pattern_kind 0x0F,
+// profile 0), extracted from file offset 0x2AA174 + 15*0x960 + 20*4.
+// The stream is deliberately kept as uint32_t: negative offsets are native
+// two's-complement words and the 0x8000000[0-3] values are interpreter
+// controls, not coordinates.  It decodes to exactly 33 coordinate pairs.
+constexpr std::uint32_t kNormalContinentalPatternWords[] = {
+    0x80000000u,
+    0xFFFFFFFFu, 0xFFFFFFFEu, 0x00000000u, 0xFFFFFFFEu,
+    0xFFFFFFFFu, 0xFFFFFFFFu, 0x00000000u, 0xFFFFFFFFu,
+    0x00000001u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0x00000000u,
+    0x00000000u, 0x00000000u, 0x00000001u, 0x00000000u,
+    0x00000002u, 0x00000000u, 0x00000000u, 0x00000001u,
+    0x00000001u, 0x00000001u, 0x00000002u, 0x00000001u,
+    0x00000001u, 0x00000002u, 0x00000002u, 0x00000002u,
+    0x00000002u, 0x00000003u, 0x80000001u, 0x00000003u,
+    0x00000002u, 0x80000002u,
+    0xFFFFFFFEu, 0xFFFFFFFDu, 0xFFFFFFFFu, 0xFFFFFFFDu,
+    0x00000000u, 0xFFFFFFFDu, 0x00000001u, 0xFFFFFFFEu,
+    0x00000002u, 0xFFFFFFFFu, 0x00000003u, 0x00000000u,
+    0x00000003u, 0x00000001u, 0x00000003u, 0x00000003u,
+    0x00000003u, 0x00000004u, 0x00000002u, 0x00000004u,
+    0x00000001u, 0x00000003u, 0x00000000u, 0x00000002u,
+    0xFFFFFFFFu, 0x00000001u, 0xFFFFFFFEu, 0x00000000u,
+    0xFFFFFFFEu, 0xFFFFFFFFu, 0x00000004u, 0x00000002u,
+    0xFFFFFFFEu, 0xFFFFFFFEu, 0x80000003u,
+};
+
+constexpr std::size_t kNormalContinentalPatternWordCount =
+    sizeof(kNormalContinentalPatternWords)
+    / sizeof(kNormalContinentalPatternWords[0]);
+static_assert(kNormalContinentalPatternWordCount == 70);
+
+std::vector<NativeHexOffset> native_build_hex_offset_bank() {
+    struct Candidate {
+        std::uint32_t metric;
+        std::int32_t x;
+        std::int32_t y;
+    };
+
+    std::vector<Candidate> candidates;
+    candidates.reserve(5000);
+
+    std::int32_t x = 1;
+    std::int32_t y = 0;
+    for (unsigned i = 0; i < 5000; ++i) {
+        const std::int32_t d = 2 * x - y;
+        const std::uint64_t metric64 =
+            2500ull * static_cast<std::uint64_t>(d) * d
+            + 7569ull * static_cast<std::uint64_t>(y) * y;
+        candidates.push_back({static_cast<std::uint32_t>(metric64), x, y});
+
+        ++y;
+        if (y == x) {
+            y = 0;
+            ++x;
+        }
+    }
+
+    std::vector<NativeHexOffset> bank;
+    bank.reserve(1 + 3333 * 6);
+    bank.push_back({0, 0, 0, 0});
+
+    std::int32_t ring = 1;
+    for (unsigned group = 0; group < 3333; ++group) {
+        unsigned selected = 0;
+        for (unsigned i = 1; i < candidates.size(); ++i) {
+            // The native comparison is strict, so ties retain the first
+            // candidate in enumeration order.
+            if (candidates[i].metric < candidates[selected].metric) {
+                selected = i;
+            }
+        }
+
+        const Candidate candidate = candidates[selected];
+        candidates[selected].metric = 0x7FFFFFFFu;
+
+        const std::int32_t cx = candidate.x;
+        const std::int32_t cy = candidate.y;
+        const std::int32_t offsets[6][2] = {
+            { cx,     cy     },
+            { cx - cy, cx    },
+            {-cy,     cx - cy},
+            {-cx,    -cy     },
+            { cy - cx, -cx   },
+            { cy,     cy - cx},
+        };
+        const bool rotated = 2 * cy > cx;
+        const std::int32_t orientations[6] =
+            {0, 1, 2, 3, 4, 5};
+        for (unsigned i = 0; i < 6; ++i) {
+            const unsigned orientation = rotated ? (i + 1) % 6 : i;
+            bank.push_back({
+                offsets[i][0], offsets[i][1], ring,
+                orientations[orientation],
+            });
+        }
+
+        if (cy == 0) {
+            ++ring;
+        }
+    }
+    return bank;
 }
 
 struct NativeAreaCell {
@@ -385,15 +500,21 @@ std::uint32_t native_diagonal_separation(
 int native_find_mirror(const NativeStartSlot* slots, int requested_id);
 
 // 0x508420 -> 0x4D99E0.
-// The detailed footprint table at 0x6AA174 is intentionally opaque here.
+// The table block is selected by pattern_kind + 57 * profile and has a 0x960
+// byte stride from 0x6AA174. Its 32-bit offset tokens and sentinels are kept
+// raw here; the interpreter branch structure is known, but naming every
+// profile-specific pattern still requires a controlled data comparison.
 bool native_footprint_gate(
     NativeWorld& world, int player_slot, int x, int y) {
     // CONFIRMED checks in 0x4D99E0:
     //   - roughly 15-cell interior margin;
-    //   - footprint offsets/sentinels from 0x6AA174;
+    //   - key = 0x0F + 57 * slot.profile and block = 0x6AA174 + 0x960*key;
+    //   - 0x80000000..0x80000003 control the token interpreter;
+    //   - 0x80000004/0x80000005 occur in the raw block header and are not
+    //     offset pairs in the normal stream;
     //   - terrain/claim/accessibility compatibility;
     //   - no occupied object/entity word at inspected cells.
-    // TODO: decode each table variant before replacing this stub.
+    // The candidate ordering used by callers is the separate native hex bank.
     return native_4d99e0(world, x, y, 0x0F, player_slot, 2);
 }
 
@@ -419,8 +540,8 @@ bool native_random_start_quality(
     std::uint32_t resource_40 = 0;
     std::uint32_t resource_50 = 0;
 
-    // The native code advances at most 0x270B offsets. Cell contents are
-    // inspected only while the offset counter is below 0xBB8.
+    // The native code advances through offset indices 0..0x270A. Cell
+    // contents are inspected only while the index is below 0xBB8.
     for (std::uint32_t i = 0; i < 0x270B; ++i) {
         auto [cx, cy] = world.start_offset(i, x, y);
         if (i < 0xBB8 && world.in_bounds(cx, cy)) {
@@ -492,15 +613,18 @@ void native_place_entity_batch(
     int dx,
     int dy);
 
-// 0x506CF0: accepted start -> town core and fixed initial batches.
+// 0x506CF0: accepted start -> town core and profile-dependent initial batches.
 void native_materialize_start_town(
     NativeWorld& world, int player, int x, int y, int profile) {
     // 1. Clear/mark the footprint using native terrain/accessibility helpers.
     // 2. Create the central type-5 entity.
     native_allocate_entity(world, x, y, 5, player);
 
-    // The following literal pairs are observed in successive 0x50CB20 /
-    // 0x5046B0 calls. They are intentionally not renamed as resources yet.
+    // This is the exact 0x506F68 branch. For 0x5046B0 the pair is
+    // (value,type); other 0x412300-selected branches have their own literal
+    // lists and must not be merged with this one. The 0x50CB20 calls are also
+    // profile/edition-dependent and are kept as raw type/count data in the
+    // audit rather than guessed game names.
     constexpr int observed_batches[][2] = {
         {8, 1}, {4, 1}, {8, 2}, {4, 2},
         {5, 0x0C}, {6, 0x0D}, {3, 0x0E},

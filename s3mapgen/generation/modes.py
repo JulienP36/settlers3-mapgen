@@ -10,8 +10,8 @@ class GenerationMode:
 
 MODES = {
     'legacy': GenerationMode(
-        'legacy', 'Legacy', False,
-        'Reconstruction native en cours ; le générateur DEV_1 a été retiré.'
+        'legacy', 'Legacy', True,
+        'Reconstruction native Legacy v1.'
     ),
     'upgraded': GenerationMode(
         'upgraded', 'Upgraded', True,

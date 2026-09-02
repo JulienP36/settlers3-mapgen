@@ -28,11 +28,12 @@ class Var:
         self.value = value
 
 
-def row(index, *, mode="Amélioré (Upgraded)", archetype="Continental", side="768", players="4", seed="100"):
+def row(index, *, mode="Héritage (Legacy)", archetype="Continental", mirror="Aucun", side="768", players="4", seed="100"):
     return {
         "index": index,
         "mode_var": Var(mode),
         "arch_var": Var(archetype),
+        "mirror_var": Var(mirror),
         "size_var": Var(side),
         "players_var": Var(players),
         "seed_var": Var(seed),
@@ -60,25 +61,34 @@ def test_batch_is_bilingual_and_replaces_the_reserved_placeholder():
 
 def test_batch_collects_one_to_four_independent_generation_keys():
     dummy = batch_dummy([
-        row(1, mode="Amélioré (Upgraded)", players="4", seed="101"),
+        row(1, mode="Héritage (Legacy)", players="4", seed="101"),
         row(2, mode="Amélioré (Upgraded)", players="8", seed="202"),
     ])
     requests = MainWindow._batch_collect_requests(dummy)
     assert [request["key"].seed for request in requests] == [101, 202]
     assert [request["key"].players for request in requests] == [4, 8]
-    assert [request["key"].mode for request in requests] == ["upgraded", "upgraded"]
-    assert all(request["key"].engine_revision == "v2.0-dev2-upgraded-only" for request in requests)
+    assert [request["key"].mode for request in requests] == ["legacy", "upgraded"]
+    assert requests[0]["key"].engine_revision == "continental_legacy_native_content"
+    assert requests[1]["key"].engine_revision == "v1.5-stable"
 
 
-def test_batch_rejects_uncalibrated_sizes_before_starting():
-    dummy = batch_dummy([row(1, side="384")])
-    with pytest.raises(ValueError, match="768×768"):
+def test_batch_collects_native_size_and_mirror_parameters():
+    dummy = batch_dummy([row(1, side="320", players="6", mirror="Axe long")])
+    request = MainWindow._batch_collect_requests(dummy)[0]["key"]
+    assert request.side == 320
+    assert request.players == 6
+    assert request.mirror_mode == 1
+
+
+def test_batch_rejects_unknown_sizes_before_starting():
+    dummy = batch_dummy([row(1, side="192")])
+    with pytest.raises(ValueError, match="native"):
         MainWindow._batch_collect_requests(dummy)
 
 
 def test_batch_queue_is_sequential_and_populates_history_and_ab_actions():
     assert "request=self._batch_queue.pop(0)" in SRC
-    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype)" in SRC
+    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)" in SRC
     assert "self.session_cache.put(key,out)" in SRC
     assert "self.after(30,self._batch_run_next)" in SRC
     assert "self._set_compare_output(slot,out)" in SRC

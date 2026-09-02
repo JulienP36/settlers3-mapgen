@@ -13,7 +13,7 @@ def upgraded4():return gen().generate(4,2026082202,mode='upgraded',archetype='co
 def upgraded20():return gen().generate(20,2026082203,mode='upgraded',archetype='continental')
 
 def test_architecture_names_are_separate():
-    assert set(MODES)=={'legacy','upgraded','custom'};assert 'continental' in ARCHETYPES;assert not MODES['legacy'].implemented;assert MODES['upgraded'].implemented;assert not MODES['custom'].implemented
+    assert set(MODES)=={'legacy','upgraded','custom'};assert 'continental' in ARCHETYPES;assert MODES['legacy'].implemented;assert MODES['upgraded'].implemented;assert not MODES['custom'].implemented
 
 def test_starts_are_early_in_pipeline():assert PIPELINE_STAGES.index('starts.maximin_early') < PIPELINE_STAGES.index('hydrology.micro_water_cleanup')
 
@@ -26,9 +26,27 @@ def test_upgraded_20p_starts_survive_full_pipeline(upgraded20):
 def test_custom_still_fails_explicitly():
     with pytest.raises(NotImplementedError):gen().generate(4,2026081901,mode='custom',archetype='continental')
 
-def test_legacy_is_explicitly_disabled_until_native_rebuild():
-    with pytest.raises(NotImplementedError, match='reconstruction native DEV_2'):
-        gen().generate(4,2026081901,mode='legacy',archetype='continental')
+def test_legacy_native_rebuild_is_reachable():
+    result=gen().generate(2,2026081901,mode='legacy',archetype='continental',side=384)
+    assert result.state.metadata['mode_key']=='legacy'
+    assert result.state.metadata['engine_revision'].endswith('native-legacy-v1')
+    assert len(result.state.starts)==2
+    assert all(v.passed for v in result.validations if v.hard)
+
+def test_reported_small_seed_finishes_without_relief_loop():
+    result=gen().generate(2,297650040,mode='legacy',archetype='continental',side=256)
+    assert result.state.side==256
+    assert result.state.metadata['native_relief_relax_passes']<=128
+    assert all(v.passed for v in result.validations if v.hard)
+
+def test_legacy_native_tables_are_transcribed():
+    from s3mapgen.generation.generators.legacy.native import NATIVE_NORMAL_START_FOOTPRINT,native_build_hex_offset_bank
+    from s3mapgen.map_data.constants import START_FOOTPRINT
+    bank=native_build_hex_offset_bank()
+    assert len(bank)==19999
+    assert [(o.dx,o.dy,o.ring,o.orientation) for o in bank[:7]]==[(0,0,0,0),(1,0,1,0),(1,1,1,1),(0,1,1,2),(-1,0,1,3),(-1,-1,1,4),(0,-1,1,5)]
+    assert len(NATIVE_NORMAL_START_FOOTPRINT)==33
+    assert set(NATIVE_NORMAL_START_FOOTPRINT)==set(START_FOOTPRINT)
 
 def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal(upgraded4):
     from s3mapgen.map_data.constants import SNOW,SNOW_TRANS

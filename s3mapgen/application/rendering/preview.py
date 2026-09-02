@@ -11,7 +11,7 @@ from ...map_data.model import MapState
 from ..paths import START_MARKER_SHEET
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
-PALETTE={GRASS:(72,148,69),18:(101,166,78),19:(116,177,88),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(76,101,56),SWAMP_TRANS:(94,119,67),GRASS_SWAMP_TRANS:(115,139,78),22:(147,112,72),28:(126,99,66),34:(116,116,108),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
+PALETTE={GRASS:(72,148,69),18:(101,166,78),19:(116,177,88),DRY_GRASS:(155,166,80),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(25,89,79),SWAMP_TRANS:(42,111,88),GRASS_SWAMP_TRANS:(79,132,73),MUD:(137,98,62),MUD_TRANS_2:(116,82,54),MUD_TRANS_1:(86,61,45),22:(147,112,72),28:(126,99,66),34:(116,116,108),96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
 
 # Settlers III player-color palette validated for v1.6 STABLE.
 # Order follows player slots P1..P20; P1 is the canonical S3 red.  The palette
@@ -121,6 +121,17 @@ def _global_rgb(state:MapState)->np.ndarray:
     for i,c in enumerate(WATER_COLORS):rgb[T==i]=c
     for tid,c in PALETTE.items():rgb[T==tid]=c
     rgb[rgb.sum(axis=2)==0]=(150,150,150)
+    # Static world-decor families are single-cell anchors in the preview.  The
+    # colors are intentionally restrained so they remain legible over their
+    # ecological support without pretending to be the game's sprites.
+    rgb[np.isin(O,range(1,29))]=(130,130,126)      # stones
+    rgb[np.isin(O,range(29,34))]=(126,91,58)       # wrecks
+    rgb[O==34]=(112,106,106)                      # graves
+    rgb[np.isin(O,range(35,43))]=(86,132,62)      # plants / fungi / stumps
+    rgb[np.isin(O,range(43,45))]=(72,84,58)       # dead trees
+    rgb[np.isin(O,range(45,50))]=(180,134,52)     # desert props
+    rgb[np.isin(O,range(50,62))]=(66,137,58)      # flowers / bushes
+    rgb[np.isin(O,range(62,68))]=(55,130,92)      # reeds
     adult=(O>=68)&(O<=81)&~np.isin(O,[78,79])
     rgb[adult]=(25,88,34);rgb[np.isin(O,[78,79])]=(46,113,51);rgb[O==84]=(81,145,73)
     rgb[(O>=115)&(O<=126)]=(205,205,198);rgb[O==127]=(150,150,145)
@@ -160,10 +171,10 @@ def _overlay_rgb(state:MapState,view:str,heatmap_resource:str='trees')->np.ndarr
         fish=water&((R&0xF0)==0)&((R&0x0F)>0);rgb[fish]=(70,210,240)
     elif view=='territories':
         rgb[:]=(65,65,65);palette=np.asarray(PLAYER_COLORS,np.uint8)
-        # Only a claim raster present in the source may be rendered.  In
-        # particular, do not substitute the historical canonical shape for an
-        # EDM/MAP/SAV file that does not carry claims.
-        claims=C
+        # SAV claims are the authoritative runtime raster.  MAP/EDM files do
+        # not carry claims, so show the known initial claim footprint instead
+        # of leaving the validated Frontières view empty.
+        claims=C if np.any(C<len(palette)) else _estimated_initial_claim_raster(state)
         claimed=claims<len(palette)
         if claimed.any():rgb[claimed]=palette[claims[claimed]]
     elif view=='initial_territory':
@@ -254,7 +265,7 @@ def _draw_square_start_markers(im:Image.Image,state:MapState,scale:int=1,include
         marker=_start_marker(i,False,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,False,opacity)
-            for bx,by in _ordered_direct_initial_boundary(state,i,False):
+            for bx,by in _ordered_initial_boundary(state,i,False):
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,bx,by),boundary_marker)
         im.paste(marker,_centered_marker_origin(marker,x,y),marker)
 
@@ -263,7 +274,7 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
         marker=_start_marker(i,True,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,True,opacity)
-            for bx,by in _ordered_direct_initial_boundary(state,i,True):
+            for bx,by in _ordered_initial_boundary(state,i,True):
                 X,Y=_project_point(bx,by,source_height)
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,X,Y),boundary_marker)
         X,Y=_project_point(x,y,source_height)
@@ -272,7 +283,7 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
 def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
     """Draw only the start-marker layer on an already rendered map image."""
     scale=max(1,int(scale))
-    include_boundaries=bool(include_boundaries and _has_direct_initial_mask(state))
+    include_boundaries=bool(include_boundaries and _has_initial_mask_or_estimate(state))
     if projection=='parallelogram':
         _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity)
     else:
@@ -288,6 +299,32 @@ def _has_direct_initial_mask(state:MapState)->bool:
     cells=state.metadata.get('initial_territory_direct_cells')
     if not isinstance(cells,(list,tuple,dict)) or not cells:return False
     return any(_direct_initial_mask_cells(state,i) for i in range(len(state.starts)))
+
+def _source_format(state:MapState)->str:
+    return str(state.metadata.get('source_format','')).upper()
+
+def _allows_estimated_initial_mask(state:MapState)->bool:
+    """Return whether the known start radius may stand in for missing SAV data.
+
+    MAP/EDM and generated states have no native claim raster, but their start
+    coordinates are sufficient to display the validated initial footprint.
+    A SAV is deliberately excluded: its claims are runtime data and must not
+    be guessed when the decoder did not expose them.
+    """
+    return _source_format(state) != 'SAV' and bool(state.starts)
+
+def _allows_estimated_start_boundary(state:MapState)->bool:
+    """Allow Starts to show the known-radius outline for every decoded start.
+
+    A SAV may not expose its initial claim raster in the current decoder, but
+    its decoded start coordinates still justify the established visual
+    boundary.  This fallback is deliberately limited to the Starts overlay;
+    the Territories view keeps SAV runtime claims authoritative.
+    """
+    return bool(state.starts)
+
+def _has_initial_mask_or_estimate(state:MapState)->bool:
+    return _has_direct_initial_mask(state) or _allows_estimated_start_boundary(state)
 
 def _direct_initial_mask_cells(state:MapState,player_index:int)->set[tuple[int,int]]:
     """Read exact absolute cells supplied by a future format decoder.
@@ -323,6 +360,40 @@ def _direct_initial_claim_raster(state:MapState)->np.ndarray:
             xs=np.fromiter((x for x,_y in cells),dtype=np.intp,count=len(cells))
             claims[ys,xs]=player_index
     return claims
+
+def _estimated_initial_claim_raster(state:MapState)->np.ndarray:
+    """Estimate the initial claim for non-SAV sources from the known radius."""
+    claims=np.full((state.side,state.side),255,dtype=np.uint8)
+    if not _allows_estimated_initial_mask(state):return claims
+    for player_index,start in enumerate(state.starts):
+        cells=initial_territory_cells(start,state.side)
+        if not cells:continue
+        ys=np.fromiter((y for _x,y in cells),dtype=np.intp,count=len(cells))
+        xs=np.fromiter((x for x,_y in cells),dtype=np.intp,count=len(cells))
+        claims[ys,xs]=player_index
+    return claims
+
+def _initial_boundary_cells(state:MapState,player_index:int)->set[tuple[int,int]]:
+    direct=_direct_initial_mask_cells(state,player_index)
+    if direct:return direct
+    if _allows_estimated_start_boundary(state) and player_index<len(state.starts):
+        return initial_territory_cells(state.starts[player_index],state.side)
+    return set()
+
+def _ordered_initial_boundary(state:MapState,player_index:int,projected:bool)->tuple[tuple[int,int],...]:
+    cells=_initial_boundary_cells(state,player_index)
+    if not cells:return ()
+    boundary=frozenset(
+        (x,y) for x,y in cells
+        if any(((x+dx)%state.side,(y+dy)%state.side) not in cells for dx,dy in HEX6)
+    )
+    sx,sy=state.starts[player_index]
+    def screen_point(point):
+        x,y=point
+        dx=((x-int(sx)+state.side//2)%state.side)-state.side//2
+        dy=((y-int(sy)+state.side//2)%state.side)-state.side//2
+        return (2*dx-dy,2*dy) if projected else (dx,dy)
+    return tuple(sorted(boundary,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
 def _ordered_direct_initial_boundary(state:MapState,player_index:int,projected:bool)->tuple[tuple[int,int],...]:
     cells=_direct_initial_mask_cells(state,player_index)
@@ -360,9 +431,10 @@ def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overla
     """Project and decorate a cached square raster without mutating that base."""
     im=project_parallelogram(base) if projection=='parallelogram' else base.copy()
     draw_start_markers=(labels and view=='starts') or bool(start_markers)
-    # Never draw the historical reconstructed contour as if it were native.
-    # A future format-specific reader may opt in by attaching direct cells.
-    draw_start_boundaries=labels and view=='starts' and _has_direct_initial_mask(state)
+    # Starts use direct cells when decoded, otherwise the known-radius outline.
+    # Territories remains conservative for SAVs; batch marker mode remains
+    # centre-only.
+    draw_start_boundaries=labels and view=='starts' and _has_initial_mask_or_estimate(state)
     marker_opacity=overlay_alpha if draw_start_boundaries else 100
     if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
     return im

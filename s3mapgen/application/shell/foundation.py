@@ -12,9 +12,10 @@ import tkinter as tk
 from tkinter import ttk
 
 from ..analysis.core import analyze_map, format_stats_report
+from ...generation.core import NATIVE_PLAYER_LIMITS
 
 
-NATIVE_LIMITS = {384: 8, 448: 11, 512: 15, 576: 19, 640: 20, 704: 20, 768: 20}
+NATIVE_LIMITS = dict(NATIVE_PLAYER_LIMITS)
 
 
 class ShellWindow(tk.Tk):
@@ -29,8 +30,9 @@ class ShellWindow(tk.Tk):
         self._build();self._size_changed()
 
     def _build_foundation(self):
-        self.mode=tk.StringVar(value='Upgraded')
+        self.mode=tk.StringVar(value='Legacy')
         self.arch=tk.StringVar(value='Continental')
+        self.mirror=tk.StringVar(value='Aucun')
         self.size=tk.StringVar(value='768')
         self.players=tk.IntVar(value=4)
         self.seed=tk.StringVar(value='2026081901')

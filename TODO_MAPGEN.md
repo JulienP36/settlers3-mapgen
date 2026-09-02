@@ -90,21 +90,30 @@ Upgraded validé pendant cette reconstruction.
 - [x] Deuxième passe approfondie : layout exact du type 9 et de son registre,
   catalogue paramétrique `0x51B010/0x51B1A0`, compteurs d'essais distincts,
   chemin `GameDataSave::Save` et records SAV générés.
-- [ ] Achever l'audit non-terrain : retrouver le producteur aléatoire type 9,
-  relier l'export des objets runtime au byte 2 Area, décoder les empreintes et
-  tables d'offsets, nommer les métadonnées et identifier le writer EDM/MAP ; voir
-  `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`.
-- [ ] Implémenter le noyau Legacy natif séparé : seed, relief, familles de
+- [x] Compléter le contrat non-terrain nécessaire au portage : banque exacte
+  d'offsets hexagonaux, frontière nouvelle carte/carte chargée, choix et
+  validation des départs, lots d'entités et producteur du stock initial
+  (`0x506CF0 -> 0x5046B0 -> 0x504420`).
+- [ ] Poursuivre séparément les résidus de format : couverture complète des
+  tokens d'empreinte, nomenclature des IDs/champs, source externe type 9 et
+  writer EDM/MAP ; voir `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`.
+- [x] Documenter l'ordre natif complet observable : noyau terrain, objets et
+  ressources de sol, re-seed, départs, ville/stock et finalisation.
+- [x] Implémenter le noyau Legacy natif séparé : seed, relief, familles de
   terrains, transitions, hydrologie et ordre d’écriture démontrés.
-- [ ] Définir l’archétype Continental v1 au-dessus de ce noyau sans lui
+- [x] Définir l’archétype Continental v1 au-dessus de ce noyau sans lui
   appliquer une seconde macro-forme.
-- [ ] Reproduire ensuite les starts, minerais, objets et validations Legacy
-  avec les mesures natives, puis tester chaque taille et densité de joueurs.
+- [x] Reproduire le terrain, les ressources globales (minerais/poissons), les
+  objets/décorations et les validations Legacy avec les mesures natives ; les
+  objets/ressources de départ, colons et writer SAV restent hors périmètre.
+- [x] Exposer les tailles natives 256–1024, les miroirs Axe long/Axe court/Les
+  deux, les avertissements de viabilité et l'export MAP/EDM multi-tailles via
+  scaffold de test.
 - [ ] Ajouter modificateurs et autres archétypes après ce socle.
 - [ ] Concevoir ensuite le mode **Custom laboratoire** séparé : catalogue,
   presets, batch, diagnostics et garde-fous.
 - [ ] Revalider progressivement terrains, transitions, joueurs, ressources,
-  macro-forme et côtes dans l'éditeur/jeu avant tout nouveau mode.
+  macro-forme, côtes et exports 832–1024 dans l'éditeur communautaire/jeu.
 
 ### Garde-fous
 
@@ -112,8 +121,9 @@ Upgraded validé pendant cette reconstruction.
   règles hydrologiques mesurées.
 - [ ] Ne jamais mélanger Legacy et Upgraded ; chaque mode garde profils,
   références et tests séparés.
-- [x] Maintenir l'ordre start-first du projet, le footprint natif et la
-  protection sans halo ; l'ordre interne natif reste inconnu.
+- [x] Maintenir l'ordre natif démontré : terrain/objets/ressources, re-seed,
+  départs, ville/stock puis finalisation ; conserver le footprint natif et la
+  protection sans halo.
 - [x] Séparer décor initial byte 14, objet runtime byte 7 et byte 9 SAV encore
   inconnu.
 - [ ] Toute comparaison visuelle doit venir d'un EDM/MAP/SAV réel ou d'une
@@ -152,7 +162,8 @@ Upgraded validé pendant cette reconstruction.
 
 - Archetype = macro-géographie ; Legacy/Upgraded = contenu, règles, balance,
   ressources et objets.
-- Starts placés tôt et protégés ; minerais Upgraded v7 no-gap préservés.
+- Legacy : terrain/objets/ressources avant re-seed, puis starts/ville/stock ;
+  Upgraded : starts précoces et minerais v7 no-gap préservés.
 - Aucun aperçu ou asset imaginaire ; SAV lu sans réinvention et copié inchangé.
 - IDs inconnus explicitement inconnus ; ne jamais repartir d'une version
   invalidée du générateur.

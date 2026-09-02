@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from ...map_data.binary import export_with_scaffold
+from ...version import SOURCE_CANDIDATE_LABEL
 from ..analysis.charts import render_stats_chart
 from ..analysis.core import stats_csv, stats_json
 from ..paths import EDM_SCAFFOLD, MAP_SCAFFOLD, OUTPUT
@@ -31,7 +32,9 @@ class ExportController:
         source=self._current_source_path()
         if source:return safe_export_basename(source.stem+('_stats' if stats else ''))
         st=self.current.state;m=st.metadata
-        base=f"S3_{m.get('archetype','Imported')}_{m.get('mode','Map')}_{len(st.starts) or m.get('players',0)}P_{st.side}x{st.side}_seed_{m.get('seed','import')}_MapGenV1_8"
+        mirror=int(m.get('native_mode_mask',0) or 0)
+        mirror_suffix=f'_mirror{mirror}' if mirror else ''
+        base=f"S3_{m.get('archetype','Imported')}_{m.get('mode','Map')}_{len(st.starts) or m.get('players',0)}P_{st.side}x{st.side}_seed_{m.get('seed','import')}{mirror_suffix}_MapGenV2_0_{SOURCE_CANDIDATE_LABEL}"
         return safe_export_basename(base+('_stats' if stats else ''))
 
     def _current_source_path(self):
@@ -147,6 +150,7 @@ class ExportController:
             if not capabilities[key]:check.configure(state='disabled',style='Unavailable.TCheckbutton')
         hints=[]
         if not capabilities['edm']:hints.append(text['binary_unavailable'])
+        elif state.side!=768:hints.append(text['binary_experimental'])
         if not capabilities['sav']:hints.append(text['sav_unavailable'])
         else:hints.append(text['sav_exact'])
         if not capabilities['png_current']:hints.append(text['current_unavailable'])

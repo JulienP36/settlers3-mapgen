@@ -50,19 +50,17 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 ## État actuel — v2.0 DEV_2 / reconstruction native Legacy
 
-La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. DEV_2 repart
-sur une base propre : l'ancien générateur Legacy procédural, ses profils,
-helpers et bibliothèques dérivées sont retirés, ainsi que l'ancien chemin
-Legacy v1.5 qui ne produisait pas une génération exploitable. Le mode Legacy
-reste réservé dans l'interface et l'API, mais sa génération est explicitement
-désactivée pendant la reconstruction native.
+La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` est
+maintenant le checkpoint validé et publié : l'ancien générateur Legacy
+procédural et ses bibliothèques dérivées ont été retirés, puis remplacés par
+un portage natif v1 séparé du moteur Upgraded protégé.
 
-Le seul moteur génératif conservé est le chemin **Upgraded** de compatibilité,
-calibré sur Continental 768×768. Ses règles, son profil, ses validations et
-ses références restent séparés et protégés. L'archétype Continental continue à
-définir la macro-forme ; le futur générateur Legacy définira ensuite ses
-propres couches de relief, terrains, hydrologie, ressources, objets, départs
-et validations à partir de l'audit natif.
+Le moteur **Legacy** implémente Continental v1 avec le relief, les terrains,
+l'hydrologie, les objets, les ressources, les départs et les métadonnées de
+partie observés dans S3.EXE. Le moteur **Upgraded** de compatibilité reste
+calibré sur Continental 768×768, avec ses propres règles, profil, validations
+et références. L'archétype Continental fournit le contexte macro-géographique ;
+il ne sculpte pas une seconde forme par-dessus le noyau natif.
 
 La comparaison des minerais a été faite avant la suppression : l'ancien
 générateur avait un mix global proche des SAV natifs, mais des composants et
@@ -70,13 +68,17 @@ des tailles de gisements nettement trop fragmentés. Ces quotas et heuristiques
 ne sont donc pas conservés comme règles. Le détail reproductible est dans
 `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
-Le chantier DEV_2 est maintenant la reconstruction du noyau Legacy natif,
-puis de l'archétype Continental v1. Les audits de l'algorithme de génération
-restent la source de vérité ; aucun résultat provisoire ne doit être présenté
-comme une implémentation exacte avant validation sur les cartes du jeu.
+Le portage natif est présent dans DEV_2 pour les tailles `256, 320, 384, 448,
+512, 576, 640, 704, 768, 832, 896, 960 et 1024`. Les modes miroir proposent
+`Axe long`, `Axe court` ou `Les deux`. Les tailles sous 384 et au-dessus de 768
+restent exportables et signalées dans le feedback lorsqu'elles sortent du
+cadre de jeu habituel. Les audits de l'algorithme restent la source de vérité ;
+une validation dans l'éditeur/jeu reste nécessaire pour les exportations
+étendues.
 
 La GUI et l'outillage validés restent disponibles : import EDM / MAP / SAV en
-lecture, export EDM/MAP 768 avec scaffold, vues d'analyse et d'inspection,
+lecture, export EDM/MAP de toutes les tailles natives via scaffold de test,
+vues d'analyse et d'inspection,
 statistiques, graphiques, historique, comparaison A/B, génération par lot,
 thèmes et langues FR/EN/DE/ES. Les aperçus restent des rendus déterministes de
 données réelles ou de sorties identifiées du moteur conservé.
@@ -92,7 +94,7 @@ Masque initial affiche exclusivement les coordonnées directes du byte 8 d'un
 SAV immédiat reconnu, tandis que Territoires affiche les claims runtime
 réellement lus dans le SAV.
 
-> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP restent dépendants d’un scaffold de la taille concernée ; la génération active conservée est calibrée sur Upgraded 768×768.
+> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP utilisent pour l'instant le scaffold 768 comme enveloppe de test, y compris pour les tailles étendues ; leur compatibilité avec l'éditeur/jeu doit encore être vérifiée. Le chemin Upgraded reste calibré sur 768×768.
 
 La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a construit la passe Workflow / accessibilité / production. La **v1.9** consolide maintenant l’architecture interne avant de terminer par l’archéologie/data mapping. Le retour profond au générateur reste prévu pour la v1.10.
 
@@ -100,7 +102,12 @@ La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a const
 
 ### Legacy
 
-Mode réservé à la fidélité au générateur original de Settlers III et au corpus natif analysé. Il sert de cible du reverse-engineering, mais sa génération est désactivée pendant la reconstruction DEV_2.
+Moteur natif v1 pour l'archétype Continental, disponible sur les tailles du
+contrat natif et avec les quatre combinaisons de miroir. Il suit l'ordre
+relief/terrain, objets et ressources globales, re-seed, puis préparation des
+départs ; les objets/ressources propres aux joueurs, les colons et l'écriture
+SAV restent reportés à la future gestion des `.sav`. Les données runtime type 9
+qui ne tiennent pas dans l'Area sont reportées explicitement dans le rapport.
 
 ### Upgraded
 
@@ -127,12 +134,28 @@ L'archétype décrit principalement la **forme globale terre/eau**. Les objets, 
 
 ## Architecture des starts
 
-Ordre conceptuel actuel :
+Les deux modes n'ont pas le même ordre. Le Legacy natif porte d'abord le
+terrain et le contenu global ; l'Upgraded conserve ses starts précoces et ses
+réservations techniques :
 
 ```text
-MapConfig
+Legacy : MapConfig
   ↓
-Archetype : macro-layout
+Continental : contexte macro
+  ↓
+Relief / terrain / hydrologie native
+  ↓
+Objets et ressources globales
+  ↓
+Re-seed puis starts de transition MAP/EDM
+  ↓
+Finalisation / validators
+```
+
+```text
+Upgraded : MapConfig
+  ↓
+Continental : macro-layout
   ↓
 Placement précoce des starts
   ↓
@@ -140,13 +163,7 @@ Réservation des zones techniques
   ↓
 Relief / biomes / hydrologie détaillée
   ↓
-Ressources et balance locale
-  ↓
-Objets / décorations
-  ↓
-Hydrologie finale / poissons
-  ↓
-Validators
+Ressources / objets / validators
   ↓
 Export
 ```
@@ -155,9 +172,7 @@ Une passe tardive ne doit pas invalider un start réservé. Elle doit contourner
 
 ## Morphologie Upgraded
 
-La première implémentation exécutable d'Upgraded 768 utilise encore le checkpoint terrain/height validé comme référence de morphologie locale. Cela évite de réinventer des formes déjà validées.
-
-La prochaine grosse étape de génération est de **généraliser cette morphologie Upgraded** afin de produire de nouvelles formes fraîches et compatibles avec plusieurs tailles et archétypes sans dépendre d'un unique checkpoint 768.
+La première implémentation exécutable d'Upgraded 768 utilise encore le checkpoint terrain/height validé comme référence de morphologie locale. Cela évite de réinventer des formes déjà validées. Le prochain moteur à étudier est l'**Upgraded généralisé**, sans modifier le comportement du checkpoint protégé.
 
 Limite connue avant cette refonte : les seeds actuelles ne produisent que trois morphologies de base, ensuite présentées avec des rotations et parfois un miroir. L’audit seed/RNG et la diversification objective sont planifiés pour la v1.10.
 

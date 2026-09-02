@@ -10,13 +10,14 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
 from ...generation.archetypes import ARCHETYPES, ARCHETYPE_ORDER
+from ...generation.core import native_size_warning_kind
 from ...generation.modes import MODES, MODE_ORDER
 from ..rendering.preview import compose_start_markers, project_parallelogram, render_square_base
 from ..session.cache import GenerationCacheKey
 from ..shell import NATIVE_LIMITS
 from ..ui.i18n.batch import BATCH_HINTS, BATCH_TEXT, _BATCH_CAPACITY_TEXT
 from ..ui.i18n.history import _CONTEXT_TEXT
-from ..ui.i18n.shell import ARCHETYPE_LABELS, MODE_LABELS
+from ..ui.i18n.shell import ARCHETYPE_LABELS, MIRROR_LABELS, MODE_LABELS
 from ..ui.theme import THEME_PALETTES
 from ..ui.widgets import _thumbnail_with_magnifier
 
@@ -59,7 +60,7 @@ class BatchController:
         rows_host=ttk.Frame(shell);rows_host.pack(fill='both',expand=True)
         rows_host.columnconfigure(0,weight=1)
         self._batch_rows=[]
-        current_mode=self._mode_key();current_arch=self._arch_key();current_size=str(self.size.get());current_players=str(self.players.get())
+        current_mode=self._mode_key();current_arch=self._arch_key();current_mirror=self._mirror_key() if hasattr(self,'_mirror_key') else 0;current_size=str(self.size.get());current_players=str(self.players.get())
         first_seed=self._default_batch_seed();self._batch_common_seed_var.set(str(first_seed))
         for index in range(1,5):
             frame=ttk.Labelframe(rows_host,text=bt['map'].format(index=index),padding=(1,1))
@@ -76,6 +77,9 @@ class BatchController:
             row['arch']=ttk.Combobox(box,textvariable=row['arch_var'],values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER],state='readonly',width=17);row['arch'].pack();input_widgets.append((row['arch'],'readonly'))
             box=group('modifiers');row['modifier_var']=tk.StringVar(value=bt['none'])
             row['modifier']=ttk.Combobox(box,textvariable=row['modifier_var'],values=[bt['none']],state='readonly',width=13);row['modifier'].pack();input_widgets.append((row['modifier'],'readonly'))
+            box=group('mirror');row['mirror_var']=tk.StringVar(value=MIRROR_LABELS[lang][current_mirror])
+            mirror_width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2)
+            row['mirror']=ttk.Combobox(box,textvariable=row['mirror_var'],values=list(MIRROR_LABELS[lang].values()),state='readonly',width=mirror_width);row['mirror'].pack();input_widgets.append((row['mirror'],'readonly'))
             box=group('size');row['size_var']=tk.StringVar(value=current_size)
             row['size']=ttk.Combobox(box,textvariable=row['size_var'],values=[str(x) for x in NATIVE_LIMITS],state='readonly',width=7);row['size'].pack();input_widgets.append((row['size'],'readonly'))
             box=group('players');row['players_var']=tk.StringVar(value=current_players)
@@ -330,16 +334,24 @@ class BatchController:
             self._batch_i18n['count_label'].configure(text=bt['count']);self._batch_randomize_button.configure(text=bt['randomize']);self._batch_apply_seed_button.configure(text=bt['apply_seed'])
             self._batch_i18n['hint_label'].configure(text=BATCH_HINTS.get(lang,BATCH_HINTS['en']))
             for row in self._batch_rows:
-                mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'upgraded');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
+                mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy');arch=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental');mirror=self._batch_label_key(row.get('mirror_var').get() if row.get('mirror_var') is not None else MIRROR_LABELS[lang][0],MIRROR_LABELS,0)
                 row['frame'].configure(text=bt['map'].format(index=row['index']))
                 for key,label in row['group_labels'].items():label.configure(text=bt[key])
                 row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
                 row['arch'].configure(values=[ARCHETYPE_LABELS[lang][key] for key in ARCHETYPE_ORDER]);row['arch_var'].set(ARCHETYPE_LABELS[lang][arch])
+                if row.get('mirror') is not None:
+                    row['mirror'].configure(values=list(MIRROR_LABELS[lang].values()),width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2));row['mirror_var'].set(MIRROR_LABELS[lang][mirror])
                 row['modifier'].configure(values=[bt['none']]);row['modifier_var'].set(bt['none']);row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
                 state=row.get('state','waiting');key='not_cached' if state=='not_cached' else ('cached' if row.get('cached') else ('success' if state=='success' else state))
                 if key=='failed':text=bt['failed'].format(error=row.get('error',''))
                 elif key in bt:text=bt[key]
                 else:text=bt['waiting']
+                if row.get('viability_warning') and key in ('success','cached'):
+                    try:warning_side=int(row['size_var'].get())
+                    except (TypeError,ValueError,tk.TclError):warning_side=0
+                    if warning_side:
+                        warning_text_key='extended_size_warning' if row.get('size_warning_kind')=='extended' else 'small_size_warning'
+                        text=f"{text} · {bt[warning_text_key].format(side=warning_side,max_players=NATIVE_LIMITS[warning_side])}"
                 row['status_var'].set(text);self._batch_draw_progress(row)
             self._batch_start_button.configure(text=bt['start']);self._batch_cancel_button.configure(text=bt['cancel']);self._batch_close_button.configure(text=bt['close'])
             self._refresh_batch_assignment_buttons()
@@ -383,22 +395,30 @@ class BatchController:
         except (TypeError,ValueError):count=1
         for row in self._batch_rows[:count]:
             error=None
+            row['viability_warning']=False
+            row['size_warning_kind']=None
             try:side=int(row['size_var'].get())
             except (TypeError,ValueError):side=0
-            mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'upgraded')
+            mode=self._batch_label_key(row['mode_var'].get(),MODE_LABELS,'legacy')
             archetype=self._batch_label_key(row['arch_var'].get(),ARCHETYPE_LABELS,'continental')
+            mirror=self._batch_label_key(row.get('mirror_var').get() if row.get('mirror_var') is not None else MIRROR_LABELS[lang][0],MIRROR_LABELS,0)
             try:players=int(row['players_var'].get())
             except (TypeError,ValueError):players=0
             try:seed=int(row['seed_var'].get())
             except (TypeError,ValueError):seed=None
-            if side!=768:error=BATCH_TEXT[lang]['unsupported_size']
+            if side not in NATIVE_LIMITS:error=BATCH_TEXT[lang]['unsupported_size']
             elif not MODES[mode].implemented:error=BATCH_TEXT[lang]['unsupported_mode']
             elif not ARCHETYPES[archetype].implemented:error=BATCH_TEXT[lang]['unsupported_archetype']
+            elif mode!='legacy' and side!=768:error=BATCH_TEXT[lang]['unsupported_mode_size']
+            elif mirror and not (mode=='legacy' and archetype=='continental'):error=BATCH_TEXT[lang]['unsupported_mirror']
             elif not 2<=players<=NATIVE_LIMITS[side]:error=BATCH_TEXT[lang]['invalid_players'].format(maximum=NATIVE_LIMITS[side])
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
                 errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
-            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision='v2.0-dev2-upgraded-only')
+            revision='continental_legacy_native_content' if mode=='legacy' and archetype=='continental' else 'v1.5-stable'
+            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror)
+            row['size_warning_kind']=native_size_warning_kind(side) if mode=='legacy' and archetype=='continental' else None
+            row['viability_warning']=row['size_warning_kind'] is not None
             requests.append({'row':row,'key':key})
         if errors:raise ValueError('\n'.join(errors))
         return requests
@@ -495,9 +515,14 @@ class BatchController:
         self._batch_update_progress(row,2,self._batch_text('generating'),'running')
         try:
             out=self.session_cache.get(key);cached=out is not None
-            if out is None:out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype)
+            if out is None:out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)
             self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'});row['history_key']=key;row['result']=out;row['cached']=cached;self._batch_last_success=out
-            self._batch_update_progress(row,100,self._batch_text('cached' if cached else 'success'),'cached' if cached else 'success');self._batch_render_thumbnail(row)
+            result_state='cached' if cached else 'success'
+            result_text=self._batch_text(result_state)
+            if row.get('viability_warning'):
+                warning_text_key='extended_size_warning' if row.get('size_warning_kind')=='extended' else 'small_size_warning'
+                result_text=f"{result_text} · {self._batch_text(warning_text_key,side=key.side,max_players=NATIVE_LIMITS[key.side])}"
+            self._batch_update_progress(row,100,result_text,result_state);self._batch_render_thumbnail(row)
         except Exception as exc:
             row['error']=str(exc);self._batch_update_progress(row,100,self._batch_text('failed',error=str(exc)),'failed')
         finally:

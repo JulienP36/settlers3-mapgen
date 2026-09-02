@@ -12,21 +12,37 @@ import tkinter as tk
 from tkinter import messagebox
 
 from ...generation.archetypes import ARCHETYPES
+from ...generation.core import (
+    NATIVE_PLAYER_LIMITS as NATIVE_LIMITS,
+    native_size_warning_kind,
+)
 from ...generation.modes import MODES
 from ..session.cache import GenerationCacheKey
-from ..shell import NATIVE_LIMITS
 from ..ui.i18n.common import _lang_text
-from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MODE_LABELS, NONE_LABELS
+from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS, NONE_LABELS
 
 
 class GenerationWorkflowController:
     """Host contract: generation widgets, protected engine and session cache."""
+
+    @staticmethod
+    def _legacy_size_warning_key(mode, archetype, side):
+        """Translate core size semantics into an application feedback key."""
+
+        if mode != 'legacy' or archetype != 'continental':
+            return None
+        kind = native_size_warning_kind(side)
+        return {
+            'small': 'size_viability_warning',
+            'extended': 'size_extended_warning',
+        }.get(kind)
+
     def _mode_key(self):
         value=self.mode.get()
         for labels in MODE_LABELS.values():
             for key,label in labels.items():
                 if label==value:return key
-        return next((k for k,v in MODES.items() if v.label==value),'upgraded')
+        return next((k for k,v in MODES.items() if v.label==value),'legacy')
 
     def _arch_key(self):
         value=self.arch.get()
@@ -34,6 +50,13 @@ class GenerationWorkflowController:
             for key,label in labels.items():
                 if label==value:return key
         return next((k for k,v in ARCHETYPES.items() if v.label==value),'continental')
+
+    def _mirror_key(self):
+        value=self.mirror.get()
+        for labels in MIRROR_LABELS.values():
+            for key,label in labels.items():
+                if label==value:return int(key)
+        return 0
 
     def _modifier_keys(self):
         # The future multi-select architecture is reserved. The only currently
@@ -56,11 +79,13 @@ class GenerationWorkflowController:
         value=str(self.seed.get());self.clipboard_clear();self.clipboard_append(value);self._feedback('seed_copied','success',seed=value)
 
     def _selection_changed(self):
-        s=int(self.size.get());mkey=self._mode_key();akey=self._arch_key();m=MODES[mkey];a=ARCHETYPES[akey];lang=self.prefs.get('language','fr')
+        s=int(self.size.get());mkey=self._mode_key();akey=self._arch_key();m=MODES[mkey];a=ARCHETYPES[akey];lang=self.prefs.get('language','fr');warning_key=self._legacy_size_warning_key(mkey,akey,s)
         mode=MODE_LABELS[lang][mkey];arch=ARCHETYPE_LABELS[lang][akey];modifiers=self._modifier_summary()
-        if s!=768:self._feedback('size_reserved','warning',side=s,max_players=NATIVE_LIMITS[s])
-        elif not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
+        if not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
         elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
+        elif self._mirror_key() and not (mkey=='legacy' and akey=='continental'):self._feedback('mirror_reserved','warning')
+        elif mkey!='legacy' and s!=768:self._feedback('size_reserved','warning',side=s,max_players=NATIVE_LIMITS[s])
+        elif warning_key:self._feedback(warning_key,'warning',side=s,max_players=NATIVE_LIMITS[s])
         else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
 
     def _progress_stage(self,stage,detail,index):
@@ -79,20 +104,25 @@ class GenerationWorkflowController:
         self.update_idletasks()
 
     def _cache_key(self):
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='v2.0-dev2-upgraded-only')
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='continental_legacy_native_content',mirror_mode=self._mirror_key())
 
     def generate(self):
         try:
             side=int(self.size.get())
-            if side!=768:raise NotImplementedError(_lang_text(self.prefs.get('language','fr'),f'La génération {side}×{side} est réservée mais pas encore calibrée. Max joueurs={NATIVE_LIMITS[side]}.',f'{side}×{side} generation is reserved but not calibrated yet. Max players={NATIVE_LIMITS[side]}.',f'Die Generierung in {side}×{side} ist reserviert, aber noch nicht kalibriert. Max. Spieler={NATIVE_LIMITS[side]}.',f'La generación {side}×{side} está reservada, pero aún no está calibrada. Máx. jugadores={NATIVE_LIMITS[side]}.'))
             key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
             mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
+            warning_key=self._legacy_size_warning_key(key.mode,key.archetype,key.side)
             if cached is not None:
-                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history();self._feedback('cache_hit','success',seed=key.seed);return
+                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history()
+                if warning_key:self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
+                else:self._feedback('cache_hit','success',seed=key.seed)
+                return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
-            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key())
+            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key())
             retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
-            if not retained:self._feedback('history_not_retained','warning')
+            if warning_key:
+                self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
+            elif not retained:self._feedback('history_not_retained','warning')
         except Exception as e:
             import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')

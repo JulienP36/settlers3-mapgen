@@ -1,6 +1,6 @@
-"""Validated map-building pipeline exposed to application entrypoints."""
+"""Map-building pipelines exposed to application entrypoints."""
 
 from .contracts import GenerationOutput
-from .validated import MapGenerator
+from .facade import MapGenerator
 
 __all__ = ["GenerationOutput", "MapGenerator"]

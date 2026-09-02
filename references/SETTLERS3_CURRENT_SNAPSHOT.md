@@ -2,38 +2,44 @@
 
 > **Point de reprise vivant — état actuel uniquement.**
 >
-> Dernière mise à jour : **2026-09-01 — v2.0 DEV_2, reset du générateur Legacy**
+> Dernière mise à jour : **2026-09-02 — v2.0 DEV_2 validé et poussé**
 
 ## 1. État immédiat
 
 - Dépôt : `JulienP36/settlers3-mapgen` ; branche de travail : `dev`.
-- Dernier checkpoint publié : **v2.0 DEV_1**, validé et poussé sur `dev`. Le
-  travail local courant prépare **v2.0 DEV_2** ; il n'est pas encore poussé.
+- Dernier checkpoint publié : **v2.0 DEV_2**, validé et poussé sur `dev`.
 - DEV_2 retire complètement l'ancien chemin Legacy v1.5 et le générateur
   Legacy procédural DEV_1, avec leurs profils, helpers, tests spécifiques et
-  bibliothèques de silhouettes. Le mode Legacy reste réservé dans l'API, mais
-  ne génère plus de carte pendant la reconstruction native.
+  bibliothèques de silhouettes. Le mode Legacy public est maintenant relié au
+  nouveau moteur natif v1 ; l'ancien chemin ne doit pas réapparaître.
 - L'audit non-terrain du binaire est maintenant approfondi et archivé
   dans `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`, avec une
   transcription comportementale progressive dans
   `references/S3_EXE_NON_TERRAIN_RECONSTRUCTION_20260901.cpp`. Elle couvre le
-  flot Area -> bâtiments -> colons/départs -> ressources de départ ->
-  métadonnées, la séparation des couches runtime, le filtre des starts, le
-  layout du registre type 9, le catalogue paramétrique des objets statiques et
-  le writer `GameDataSave::Save` des principaux records SAV. La convention
-  d'appel du noyau et la réinitialisation du PRNG avant les couches de partie
-  sont également confirmées ; les sous-records SAV type 2 sont séparés du
-  futur writer EDM/MAP. Le producteur aléatoire type 9, le catalogue métier
-  complet et le writer EDM/MAP exact restent ouverts.
-- Le seul moteur de génération conservé est **Upgraded Continental 768×768**.
-  Son profil, ses règles, ses validations et ses références restent isolés.
+  flot nouvelle carte/carte chargée, la séparation des couches runtime, le
+  filtre des starts, la banque exacte d'offsets, le layout du registre type 9,
+  le catalogue paramétrique des objets statiques et le writer
+  `GameDataSave::Save` des principaux records SAV. La convention d'appel du
+  noyau et la réinitialisation du PRNG avant les couches de partie sont
+  également confirmées. Le producteur du stock initial est relié à
+  `0x506CF0 -> 0x5046B0 -> 0x504420`; seuls les noms métier, la source externe
+  type 9 et le writer EDM/MAP exact restent ouverts.
+- Les deux moteurs restent isolés : **Legacy Continental natif v1** accepte
+  `256, 320, 384, 448, 512, 576, 640, 704, 768, 832, 896, 960 et 1024` ;
+  **Upgraded Continental** reste calibré en 768×768 avec son profil, ses
+  règles, ses validations et ses références.
 - La comparaison des minerais a été archivée avant suppression dans
   `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md` : le mix familial
   de DEV_1 était proche du corpus natif, mais la géométrie des gisements était
   trop fragmentée ; aucune de ses heuristiques n'est reconduite.
-- La prochaine implémentation devra séparer l'archétype Continental (macro-
-  forme) du générateur Legacy natif (relief, terrains, hydrologie, ressources,
-  objets, départs et validations), conformément à l'audit décompilé.
+- L'implémentation sépare l'archétype Continental (contexte macro-forme) du
+  générateur Legacy natif (relief, terrains, hydrologie, ressources, objets,
+  départs et validations), conformément à l'audit décompilé.
+- Le Legacy natif expose les miroirs Axe long, Axe court et Les deux. Les
+  avertissements de viabilité pour les tailles sous 384 et au-dessus de 768
+  passent par la zone de feedback ; le seed `297650040` en 256×256 ne reste
+  plus bloqué dans la sculpture du relief. La bordure extérieure est normalisée
+  en Water7 plutôt qu'en Water1.
 - Le gate Windows protège désormais cinq éléments du chemin Upgraded : les
   trois modules Python de génération conservés, le profil Upgraded et la
   bibliothèque statique native. Les hashes canoniques sont dans
@@ -55,16 +61,17 @@
   ID16. Les nids `247–253` appartiennent à Agriculture/Cultures, avec une
   teinte miel distincte et sans présence dans le graphe forestier.
 - L'audit natif du générateur reste la source de vérité ; les documents de
-  reverse-engineering décrivent encore des branches partielles et ne valent
-  pas implémentation tant qu'elles ne sont pas validées sur des sorties du jeu.
+  reverse-engineering distinguent le contrat démontré des résidus de format et
+  de nomenclature qui devront être validés sur des sorties du jeu.
 - L'audit non-terrain confirme que le byte ressource de l'Area, le byte objet
   statique, les ressources type 9 et les entités runtime sont des couches
   distinctes. Les producteurs initiaux `0x51AD40`, `0x518A08`, `0x51B010` et
-  `0x51B1A0`, le loader `0x504420` et la sérialisation SAV `0x509995` sont
-  reliés ; les règles non démontrées restent explicitement interdites.
+  `0x51B1A0`, le loader/producteur `0x504420` et la sérialisation SAV
+  `0x509995` sont reliés ; les règles non démontrées restent explicitement
+  interdites.
 - La compatibilité Upgraded 768×768 et sa géométrie v7 no-gap restent le socle
   exécutable conservé. Les anciens fichiers Legacy supprimés sont historiques
-  dans Git, mais ne font plus partie du runtime ni de l'archive source.
+  dans Git, mais ne font plus partie du runtime natif actif.
 - La comparaison minière conservée est une mesure de proximité, pas une règle
   de génération : les volumes étaient proches, les formes ne l'étaient pas.
 - Aucun asset visuel généré par IA n'est autorisé. Les aperçus doivent rester
@@ -83,9 +90,11 @@
 
 ## 4. Problèmes connus et reports
 
-- La génération active est calibrée sur Upgraded Continental 768×768. Le
-  Legacy natif, les modificateurs, les autres archétypes et le mode Custom
-  attendent la reconstruction et la validation de leur socle respectif.
+- La génération active expose maintenant les chemins Legacy Continental natif
+  et Upgraded Continental 768×768. Les modificateurs et les autres archétypes
+  restent ultérieurs. L'export EDM/MAP est disponible sur toutes les tailles
+  du contrat via le scaffold 768, mais les tailles hors 768 restent des
+  candidates de test à valider dans l'éditeur communautaire/jeu.
 - L'extension des audits aux autres tailles reste ouverte. L'audit exhaustif
   des objets, dont `82/83`, reste reporté.
 - Les écarts de formes Legacy DEV_1 sont volontairement abandonnés ; il ne faut
@@ -96,14 +105,15 @@
 
 ## 5. Suite de la roadmap
 
-- **Audit natif** : poursuivre la partie non-terrain restante : remonter le
-  producteur type 9, décoder les tables d'empreintes/offsets et identifier le
-  writer EDM/MAP ; ne pas implémenter sur la seule base d'une analogie SAV.
-- **Implémentation** : construire le générateur Legacy natif séparément de
-  l'archétype Continental v1, puis ajouter starts, ressources, objets,
-  validations et export à partir des mesures confirmées.
-- **Validation** : rejouer la suite pytest dans l'environnement équipé,
-  exécuter le smoke-test moteur et valider l'archive Windows sous Windows.
+- **Résidus d'audit** : décoder plus tard la couverture complète des tables,
+  les noms métier, la source externe type 9 et le writer EDM/MAP ; aucun de ces
+  points ne doit être remplacé par une hypothèse.
+- **Implémentation** : le générateur Legacy natif et l'archétype Continental v1
+  sont maintenant séparés dans le dépôt ; comparer leurs sorties aux références
+  du jeu reste le prochain contrôle externe.
+- **Validation externe** : rejouer la suite pytest dans l'environnement
+  équipé, exécuter le smoke-test moteur et valider l'archive Windows, les
+  exports étendus et le comportement en jeu.
 - **Après Continental** : dérivés Large Islands puis Small Islands ; le Custom
   et l'éditeur intégré restent ultérieurs.
 - Aucune RC, Release ou promotion sur `main` avant validation Windows/jeu du

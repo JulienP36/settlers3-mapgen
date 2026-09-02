@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.0 DEV_2 — 2026-09-01 — reset du générateur Legacy
+## v2.0 DEV_2 — 2026-09-02 — checkpoint Legacy natif validé
 
 - Retire le pipeline procédural Continental Legacy DEV_1, ses profils et ses
   bibliothèques de silhouettes dérivées : ils étaient calibrés sur des
@@ -21,11 +21,30 @@
   registre type 9, les essais distincts des deux helpers, le catalogue de leurs
   paramètres et le writer natif `GameDataSave::Save` (`0x509995`) pour les
   records SAV principaux. Confirme aussi l'ordre des paramètres du noyau,
-  le re-seed PRNG entre terrain et couches de partie, les sous-records SAV type
-  2 et la séparation des appels de gameplay ; le producteur type 9, les noms
-  métier et le writer EDM/MAP restent à décoder.
-- Prépare le prochain générateur Legacy à partir de l'audit décompilé, sans
-  recycler les quotas ou les heuristiques de DEV_1.
+  le re-seed PRNG entre terrain et couches de partie, la banque exacte
+  d'offsets hexagonaux, la frontière nouvelle carte/carte chargée et les
+  sous-records SAV type 2. Le stock initial est relié à
+  `0x506CF0 -> 0x5046B0 -> 0x504420`; seuls les noms métier, la source externe
+  type 9 et le writer EDM/MAP restent à décoder.
+- Met à jour le contrat de conception pour séparer `Continental v1` (archétype
+  macro) de `Legacy v1` (moteur natif) et fixe l'ordre terrain/objets/ressources,
+  re-seed, départs, ville/stock puis finalisation.
+- Implémente le premier portage Legacy v1 séparé : relief, rivières,
+  transitions, pinceaux de surfaces, objets statiques, minerais, poissons,
+  reseed, sélection des départs et métadonnées runtime de ville/stock.
+- Expose Continental v1 comme contexte d'archétype et garde le chemin Upgraded
+  protégé séparé. Les tables runtime type 9 encore opaques sont conservées
+  explicitement dans les métadonnées, sans règle inventée.
+- Publie le générateur natif Legacy validé : tailles `256, 320, 384, 448, 512,
+  576, 640, 704, 768, 832, 896, 960, 1024`, sélection des miroirs Axe long,
+  Axe court ou Les deux, et avertissements de viabilité dans le feedback.
+- Corrige le blocage observé sur le seed `297650040` en 256×256 et normalise
+  la bordure extérieure en Water7. Les couches globales minerais, poissons,
+  objets et décorations sont portées ; objets/ressources de départ, colons et
+  écriture SAV restent différés.
+- Rend les exports EDM/MAP disponibles sur toutes les tailles du contrat via
+  le scaffold 768, explicitement comme candidates à tester dans l'éditeur
+  communautaire/jeu. Le checkpoint est validé et poussé sur `dev` sans suffixe.
 
 ## v2.0 DEV_1 — 2026-08-31 — checkpoint Legacy validé
 

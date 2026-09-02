@@ -48,19 +48,17 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 ## Current state — v2.0 DEV_2 / native Legacy reconstruction
 
-The `v2.0 DEV_1` generation was validated and published on GitHub. DEV_2 now
-starts from a clean boundary: the old procedural Legacy generator, its
-profiles, helpers and derived libraries are removed, together with the former
-Legacy v1.5 path that did not provide usable generation. Legacy remains a
-reserved mode in the UI and API, but generation is explicitly disabled while
-the native reconstruction is completed.
+The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` is
+now the validated and published checkpoint: the old procedural Legacy
+generator and its derived libraries were removed and replaced by a separate
+native-inspired v1 port beside the protected Upgraded path.
 
-The only generation engine retained is the **Upgraded** compatibility path,
-calibrated for Continental 768×768. Its rules, profile, validators and
-references remain separated and protected. The Continental archetype continues
-to own macro shape; the future Legacy generator will define its own relief,
-terrain, hydrology, resources, objects, starts and validation layers from the
-native audit.
+The **Legacy** engine now implements the Continental v1 native reconstruction:
+relief, terrain, hydrology, objects, resources, starts and runtime metadata.
+The **Upgraded** compatibility path remains calibrated for Continental
+768×768, with separate protected rules, profile, validators and references.
+The Continental archetype supplies the macro-geographic context; it does not
+apply a second sculpture over the native core.
 
 Minerals were compared before removal: the former generator had a globally
 similar family mix to the native SAV corpus, but its deposits were much too
@@ -68,13 +66,13 @@ fragmented in component count and size. Those quotas and heuristics are not
 carried forward as rules. The reproducible comparison is recorded in
 `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
-DEV_2 is therefore dedicated to rebuilding the native Legacy core and then
-defining Continental v1. The generator audit is the source of truth; no
-provisional behavior should be described as exact until it is validated against
-maps produced by the game.
+The native port is now present in DEV_2 for sizes 256, 320, 384, 448, 512,
+576, 640, 704, 768, 832, 896, 960 and 1024. Mirror modes are Long axis,
+Short axis and Both. The generator audit remains the source of truth; extended
+exports still require validation in the community editor/game.
 
 The validated GUI and tooling remain available: read-only EDM/MAP/SAV import,
-scaffolded 768 EDM/MAP export, analysis and inspection views, statistics,
+scaffold-based EDM/MAP export for all native sizes, analysis and inspection views, statistics,
 charts, history, A/B comparison, Batch generation, themes and FR/EN/DE/ES
 locales. Previews remain deterministic renders of real data or identified
 outputs of the retained engine.
@@ -103,17 +101,18 @@ The main Python dependencies are NumPy, SciPy and Pillow. A separate installatio
 
 ## Important limits
 
-- Legacy generation/preview is currently disabled during the native rebuild.
-  The retained Upgraded generator is calibrated for Continental 768×768, and
-  EDM/MAP export still requires its validated scaffold.
+- Native Legacy generation is available for the native map sizes. Sizes below
+  384 and above 768 are deliberately exportable test candidates and are warned
+  about in the feedback area. The Upgraded generator remains calibrated for
+  Continental 768×768.
 - The project has no `.SAV` writer. Imported saves are read for supported data and may only be copied unchanged.
 - The native initial territory mask is read directly from type-3 byte 8 of an
   immediate SAV when the confirmed signature is present; no start-based shape
   reconstruction is used. EDM/MAP claim-less sources remain neutral in that
   view.
 - The partial `.EDM` import failure was fixed and Windows-validated in v1.9 DEV_1. The parser accepts only the confirmed terminal DWORD-alignment case and keeps reconstruction paths strict.
-- The native Legacy audit and implementation are still in progress; no
-  provisional procedural rule is treated as an exact game rule.
+- The native Legacy audit and implementation are complete for the demonstrated
+  generation contract; opaque runtime format tables remain explicitly open.
 - Automated validators are regression guards; they do not replace validation in the official editor, View Map, a runtime `.SAV`, or long-play.
 
 ## Translation status

@@ -1,10 +1,14 @@
 # Reconstruction du générateur — conception v2
 
-> Document de travail pour le premier générateur réellement procédural.
-> Il ne remplace pas la référence v1.5 : celle-ci reste disponible pour
-> régression, comparaison et extraction de mesures natives.
+> Document de conception pour le portage fidèle du générateur Legacy natif.
+> Le chemin procédural DEV_1 a été retiré ; les références historiques restent
+> disponibles uniquement pour comparaison.
 
-## Diagnostic établi le 28 août 2026
+## Diagnostic historique établi le 28 août 2026
+
+Cette section décrit le chemin de compatibilité v1.5 mesuré avant le portage
+Legacy natif ; elle ne décrit pas la morphologie générée par le moteur actif
+DEV_2.
 
 Le moteur v1.5 ne calcule pas sa macro-géographie à partir de la seed.
 
@@ -22,11 +26,14 @@ objets changent, mais la silhouette continentale ne peut pas être nouvelle.
 
 ## Objectif
 
-Créer deux implémentations explicites et indépendantes :
+Définir deux axes explicites et indépendants :
 
-- `ContinentalLegacyGenerator` : profil proche des distributions natives ;
-- `ContinentalUpgradedGenerator` : profil de jeu du projet, notamment les
-  corrections/accessibilités et les quotas explicitement validés.
+- `Continental v1` : archétype, macro-forme et contexte géographique ;
+- `Legacy v1` : moteur de génération natif, avec terrain, objets, ressources,
+  départs, entités et finalisation dans l'ordre du binaire.
+
+Le chemin `Upgraded` reste un moteur de compatibilité distinct et validé ; il
+ne doit pas être fusionné avec le portage Legacy.
 
 Elles partagent seulement des primitives sans politique : topologie HEX6,
 masques, bruit déterministe, profondeur, validation et sérialisation. Un mode
@@ -41,36 +48,30 @@ extraites, mais les 21 SAV natifs bruts ne sont pas dans le dépôt. Ils sont
 nécessaires pour recalculer les signatures, vérifier les hypothèses et dériver
 des distributions par taille sans figer un nombre moyen.
 
-Un prototype de macro-forme fondé uniquement sur du bruit a été volontairement
-retiré le 28 août 2026 : il aurait produit des cartes nouvelles, mais pas une
-génération suffisamment démontrée comme native-compatible. Le prochain code
-de géographie ne sera ajouté qu'après l'outillage d'analyse du corpus et sa
-calibration contre les fichiers source.
+Un prototype de macro-forme fondé uniquement sur du bruit et l'ancien pipeline
+Legacy DEV_1 ont été volontairement retirés : ils produisaient des cartes
+plausibles, mais ne portaient pas l'algorithme natif. Le corpus brut reste
+nécessaire pour la validation de sortie ; le premier portage du noyau est
+désormais présent dans le moteur legacy natif.
 
 ## Calibration de la côte — 29 août 2026
 
-Le générateur Continental Legacy v2 dispose maintenant d'une bibliothèque
-compacte de silhouettes littorales dérivées hors ligne des 8 SAV 768 à 2
-joueurs et des 8 SAV 768 à 20 joueurs fournis pour la calibration. Elle ne
-contient ni terrain intérieur, ni objets, ni territoires, ni données de joueur :
-uniquement les masques remplis du continent principal.
-
-À l'exécution, la banque 2 joueurs est utilisée pour les faibles densités et la
-banque 20 joueurs au-delà de 8 joueurs. Une symétrie HEX sûre et une petite
-déformation continue sont tirées par seed, puis la croissance connectée impose
-la surface cible. Les SAV bruts et les images ne sont donc jamais lus par le
-générateur. Les tailles inférieures à 768 conservent le chemin procédural de
-secours jusqu'à disposer de silhouettes calibrées à ces tailles.
+La bibliothèque de silhouettes littorales et le chemin de déformation du
+Legacy DEV_1 sont historiques et ne font plus partie du moteur actif. Pour le
+portage natif, `Continental v1` doit fournir le contexte attendu par
+`Legacy v1`; il ne faut pas réinjecter une banque de formes dérivées à la place
+des ancres et raffinements de `0x5166D0`.
 
 ## Contrat d'exécution
 
 Une requête de génération contient au minimum : `side`, `players`, `seed`,
 `archetype`, `mode` et plus tard `modifiers`.
 
-La seed est dérivée en sous-flux nommés, stables et indépendants :
-`macro`, `starts`, `mountains`, `biomes`, `lakes`, `rivers`, `height`,
-`resources`, `objects`. Modifier une couche ne doit pas modifier les tirages
-des autres couches.
+Pour le mode exact Legacy, la seed n'est pas dérivée en sous-flux indépendants
+par famille : le binaire consomme son PRNG commun dans le noyau terrain puis
+le réinitialise avant les couches de partie. L'application peut journaliser
+des sous-étapes, mais ne doit pas changer cette consommation native dans le
+portage de fidélité.
 
 Le résultat contient la `MapState`, le journal des sous-flux, les métriques de
 forme et les résultats des validateurs. Une même requête donne les mêmes
@@ -85,6 +86,7 @@ generation/
   archetypes/                   # catalogue des macro-topologies et capacités
   generators/
     legacy/                     # moteur Legacy actuel (Continental en premier)
+  facade.py                     # dispatch Legacy/Upgraded sans mélanger leurs règles
 ```
 
 Les archétypes et les moteurs sont deux axes distincts : un archétype décrit
@@ -102,64 +104,81 @@ neutre va dans `core/`; une règle ou une identité d'archétype va dans
 `archetypes/`; une politique de contenu ou d'équilibrage reste dans le moteur
 qui l'exécute.
 
-## Ordre du pipeline des générateurs
+## Ordre du pipeline : contrat séparé et ordre natif observé
 
-L'ordre ci-dessous est le workflow de référence pour **chaque générateur**.
-Les générateurs restent des implémentations séparées (Legacy, Upgraded et
-futurs archétypes) ; chacun peut activer ou paramétrer ses familles, mais ne
-doit pas réordonner arbitrairement ces phases sans justification documentée.
+L'ancien ordre générique de ce document est retiré : il plaçait les départs et
+les lacs à des endroits qui ne sont pas démontrés par `S3.EXE`. Il faut
+séparer l'architecture cible de l'ordre d'exécution réellement observé.
 
-1. **Océan initial** : remplir la carte d'eau, avec des bordures valides et
-   non franchissables.
-2. **Continent** : ouvrir une masse continentale irrégulière, entièrement
-   entourée d'eau ; la côte ne doit jamais être coupée par une limite droite.
-3. **Starts** : placer les joueurs sur la géographie exploitable et réserver
-   leurs zones immédiates. Les terrains suivants évitent ces réservations sans
-   imposer un hexagone d'interdiction excessif.
-4. **Montagnes puis neige** : poser les massifs, puis la neige issue des
-   sommets/altitudes compatibles. Après cette phase, aucune zone nouvelle ne
-   peut recouvrir une autre famille ni y laisser de trou.
-5. **Lacs et rivières** : créer les lacs, puis tracer les rivières HEX6 vers
-   un lac ou l'océan. Les deux respectent les masques déjà occupés et leurs
-   règles de transitions ; aucune eau parasite ne doit être introduite dans
-   un massif ou une zone incompatible.
-6. **Marais** : placer les zones de marais uniquement sur les cellules encore
-   compatibles, sans trouer les familles précédentes.
-7. **Autres terrains activés** : désert, boue, herbe sèche et toute autre
-   famille du profil, dans les espaces restants et avec leurs transitions
-   légales.
-8. **Objets de ressources** : arbres, pierres de construction et autres
-   objets nécessaires aux ressources ; leurs empreintes complètes sont
-   réservées et validées.
-9. **Objets décoratifs** : ajouter les décorations après les ressources, sans
-   modifier les masques de terrain ni les halos réservés.
-10. **Poissons et minerais** : placer les ressources finales après tous les
-    objets, avec leurs contraintes de côte, de rivière, de relief et de stock.
+### Contrat des deux composants
+
+| Composant | Responsabilité |
+|---|---|
+| `Continental v1` | fournit la macro-forme et le contexte géographique attendus par le moteur ; il ne recode ni les starts ni les minerais |
+| `Legacy v1` | porte le pipeline natif, son PRNG, ses tables et ses sorties terrain/runtime |
+
+Le moteur `Legacy v1` reste utilisable avec un contexte continental v1, mais
+`Continental v1` ne doit pas lui appliquer une seconde sculpture de continent.
+Les couches de format/export sont des adaptateurs après le résultat du moteur ;
+elles ne doivent pas être confondues avec une phase de génération.
+
+### Ordre natif démontré pour une nouvelle carte
+
+1. **Initialisation du contexte monde** : création de la grille runtime et de
+   la banque d'offsets hexagonaux `0x516530` (origine + `3333×6` offsets,
+   métrique et anneaux exacts documentés dans les audits).
+2. **Noyau aléatoire `0x5166D0`** : initialisation du PRNG, relief par ancres et
+   raffinements, sculpture conditionnée par le mode, classification des
+   surfaces, rivières, rives/transitions, désert/marais/boue/herbe sèche,
+   micro-terrains et copies finales de mode.
+3. **Objets et ressources directement écrits par le noyau** : les appels
+   `0x51B010/0x51B1A0` posent les objets statiques, puis `0x51AD40` pose les
+   ressources de sol dans l'ordre soufre, gemmes, or, fer, charbon ;
+   `0x518A08` pose ensuite les poissons.
+4. **Re-seed de partie** : l'orchestrateur retire la configuration type 5,
+   puis réinitialise le même PRNG à partir de la valeur globale lue par
+   `0x437050 -> 0x4FEB40`.
+5. **Départs** : `0x5074B0` parcourt les slots actifs, tire ou cherche les
+   coordonnées, applique la séparation, les miroirs, l'empreinte
+   `0x4D99E0` et le filtre de qualité relâché ; il appelle `0x506CF0` pour
+   chaque point accepté.
+6. **Ville, entités et stock initial** : `0x506CF0` crée le noyau de ville,
+   les lots `0x50CB20`, puis les records type 9 via `0x5046B0` et le registre
+   `0x504420`. Les listes de types/valeurs dépendent de la branche
+   `0x412300` et restent conservées comme tables natives.
+7. **Finalisation runtime** : `0x4FD540` traite les records non-terrain
+   éventuellement présents, puis `0x4FD020` construit les index et masques
+   auxiliaires. Sur une carte chargée, le chemin commence au contraire par
+   `0x508FA0` et `0x4FD540` matérialise conditionnellement l'Area/type 6,
+   les bâtiments, les colons et les records sérialisés.
+
+Il n'existe donc pas, dans le chemin aléatoire démontré, de phase de starts
+avant le terrain, de passe type 8 cachée dans `0x5166D0`, ni de subdivision en
+chunks de carte. Les rivières et les familles de surfaces sont des phases
+internes du noyau terrain ; les départs appartiennent à l'orchestrateur qui
+suit le re-seed.
 
 ### Contrat d'occupation et de transitions
 
-Chaque phase terrain reçoit le masque d'occupation produit par les phases
-précédentes et ne peut écrire que sur des cellules explicitement compatibles.
-Une nouvelle zone ne peut donc ni remplacer silencieusement une famille
-existante, ni créer de trous internes, ni laisser une transition illégale sur
-son contour. Les bandes de transition et la shore/bathymétrie sont des
-cellules produites intentionnellement par la phase concernée, pas des
-corrections visuelles a posteriori.
-
-Les phases d'objets et de ressources ne doivent commencer qu'une fois les
-terrains, leurs formes et leurs transitions validés. Cette séparation est
-obligatoire pour permettre d'affiner la géométrie sans masquer ses erreurs.
+Le portage doit respecter les prédicats écrits par le binaire : voisinage
+HEX6, familles/chaînes de transition, empreintes de sept cellules ou de
+motifs, flags d'accès et absence d'écrasement là où le helper le refuse. Les
+tables opaques restent des données natives ; aucune règle visuelle de
+remplacement ne doit être ajoutée pour combler un manque de nom métier.
 
 ## Échelle et validation
 
-Le moteur accepte dès sa première version les tailles natives 384, 448, 512,
-576, 640, 704 et 768, avec leurs limites de joueurs. Les règles physiques
-absolues restent absolues lorsqu'elles sont liées au jeu (marge océanique,
-bandes de poisson, halos, tailles de blobs) ; les nombres de systèmes et les
-quotas suivent les distributions natives par taille.
+Le moteur accepte dès cette version les tailles `256, 320, 384, 448, 512, 576,
+640, 704, 768, 832, 896, 960 et 1024`, avec leurs limites de joueurs. Les
+tailles sous 384 et au-dessus de 768 restent générables pour les éditeurs
+compatibles ; l'application les signale comme candidates de viabilité, sans
+les bloquer. Les règles physiques absolues restent absolues lorsqu'elles sont
+liées au jeu (marge océanique, bandes de poisson, halos, tailles de blobs) ;
+les nombres de systèmes et les quotas suivent les distributions natives par
+taille lorsque le profil les fournit.
 
-L'implémentation est calibrée initialement contre 768, mais n'est pas
-considérée fonctionnelle avant une matrice multi-seeds sur toutes les tailles,
-au moins faible densité, 8 joueurs si légal et maximum natif, puis tests
-éditeur/jeu. Les modificateurs et les autres archétypes restent hors du
-premier jalon.
+Le portage est calibré initialement contre 768 et exerce également les tailles
+du contrat natif en mémoire. Il n'est pas considéré homologué avant une matrice
+multi-seeds sur toutes les tailles, au moins faible densité, 8 joueurs si légal
+et maximum natif, puis tests éditeur/jeu. Les modificateurs et les autres
+archétypes restent hors du premier jalon.

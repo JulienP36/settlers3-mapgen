@@ -459,11 +459,47 @@ La routine structurée reçoit six paramètres après `this` :
 
 Pour une taille positive, le nombre de tentatives est `floor(floor(taille / 64)² × coefficient / 16)`. L'objet écrit est calculé comme `min + (PRNG × (max−min+1) >> 16)`. Chaque tentative choisit un centre intérieur de la carte et lit les décalages de l'empreinte dans les tableaux pré-calculés du générateur. Le prédicat `0x51B450` exige à nouveau que le centre et ses six voisins appartiennent à la famille source ; `0x51B3C0` rejette les motifs qui entrent en conflit avec un objet ou un drapeau déjà présent.
 
-### PARTIAL — banque de motifs hexagonaux pré-calculés
+### CONFIRMED — banque native d'offsets hexagonaux
 
-L'initialisation `0x516530`, appelée une fois par l'initialiseur de l'objet monde (`0x4FCA65`), réserve `0xEA68` octets pour `5 000` candidats, puis construit `3 333` enregistrements de `0x60` octets. Chaque enregistrement contient six sous-motifs orientés, avec des paires de décalages et une étiquette d'orientation `0..5`. Les branches de construction réordonnent les paires selon leur orientation hexagonale.
+L'initialisation `0x516530`, appelée une fois depuis `0x4FCA65`, construit une
+banque d'offsets commune aux empreintes, aux métriques de départ et à plusieurs
+placements structurés. Elle réserve `0xEA68` octets pour `5 000` candidats,
+réinitialise les états à `world+0x110A588`, `+0x110A58C` et `+0x110A590`, puis
+sélectionne `3 333` candidats selon leur métrique croissante. Il ne s'agit pas
+de chunks de la carte : la banque est un ordre de voisinage réutilisable.
 
-Cette banque explique pourquoi les poses ont des formes et des rotations répétables dans un voisinage à six directions. Elle ne fournit pas de preuve de sous-régions de carte de taille fixe : les centres restent tirés aléatoirement et les motifs sont vérifiés cellule par cellule.
+Les candidats sont énumérés par anneaux triangulaires : `x=1,2,3,...` et
+`y=0..x−1`. Pour un candidat `(x,y)`, le désassemblage donne exactement :
+
+```text
+d = 2*x - y
+metric = 2500*d*d + 7569*y*y
+```
+
+La sélection prend le plus petit score strictement (`<`, donc le premier en
+cas d'égalité), puis remplace son score par `0x7FFFFFFF`. Chaque candidat
+retenu produit six offsets dans l'ordre :
+
+```text
+( x,  y), ( x-y,  x), (-y, x-y),
+(-x, -y), (y-x, -x), ( y, y-x)
+```
+
+Chaque entrée finale fait `0x10` octets et contient
+`[dx, dy, ring_marker, orientation]`. Les six entrées d'un groupe partagent
+le même `ring_marker`, initialisé à `1` et incrémenté après le groupe si le
+candidat sélectionné avait `y==0`. L'orientation vaut `0,1,2,3,4,5` lorsque
+`2*y <= x`, sinon `1,2,3,4,5,0`. L'origine est stockée séparément dans
+`world+0x110A588` ; le pointeur consommé par les routines vise
+`+0x110A58C`, et `+0x110A590` contient le marqueur de l'anneau d'origine,
+pas un compteur. Le résultat contient donc `1 + 3333*6 = 19999` entrées.
+
+Les routines consommatrices s'arrêtent selon leur propre sous-ensemble ou
+marqueur d'anneau (`0x4D99E0` utilise notamment les anneaux `<=0x14`). La
+table de tokens d'empreintes à `0x6AA174` est une table distincte : elle
+décrit les cellules d'un motif, tandis que la banque ci-dessus fournit les
+centres/décalages candidats. Cette séparation ne fournit aucune preuve de
+sous-régions fixes de la carte.
 
 ### PARTIAL
 

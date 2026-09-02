@@ -131,22 +131,33 @@ def test_sprite_boundary_uses_all_210_cells_of_the_exact_native_outline():
     assert BOUNDARY_START_MARKER_SIZE_SQUARE==(1,1)
     assert BOUNDARY_START_MARKER_SIZE_PROJECTED==(2,2)
 
-def test_starts_without_direct_mask_does_not_draw_a_reconstructed_boundary():
-    s=_state();s.starts=[(64,64)]
+def test_starts_without_direct_mask_uses_known_radius_boundary_for_non_sav():
+    s=_state();s.starts=[(64,64)];s.metadata['source_format']='EDM'
     global_view=np.asarray(render(s,labels=True,view='global',projection='square'))
-    starts=np.asarray(render(s,labels=True,view='starts',overlay_alpha=0,projection='square'))
+    starts=np.asarray(render(s,labels=True,view='starts',overlay_alpha=100,projection='square'))
     assert not np.array_equal(starts,global_view)
-    # With no direct native mask attached, only the centred start sprite is
-    # allowed; the 210-cell reconstructed contour must remain absent.
-    x,y=next(iter(initial_territory_boundary((64,64),128)))
-    assert tuple(starts[y,x])==tuple(global_view[y,x])
+    boundary=initial_territory_boundary((64,64),128)
+    assert any(not np.array_equal(starts[y,x],global_view[y,x]) for x,y in boundary)
 
-def test_territories_without_source_claims_stay_unclaimed():
+def test_starts_without_direct_mask_uses_known_radius_boundary_for_sav():
+    s=_state();s.starts=[(64,64)];s.metadata.update(source_format='SAV',territories_available=False)
+    global_view=np.asarray(render(s,labels=True,view='global',projection='square'))
+    starts=np.asarray(render(s,labels=True,view='starts',overlay_alpha=100,projection='square'))
+    assert not np.array_equal(starts,global_view)
+    boundary=initial_territory_boundary((64,64),128)
+    assert any(not np.array_equal(starts[y,x],global_view[y,x]) for x,y in boundary)
+
+def test_territories_without_source_claims_estimate_non_sav_initial_claim():
     s=_state();s.claim[:]=255;s.starts=[(64,64)]
-    for source_format in ('EDM','MAP','SAV'):
+    for source_format in ('EDM','MAP'):
         s.metadata.update(source_format=source_format,territories_available=False)
         rgb=np.asarray(render(s,view='territories',overlay_alpha=100,labels=False))[:,:,:3]
-        assert int(np.all(rgb==np.asarray(PLAYER_COLORS[0]),axis=2).sum())==0
+        assert tuple(rgb[64,64])==PLAYER_COLORS[0]
+        assert int(np.all(rgb==np.asarray(PLAYER_COLORS[0]),axis=2).sum())>0
+
+    s.metadata.update(source_format='SAV',territories_available=False)
+    rgb=np.asarray(render(s,view='territories',overlay_alpha=100,labels=False))[:,:,:3]
+    assert int(np.all(rgb==np.asarray(PLAYER_COLORS[0]),axis=2).sum())==0
 
 
 def test_initial_mask_view_uses_only_explicit_direct_cells():

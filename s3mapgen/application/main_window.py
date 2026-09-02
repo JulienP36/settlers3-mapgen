@@ -32,12 +32,20 @@ from .platform.titlebar import apply_native_titlebar
 from .ui.i18n.shell import (
     FEEDBACK_TEXT,
     LANGUAGE_LABELS,
+    MIRROR_LABELS,
 )
 from .ui.widgets import (
     ColorMenuSelect,
     _history_heading_lock_icon,
     _selector_icon,
 )
+
+
+def _mirror_combo_width(language: str) -> int:
+    """Return a content-sized width for the mirror selector."""
+    labels = MIRROR_LABELS.get(language, MIRROR_LABELS['en']).values()
+    return max(8, max((len(str(label)) for label in labels), default=0) + 2)
+
 
 class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
     """Composed desktop shell running the validated generation facade."""
@@ -125,6 +133,10 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.modifier_menu=tk.Menu(self.modifier_button,tearoff=False);self.modifier_button.configure(menu=self.modifier_menu)
         self.modifier_menu.add_checkbutton(label='Aucun',variable=self.modifier_none,command=self._modifier_none_selected)
         self.modifier_button.pack()
+        mirror_group=selector_group(primary_row,'Miroir');mirror_group.pack(side='left',padx=(0,5))
+        mirror_language=self.prefs.get('language','fr')
+        self.mirror_combo=ttk.Combobox(mirror_group,textvariable=self.mirror,values=list(MIRROR_LABELS[mirror_language].values()),state='readonly',width=_mirror_combo_width(mirror_language))
+        self.mirror_combo.pack();self.mirror_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
         primary_actions=ttk.Frame(primary_row);primary_actions.pack(side='left',fill='y')
         self.generate_button=ttk.Button(primary_actions,text='Générer',command=self.generate)
         self.generate_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))

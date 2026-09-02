@@ -21,11 +21,13 @@ Area/type 6 -> cellules runtime ; ce n'est pas une seconde génération aléatoi
 La frontière est suffisamment nette pour définir l'architecture future
 `Continental v1` / `Legacy v1`. Les producteurs initiaux des ressources de sol
 et de nombreuses familles d'objets statiques sont maintenant reliés à
-`0x5166D0`. Le format de lecture et d'écriture du registre type 9 est également
-établi, mais son producteur aléatoire et le nom métier de ses champs restent à
-relier. Le chemin exact d'export EDM/MAP n'est pas encore identifié. Cet audit ne
-prétend donc pas que la partie non-terrain est déjà portable à 100 % ; il fixe
-les couches, structures et règles effectivement démontrées.
+`0x5166D0`. La banque native d'offsets hexagonaux est également décodée
+exactement. Le registre type 9 est lu par `0x4FD540` et alimenté pour les lots
+de départ par `0x506CF0 -> 0x5046B0 -> 0x504420` ; le nom métier de ses champs et
+son producteur dans d'éventuels fichiers externes restent à relier. Le chemin
+exact d'export EDM/MAP n'est pas encore identifié. Cet audit ne prétend donc
+pas que la partie non-terrain est déjà portable à 100 % ; il fixe les couches,
+structures et règles effectivement démontrées.
 
 ## Statuts utilisés
 
@@ -80,16 +82,19 @@ flowchart TD
     A["53C9E0 : nouvelle partie"] --> B{"carte existante ?"}
     B -- oui --> C["508FA0 : charger SAV / état"]
     B -- non --> D["5166D0 : monde aléatoire / terrain"]
-    C --> E["4FD540 : matérialiser le type 6"]
-    D --> E
-    E --> F["type 8 : bâtiments"]
-    F --> G{"type 7 présent ?"}
-    G -- oui --> H["type 7 : colons"]
-    G -- non --> I["5074B0 : choisir les départs"]
-    H --> J["type 9 : ressources de départ"]
-    I --> J
-    J --> K["type 10 / normalisations / index"]
-    K --> L["4FD020 : finalisation runtime"]
+    C --> E["4FD540 : couches sérialisées présentes"]
+    E --> F["type 6 : Area -> runtime"]
+    F --> G["type 8 : bâtiments"]
+    G --> H{"type 7 présent ?"}
+    H -- oui --> I["type 7 : colons"]
+    H -- non --> J["5074B0 : choisir les départs"]
+    I --> K["type 9 / type 10 / finalisation"]
+    J --> K
+    D --> L["re-seed PRNG"]
+    L --> M["4FD540 : couches non-terrain restantes"]
+    M --> N["type 10 / normalisations / index"]
+    N --> O["4FD020 : finalisation runtime"]
+    K --> O
 ```
 
 ### 2.1 Ordre et preuves
@@ -98,12 +103,13 @@ flowchart TD
 |---:|---|---|---|
 | 1 | `0x53C9E0` | initialise les structures de partie et les slots joueurs | CONFIRMED |
 | 2a | `0x508FA0` | chemin `GameDataSave::Load` d'un état SAV déjà sérialisé lorsque le test de configuration est vrai | CONFIRMED |
-| 2b | `0x5166D0` via `0x53CE35` | produit le monde aléatoire : relief, terrain principal, objets statiques et ressources de sol initiales | CONFIRMED |
-| 3 | `0x4FD540` | copie l'Area/type 6 dans les cellules runtime | CONFIRMED |
-| 4 | `0x4FD540` | lit les bâtiments/type 8 et appelle `0x4DD280` | CONFIRMED |
+| 2b | `0x5166D0` via `0x53CE35` | produit directement dans la grille runtime le relief, le terrain principal, les objets statiques et les ressources de sol initiales | CONFIRMED |
+| 3a | `0x4FD540` | sur le chemin chargé seulement, copie l'Area/type 6 dans les cellules runtime si le record type 6 existe | CONFIRMED |
+| 3b | `0x53CE44` | retire la configuration de génération puis réinitialise le même PRNG avant les couches de partie | CONFIRMED |
+| 4 | `0x4FD540` | lit les bâtiments/type 8 présents et appelle `0x4DD280` | CONFIRMED |
 | 5a | `0x4FD540` | lit les colons/type 7 et appelle `0x50C9E0`, `0x50DC10` ou `0x50DD20` | CONFIRMED |
-| 5b | `0x4FE28D` | si aucun type 7 n'est présent, appelle `0x5074B0` | CONFIRMED |
-| 6 | `0x4FD540` | lit les ressources de départ/type 9 | CONFIRMED |
+| 5b | `0x4FE28D` | si aucun type 7 n'est présent, appelle `0x5074B0` pour les départs d'une nouvelle carte | CONFIRMED |
+| 6 | `0x4FD540` / `0x506CF0` | lit les records type 9 chargés ; le chemin aléatoire crée le stock initial dans le registre via `0x5046B0` | CONFIRMED |
 | 7 | `0x4FE4D2` | lit le type 10 dans une structure runtime de métadonnées | CONFIRMED |
 | 8 | `0x4FE5DC` et `0x4DFA60` | conversions et post-traitements dépendant du contexte | PARTIAL |
 | 9 | `0x4FD020` | initialise index, registres et valeurs de runtime | CONFIRMED |
@@ -124,10 +130,34 @@ matérialisation non-terrain. Les tirages des départs ne sont pas la simple
 continuation de la suite consommée par le relief, les objets et les minerais.
 
 Cette séparation est démontrée pour `0x5074B0`, qui appelle ensuite `0x4FEB70`.
-Le producteur type 9 et les couches d'entités doivent être raccordés à cet état
-réinitialisé seulement lorsque leur chaîne d'appel aléatoire aura été retrouvée.
+Les lots de départ suivent ensuite `0x506CF0` et `0x5046B0`, qui consomment ce
+même état réinitialisé. Il n'existe pas d'appel direct démontré de `0x5166D0`
+vers le producteur de registre `0x504420`.
 
-### 2.3 Conséquence pour l'hypothèse de génération
+### 2.3 Frontière exacte entre nouvelle carte et carte chargée
+
+Le branchement de `0x53C9E0` doit être conservé dans le portage. Une carte
+existante passe d'abord par `0x508FA0`, puis `0x4FD540` peut matérialiser le
+record type 6, les bâtiments type 8, les colons type 7, les records type 9 et
+les métadonnées type 10. Une nouvelle carte suit un autre chemin :
+
+```text
+configuration type 5
+  -> 0x5166D0 : écrit directement terrain/objets/ressources dans le runtime
+  -> 0x4A6310 : retire la configuration
+  -> 0x437050 -> 0x4FEB40 : re-seed
+  -> 0x4FD540 : traite les records non-terrain éventuellement présents
+  -> 0x5074B0 : sélectionne les départs si aucun type 7 n'est chargé
+  -> 0x506CF0 : ville, entités et stock du départ accepté
+  -> 0x4FD020 : indexation/finalisation
+```
+
+Dans le chemin aléatoire, il n'y a donc pas de seconde copie Area/type 6 qui
+serait nécessaire pour obtenir le terrain : cette copie est conditionnée par
+la présence d'un record type 6 et concerne le chargement. Les structures
+type 8/7/9 produites ensuite ne constituent pas une nouvelle passe de terrain.
+
+### 2.4 Conséquence pour l'hypothèse de génération
 
 Le fait que `0x5166D0` soit appelé avant `0x4FD540` ne signifie pas que cette
 routine pose à elle seule toutes les entités de la partie. Le chemin direct de
@@ -139,7 +169,9 @@ runtime, via `0x51AD40`, `0x51B010` et `0x51B1A0`.
 
 Cela n'exclut pas une écriture indirecte dans un conteneur intermédiaire ; cela
 exclut seulement l'idée d'une pose directe d'entités par ces allocateurs dans le
-noyau terrain observé.
+noyau terrain observé. Inversement, l'absence du type 6 dans le chemin
+aléatoire ne signifie pas que les cellules sont absentes : `0x5166D0` les a
+déjà écrites dans le runtime.
 
 ## 3. Matérialisation de l'Area/type 6
 
@@ -299,6 +331,34 @@ l'indice de l'entrée est relié à la cellule par le mot runtime `+0x67446`.
 Les noms métier de `record[4..7]` restent **PARTIAL**, mais la structure binaire,
 la condition `record[6] != 0` et le lien cellule-registre sont **CONFIRMED**.
 
+#### Producteur aléatoire observé dans une nouvelle carte
+
+La passe ciblée de `0x5046B0` ferme le doute sur le producteur des premiers
+records type 9 du chemin aléatoire. Sa signature cdecl est :
+
+```text
+0x5046B0(world, value, type, x, y)
+```
+
+`0x506CF0` l'appelle avec le point de départ accepté. La routine parcourt la
+banque d'offsets depuis `world+0x110A58C`, au plus jusqu'à l'index
+`0x270F` inclus, et teste chaque cellule candidate. Elle exige notamment une
+cellule existante, un lien runtime `+0x67446` non nul, l'absence du bit d'accès
+`0x20`, puis vérifie la valeur/état du record lié. Pour un emplacement
+compatible, elle peut créer le record avec :
+
+```text
+0x504420(candidate_x, candidate_y, value, type, 0xFE)
+```
+
+ou mettre à jour le record déjà lié via `0x4FFB00`. Le registre doit être dans
+l'état `0xFE` et le compteur de sous-éléments rester inférieur à `8`. Le
+producteur du stock initial est donc localisé dans la matérialisation de la
+ville (`0x506CF0 -> 0x5046B0`), après le re-seed ; il n'est pas une sous-passe
+directe de `0x5166D0`. Le producteur de records type 9 lus depuis un fichier
+EDM/MAP ou une autre source sérialisée n'est pas nécessaire à cette conclusion
+et reste séparé.
+
 ### 4.4 Entités qui portent ou consomment des ressources
 
 `0x50C9E0` alloue une entité dans une table de slots de stride `0x40` :
@@ -421,13 +481,69 @@ et renvoie l'indice du premier miroir correspondant.
 `0x4D99E0` avec les constantes `2` et `0x0F`. Ce helper :
 
 - impose une marge d'au moins 15 cellules environ autour du candidat ;
-- lit une table de motifs/empreintes autour de `0x6AA174` ;
+- forme la clé `pattern_kind + 57 * profile`, puis lit le bloc de
+  `0x960` octets à `0x6AA174 + 0x960 * clé` ;
+- interprète des tokens 32 bits par paires de décalages et des contrôles
+  `0x80000000..0x80000005` ; `0x80000000` délimite le début du flux utile,
+  `0x80000001` et `0x80000002` changent de branche, et `0x80000003` termine
+  le flux ; `0x80000004`/`0x80000005` sont observés dans l'en-tête brut des
+  blocs et ne doivent pas être lus comme des couples de coordonnées ;
 - vérifie claim, terrain, flags d'accès et mots d'objet des cellules voisines ;
 - rejette des cellules occupées ou incompatibles ;
 - traite plusieurs variantes selon les paramètres du slot.
 
-La table `0x6AA174` et les sentinelles `0x80000000..0x80000003` sont donc
-des données d'empreinte de placement. Elles ne sont pas un bruit de terrain.
+Le wrapper appelle `0x4D99E0(x,y,0x0F,slot,2)`. Dans le helper, le dernier
+argument supérieur ou égal à `2` est réduit de `2` et force le contexte interne
+à `0xFF`. Pour le wrapper normal, le profil `0` sélectionne le bloc de clé 15
+et la branche interne 0. Les contrôles pilotent des branches d'interprétation
+du motif ; leur correspondance avec chaque forme de ville reste brute pour les
+autres profils. La table `0x6AA174` est donc une donnée d'empreinte de
+placement, pas un bruit de terrain, et la banque d'offsets `+0x110A58C` est une
+ressource distincte pour l'ordre des candidats.
+
+### Bornes brutes de la table d'empreintes
+
+La table commence à l'adresse virtuelle 0x6AA174. Dans le fichier PE, la
+section data commence à la VMA 0x692000 et à l'offset 0x292000 ; l'adresse de
+la table correspond donc à l'offset fichier 0x2AA174.
+
+Les blocs de clé 0 à 227 occupent exactement 228 × 0x960 = 0x85800 octets.
+Le bloc de clé 228, à l'adresse virtuelle 0x72FAF4, commence une autre donnée.
+La clé 0 est nulle ; les clés 1 à 227 contiennent les tokens statiques. Pour
+le profil normal et pattern_kind=0x0F, les quatre blocs directement utilisés
+sont les clés 15, 72, 129 et 186. Cette borne est certaine même si la
+signification métier des variantes reste partielle.
+
+#### Empreinte normale Continental : flux désormais extrait
+
+Le bloc de clé 15 (profil normal `0`, `pattern_kind=0x0F`) contient un en-tête
+avant le premier `0x80000000`. Le flux utile commence au mot 20 du bloc et se
+termine au mot 89 par `0x80000003`. Il contient exactement 33 couples de
+coordonnées : 16 dans la première section, puis 17 dans la seconde. Les
+contrôles intermédiaires sont `0x80000001` au mot 51 et `0x80000002` au mot 54.
+
+La transcription native
+`references/S3_EXE_NON_TERRAIN_RECONSTRUCTION_20260901.cpp` et le module
+`s3mapgen/generation/generators/legacy/native.py` conservent ce flux brut. Le
+décodeur produit exactement l'empreinte `START_FOOTPRINT` de 33 cellules,
+bornée par `dx=-2..4` et `dy=-3..4`. Ce point n'est donc plus une forme
+reconstituée à la main : l'empreinte normale du départ est **CONFIRMED**.
+La couverture des trois autres profils/blocs et des variantes de construction
+reste un sujet séparé.
+
+### Convention ABI du filtre d'empreinte
+
+La convention utile au portage est :
+
+```text
+4D99E0(world, x, y, pattern_kind, player_slot_or_context, variant)
+508420(slot, x, y)       -> 4D99E0(x, y, 0x0F, slot, 2)
+5081A0(slot, x, y, try)   -> 4D99E0(x, y, 0x0F, slot, 2)
+```
+
+Le dernier argument supérieur ou égal à 2 est réduit de 2 et force le contexte
+interne à 0xFF. La banque d'offsets hexagonaux de 19 999 entrées est distincte
+de cette table de tokens.
 
 #### Qualité locale et relâchement : `0x5081A0`
 
@@ -472,12 +588,31 @@ Après l'acceptation d'un point, `0x5074B0` appelle `0x506CF0`. Cette routine :
    de quantités ;
 5. marque le slot comme placé et écrit ses coordonnées.
 
-Les couples littéraux visibles incluent notamment les séquences `(8,1)`,
-`(4,1)`, `(8,2)`, `(4,2)`, puis des valeurs utilisant les types `5`, `6`,
-`3`, `2`, `1` et des quantités `0x0C..0x10`. Le sens précis de chaque couple
-dans l'interface de jeu reste à nommer, mais il est démontré que le départ
-crée un ensemble d'entités/stock initial : ce n'est pas seulement une
-coordonnée ajoutée au fichier.
+Pour `0x5046B0`, l'ordre des deux littéraux est maintenant fixé : chaque couple
+est `(value, type)`, suivi de `(x,y)`. La branche `0x506F68` émet exactement :
+
+```text
+(1,8), (1,4), (2,8), (2,4),
+(0x0C,5), (0x0D,6), (0x0E,3), (0x0F,2), (0x10,1)
+```
+
+Les branches sélectionnées lorsque `412300(0x7A7A18)` renvoie une autre
+édition ont leurs propres listes littérales, également visibles dans le
+binaire : la branche `0x50705A` contient 30 couples et la branche `0x5072AF`
+en contient 23. Elles ne doivent pas être fusionnées avec la liste précédente.
+Les appels `0x50CB20` associés sont eux aussi dépendants de la branche ; dans
+`0x506F68`, les six premiers sont exactement :
+
+```text
+(count,type,dx,dy) =
+(1,0x0B,-8,-16), (2,0x0A,-8,-16), (0x10,0,-8,-16),
+(6,5,+8,+16), (1,8,+0x0E,+0x0A), (1,0x0F,-4,+0x0A)
+```
+
+Une branche peut enfin ajouter l'appel commun `count=10, type=5` à
+`(+8,+16)` lorsque le champ de catégorie du slot vaut `2`. Le sens métier de
+chaque type/valeur reste à nommer, mais l'ordre, les littéraux et la séparation
+entre entités (`0x50CB20`) et records de registre (`0x5046B0`) sont démontrés.
 
 ## 6. Objets statiques, bâtiments, colons et objets matérialisés
 
@@ -585,6 +720,12 @@ La sémantique de la queue n'est pas fixée. `0x4DD280` :
 Les sentinelles d'empreinte sont consommées en parcourant des couples de
 décalages. Une cellule sans objet statique n'est donc pas nécessairement libre
 pour un bâtiment.
+
+Dans une nouvelle carte, `0x4DD280` n'est pas appelé par `0x5166D0` comme une
+passe de bâtiments indépendante. Il est utilisé par `0x4FD540` lorsqu'un
+record type 8 est chargé, ou par les opérations de ville de `0x506CF0` pour la
+ville initiale. La génération aléatoire du terrain ne doit donc pas inventer
+une passe type 8 cachée entre les objets statiques et les ressources de sol.
 
 ### 6.3 Colons — type 7
 
@@ -726,28 +867,30 @@ la génération Legacy.
 
 Le contrôle des appels et des écritures donne le résultat suivant. Les appels à
 `0x504420` trouvés dans les zones `0x4DC...`, `0x4E...` et `0x50...` ne sont pas
-retenus comme producteurs initiaux : ils appartiennent à des handlers de jeu ou
-à la gestion de registres runtime, et ne sont pas dans le chemin direct
-`0x53CE35 -> 0x5166D0`. Le seul consommateur initial démontré est le loader
-type 9 de `0x4FD540`.
+retenus indistinctement comme producteurs initiaux : beaucoup appartiennent à
+des handlers de jeu ou à la gestion de registres runtime. Le chemin aléatoire
+pertinent est cependant maintenant relié par `0x506CF0 -> 0x5046B0` ; le loader
+type 9 de `0x4FD540` reste le consommateur des records sérialisés.
 
 | Élément | Consommateur démontré | Producteur aléatoire exact |
 |---|---|---|
 | relief/terrain principal | `0x5166D0` | **CONFIRMED** dans l'audit terrain |
 | byte ressource Area | `0x4FD540`, `0x5081A0`, normalisation `0x4FE5DC` | **CONFIRMED** initial : `0x5166D0 -> 0x51AD40` + poissons `0x518A08`; copie `0x518B07` partielle |
 | objet statique runtime/Area | `0x4FD540`, empreintes et tests runtime | **CONFIRMED** pour les producteurs directs et leurs paramètres ; noms métier et export **PARTIAL** |
-| ressource type 9 | `0x4FD540 -> 0x504420` et writer SAV `0x509995` | loader, layout du registre et sérialisation confirmés ; producteur aléatoire exact TODO |
-| bâtiments | `0x4FD540 -> 0x4DD280` | matérialisation confirmée, tirage TODO |
-| colons | `0x4FD540 -> 0x50C9E0/50DC10/50DD20` | matérialisation confirmée, tirage TODO |
+| ressource type 9 | `0x4FD540 -> 0x504420` et `0x506CF0 -> 0x5046B0 -> 0x504420` ; writer SAV `0x509995` | loader, layout du registre et producteur du stock initial confirmés ; source EDM/MAP externe non reliée |
+| bâtiments | `0x4FD540 -> 0x4DD280`, puis ville `0x506CF0` | matérialisation confirmée ; aucune passe de tirage type 8 dans `0x5166D0` |
+| colons | `0x4FD540 -> 0x50C9E0/50DC10/50DD20` et lots `0x50CB20` de `0x506CF0` | matérialisation confirmée ; les types/lots sont conservés littéralement |
 | ville/stock initial | `0x506CF0` | placement des lots confirmé, nomenclature partielle |
 | départs | `0x5074B0` | sélection/validation confirmée |
 
 Autrement dit, l'audit permet désormais de porter séparément le noyau de
-ressources de sol et les primitives de décor statique, sous réserve de
-reproduire le PRNG et la banque d'offsets. Le producteur aléatoire type 9, les
-bâtiments, les noms métier d'objets et l'export EDM/MAP exact restent à traiter
-avant de déclarer le bloc non-terrain complet ; la sérialisation SAV est, elle,
-maintenant localisée et décrite au niveau de ses records principaux.
+ressources de sol, les primitives de décor statique, les positions de départ et
+le stock initial, sous réserve de reproduire le PRNG, la banque d'offsets et
+les tables de motifs. Les noms métier d'objets, la source externe exacte des
+records type 9 et l'export EDM/MAP restent des sujets de format ou de
+nomenclature ; ils ne bloquent pas le cœur de la génération aléatoire. La
+sérialisation SAV est, elle, localisée et décrite au niveau de ses records
+principaux.
 
 ## 9. Frontière d'architecture pour `Continental v1 + Legacy v1`
 
@@ -769,29 +912,31 @@ La séparation demandée devient maintenant concrète :
 objets. Il fournira au générateur Legacy le contexte macro-géographique dans
 lequel le pipeline natif produira ses couches.
 
-## 10. Ce qui reste à décoder avant l'implémentation
+## 10. Ce qui reste à décoder après la complétude du contrat de génération
 
-Priorité immédiate de la suite d'audit :
+Le contrat nécessaire à l'implémentation de `Legacy v1` est maintenant
+suffisamment établi : PRNG, banque d'offsets, noyau terrain, objets statiques,
+ressources de sol, choix/validation des départs, ville et stock initial sont
+reliés dans l'ordre. Les points suivants restent utiles pour une reproduction
+complète du runtime ou des formats, mais ne doivent pas retarder le portage du
+générateur :
 
-1. retrouver le producteur aléatoire des records type 9 et la conversion finale
-   des objets runtime vers le byte 2 d'un Area exporté ;
-2. décoder les données de motifs `0x6AA174` et la table d'offsets runtime
-   `+0x110A58C` par mode de départ ;
+1. décoder les variantes et la couverture des profils restantes dans les
+   tables d'empreintes `0x6AA174` et `0x6B2E14` ; le flux normal Continental
+   et son empreinte de 33 cellules sont déjà extraits ;
+2. relier la source externe exacte des records type 9, ainsi que la conversion
+   d'un runtime nouvellement créé vers un byte 2 d'Area exporté ;
 3. relier la normalisation `0x4FE5DC` à son type de partie/version ;
-4. nommer les IDs métier issus du catalogue `0x51B010/0x51B1A0` à partir de
-   données contrôlées ;
-5. nommer les champs type 9 et le rôle des types 10/`0x40` ;
-6. suivre les écritures de byte 7 SAV et des parties SAV `0x41`, `0x46` et
+4. nommer les IDs métier, les champs type 9 et le rôle des types 10/`0x40`
+   à partir de données contrôlées ;
+5. suivre les écritures de byte 7 SAV et des parties SAV `0x41`, `0x46` et
    `0x3A` sans les confondre avec l'Area ;
-7. retrouver le chemin d'export natif et distinguer ses types 2 des sous-records
-   SAV maintenant observés ; vérifier comment les starts sont écrits ;
-8. valider les hypothèses sur des couples MAP/SAV contrôlés, sans exécuter ni
-   modifier le binaire fourni.
+6. identifier le writer EDM/MAP éditable et valider les sorties sur des couples
+   MAP/SAV contrôlés, sans exécuter ni modifier le binaire fourni.
 
-Les primitives `0x51AD40`, `0x518A08`, `0x51B010` et `0x51B1A0` sont
-maintenant suffisamment reliées pour être transcrites, mais leur intégration
-dans `Legacy v1` attend encore le contrat exact du PRNG, des offsets et de
-l'export.
+Les éléments 1 à 6 concernent la fidélité de format, la nomenclature et la
+relecture du runtime. Ils ne justifient pas d'inventer une règle dans le
+générateur Legacy avant comparaison de sortie.
 
 ## 11. Provenance croisée dans le dépôt
 
@@ -809,8 +954,9 @@ l'export.
 
 ## Révision
 
-Cette version documente la première passe non-terrain. Elle remplace les
-déductions historiques de l'ancien générateur procédural pour tout ce qui est
-matérialisation et placement des joueurs, mais ne les transforme pas en règles
-de génération. Le reset DEV_2 reste local ; cette documentation n'autorise pas
-un push ni une implémentation prématurée du chemin Legacy.
+Cette version documente la passe non-terrain complétée pour le contrat de
+génération. Elle remplace les déductions historiques de l'ancien générateur
+procédural pour tout ce qui est matérialisation et placement des joueurs. Le
+portage Legacy v1 utilise les éléments démontrés et conserve les résidus de
+format en métadonnées explicites ; une validation externe sur sortie du jeu
+reste nécessaire avant toute homologation ou push.

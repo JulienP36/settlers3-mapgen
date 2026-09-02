@@ -13,6 +13,7 @@ from ..paths import (
     BASE,
     EDM_SCAFFOLD,
     FROZEN,
+    LEGACY_PROFILE,
     LIBRARY,
     MAP_SCAFFOLD,
     OUTPUT,
@@ -24,6 +25,7 @@ from ...version import APP_VERSION, ENGINE_VERSION
 
 
 PROTECTED_RESOURCE_HASHES={
+    'legacy_profile':'bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85',
     'upgraded_profile':'11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441',
     'native_library':'fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d',
 }
@@ -57,7 +59,10 @@ def inspect_package() -> dict:
         checks['gui_runtime_import']={'ok':False,'error':repr(exc)}
         errors.append('gui_runtime_import')
 
-    for name,path in (('upgraded_profile',UPGRADED_PROFILE),):
+    for name,path in (
+        ('legacy_profile',LEGACY_PROFILE),
+        ('upgraded_profile',UPGRADED_PROFILE),
+    ):
         try:
             payload=json.loads(path.read_text(encoding='utf-8'))
             actual_hash=_sha256(path);expected_hash=PROTECTED_RESOURCE_HASHES[name]

@@ -26,7 +26,8 @@ def test_export_basename_is_windows_safe_and_never_empty():
 def test_map_capabilities_follow_validated_writer_rules(tmp_path):
     sav=tmp_path/'source.sav';sav.write_bytes(b'S3')
     assert map_export_capabilities(768,sav)=={'edm':True,'map':True,'sav':True,'png_global':True,'png_current':True}
-    assert map_export_capabilities(640,sav)=={'edm':False,'map':False,'sav':True,'png_global':True,'png_current':True}
+    for side in (640, 832, 896, 960, 1024):
+        assert map_export_capabilities(side,sav)=={'edm':True,'map':True,'sav':True,'png_global':True,'png_current':True}
     assert map_export_capabilities(768,tmp_path/'missing.sav')['sav'] is False
     assert map_export_capabilities(768,tmp_path/'source.edm')['sav'] is False
 

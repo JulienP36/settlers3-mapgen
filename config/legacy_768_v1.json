@@ -1,0 +1,16 @@
+{
+  "profile_name": "Legacy 768 v1.5",
+  "profile_kind": "legacy",
+  "side": 768,
+  "max_players": 20,
+  "supported_players": [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+  "river": {"practical_max_cells":999,"apply_practical_trim":false,"max_straight_run":4,"terrain_ids":[96,97,98,99],"stop_at_first_water":true,"fish_forbidden":true},
+  "water": {"terrain_ids":[0,1,2,3,4,5,6,7],"shore_id":48,"height":0,"accessibility":1,"forbid_inland_components_leq":0,"cleanup_micro_water":false,"border_must_have_gradient":true},
+  "fish": {"target_cells":32313,"bands":[[1,3,0.68],[4,6,0.55],[7,9,0.40],[10,12,0.24]],"max_shore_hex_distance":12,"quantity_multiplier":1.3,"quantity_cap":15,"edge_is_not_shore":true},
+  "minerals": {"families":{"16":{"name":"Coal","cells":28375,"blobs":500},"32":{"name":"Iron","cells":12202,"blobs":240},"48":{"name":"Gold","cells":8164,"blobs":165},"64":{"name":"Gems","cells":3098,"blobs":75},"80":{"name":"Sulfur","cells":4745,"blobs":100}},"blob_size_min":18,"blob_size_max":105,"quantity_multiplier":1.3,"quantity_cap":15,"rocky_accessible_occupancy_target":0.8008},
+  "snow": {"relative_percentile":80,"absolute_min_height":135,"mountain_hex_depth_min":4,"target_cells":11618},
+  "trees": {"adult_ids":[68,69,70,71,72,73,74,75,76,77,80,81],"adult_weights":[236,226,191,200,187,185,202,195,193,213,351,356],"adult_global_target":2736,"adult_start_bonus_per_player":0,"small_tree_id":84,"small_tree_target":0,"small_tree_start_bonus_per_player":0,"small_tree_separate_pool":false,"palm_ids":[78,79],"palm_target":8},
+  "building_stones": {"active_ids":[115,116,117,118,119,120,121,122,123,124,125,126],"exhausted_id":127,"exhausted_buildable":true,"global_anchor_target":1683,"global_exhausted_anchor_target":20,"global_stock_target":10892,"global_stock_weighted_fullness":false,"start_bonus_anchor_target":0,"start_bonus_stock_per_player":0,"anchor_min_hex_distance":4,"footprint":[[-1,-1],[0,-1],[-1,0],[0,0],[1,0],[0,1],[1,1]]},
+  "decor": {"reef_target":0,"swamp_reeds_only":true,"desert_ids":[43,44,45,46,47,48,49],"desert_target":30,"swamp_reed_ids":[62,63,64,65,66,67],"swamp_target":60,"decorative_stone_target":886,"forbid_objects_on_mountain":true},
+  "starts": {"min_pair_hex_distance":52,"technical_clear_hex":10,"local_bonus_outer_hex":42,"initial_territory_hex_radius":34,"height_range_max":10,"immediate_height_delta_max":4,"immediate_height_delta_sum_max":14,"editor_terrain_clear_hex":10,"editor_water_clear_hex":20,"editor_object_clear_hex":14}
+}

@@ -95,12 +95,20 @@ def _set_players(parts, starts:list[tuple[int,int]], goods_default:int):
     if not all(done.values()): raise ValueError(f'Player metadata parts missing: {done}')
 
 def export_with_scaffold(state:MapState, scaffold:Path|str, output:Path|str):
+    """Write an EDM/MAP with a validated scaffold as its format shell.
+
+    The supplied 768 scaffold is also usable for the other native sizes: the
+    size-bearing Area payload is replaced with the requested grid while the
+    remaining opaque parts are retained. Those non-768 files are deliberately
+    exportable test candidates; validation by the community editor/game is
+    still required before treating them as a fully native format.
+    """
     version,parts=parse_parts(scaffold)
     area_done=False
     for i,(t,p) in enumerate(parts):
         if t==6 and len(p)>=4:
-            side=struct.unpack_from('<I',p,0)[0]
-            if side==state.side and len(p)==4+side*side*6:
+            scaffold_side=struct.unpack_from('<I',p,0)[0]
+            if len(p)==4+scaffold_side*scaffold_side*6:
                 parts[i][1]=bytearray(struct.pack('<I',state.side)+state.area.tobytes())
                 area_done=True; break
     if not area_done: raise ValueError('Compatible Area part not found in scaffold')
