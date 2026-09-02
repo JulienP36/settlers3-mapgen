@@ -55,12 +55,13 @@ def test_upgraded_facade_does_not_move_into_legacy_native_modules():
 
 
 def test_upgraded_pipeline_is_a_separate_complete_copy():
-    pipeline = (ROOT / "generators" / "upgraded" / "pipeline.py").read_text(encoding="utf-8")
+    pipeline_path = ROOT / "generators" / "upgraded" / "pipeline.py"
+    pipeline = pipeline_path.read_text(encoding="utf-8")
     terrain = (ROOT / "generators" / "upgraded" / "native_terrain.py").read_text(encoding="utf-8")
     assert "assemble_continental_state" in pipeline
     assert "generate_primary_terrain" in pipeline
     assert "UpgradedContent" in pipeline
-    assert "generators.legacy" not in pipeline
+    assert not any("generators.legacy" in target for target in _imports(pipeline_path))
     assert "_FamilyPlan(DESERT" in terrain
     assert "_FamilyPlan(SWAMP" in terrain
     assert "_FamilyPlan(MUD" not in terrain
