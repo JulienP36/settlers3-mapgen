@@ -163,6 +163,22 @@ Sulfur  4745
 
 Low-nibble quantity distribution remains native-like (`1..15`) and total resource stock must be preserved when only geometry is changed.
 
+### Test de forme sans étirement
+
+Le profil DEV_3 conserve exactement la version **v7 sans trou** et ne change
+que le facteur de forme des blobs : `blob_aspect_min = 1.0` et
+`blob_aspect_max = 1.0`. La priorité de croissance est désormais évaluée dans
+l’espace compensé de la projection (`X=2x-y`, `Y=2y`) : les blobs sont ainsi
+plus ronds dans l’aperçu parallélogramme, tandis que la projection reste une
+option de rendu indépendante et ne modifie pas les données de la carte.
+
+Cette variante validée peut être comparée à la forme ovale précédente sans
+toucher aux quotas, aux quantités ni à la règle no-gap.
+
+Le test DEV_3 utilise le nom court natif **Patch d’herbe rocheuse** pour le
+terrain ID `34`. Il appartient à la famille Montagne et possède une teinte
+jaune/olive discrète, distincte du cœur Roche dans les aperçus.
+
 ## 6. Snow — accepted relief/summit rule
 
 Canonical detailed reference:

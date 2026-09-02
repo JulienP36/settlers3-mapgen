@@ -48,19 +48,25 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_2 / reconstruction native Legacy
+## État actuel — v2.0 DEV_3 / calibration Upgraded
 
-La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` est
-maintenant le checkpoint validé et publié : l'ancien générateur Legacy
+La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` a été
+le checkpoint validé du reset natif, et `DEV_3` est maintenant le checkpoint
+validé et publié : l'ancien générateur Legacy
 procédural et ses bibliothèques dérivées ont été retirés, puis remplacés par
-un portage natif v1 séparé du moteur Upgraded protégé.
+un portage natif v1. Le moteur Upgraded est maintenant reconstruit dans une
+copie indépendante de ce pipeline.
 
 Le moteur **Legacy** implémente Continental v1 avec le relief, les terrains,
 l'hydrologie, les objets, les ressources, les départs et les métadonnées de
-partie observés dans S3.EXE. Le moteur **Upgraded** de compatibilité reste
-calibré sur Continental 768×768, avec ses propres règles, profil, validations
-et références. L'archétype Continental fournit le contexte macro-géographique ;
+partie observés dans S3.EXE. Le moteur **Upgraded** possède sa propre copie du
+pipeline, calibrée sur Continental 768×768. Il ajoute uniquement ses différences
+explicites : minerais v7, poissons, arbres/décorations et pierres de
+construction, sans boue. L'archétype Continental fournit le contexte macro-géographique ;
 il ne sculpte pas une seconde forme par-dessus le noyau natif.
+Le positionnement Upgraded actuellement exposé est un pont provisoire isolé ;
+les ressources, objets et colons de départ restent différés à la future passe
+`.sav`.
 
 La comparaison des minerais a été faite avant la suppression : l'ancien
 générateur avait un mix global proche des SAV natifs, mais des composants et
@@ -68,13 +74,17 @@ des tailles de gisements nettement trop fragmentés. Ces quotas et heuristiques
 ne sont donc pas conservés comme règles. Le détail reproductible est dans
 `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
-Le portage natif est présent dans DEV_2 pour les tailles `256, 320, 384, 448,
+Le portage natif de référence est présent dans DEV_2 pour les tailles `256, 320, 384, 448,
 512, 576, 640, 704, 768, 832, 896, 960 et 1024`. Les modes miroir proposent
 `Axe long`, `Axe court` ou `Les deux`. Les tailles sous 384 et au-dessus de 768
 restent exportables et signalées dans le feedback lorsqu'elles sortent du
 cadre de jeu habituel. Les audits de l'algorithme restent la source de vérité ;
 une validation dans l'éditeur/jeu reste nécessaire pour les exportations
 étendues.
+
+DEV_3 poursuit cette base avec la forme validée des blobs miniers compensée pour
+la projection parallélogramme, le nom court validé du terrain `34` (**Patch
+d’herbe rocheuse**) et son affichage distinct dans la carte et les graphiques.
 
 La GUI et l'outillage validés restent disponibles : import EDM / MAP / SAV en
 lecture, export EDM/MAP de toutes les tailles natives via scaffold de test,
@@ -111,7 +121,7 @@ qui ne tiennent pas dans l'Area sont reportées explicitement dans le rapport.
 
 ### Upgraded
 
-Preset amélioré du projet. Il intègre les règles validées au fil des tests et du long-play : starts précoces, hydrologie corrigée, poissons et minerais rééquilibrés, SmallTree84, Building Stones avec footprint, décorations contrôlées, règles de transitions et validators spécifiques.
+Preset amélioré du projet. Il intègre les règles validées au fil des tests et du long-play : hydrologie corrigée, poissons et minerais rééquilibrés, SmallTree84, Building Stones avec footprint, décorations contrôlées, règles de transitions et validators spécifiques. Le placement des joueurs est actuellement un pont provisoire ; son comportement natif sera traité dans une passe dédiée.
 
 La matrice détaillée est disponible dans `references/SETTLERS3_UPGRADED_RULE_MATRIX_v1.md`.
 
@@ -135,8 +145,8 @@ L'archétype décrit principalement la **forme globale terre/eau**. Les objets, 
 ## Architecture des starts
 
 Les deux modes n'ont pas le même ordre. Le Legacy natif porte d'abord le
-terrain et le contenu global ; l'Upgraded conserve ses starts précoces et ses
-réservations techniques :
+terrain et le contenu global ; l'Upgraded utilise pour l'instant un pont de
+positionnement isolé, qui sera recalibré séparément :
 
 ```text
 Legacy : MapConfig
@@ -157,13 +167,11 @@ Upgraded : MapConfig
   ↓
 Continental : macro-layout
   ↓
-Placement précoce des starts
+Copie indépendante du relief / biomes / hydrologie
   ↓
-Réservation des zones techniques
+Pont de positionnement provisoire des starts
   ↓
-Relief / biomes / hydrologie détaillée
-  ↓
-Ressources / objets / validators
+Ressources / objets globaux / validators
   ↓
 Export
 ```
@@ -172,7 +180,10 @@ Une passe tardive ne doit pas invalider un start réservé. Elle doit contourner
 
 ## Morphologie Upgraded
 
-La première implémentation exécutable d'Upgraded 768 utilise encore le checkpoint terrain/height validé comme référence de morphologie locale. Cela évite de réinventer des formes déjà validées. Le prochain moteur à étudier est l'**Upgraded généralisé**, sans modifier le comportement du checkpoint protégé.
+La première implémentation exécutable d'Upgraded 768 utilise une copie
+indépendante de la séquence terrain native validée, puis applique ses passes de
+contenu spécifiques. Le prochain chantier est la parité terrain mesurée et la
+recalibration séparée du positionnement des joueurs.
 
 Limite connue avant cette refonte : les seeds actuelles ne produisent que trois morphologies de base, ensuite présentées avec des rotations et parfois un miroir. L’audit seed/RNG et la diversification objective sont planifiés pour la v1.10.
 

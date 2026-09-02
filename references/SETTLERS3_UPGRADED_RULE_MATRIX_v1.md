@@ -9,8 +9,8 @@ This file records how the recovered Upgraded rules are represented in executable
 | Starts early | latest user architecture lock | pipeline + tests |
 | 33-cell start footprint / slope limits | validated checkpoint | validator |
 | Start technical zone protected | validated start-first lineage | pipeline |
-| Start forest/stone bonus outside global quota | validated 768/10P | separate placement pools |
-| Controlled mini-swamp per player | validated 768/10P | pipeline |
+| Start forest/stone bonus outside global quota | validated 768/10P | config contract; placement deferred with native starts |
+| Controlled mini-swamp per player | validated 768/10P | config contract; placement deferred with native starts |
 | Water access=1 / H=0 | long-play runtime validated | pipeline + validator |
 | 0 inland water comps 1..4 | custom locked | cleanup + validator |
 | Removed micro-water grows existing lake only | custom locked | cleanup |
@@ -31,7 +31,7 @@ This file records how the recovered Upgraded rules are represented in executable
 | SmallTree84 406 separate | long-play validated | config + validator |
 | SmallTree84 cluster share ~76% | accepted calibration | generator metadata |
 | Building Stone 1683 global anchors / 14160 global stock | locked | config + validators |
-| Start Stone bonus 53 units/player | latest 20P profile | separate pool |
+| Start Stone bonus 53 units/player | latest 20P profile | config contract; separate pool deferred |
 | 7-cell Stone footprint | long-play critical fix | placement + validator |
 | Stone anchor min HEX4 | conservative latest rule | placement + validator |
 | Stone global cluster share ~30%, ~60 centers | profile | generator metadata |

@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.0 DEV_3 — 2026-09-02 — calibration des formes et analyse des terrains
+
+- Conserve le no-gap et les quotas des minerais, mais évalue désormais la
+  forme des blobs dans l’espace de la projection parallélogramme afin de
+  réduire l’étirement visuel dans l’aperçu standard.
+- Renomme l’ID terrain `34` en **Patch d’herbe rocheuse** et l’expose
+  explicitement dans le segment Montagne du graphique des familles de terrain.
+- Aligne la couleur de l’ID `34` dans la carte et dans le graphique sur une
+  teinte jaune/olive discrète inspirée de la référence native fournie.
+- Le positionnement des bonus de départ et des objets de départ reste reporté
+  à la passe `.sav` dédiée.
+
 ## v2.0 DEV_2 — 2026-09-02 — checkpoint Legacy natif validé
 
 - Retire le pipeline procédural Continental Legacy DEV_1, ses profils et ses

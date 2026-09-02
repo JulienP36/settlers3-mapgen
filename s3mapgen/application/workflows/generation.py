@@ -16,7 +16,7 @@ from ...generation.core import (
     NATIVE_PLAYER_LIMITS as NATIVE_LIMITS,
     native_size_warning_kind,
 )
-from ...generation.modes import MODES
+from ...generation.modes import MODES, cache_engine_revision
 from ..session.cache import GenerationCacheKey
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS, NONE_LABELS
@@ -104,7 +104,9 @@ class GenerationWorkflowController:
         self.update_idletasks()
 
     def _cache_key(self):
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=self._mode_key(),archetype=self._arch_key(),modifiers=self._modifier_keys(),engine_revision='continental_legacy_native_content',mirror_mode=self._mirror_key())
+        mode = self._mode_key()
+        archetype = self._arch_key()
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype),mirror_mode=self._mirror_key())
 
     def generate(self):
         try:

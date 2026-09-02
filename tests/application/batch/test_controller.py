@@ -69,7 +69,7 @@ def test_batch_collects_one_to_four_independent_generation_keys():
     assert [request["key"].players for request in requests] == [4, 8]
     assert [request["key"].mode for request in requests] == ["legacy", "upgraded"]
     assert requests[0]["key"].engine_revision == "continental_legacy_native_content"
-    assert requests[1]["key"].engine_revision == "v1.5-stable"
+    assert requests[1]["key"].engine_revision == "continental_upgraded-native-v1"
 
 
 def test_batch_collects_native_size_and_mirror_parameters():

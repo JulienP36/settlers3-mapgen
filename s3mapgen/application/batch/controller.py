@@ -11,7 +11,7 @@ from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
 from ...generation.archetypes import ARCHETYPES, ARCHETYPE_ORDER
 from ...generation.core import native_size_warning_kind
-from ...generation.modes import MODES, MODE_ORDER
+from ...generation.modes import MODES, MODE_ORDER, cache_engine_revision
 from ..rendering.preview import compose_start_markers, project_parallelogram, render_square_base
 from ..session.cache import GenerationCacheKey
 from ..shell import NATIVE_LIMITS
@@ -415,7 +415,7 @@ class BatchController:
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
                 errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
-            revision='continental_legacy_native_content' if mode=='legacy' and archetype=='continental' else 'v1.5-stable'
+            revision=cache_engine_revision(mode, archetype)
             key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror)
             row['size_warning_kind']=native_size_warning_kind(side) if mode=='legacy' and archetype=='continental' else None
             row['viability_warning']=row['size_warning_kind'] is not None

@@ -1,6 +1,6 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_2 removes the obsolete Legacy generators and keeps the native Legacy v1 reconstruction in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_3 continues from the validated DEV_2 reset: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
@@ -50,14 +50,14 @@ Current follow-up hotspots after DEV_2:
   responsive layout, feedback and top-level state initialization;
 - `application/shell/foundation.py`: shared Tk state/body only; it no longer
   constructs disposable header controls before the active header;
-- `generation/base.py`, `generation/continental.py` and `generation/validated.py`:
-  the retained Upgraded compatibility implementation;
+- `generation/generators/upgraded/`: an independent copy of the native terrain
+  pipeline plus the retained Upgraded content routines; it never dispatches
+  through `generation/generators/legacy/`;
 - `generation/archetypes/continental.py`: neutral Continental context and
   six-channel state assembly; it does not own native resource or object rules;
 - `generation/generators/legacy/`: the native Legacy implementation, split into
   terrain, global content, starts/transition handling, profile and validators;
-- `generation/facade.py`: dispatches Legacy to that package and keeps Upgraded
-  on the protected compatibility implementation;
+- `generation/facade.py`: dispatches each mode to its own generator package;
 - `application/history/controller.py` and `application/batch/controller.py`:
   the two largest UI subsystem controllers; both are already isolated from the
   main window and can be subdivided by window/state responsibility later.
@@ -74,11 +74,11 @@ These measurements identify investigation targets, not pre-approved deletions.
 ### Generation ownership
 
 The Continental archetype owns only macro-geographic context and neutral state
-assembly. The Legacy generator owns the recovered PRNG, relief, terrain
-families, hydrology, global fish/mineral/object/decorative content, and its
-validators. Player-start objects/resources, settlers and SAV writing remain
-outside the current MAP/EDM generation scope. This boundary prevents a future
-Upgraded or Custom engine from inheriting Legacy-specific rules by accident.
+assembly. Legacy and Upgraded each own a complete generation pipeline. The
+Upgraded copy starts from the native terrain sequence and then applies only
+its explicit differences: calibrated minerals, fish, trees/decorations and
+building stones, with Mud disabled. Player-start objects/resources, settlers
+and SAV writing remain outside the current MAP/EDM generation scope.
 
 The DEV_2 closing audit also reviewed the short modules and public entrypoints.
 Their small size is not accidental fragmentation: they hold package APIs,

@@ -289,3 +289,76 @@ Baseline: **MapGen v1.9 DEV_3 — cartographie contrôlée 2026-08-28**.
 - `215`, `223` et `231` ont fait crasher les cartes de test. Ils sont conservés
   uniquement comme trous documentaires et ne sont pas exposés comme objets
   valides dans le catalogue applicatif.
+
+## Producteurs natifs et règles de spawn des objets statiques
+
+Cette section complète le catalogue par les informations issues de la
+décompilation. Elle documente les **points de production et les contraintes de
+placement**, pas une liste de coordonnées fixes : les coordonnées finales sont
+tirées par le PRNG du jeu et changent donc avec la taille, le seed et l'état du
+terrain.
+
+### Helpers confirmés
+
+- `0x5166D0` orchestre les séries d'appels de placement.
+- `0x51B010` reçoit `(source_terrain, objet, densité, mode_accessibilité,
+  variante_collision)` et écrit directement l'ID dans l'octet objet runtime.
+- `0x51B1A0` reçoit `(source_terrain, objet_min, objet_max, densité,
+  mode_accessibilité, variante_collision)` et choisit l'ID dans la plage
+  **inclusive** indiquée.
+- `0x51B450` valide le terrain du centre et de ses six voisins : l'empreinte
+  hexagonale de sept cases doit appartenir à la famille source.
+- `0x51B3C0` refuse une empreinte déjà occupée par un objet statique ou portant
+  le bit d'accès `0x01`.
+- Le mode d'accessibilité `1` marque le centre ; le mode `2` marque le centre
+  et les six voisins. La forme exacte des adaptateurs de voisins reste à
+  compléter dans le portage.
+- Pour chaque tentative, les coordonnées suivent la forme native observée
+  `x = 1 + ((PRNG16 × (side - 2)) >> 16)` et la même formule pour `y`.
+  `0x51B010` consomme environ `(ceil(side / 64)² × densité) >> 1` tentatives ;
+  `0x51B1A0` utilise `(ceil(side / 64)² × densité) >> 4`.
+
+Les paramètres ci-dessous sont les lignes observées dans `0x5166D0`. Une plage
+de la routine `0x51B010` représente une série d'appels à ID fixe ; seules les
+lignes `0x51B1A0` tirent effectivement l'ID dans une plage. Les valeurs
+`0x10`, `0x30`, `0x40` et `0x50` sont conservées comme octets natifs : leur nom
+métier exact n'est pas encore démontré.
+
+| Routine | Source terrain | ID fixe ou plage | Densité | Mode accès | Collision |
+|---|---:|---:|---:|---:|---:|
+| `0x51B010` | `0x10` | `01` | 1 | 2 | 1 |
+| `0x51B010` | `0x10` | `02..0C` | 1 | 0 | 0 |
+| `0x51B010` | `0x10` | `0D..14` | 1 | 0 | 2 |
+| `0x51B010` | `0x30` | `1D..1E` | 5 | 2 | 0 |
+| `0x51B010` | `0x30` | `1F` | 5 | 0 | 0 |
+| `0x51B010` | `0x30` | `20..21` | 5 | 2 | 0 |
+| `0x51B010` | `0x10` | `22` | 1 | 2 | 1 |
+| `0x51B010` | `0x10` | `15..1C` | 1 | 0 | 0 |
+| `0x51B010` | `0x10` | `23..29` | 1 | 0 | 0 |
+| `0x51B010` | `0x10` | `2A` | 1 | 2 | 0 |
+| `0x51B010` | `0x40` | `2B..2C` | 3 | 1 | 2 |
+| `0x51B010` | `0x40` | `2D..2F` | 6 | 1 | 1 |
+| `0x51B010` | `0x40` | `30` | 6 | 0 | 0 |
+| `0x51B010` | `0x40` | `31` | 3 | 0 | 0 |
+| `0x51B010` | `0x10` | `32..3D` | 1 | 0 | 0 |
+| `0x51B010` | `0x50` | `3E..43` | 150 | 0 | 0 |
+| `0x51B010` | `0x10` | `44..4D` | 1 | 1 | 2 |
+| `0x51B010` | `0x40` | `4E..4F` | 1 | 1 | 2 |
+| `0x51B010` | `0x10` | `50..51` | 9 | 1 | 2 |
+| `0x51B010` | `0x10` | `73..7E` | 1 | 2 | 1 |
+| `0x51B010` | `0x10` | `7F` | 1 | 0 | 0 |
+| `0x51B1A0` | `0x10` | `44..45` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `46..47` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `48..49` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `4A..4B` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `4C..4D` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x40` | `4E..4F` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `50..51` | `0B` | 1 | 2 |
+| `0x51B1A0` | `0x10` | `73..7E` | `37` | 2 | 1 |
+
+Les séries `44..51` et `73..7E` apparaissent dans les deux helpers ; ce
+chevauchement est natif et ne doit pas être dédoublonné. Pour la source,
+l'audit complet reste disponible dans
+`references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`. La formule exacte
+qui transforme chaque tirage en coordonnées exportées `.map/.edm`, ainsi que
+la table métier complète des paramètres de collision, restent à confirmer.

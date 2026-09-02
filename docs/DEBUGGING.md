@@ -28,7 +28,7 @@ python run_gui.py --self-test
 Their roles are distinct:
 
 - pytest covers UI helpers, formats, analysis, cache behavior and regression contracts;
-- `tests/run_smoke.py` generates the retained Upgraded compatibility case, checks all hard validators and verifies the exported binary checksum;
+- `tests/run_smoke.py` generates the independent Upgraded case and the native Legacy case, checks hard validators and verifies the exported binary checksum;
 - `--self-test` imports the real GUI runtime chain and reads every required packaged resource.
 
 After significant UI/tooling work, verify the Upgraded compatibility hashes listed in `PROJECT_WORKFLOW.md`. A local PASS never replaces Windows/UI or official editor/game validation where those layers are relevant.

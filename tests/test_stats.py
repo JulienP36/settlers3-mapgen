@@ -223,6 +223,29 @@ def test_stats_csv_contains_player_local_metrics():
     assert 'coal_stock' in text
 
 
+def test_decorative_object_families_are_counted_without_double_counting():
+    st = MapState.empty(16)
+    st.terrain[:] = 16
+    family_ids = (1, 29, 34, 35, 41, 43, 45, 50, 62, 68, 84, 111, 115)
+    for column, object_id in enumerate(family_ids, start=1):
+        st.objects[15, column] = object_id
+    stats = analyze_map(st)
+    families = stats['objects']['decorative_families']
+    assert all(families[key] == 1 for key in families)
+    assert sum(families.values()) == len(family_ids)
+    csv_text = stats_csv(stats)
+    assert 'decorative_object_family,count,decorative_stones,1' in csv_text
+
+    _im, regions = render_stats_chart(
+        stats, 'decorative_objects', lang='fr', dark=True,
+        width=900, height=520, return_regions=True,
+    )
+    stones = next(r for r in regions if r['label'] == 'Pierres décoratives')
+    assert any('1–28' in line for line in stones['details'])
+    assert stones['focus']['kind'] == 'object_family'
+    assert 1 in stones['focus']['ids'] and 28 in stones['focus']['ids']
+
+
 def test_chart_segment_totals_match_report_totals():
     st = sample_state()
     stats = analyze_map(st)
@@ -255,7 +278,7 @@ def test_ab_rows_are_compact_and_semantically_segmented():
     assert len(by_label['Terre'][3])==1 and len(by_label['Terre'][4])==1
     assert len(by_label['Eau'][3])==2
     assert sum(seg[0] for seg in by_label['Eau'][3]) == by_label['Eau'][1]
-    assert len(by_label['Montagne'][3])==2
+    assert len(by_label['Montagne'][3])==3
     assert sum(seg[0] for seg in by_label['Montagne'][3]) == by_label['Montagne'][1]
     assert len(by_label['Stock minier'][3])==5
     assert sum(seg[0] for seg in by_label['Stock minier'][3]) == by_label['Stock minier'][1]
@@ -369,7 +392,7 @@ def test_tooltips_distinguish_semantic_segments():
     rows = {row[0]: row for row in build_ab_metrics(s, s, fr=True)}
     assert any(len(seg) >= 3 for seg in rows['Eau'][3])
     assert {seg[2] for seg in rows['Eau'][3]} == {'Mer', 'Lacs'}
-    assert {seg[2] for seg in rows['Montagne'][3]} == {'Roche', 'Neige'}
+    assert {seg[2] for seg in rows['Montagne'][3]} == {'Roche', 'Patch d’herbe rocheuse', 'Neige'}
     assert {seg[2] for seg in rows['Stock minier'][3]} == {'Charbon', 'Fer', 'Or', 'Gemmes', 'Soufre'}
 
 
@@ -439,6 +462,18 @@ def test_object_and_agriculture_tooltip_ids():
     _im,agri=render_stats_chart(s,'agriculture',lang='fr',dark=True,width=640,height=420,return_regions=True)
     wheat=next(r for r in agri if r['label']=='Blé')
     assert any('85' in line and '93' in line for line in wheat['details'])
+
+
+def test_mountain_family_chart_explicitly_includes_terrain_id_34():
+    state = sample_state()
+    state.terrain[12, 8] = 34
+    stats = analyze_map(state)
+    _im, regions = render_stats_chart(
+        stats, 'terrain_families', lang='fr', dark=True,
+        width=640, height=420, return_regions=True,
+    )
+    patch = next(r for r in regions if r['label'].endswith(' · Patch d’herbe rocheuse'))
+    assert any('34' in line for line in patch['details'])
 
 
 def test_bee_nests_are_counted_in_agriculture_and_not_forestry():

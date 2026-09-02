@@ -46,19 +46,26 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_2 / native Legacy reconstruction
+## Current state — v2.0 DEV_3 / Upgraded calibration
 
-The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` is
-now the validated and published checkpoint: the old procedural Legacy
+The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` was
+the validated native reset checkpoint, and `DEV_3` is now the validated and
+published checkpoint: the old procedural Legacy
 generator and its derived libraries were removed and replaced by a separate
-native-inspired v1 port beside the protected Upgraded path.
+native-inspired v1 port. The Upgraded engine is now rebuilt as an independent
+copy of that pipeline.
 
 The **Legacy** engine now implements the Continental v1 native reconstruction:
 relief, terrain, hydrology, objects, resources, starts and runtime metadata.
-The **Upgraded** compatibility path remains calibrated for Continental
-768×768, with separate protected rules, profile, validators and references.
+The **Upgraded** engine owns an independent copy of the native terrain
+pipeline, calibrated for Continental 768×768. It adds only its explicit
+differences: v7 minerals, fish, trees/decorations and building stones, with no
+Mud generation.
 The Continental archetype supplies the macro-geographic context; it does not
 apply a second sculpture over the native core.
+The current Upgraded start placement is an isolated provisional bridge; player
+start resources, objects and settlers remain deferred to the future `.sav`
+pass.
 
 Minerals were compared before removal: the former generator had a globally
 similar family mix to the native SAV corpus, but its deposits were much too
@@ -66,10 +73,14 @@ fragmented in component count and size. Those quotas and heuristics are not
 carried forward as rules. The reproducible comparison is recorded in
 `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
-The native port is now present in DEV_2 for sizes 256, 320, 384, 448, 512,
+The native reference port is present in DEV_2 for sizes 256, 320, 384, 448, 512,
 576, 640, 704, 768, 832, 896, 960 and 1024. Mirror modes are Long axis,
 Short axis and Both. The generator audit remains the source of truth; extended
 exports still require validation in the community editor/game.
+
+DEV_3 continues this base with the validated projection-compensated mineral
+blob shape, the validated short name for terrain ID `34` (**Rocky grass patch**),
+and distinct map/chart rendering for that terrain.
 
 The validated GUI and tooling remain available: read-only EDM/MAP/SAV import,
 scaffold-based EDM/MAP export for all native sizes, analysis and inspection views, statistics,

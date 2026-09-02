@@ -15,7 +15,11 @@ from ..ui.i18n.shell import (
     TEXTS,
 )
 from ..ui.i18n.viewer import HEATMAP_LABELS, VIEW_LABELS
-from ..ui.viewer import MINERAL_NAMES, OBJECT_NAMES, TERRAIN_NAMES
+from ..ui.viewer import (
+    localized_object_name,
+    localized_resource_text,
+    localized_terrain_name,
+)
 from ..ui.viewer.options import VIEW_CHOICES
 from ..ui.widgets import ColorMenuSelect, _selector_icon
 
@@ -193,18 +197,17 @@ class ViewerController:
         return (x,y) if 0<=x<side and 0<=y<side else None
 
     def _resource_text(self,terrain,raw):
-        fam=int(raw)&0xf0;qty=int(raw)&0x0f
-        if qty<=0:return '—'
-        if int(terrain) in range(8) and fam==0:return f'Fish {qty}'
-        return f'{MINERAL_NAMES.get(fam,hex(fam))} {qty}'
+        return localized_resource_text(terrain, raw, self.prefs.get('language', 'fr'))
 
     def _inspect_motion(self,event):
         cell=self._source_cell_from_canvas(event)
         if cell is None:return self._clear_inspector()
         x,y=cell;st=self.current.state;t=int(st.terrain[y,x]);o=int(st.objects[y,x]);r=int(st.resources[y,x]);h=int(st.height[y,x]);a=int(st.accessibility[y,x]);c=int(st.claim[y,x]);claim='—' if c==255 else f'P{c+1}'
-        oname=OBJECT_NAMES.get(o,'—' if o==0 else '?');lang=self.prefs.get('language','fr')
+        lang=self.prefs.get('language','fr')
+        tname=localized_terrain_name(t, lang)
+        oname=localized_object_name(o, lang)
         labels={'fr':('Terrain','Objet','Ressource','Hauteur','Accès','Territoire'),'en':('Terrain','Object','Resource','Height','Access','Claim'),'de':('Gelände','Objekt','Ressource','Höhe','Zugang','Territorium'),'es':('Terreno','Objeto','Recurso','Altura','Acceso','Territorio')}.get(lang,('Terrain','Object','Resource','Height','Access','Claim'))
-        self.inspector_var.set(f'x={x}  y={y}  {labels[0]}={t} ({TERRAIN_NAMES.get(t,"?")})  {labels[1]}={o} ({oname})  {labels[2]}={self._resource_text(t,r)}  {labels[3]}={h}  {labels[4]}={a}  {labels[5]}={claim}')
+        self.inspector_var.set(f'x={x}  y={y}  {labels[0]}={t} ({tname})  {labels[1]}={o} ({oname})  {labels[2]}={self._resource_text(t,r)}  {labels[3]}={h}  {labels[4]}={a}  {labels[5]}={claim}')
 
     def _clear_inspector(self):
         if hasattr(self,'inspector_var'):self.inspector_var.set(_lang_text(self.prefs.get('language','fr'),'Inspecteur : —','Inspector: —','Inspektor: —','Inspector: —'))

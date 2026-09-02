@@ -69,7 +69,7 @@ TERRAIN_NAMES: dict[int, str] = {
     28: "Runtime start-area terrain",
     32: "Rocky core",
     33: "Rock transition 2",
-    34: "Rocky detail",
+    34: "Rocky grass patch",
     35: "Rock/snow transition",
     48: "Shore",
     64: "Desert core",

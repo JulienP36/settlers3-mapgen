@@ -1,9 +1,4 @@
-"""Public generation facade.
-
-The historical validated pipeline remains the Upgraded implementation. The
-public facade dispatches the native Legacy engine while keeping the protected
-Upgraded module stable.
-"""
+"""Public generation facade dispatching independent mode engines."""
 
 from __future__ import annotations
 
@@ -13,11 +8,11 @@ from typing import Any
 from .core import GenerationRequest
 from .generators.legacy import generate as generate_legacy
 from .contracts import GenerationOutput
-from .validated import MapGenerator as UpgradedMapGenerator
+from .generators.upgraded import generate as generate_upgraded
 
 
-class MapGenerator(UpgradedMapGenerator):
-    """Generate either the native Legacy map or the retained Upgraded map."""
+class MapGenerator:
+    """Generate through the selected, fully independent mode engine."""
 
     def __init__(
         self,
@@ -36,12 +31,13 @@ class MapGenerator(UpgradedMapGenerator):
         ):
             upgraded_reference_path = upgraded_profile_path
             upgraded_profile_path = None
-        super().__init__(
-            upgraded_profile_path or profile_path,
-            native_library_path,
-            upgraded_reference_path,
-            progress_callback=progress_callback,
-        )
+        self.profile_path = Path(profile_path)
+        self.native_library_path = Path(native_library_path)
+        self.upgraded_profile_path = Path(upgraded_profile_path or profile_path)
+        self.upgraded_reference_path = Path(upgraded_reference_path) if upgraded_reference_path else None
+        self.progress_callback = progress_callback
+        self.stage_log: list[str] = []
+        self.current_mode = "upgraded"
 
     def generate(
         self,
@@ -88,14 +84,30 @@ class MapGenerator(UpgradedMapGenerator):
             self.current_mode = "legacy"
             return GenerationOutput(state, validations, list(events))
 
+        if mode == "custom":
+            raise NotImplementedError("Le mode Custom n'est pas encore implémenté")
+        if mode != "upgraded":
+            raise ValueError(f"Mode de génération inconnu : {mode}")
         if mirror_mode:
-            raise ValueError("Le mode mirror natif est disponible uniquement pour Legacy/Continental")
-        return super().generate(
-            players=players,
-            seed=seed,
+            raise ValueError("Le mode mirror Upgraded sera traité lors de sa passe dédiée")
+        callback = progress_callback or self.progress_callback
+        events: list[str] = []
+
+        def report(stage: str, detail: str = "") -> None:
+            events.append(stage + (f" — {detail}" if detail else ""))
+            if callback is not None:
+                try:
+                    callback(stage, detail, len(events))
+                except Exception:
+                    pass
+
+        state, validations = generate_upgraded(
+            GenerationRequest(side=int(side), players=int(players), seed=int(seed)),
+            progress=report,
+            mirror_mode=mirror_mode,
             archetype=archetype,
-            mode=mode,
-            side=side,
-            progress_callback=progress_callback,
-            **kwargs,
+            profile_path=self.upgraded_profile_path,
         )
+        self.stage_log = events
+        self.current_mode = "upgraded"
+        return GenerationOutput(state, validations, list(events))

@@ -5,16 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS
+from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS, ROCKY_GRASS_PATCH_COLOR
 from ...map_data.constants import (
     BEE_NEST_IDS, GRASS, GRASS_DETAIL_IDS, ADULT_TREE_IDS, PALM_TREE_IDS,
     TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
     TREE_SAPLING_STAGE_1_IDS, PALM_SAPLING_STAGE_1_IDS, PLANTATION_IDS,
-    ROCKY, DESERT, SWAMP, SHORE,
+    ROCKY, ROCKY_DETAIL, DESERT, SWAMP, SHORE,
 )
+from .core import DECORATIVE_OBJECT_FAMILIES
 
 CHART_KEYS = (
-    'terrain_families','mineral_stock','building_stones','forestry','height','agriculture','nearest_starts',
+    'terrain_families','mineral_stock','building_stones','forestry','decorative_objects','height','agriculture','nearest_starts',
     'player_trees_r30','player_stone_r30','player_fish_r30','player_mining_r40',
     'mountain_components','lake_components','river_components','ab_summary'
 )
@@ -22,25 +23,25 @@ CHART_KEYS = (
 CHART_LABELS = {
     'fr': {
         'terrain_families':'Familles de terrain','mineral_stock':'Stock minier','building_stones':'Stock des pierres de construction',
-        'forestry':'Arbres et pousses','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
+        'forestry':'Arbres et pousses','decorative_objects':'Familles d’objets décoratifs','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
         'player_trees_r30':'Arbres proches','player_stone_r30':'Pierres proches','player_fish_r30':'Poissons proches','player_mining_r40':'Stock minier proche',
         'mountain_components':'Taille des massifs','lake_components':'Taille des lacs','river_components':'Taille des rivières','ab_summary':'Comparaison A/B',
     },
     'en': {
         'terrain_families':'Terrain families','mineral_stock':'Mining stock','building_stones':'Building stone stock',
-        'forestry':'Trees and saplings','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
+        'forestry':'Trees and saplings','decorative_objects':'Decorative object families','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
         'player_trees_r30':'Nearby trees','player_stone_r30':'Nearby stone stock','player_fish_r30':'Nearby fish stock','player_mining_r40':'Nearby mining stock',
         'mountain_components':'Mountain sizes','lake_components':'Lake sizes','river_components':'River sizes','ab_summary':'A/B comparison',
     },
     'de': {
         'terrain_families':'Geländefamilien','mineral_stock':'Mineralvorrat','building_stones':'Bausteinvorrat',
-        'forestry':'Bäume und Setzlinge','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
+        'forestry':'Bäume und Setzlinge','decorative_objects':'Familien dekorativer Objekte','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
         'player_trees_r30':'Bäume in der Nähe','player_stone_r30':'Steinvorrat in der Nähe','player_fish_r30':'Fischvorrat in der Nähe','player_mining_r40':'Mineralvorrat in der Nähe',
         'mountain_components':'Gebirgsgrößen','lake_components':'Seegrößen','river_components':'Flussgrößen','ab_summary':'A/B-Vergleich',
     },
     'es': {
         'terrain_families':'Familias de terreno','mineral_stock':'Reservas minerales','building_stones':'Reservas de piedra de construcción',
-        'forestry':'Árboles y retoños','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
+        'forestry':'Árboles y retoños','decorative_objects':'Familias de objetos decorativos','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
         'player_trees_r30':'Árboles cercanos','player_stone_r30':'Piedra cercana','player_fish_r30':'Peces cercanos','player_mining_r40':'Minerales cercanos',
         'mountain_components':'Tamaño de macizos','lake_components':'Tamaño de lagos','river_components':'Tamaño de ríos','ab_summary':'Comparación A/B',
     },
@@ -55,6 +56,7 @@ TERRAIN_COLORS = {
     'grass': PALETTE.get(GRASS,(72,148,69)),
     'grass_detail': (101,166,78),
     'mountain': PALETTE.get(ROCKY,(109,109,103)),
+    'mountain_patch': ROCKY_GRASS_PATCH_COLOR,
     'desert': PALETTE.get(DESERT,(211,177,80)),
     'swamp': PALETTE.get(SWAMP,(76,101,56)),
     'mud': (147,112,72),
@@ -65,6 +67,61 @@ TERRAIN_COLORS = {
 TERRAIN_CHART_ORDER = ('grass','mountain','desert','swamp','mud','shore','river','water')
 MINERAL_COLORS = {'coal':(55,55,55),'iron':(255,148,0),'gold':(235,202,35),'gems':(206,0,0),'sulfur':(196,178,92)}
 AGRI_COLORS = {'wheat':(235,205,75),'vine':(165,85,185),'rice':(80,205,110),'bee_nests':(205,118,24)}
+
+DECORATIVE_FAMILY_COLORS = {
+    'decorative_stones': (135, 135, 135),
+    'wrecks': (112, 83, 58),
+    'graves': (92, 92, 104),
+    'plants_fungi': (92, 150, 78),
+    'stumps': (122, 88, 50),
+    'dead_trees': (86, 72, 58),
+    'desert_props': (212, 157, 70),
+    'flowers_bushes': (190, 92, 150),
+    'reeds': (88, 164, 92),
+    'adult_trees': (45, 125, 60),
+    'small_trees': (150, 210, 112),
+    'reefs': (38, 145, 196),
+    'building_stones': (185, 185, 170),
+}
+
+DECORATIVE_FAMILY_LABELS = {
+    'fr': {
+        'decorative_stones': 'Pierres décoratives', 'wrecks': 'Épaves',
+        'graves': 'Tombes', 'plants_fungi': 'Plantes et champignons',
+        'stumps': 'Souches', 'dead_trees': 'Arbres morts',
+        'desert_props': 'Décors désertiques', 'flowers_bushes': 'Fleurs et buissons',
+        'reeds': 'Roseaux', 'adult_trees': 'Arbres adultes',
+        'small_trees': 'Petites pousses', 'reefs': 'Récifs',
+        'building_stones': 'Pierres de construction',
+    },
+    'en': {
+        'decorative_stones': 'Decorative stones', 'wrecks': 'Wrecks',
+        'graves': 'Graves', 'plants_fungi': 'Plants and fungi',
+        'stumps': 'Stumps', 'dead_trees': 'Dead trees',
+        'desert_props': 'Desert props', 'flowers_bushes': 'Flowers and bushes',
+        'reeds': 'Reeds', 'adult_trees': 'Adult trees',
+        'small_trees': 'Small saplings', 'reefs': 'Reefs',
+        'building_stones': 'Building stones',
+    },
+    'de': {
+        'decorative_stones': 'Dekorative Steine', 'wrecks': 'Wracks',
+        'graves': 'Gräber', 'plants_fungi': 'Pflanzen und Pilze',
+        'stumps': 'Baumstümpfe', 'dead_trees': 'Tote Bäume',
+        'desert_props': 'Wüstendekor', 'flowers_bushes': 'Blumen und Büsche',
+        'reeds': 'Schilf', 'adult_trees': 'Ausgewachsene Bäume',
+        'small_trees': 'Kleine Setzlinge', 'reefs': 'Riffe',
+        'building_stones': 'Bausteine',
+    },
+    'es': {
+        'decorative_stones': 'Piedras decorativas', 'wrecks': 'Naufragios',
+        'graves': 'Tumbas', 'plants_fungi': 'Plantas y hongos',
+        'stumps': 'Tocones', 'dead_trees': 'Árboles muertos',
+        'desert_props': 'Decoración desértica', 'flowers_bushes': 'Flores y arbustos',
+        'reeds': 'Juncos', 'adult_trees': 'Árboles adultos',
+        'small_trees': 'Retoños pequeños', 'reefs': 'Arrecifes',
+        'building_stones': 'Piedras de construcción',
+    },
+}
 
 # Forest graph order follows the validated lifecycle: adult trees are darkest,
 # then stage 2, stage 1, plantations, and adult palms retain their established
@@ -81,7 +138,7 @@ FORESTRY_COLORS = {
 DRY_GRASS = 24
 TERRAIN_ID_GROUPS = {
     'grass_green': (16,), 'grass_detail': GRASS_DETAIL_IDS, 'grass_dry': (24,),
-    'rock_open': (17, 32, 33, 34), 'snow': (35, 128, 129),
+    'rock_open': (17, 32, 33, 34), 'rock_grass_patch': (ROCKY_DETAIL,), 'snow': (35, 128, 129),
     'desert': (20, 64, 65), 'swamp': (21, 80, 81), 'mud': (23, 144, 145),
     'shore': (48,), 'river': (96, 97, 98, 99), 'water': tuple(range(8)),
 }
@@ -214,7 +271,20 @@ def _vertical_chart(groups,title,width=900,height=520,dark=True,y_label=None,sho
             tooltip_label=str(seg_label or group_label or title).strip()
             if group_label and seg_label and group_label != seg_label: tooltip_label=f'{group_label} · {seg_label}'
             details_map=g.get('tooltip_details') or {};details=segment_details or list(details_map.get(seg_label, details_map.get('', [])))
-            regions.append({'bbox':(x0,ytop,x1,ybase),'label':tooltip_label,'value':_fmt(value),'unit':str(y_label or '').strip(),'details':details})
+            region = {
+                'bbox': (x0, ytop, x1, ybase),
+                'label': tooltip_label,
+                'value': _fmt(value),
+                'unit': str(y_label or '').strip(),
+                'details': details,
+            }
+            # Optional semantic payload for a future chart-to-map focus tool.
+            # Keeping it on the hit region is backwards-compatible with the
+            # current tooltip-only controller.
+            focus = seg[4] if len(seg) > 4 else g.get('focus')
+            if focus is not None:
+                region['focus'] = focus
+            regions.append(region)
             if stacked:
                 txt=_fmt(value);bb=d.textbbox((0,0),txt,font=small_font);tw=bb[2]-bb[0]
                 if h>=18 and tw<=bar_w-4:
@@ -401,6 +471,65 @@ def _forestry_segments(stats, lang='fr'):
     ]
 
 
+def _decorative_segments(stats, lang='fr'):
+    """Build one chart segment per known static-world decoration family."""
+    lang = lang if lang in DECORATIVE_FAMILY_LABELS else 'en'
+    counts = stats.get('objects', {}).get('decorative_families', {})
+    segments = []
+    for key, ids in DECORATIVE_OBJECT_FAMILIES:
+        label = DECORATIVE_FAMILY_LABELS[lang][key]
+        details = [_id_line('object', ids, lang == 'fr', lang)]
+        focus = {'kind': 'object_family', 'family': key, 'ids': tuple(ids)}
+        segments.append((
+            int(counts.get(key, 0)),
+            DECORATIVE_FAMILY_COLORS[key],
+            label,
+            details,
+            focus,
+        ))
+    return segments
+
+
+def _mountain_segments(stats, lang='fr'):
+    """Return mountain-family segments, keeping terrain ID 34 visible."""
+    lang = lang if lang in CHART_LABELS else 'en'
+    fr = lang == 'fr'
+    tr = lambda a, b, c, d: _t(lang, a, b, c, d)
+    general = stats.get('general', {})
+    by_id = {
+        int(row['id']): int(row.get('cells', 0))
+        for row in stats.get('terrain', {}).get('ids', ())
+    }
+    patch = int(general.get('rocky_grass_patch_cells', by_id.get(ROCKY_DETAIL, 0)))
+    non_snow = int(general.get('mountain_non_snow_cells', 0))
+    rock = max(0, non_snow - patch)
+    return [
+        (
+            rock,
+            PALETTE.get(ROCKY, (109, 109, 103)),
+            tr('Roche', 'Rocky', 'Fels', 'Roca'),
+            [_id_line('terrain', (17, 32, 33), fr, lang)],
+        ),
+        (
+            patch,
+            ROCKY_GRASS_PATCH_COLOR,
+            tr(
+                'Patch d’herbe rocheuse',
+                'Rocky grass patch',
+                'Felsgrasfleck',
+                'Parche de hierba rocosa',
+            ),
+            [_id_line('terrain', (ROCKY_DETAIL,), fr, lang)],
+        ),
+        (
+            int(general.get('snow_family_cells', 0)),
+            (220, 222, 218),
+            tr('Neige', 'Snow', 'Schnee', 'Nieve'),
+            [_id_line('terrain', TERRAIN_ID_GROUPS['snow'], fr, lang)],
+        ),
+    ]
+
+
 
 def build_ab_metrics(a,b,fr=True,lang=None):
     """Build compact A/B comparison rows with semantic segment composition."""
@@ -412,7 +541,7 @@ def build_ab_metrics(a,b,fr=True,lang=None):
         g=st['general'];ids=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)];return [(g.get('ocean_cells',0),WATER_COLORS[5],tr('Mer','Ocean','Meer','Océano'),ids),(g.get('inland_water_cells',0),WATER_COLORS[1],tr('Lacs','Lakes','Seen','Lagos'),ids)]
 
     def mountain_segments(st):
-        g=st['general'];return [(g.get('mountain_non_snow_cells',0),PALETTE.get(ROCKY,(109,109,103)),tr('Roche','Rocky','Fels','Roca'),[_id_line('terrain',TERRAIN_ID_GROUPS['rock_open'],fr,lang)]),(g.get('snow_family_cells',0),(220,222,218),tr('Neige','Snow','Schnee','Nieve'),[_id_line('terrain',TERRAIN_ID_GROUPS['snow'],fr,lang)])]
+        return _mountain_segments(st, lang)
 
     def agri_segments(st):
         ag=st['agriculture'];return [(ag['wheat'],AGRI_COLORS['wheat'],tr('Blé','Wheat','Weizen','Trigo'),[_id_line('object',range(85,94),fr,lang)]),(ag['vine'],AGRI_COLORS['vine'],tr('Vigne','Vine','Weinreben','Vid'),[_id_line('object',range(94,103),fr,lang)]),(ag['rice'],AGRI_COLORS['rice'],tr('Riz','Rice','Reis','Arroz'),[_id_line('object',range(103,111),fr,lang)]),(ag.get('bee_nests',0),AGRI_COLORS['bee_nests'],tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),[_id_line('object',BEE_NEST_IDS,fr,lang)])]
@@ -450,8 +579,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
                 sea=tr('Mer','Ocean','Meer','Océano');lakes=tr('Lacs','Lakes','Seen','Lagos');detail=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)]
                 groups.append({'label':name,'segments':[(g.get('ocean_cells',r['cells']),WATER_COLORS[5],sea),(g.get('inland_water_cells',0),WATER_COLORS[1],lakes)],'tooltip_details':{sea:detail,lakes:detail}})
             elif key=='mountain':
-                rock=tr('Roche','Rocky','Fels','Roca');snow=tr('Neige','Snow','Schnee','Nieve')
-                groups.append({'label':name,'segments':[(g.get('mountain_non_snow_cells',r['cells']),PALETTE.get(ROCKY,(109,109,103)),rock),(g.get('snow_family_cells',0),(220,222,218),snow)],'tooltip_details':{rock:[_id_line('terrain',TERRAIN_ID_GROUPS['rock_open'],fr,lang)],snow:[_id_line('terrain',TERRAIN_ID_GROUPS['snow'],fr,lang)]}})
+                groups.append({'label':name,'segments':_mountain_segments(stats, lang)})
             else:
                 ids=TERRAIN_ID_GROUPS.get(key,())
                 groups.append({'label':name,'segments':[(r['cells'],TERRAIN_COLORS[key],'')],'tooltip_details':{'':([_id_line('terrain',ids,fr,lang)] if ids else [])}})
@@ -485,6 +613,25 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             for value, color, label, details in segments
         ]
         return _vertical_chart(groups,title,width,height,dark,tr('objets','objects','Objekte','objetos'),return_regions=return_regions)
+    if chart_key=='decorative_objects':
+        segments = _decorative_segments(stats, lang)
+        groups = [
+            {
+                'label': label,
+                'segments': [(value, color, '', details, focus)],
+                'tooltip_details': {'': details},
+            }
+            for value, color, label, details, focus in segments
+        ]
+        return _vertical_chart(
+            groups,
+            title,
+            width,
+            height,
+            dark,
+            tr('objets','objects','Objekte','objetos'),
+            return_regions=return_regions,
+        )
     if chart_key=='height':
         h=stats['height'].get('land_distribution',stats['height']['distribution']);keys=('p10','p25','median','p75','p90','p95','p99','max');names=tuple(tr(a,b,c,d) for a,b,c,d in [('P10 bas','P10 low','P10 niedrig','P10 bajo'),('P25 bas','P25 low','P25 niedrig','P25 bajo'),('Médiane','Median','Median','Mediana'),('P75 haut','P75 high','P75 hoch','P75 alto'),('P90 haut','P90 high','P90 hoch','P90 alto'),('P95 haut','P95 high','P95 hoch','P95 alto'),('P99 haut','P99 high','P99 hoch','P99 alto'),('Maximum','Maximum','Maximum','Máximo')]);items=[(names[i],float(h[k])) for i,k in enumerate(keys)]
         return _vertical_chart(_simple_groups(items,_gradient_colors(len(items),(226,236,220),(92,88,79))),title,width,height,dark,tr('hauteur','height','Höhe','altura'),return_regions=return_regions)

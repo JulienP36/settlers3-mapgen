@@ -52,3 +52,21 @@ def test_upgraded_facade_does_not_move_into_legacy_native_modules():
         source = path.read_text(encoding="utf-8")
         assert "generation.continental" not in source, path
         assert "validated" not in source, path
+
+
+def test_upgraded_pipeline_is_a_separate_complete_copy():
+    pipeline = (ROOT / "generators" / "upgraded" / "pipeline.py").read_text(encoding="utf-8")
+    terrain = (ROOT / "generators" / "upgraded" / "native_terrain.py").read_text(encoding="utf-8")
+    assert "assemble_continental_state" in pipeline
+    assert "generate_primary_terrain" in pipeline
+    assert "UpgradedContent" in pipeline
+    assert "generators.legacy" not in pipeline
+    assert "_FamilyPlan(DESERT" in terrain
+    assert "_FamilyPlan(SWAMP" in terrain
+    assert "_FamilyPlan(MUD" not in terrain
+
+
+def test_old_upgraded_monoliths_are_removed():
+    assert not (ROOT / "base.py").exists()
+    assert not (ROOT / "continental.py").exists()
+    assert not (ROOT / "validated.py").exists()

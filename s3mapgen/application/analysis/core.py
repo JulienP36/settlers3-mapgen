@@ -15,10 +15,10 @@ from ...map_data.constants import (
     TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
     TREE_SAPLING_STAGE_1_IDS, PALM_SAPLING_STAGE_1_IDS,
     SAPLING_STAGE_2_IDS, SAPLING_STAGE_1_IDS,
-    GRASS_DESERT_TRANS, GRASS_SWAMP_TRANS, ROCKY,
+    GRASS_DESERT_TRANS, GRASS_SWAMP_TRANS, ROCKY, ROCKY_DETAIL,
     ROCK_TRANS_1, ROCK_TRANS_2, ROCK_SNOW_TRANS, SHORE, DESERT,
     DESERT_TRANS, SWAMP, SWAMP_TRANS, RIVER_IDS, SNOW, SNOW_TRANS,
-    MOUNTAIN_IDS, DESERT_IDS, SWAMP_IDS,
+    MOUNTAIN_IDS, PALM_TREE_IDS, DESERT_IDS, SWAMP_IDS,
 )
 from ..rendering.preview import PLAYER_COLORS
 from ...map_data.hexgrid import component_labels, hex_distance, neighbor_count
@@ -43,12 +43,32 @@ TREE_FAMILIES = {
     'other_adult': ((73, 74, 75, 76, 77, 80, 81), 'Autres arbres adultes', 'Other adult trees'),
     'palm': ((78, 79), 'Palmiers', 'Palm'),
 }
+
+# Non-overlapping static-world object families used by the dedicated
+# decorative-object chart.  Crops, resource panels, lifecycle records and
+# other runtime-only values are intentionally kept out of this catalogue:
+# they already have their own analysis surfaces and are not map decoration.
+DECORATIVE_OBJECT_FAMILIES = (
+    ('decorative_stones', tuple(range(1, 29))),
+    ('wrecks', tuple(range(29, 34))),
+    ('graves', (34,)),
+    ('plants_fungi', tuple(range(35, 41))),
+    ('stumps', tuple(range(41, 43))),
+    ('dead_trees', tuple(range(43, 45))),
+    ('desert_props', tuple(range(45, 50))),
+    ('flowers_bushes', tuple(range(50, 62))),
+    ('reeds', tuple(range(62, 68))),
+    ('adult_trees', ADULT_TREE_IDS + PALM_TREE_IDS),
+    ('small_trees', PLANTATION_IDS),
+    ('reefs', tuple(range(111, 115))),
+    ('building_stones', tuple(range(115, 128))),
+)
 # Backward-compatible name for the original plantation/sapling object.  The
 # later lifecycle stages are exposed separately below instead of replacing
 # this existing stats field.
 SAPLING_IDS = PLANTATION_IDS
 MUD_IDS = (23, 144, 145)
-MOUNTAIN_ANALYSIS_IDS = tuple(sorted(set(MOUNTAIN_IDS + (34,))))
+MOUNTAIN_ANALYSIS_IDS = tuple(sorted(set(MOUNTAIN_IDS + (ROCKY_DETAIL,))))
 
 LOCAL_RADII = (10, 20, 30, 40, 50, 100)
 DRY_GRASS = 24
@@ -239,7 +259,7 @@ TERRAIN_NAMES = {
     21: ('Transition herbe/marais', 'Grass/swamp transition'),
     22: ('Agriculture runtime', 'Runtime agriculture'), 23: ('Boue', 'Mud'), 24: ('Herbe sèche', 'Dry grass'),
     28: ('Chemin runtime', 'Runtime path'), 32: ('Roche', 'Rocky'),
-    33: ('Transition roche 2', 'Rock transition 2'), 34: ('Détail roche', 'Rocky detail'),
+    33: ('Transition roche 2', 'Rock transition 2'), 34: ('Patch d’herbe rocheuse', 'Rocky grass patch'),
     35: ('Transition roche/neige', 'Rock/snow transition'), 48: ('Rivage', 'Shore'),
     64: ('Désert', 'Desert'), 65: ('Transition désert', 'Desert transition'),
     80: ('Marais', 'Swamp'), 81: ('Transition marais', 'Swamp transition'),
@@ -368,6 +388,14 @@ def _object_family_counts(objects: np.ndarray) -> dict[str, int]:
     return out
 
 
+def _decorative_object_family_counts(objects: np.ndarray) -> dict[str, int]:
+    """Count the known static-world decoration families without overlap."""
+    return {
+        key: int(np.isin(objects, ids).sum())
+        for key, ids in DECORATIVE_OBJECT_FAMILIES
+    }
+
+
 def analyze_map(state) -> dict[str, Any]:
     T = np.asarray(state.terrain)
     O = np.asarray(state.objects)
@@ -406,6 +434,7 @@ def analyze_map(state) -> dict[str, Any]:
         object_ids.append({'id': oid, 'name_fr': fr, 'name_en': en, 'count': int(count), 'pct_map': _pct(count, n)})
 
     object_families = _object_family_counts(O)
+    decorative_object_families = _decorative_object_family_counts(O)
     tree_adults = sum(object_families[k] for k in ('birch','elm','oak','other_adult'))
     tree_all_adults = tree_adults + object_families['palm']
 
@@ -510,12 +539,17 @@ def analyze_map(state) -> dict[str, Any]:
             'dry_grass_cells': int((T == DRY_GRASS).sum()),
             'mountain_cells': support_n, 'mountain_pct_land': _pct(support_n, land_n),
             'mountain_non_snow_cells': int(mountain_non_snow_mask.sum()), 'snow_family_cells': int(snow_family_mask.sum()),
+            'rocky_grass_patch_cells': int((T == ROCKY_DETAIL).sum()),
             'desert_cells': int(np.isin(T, DESERT_IDS).sum()), 'swamp_cells': int(np.isin(T, SWAMP_IDS).sum()),
             'mud_cells': int(np.isin(T, MUD_IDS).sum()),
             'river_cells': int(np.isin(T, RIVER_IDS).sum()), 'shore_cells': int((T == SHORE).sum()),
         },
         'terrain': {'ids': terrain_ids, 'families': terrain_families},
-        'objects': {'ids': object_ids, 'families': object_families},
+        'objects': {
+            'ids': object_ids,
+            'families': object_families,
+            'decorative_families': decorative_object_families,
+        },
         'vegetation': {
             'adult_wood_trees': int(tree_adults), 'adult_trees_including_palms': int(tree_all_adults),
             # ID84 is the established plantation metric.  Keep its legacy
@@ -615,6 +649,8 @@ def stats_csv(stats: dict[str, Any]) -> str:
     for row in stats['building_stones']['states']:
         w.writerow(['building_stone', 'anchors', row['object_id'], row['anchors']]); w.writerow(['building_stone', 'stock', row['object_id'], row['stock']])
     for key, value in stats['vegetation']['families'].items(): w.writerow(['vegetation', 'count', key, value])
+    for key, value in stats.get('objects', {}).get('decorative_families', {}).items():
+        w.writerow(['decorative_object_family', 'count', key, value])
     w.writerow(['vegetation', 'count', 'saplings', stats['vegetation']['saplings']])
     for key in ('plantations', 'saplings_stage_2', 'saplings_stage_1',
                 'tree_saplings_stage_2', 'palm_saplings_stage_2',

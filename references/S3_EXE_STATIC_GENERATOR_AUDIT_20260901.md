@@ -370,7 +370,7 @@ Après les quatre grandes familles de pinceaux, trois poses supplémentaires son
 |---|---:|---:|---|
 | Herbe `16` | `18` | 2 | micro-terrain / transition d'herbe sèche, nom précis à stabiliser |
 | Herbe `16` | `19` | 2 | micro-terrain / transition d'herbe sèche, nom précis à stabiliser |
-| Roche `32` | `34` | 2 | détail rocheux : petites inclusions d'herbe dans la roche |
+| Roche `32` | `34` | 2 | patch d’herbe rocheuse : petites inclusions d’herbe dans la roche |
 
 Ces ajouts interviennent avant la génération des variantes graphiques et des détails, mais après les grandes zones et leurs lissages.
 

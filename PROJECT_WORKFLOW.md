@@ -92,14 +92,12 @@ This standing authorization does **not** cover `main`, tags, GitHub Releases, fo
 Do not alter these retained baselines without an explicit generation-engine
 reason. The obsolete procedural Legacy generator is absent after the DEV_2
 reset; the replacement native Legacy v1 lives in the separate
-`generation/generators/legacy/` package. The former 768 Legacy profile remains
-only as a protected compatibility resource for packaging diagnostics, while
-the active native profile is `config/generation_profiles/continental_legacy_v2.json`.
-- `s3mapgen/generation/base.py` — `b2df5cc0329be2e63ba27b06501a5661547ce23f2b2ea739d3ec23de497bce88`
-- `s3mapgen/generation/continental.py` — `29d2413a742e4b5f446fed0cb4eed5b362b1ead431632d4a0397c3f4ea32c4d2`
-- `s3mapgen/generation/validated.py` — `cabcc24fc8a5eac99d2a9a9a5009d41addc1cc49d05815d2d3567e105f8277c5`
+`generation/generators/legacy/` package, and the independent Upgraded copy now
+lives in `generation/generators/upgraded/`. The former 768 Legacy profile
+remains only as a protected compatibility resource for packaging diagnostics,
+while the active native profile is `config/generation_profiles/continental_legacy_v2.json`.
 - `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
-- `config/upgraded_768_v1.json` — `11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441`
+- `config/upgraded_768_v1.json` — `6faa91f4677692797cee34a79f09f2026fda4ac80e9b1aef6dc38c91058244ac`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`
 
 Check these hashes after significant tooling/UI/Stats work. These values are

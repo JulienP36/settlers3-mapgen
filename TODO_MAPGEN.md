@@ -18,9 +18,9 @@
   catalogue objets, terrains `18/19`, nids `247–253` et graphes de végétation.
 
 Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute modification de
-génération ou de format. Depuis le reset DEV_2, la protection concerne le
-chemin de compatibilité Upgraded ; l'ancien Legacy v1.5 et le générateur
-procédural DEV_1 ont été explicitement retirés.
+génération ou de format. Depuis le reset DEV_2, le Legacy natif est le
+checkpoint validé ; l'ancien Legacy v1.5 et l'ancien moteur Upgraded sont
+remplacés par des pipelines séparés en cours de reconstruction.
 
 ## Prochaine RC/STABLE — après v1.10
 
@@ -72,16 +72,34 @@ stabilisées.
 
 ## v2.0 — reconstruction native Legacy, puis Custom
 
-La **reconstruction complète du pipeline** est maintenant le périmètre v2.0.
-Le générateur procédural Continental de DEV_1 a été retiré : ses volumes
-minéraux étaient calibrés, mais ses formes n’étaient pas assez proches du
-jeu. DEV_2 repart de l’audit décompilé et conserve uniquement le chemin
-Upgraded validé pendant cette reconstruction.
+La **reconstruction complète des pipelines** est maintenant le périmètre v2.0.
+Le générateur procédural Continental de DEV_1 a été retiré et le Legacy natif
+est validé dans DEV_2. Le chantier Upgraded a été porté dans une copie
+indépendante du pipeline Legacy ; sa calibration visuelle DEV_3 est maintenant
+validée, avec uniquement ses différences explicites.
+
+### v2.0 — Upgraded indépendant
+
+- [x] Dupliquer le pipeline terrain Legacy dans `generators/upgraded/` sans
+  dépendance d’exécution vers `generators/legacy/`.
+- [x] Réintégrer la génération calibrée des minerais de montagnes.
+- [x] Réintégrer poissons, arbres, décorations et pierres de construction.
+- [x] Désactiver toute génération de boue dans Upgraded.
+- [x] Garder le positionnement des joueurs isolé pour une passe dédiée ; le
+  pont actuel reste provisoire et ne crée ni ressources ni colons de départ.
+- [x] Calibrer les blobs miniers avec compensation de la projection
+  parallélogramme, sans changer la topologie HEX6, les quotas, les quantités ou
+  la règle no-gap.
+- [x] Documenter le terrain `34` comme **Patch d’herbe rocheuse**, l’ajouter au
+  graphique Montagne avec une couleur dédiée et harmoniser sa couleur de carte.
+- [x] Ajouter les tests de parité terrain et les validations spécifiques
+  Upgraded du checkpoint DEV_3 ; la parité externe complète reste à rejouer
+  dans l’éditeur/jeu lors de la prochaine validation dédiée.
 
 - [x] Ancien pipeline Legacy DEV_1 retiré, y compris ses profils, helpers et
   bibliothèques de silhouettes dérivées.
-- [x] Chemin Upgraded isolé et conservé avec ses règles, profils et validations
-  de compatibilité.
+- [x] Chemin Upgraded isolé, avec sa copie de pipeline, ses règles, son profil
+  et ses validations spécifiques.
 - [x] Comparaison des minerais DEV_1/natif archivée : mix proche, géométrie
   trop fragmentée ; aucune heuristique minérale DEV_1 ne devient une règle.
 - [x] Première passe de l'audit non-terrain ajoutée : ordre Area/bâtiments/
@@ -147,6 +165,10 @@ Upgraded validé pendant cette reconstruction.
 - [ ] Reporter responsive UI v2, Status/Feedback v2, centres d'export et
   diagnostic mémoire v1.11 à une passe dédiée avec mesures factuelles.
 
+- [ ] Implémenter dans Upgraded la passe séparée du positionnement des starts,
+  bonus de départ et objets de départ ; ne pas mélanger cette passe avec la
+  calibration DEV_3 validée.
+
 ## Personnalisation, après Continental et ENDGAME
 
 - [ ] Relire DE/ES, versionner les packs de langue et thèmes déclaratifs, puis
@@ -163,7 +185,8 @@ Upgraded validé pendant cette reconstruction.
 - Archetype = macro-géographie ; Legacy/Upgraded = contenu, règles, balance,
   ressources et objets.
 - Legacy : terrain/objets/ressources avant re-seed, puis starts/ville/stock ;
-  Upgraded : starts précoces et minerais v7 no-gap préservés.
+  Upgraded : terrain copié indépendant, contenu global spécifique, minerais v7
+  no-gap préservés et contenu de départ différé.
 - Aucun aperçu ou asset imaginaire ; SAV lu sans réinvention et copié inchangé.
 - IDs inconnus explicitement inconnus ; ne jamais repartir d'une version
   invalidée du générateur.

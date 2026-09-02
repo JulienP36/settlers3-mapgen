@@ -48,7 +48,7 @@ ordinaire (ID 16). Ils appartiennent donc à la famille `Herbe`; leur distinctio
 | 31 | Inconnu | Inconnu | À identifier |
 | 32 | Roche | Rocky | Connu |
 | 33 | Transition roche 2 | Rock transition 2 | Connu |
-| 34 | Détail roche | Rocky detail | Connu |
+| 34 | Patch d’herbe rocheuse | Rocky grass patch | Confirmé — petit patch d’herbe dans la roche |
 | 35 | Transition roche/neige | Rock/snow transition | Connu |
 | 36 | Inconnu | Inconnu | À identifier |
 | 37 | Inconnu | Inconnu | À identifier |

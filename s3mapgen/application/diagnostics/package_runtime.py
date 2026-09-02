@@ -26,7 +26,7 @@ from ...version import APP_VERSION, ENGINE_VERSION
 
 PROTECTED_RESOURCE_HASHES={
     'legacy_profile':'bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85',
-    'upgraded_profile':'11a4feba38372a63d6dd32959d7578377ffc6da82a0e33fd918d597b15a5b441',
+    'upgraded_profile':'6faa91f4677692797cee34a79f09f2026fda4ac80e9b1aef6dc38c91058244ac',
     'native_library':'fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d',
 }
 
