@@ -9,6 +9,7 @@ from PIL import ImageTk
 
 from .core import analyze_map
 from .charts import CHART_KEYS, CHART_LABELS, render_stats_chart
+from ..rendering.focus import focus_signature
 from ..ui.i18n.common import _lang_text
 
 
@@ -29,13 +30,44 @@ class AnalysisController:
         ttk.Label(controls,text='Graphiques').grid(row=0,column=0,sticky='w',padx=(0,8))
         self.stats_chart_var=tk.StringVar(value=CHART_LABELS[self.prefs.get('language','fr')]['terrain_families'])
         self.stats_chart_combo=ttk.Combobox(controls,textvariable=self.stats_chart_var,state='readonly',width=40)
-        self.stats_chart_combo.grid(row=0,column=1,sticky='ew',padx=(0,8));self.stats_chart_combo.bind('<<ComboboxSelected>>',lambda e:self._refresh_stats_chart())
-        self.stats_export_button=ttk.Button(controls,text='Exporter…',command=self._open_stats_export_center);self.stats_export_button.grid(row=0,column=2,padx=3)
+        self.stats_chart_combo.grid(row=0,column=1,sticky='ew',padx=(0,8));self.stats_chart_combo.bind('<<ComboboxSelected>>',lambda e:self._stats_chart_selection_changed())
+        self.stats_link_var=tk.BooleanVar(value=False)
+        self.stats_link_button=ttk.Checkbutton(controls,text='Lier à la vue',variable=self.stats_link_var,command=self._toggle_chart_link)
+        self.stats_link_button.grid(row=0,column=2,padx=(0,8))
+        self.stats_export_button=ttk.Button(controls,text='Exporter…',command=self._open_stats_export_center);self.stats_export_button.grid(row=0,column=3,padx=3)
         self.stats_chart_canvas=tk.Canvas(frame,highlightthickness=0,bg='#212225');self.stats_chart_canvas.grid(row=1,column=0,sticky='nsew')
         self.stats_chart_canvas.bind('<Configure>',lambda e:self._refresh_stats_chart(),add='+')
-        self.stats_chart_canvas.bind('<Motion>',self._chart_tooltip_motion,add='+');self.stats_chart_canvas.bind('<Leave>',lambda e:self._hide_chart_tooltip(),add='+')
+        self.stats_chart_canvas.bind('<Motion>',self._chart_tooltip_motion,add='+');self.stats_chart_canvas.bind('<Leave>',self._chart_leave,add='+')
         self._stats_chart_photo=None;self._stats_chart_regions=[];self._chart_tooltip=None;self._chart_tooltip_label=None
+        self._chart_hover_region=None;self._chart_link_focus=None
         self._refresh_stats_chart_labels()
+
+    def _stats_chart_selection_changed(self):
+        """Change charts without leaving a stale semantic selection active."""
+        self._chart_hover_region=None
+        self._set_chart_link_focus(None)
+        self._refresh_stats_chart()
+
+    def _set_chart_link_focus(self, focus):
+        if not getattr(self, 'stats_link_var', None) or not self.stats_link_var.get():
+            focus=None
+        old=focus_signature(getattr(self, '_chart_link_focus', None))
+        new=focus_signature(focus)
+        self._chart_link_focus=focus
+        if old != new and hasattr(self, '_refresh_preview'):
+            self._refresh_preview(False)
+
+    def _toggle_chart_link(self):
+        """Enable temporary chart-hover highlighting in the main map."""
+        focus=None
+        if self.stats_link_var.get():
+            focus=(getattr(self, '_chart_hover_region', None) or {}).get('focus')
+        self._set_chart_link_focus(focus)
+
+    def _chart_leave(self,event=None):
+        self._hide_chart_tooltip()
+        self._chart_hover_region=None
+        self._set_chart_link_focus(None)
 
     def _refresh_stats_chart_labels(self):
         if not hasattr(self,'stats_chart_combo'):return
@@ -100,7 +132,9 @@ class AnalysisController:
             if x0<=event.x<=x1 and y0<=event.y<=y1:
                 hit=region;break
         if hit is None:
-            self._hide_chart_tooltip();return
+            self._chart_leave();return
+        self._chart_hover_region=hit
+        self._set_chart_link_focus(hit.get('focus'))
         unit=hit.get('unit','');text=f"{hit.get('label','')}\n{hit.get('value','')}"+(f" {unit}" if unit else '')
         details=hit.get('details') or []
         if details:text+='\n'+'\n'.join(str(line) for line in details)

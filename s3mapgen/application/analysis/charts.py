@@ -265,8 +265,8 @@ def _vertical_chart(groups,title,width=900,height=520,dark=True,y_label=None,sho
         for seg in g['segments']:
             value,color,seg_label=seg[:3];segment_details=list(seg[3]) if len(seg)>3 and seg[3] else []
             value=max(0,float(value))
-            if value<=0:continue
-            h=max(1,int(plot_h*value/max_axis));ytop=ybase-h;d.rectangle((x0,ytop,x1,ybase),fill=color)
+            if value<=0 and not (value == 0 and g.get('allow_zero_region')):continue
+            h=1 if value == 0 else max(1,int(plot_h*value/max_axis));ytop=ybase-h;d.rectangle((x0,ytop,x1,ybase),fill=color)
             group_label=str(g.get('tooltip_label') or g.get('pair_label') or g.get('label') or '').strip()
             tooltip_label=str(seg_label or group_label or title).strip()
             if group_label and seg_label and group_label != seg_label: tooltip_label=f'{group_label} · {seg_label}'
@@ -398,7 +398,8 @@ def _paired_ab_chart(metrics,title,width=900,height=520,dark=True,return_regions
                         sw=bw-cursor+bx if j==len(segs)-1 else int(bw*float(sv)/total)
                         x2=cursor+max(1,sw);d.rectangle((cursor,y,x2,y+h),fill=c)
                         tip_label=f'{side_name} · {label}' + (f' · {seg_label}' if seg_label else '')
-                        regions.append({'bbox':(cursor,y,x2,y+h),'label':tip_label,'value':_fmt(sv),'unit':'','details':details});cursor=x2
+                        region={'bbox':(cursor,y,x2,y+h),'label':tip_label,'value':_fmt(sv),'unit':'','details':details}
+                        regions.append(region);cursor=x2
                 else:
                     d.rectangle((bx,y,bx+bw,y+h),fill=(65,135,220) if side==0 else (230,145,55))
                     regions.append({'bbox':(bx,y,bx+bw,y+h),'label':f'{side_name} · {label}','value':_fmt(value),'unit':''})
@@ -437,6 +438,7 @@ def _forestry_segments(stats, lang='fr'):
             FORESTRY_COLORS['adult_trees'],
             tr('Arbres adultes', 'Adult trees', 'Ausgewachsene Bäume', 'Árboles adultos'),
             [_id_line('object', ADULT_TREE_IDS, fr, lang)],
+            {'kind': 'object_ids', 'ids': tuple(ADULT_TREE_IDS)},
         ),
         (
             stage_2,
@@ -446,6 +448,7 @@ def _forestry_segments(stats, lang='fr'):
                 _id_line('object', TREE_SAPLING_STAGE_2_IDS, fr, lang),
                 _id_line('object', PALM_SAPLING_STAGE_2_IDS, fr, lang),
             ],
+            {'kind': 'object_ids', 'ids': tuple(TREE_SAPLING_STAGE_2_IDS + PALM_SAPLING_STAGE_2_IDS)},
         ),
         (
             stage_1,
@@ -455,18 +458,21 @@ def _forestry_segments(stats, lang='fr'):
                 _id_line('object', TREE_SAPLING_STAGE_1_IDS, fr, lang),
                 _id_line('object', PALM_SAPLING_STAGE_1_IDS, fr, lang),
             ],
+            {'kind': 'object_ids', 'ids': tuple(TREE_SAPLING_STAGE_1_IDS + PALM_SAPLING_STAGE_1_IDS)},
         ),
         (
             plantations,
             FORESTRY_COLORS['plantations'],
             tr('Plantations', 'Plantations', 'Pflanzungen', 'Plantaciones'),
             [_id_line('object', PLANTATION_IDS, fr, lang)],
+            {'kind': 'object_ids', 'ids': tuple(PLANTATION_IDS)},
         ),
         (
             int(v.get('families', {}).get('palm', 0)),
             FORESTRY_COLORS['adult_palms'],
             tr('Palmiers adultes', 'Adult palms', 'Ausgewachsene Palmen', 'Palmeras adultas'),
             [_id_line('object', PALM_TREE_IDS, fr, lang)],
+            {'kind': 'object_ids', 'ids': tuple(PALM_TREE_IDS)},
         ),
     ]
 
@@ -509,6 +515,7 @@ def _mountain_segments(stats, lang='fr'):
             PALETTE.get(ROCKY, (109, 109, 103)),
             tr('Roche', 'Rocky', 'Fels', 'Roca'),
             [_id_line('terrain', (17, 32, 33), fr, lang)],
+            {'kind': 'terrain_ids', 'ids': (17, 32, 33)},
         ),
         (
             patch,
@@ -520,12 +527,14 @@ def _mountain_segments(stats, lang='fr'):
                 'Parche de hierba rocosa',
             ),
             [_id_line('terrain', (ROCKY_DETAIL,), fr, lang)],
+            {'kind': 'terrain_ids', 'ids': (ROCKY_DETAIL,)},
         ),
         (
             int(general.get('snow_family_cells', 0)),
             (220, 222, 218),
             tr('Neige', 'Snow', 'Schnee', 'Nieve'),
             [_id_line('terrain', TERRAIN_ID_GROUPS['snow'], fr, lang)],
+            {'kind': 'terrain_ids', 'ids': tuple(TERRAIN_ID_GROUPS['snow'])},
         ),
     ]
 
@@ -535,25 +544,25 @@ def build_ab_metrics(a,b,fr=True,lang=None):
     """Build compact A/B comparison rows with semantic segment composition."""
     lang=lang or ('fr' if fr else 'en');fr=lang=='fr';tr=lambda a,b,c,d:_t(lang,a,b,c,d)
     def ore_segments(st):
-        return [(st['resources']['minerals'][key]['stock'],MINERAL_COLORS[key],MINERAL_NAMES_I18N[lang][key],[_resource_id_line(MINERAL_NAMES_I18N[lang][key],RESOURCE_IDS[key],fr,lang)]) for key in ('coal','iron','gold','gems','sulfur')]
+        return [(st['resources']['minerals'][key]['stock'],MINERAL_COLORS[key],MINERAL_NAMES_I18N[lang][key],[_resource_id_line(MINERAL_NAMES_I18N[lang][key],RESOURCE_IDS[key],fr,lang)],{'kind':'resource_family','family':key}) for key in ('coal','iron','gold','gems','sulfur')]
 
     def water_segments(st):
-        g=st['general'];ids=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)];return [(g.get('ocean_cells',0),WATER_COLORS[5],tr('Mer','Ocean','Meer','Océano'),ids),(g.get('inland_water_cells',0),WATER_COLORS[1],tr('Lacs','Lakes','Seen','Lagos'),ids)]
+        g=st['general'];ids=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)];return [(g.get('ocean_cells',0),WATER_COLORS[5],tr('Mer','Ocean','Meer','Océano'),ids,{'kind':'water_component','component':'ocean'}),(g.get('inland_water_cells',0),WATER_COLORS[1],tr('Lacs','Lakes','Seen','Lagos'),ids,{'kind':'water_component','component':'inland'})]
 
     def mountain_segments(st):
         return _mountain_segments(st, lang)
 
     def agri_segments(st):
-        ag=st['agriculture'];return [(ag['wheat'],AGRI_COLORS['wheat'],tr('Blé','Wheat','Weizen','Trigo'),[_id_line('object',range(85,94),fr,lang)]),(ag['vine'],AGRI_COLORS['vine'],tr('Vigne','Vine','Weinreben','Vid'),[_id_line('object',range(94,103),fr,lang)]),(ag['rice'],AGRI_COLORS['rice'],tr('Riz','Rice','Reis','Arroz'),[_id_line('object',range(103,111),fr,lang)]),(ag.get('bee_nests',0),AGRI_COLORS['bee_nests'],tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),[_id_line('object',BEE_NEST_IDS,fr,lang)])]
+        ag=st['agriculture'];return [(ag['wheat'],AGRI_COLORS['wheat'],tr('Blé','Wheat','Weizen','Trigo'),[_id_line('object',range(85,94),fr,lang)],{'kind':'object_ids','ids':tuple(range(85,94)),'view':'crops'}),(ag['vine'],AGRI_COLORS['vine'],tr('Vigne','Vine','Weinreben','Vid'),[_id_line('object',range(94,103),fr,lang)],{'kind':'object_ids','ids':tuple(range(94,103)),'view':'crops'}),(ag['rice'],AGRI_COLORS['rice'],tr('Riz','Rice','Reis','Arroz'),[_id_line('object',range(103,111),fr,lang)],{'kind':'object_ids','ids':tuple(range(103,111)),'view':'crops'}),(ag.get('bee_nests',0),AGRI_COLORS['bee_nests'],tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),[_id_line('object',BEE_NEST_IDS,fr,lang)],{'kind':'object_ids','ids':tuple(BEE_NEST_IDS),'view':'crops'})]
 
     specs=[
         (tr('Terre','Land','Land','Tierra'),lambda st:st['general']['land_cells'],lambda st:[(st['general']['land_cells'],PALETTE.get(GRASS,(72,148,69)),tr('Cases terrestres','Land cells','Landzellen','Celdas terrestres'))]),
         (tr('Eau','Water','Wasser','Agua'),lambda st:st['general']['water_cells'],water_segments),
         (tr('Montagne','Mountain','Gebirge','Montaña'),lambda st:st['general']['mountain_cells'],mountain_segments),
         (tr('Arbres et pousses','Trees and saplings','Bäume und Setzlinge','Árboles y retoños'),lambda st:sum(seg[0] for seg in _forestry_segments(st, lang)),lambda st:_forestry_segments(st, lang)),
-        (tr('Stock pierre','Stone stock','Steinvorrat','Reserva de piedra'),lambda st:st['building_stones']['stock_total'],lambda st:[(st['building_stones']['stock_total'],(125,125,120),tr('Pierre','Stone','Stein','Piedra'),[_id_line('object',range(115,128),fr,lang)])]),
+        (tr('Stock pierre','Stone stock','Steinvorrat','Reserva de piedra'),lambda st:st['building_stones']['stock_total'],lambda st:[(st['building_stones']['stock_total'],(125,125,120),tr('Pierre','Stone','Stein','Piedra'),[_id_line('object',range(115,128),fr,lang)],{'kind':'object_ids','ids':tuple(range(115,128))})]),
         (tr('Stock minier','Mining stock','Mineralvorrat','Reservas minerales'),lambda st:sum(seg[0] for seg in ore_segments(st)),ore_segments),
-        (tr('Stock poisson','Fish stock','Fischvorrat','Reserva de peces'),lambda st:st['resources']['fish_stock'],lambda st:[(st['resources']['fish_stock'],WATER_COLORS[2],tr('Poisson','Fish','Fisch','Pez'),[_id_line('resource',range(1,16),fr,lang)])]),
+        (tr('Stock poisson','Fish stock','Fischvorrat','Reserva de peces'),lambda st:st['resources']['fish_stock'],lambda st:[(st['resources']['fish_stock'],WATER_COLORS[2],tr('Poisson','Fish','Fisch','Pez'),[_id_line('resource',range(1,16),fr,lang)],{'kind':'fish'})]),
         (tr('Agriculture','Agriculture','Landwirtschaft','Agricultura'),lambda st:sum(seg[0] for seg in agri_segments(st)),agri_segments),
     ]
     rows=[]
@@ -573,23 +582,23 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             if key=='grass':
                 green=g.get('green_grass_cells',r['cells']);detail=g.get('grass_detail_cells',max(0,r['cells']-green-g.get('dry_grass_cells',0)));dry=g.get('dry_grass_cells',0)
                 green_label=tr('Herbe verte','Green grass','Grünes Gras','Hierba verde');detail_label=tr('Détails d’herbe','Grass details','Grasdetails','Detalles de hierba');dry_label=tr('Herbe sèche','Dry grass','Trockenes Gras','Hierba seca')
-                groups.append({'label':name,'segments':[(green,TERRAIN_COLORS['grass'],green_label),(detail,TERRAIN_COLORS['grass_detail'],detail_label),(dry,(177,157,82),dry_label)],
+                groups.append({'label':name,'segments':[(green,TERRAIN_COLORS['grass'],green_label,[],{'kind':'terrain_ids','ids':tuple(TERRAIN_ID_GROUPS['grass_green'])}),(detail,TERRAIN_COLORS['grass_detail'],detail_label,[],{'kind':'terrain_ids','ids':tuple(TERRAIN_ID_GROUPS['grass_detail'])}),(dry,(177,157,82),dry_label,[],{'kind':'terrain_ids','ids':tuple(TERRAIN_ID_GROUPS['grass_dry'])})],
                                'tooltip_details':{green_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_green'],fr,lang)],detail_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_detail'],fr,lang)],dry_label:[_id_line('terrain',TERRAIN_ID_GROUPS['grass_dry'],fr,lang)]}})
             elif key=='water':
                 sea=tr('Mer','Ocean','Meer','Océano');lakes=tr('Lacs','Lakes','Seen','Lagos');detail=[_id_line('terrain',TERRAIN_ID_GROUPS['water'],fr,lang)]
-                groups.append({'label':name,'segments':[(g.get('ocean_cells',r['cells']),WATER_COLORS[5],sea),(g.get('inland_water_cells',0),WATER_COLORS[1],lakes)],'tooltip_details':{sea:detail,lakes:detail}})
+                groups.append({'label':name,'segments':[(g.get('ocean_cells',r['cells']),WATER_COLORS[5],sea,[],{'kind':'water_component','component':'ocean'}),(g.get('inland_water_cells',0),WATER_COLORS[1],lakes,[],{'kind':'water_component','component':'inland'})],'tooltip_details':{sea:detail,lakes:detail}})
             elif key=='mountain':
                 groups.append({'label':name,'segments':_mountain_segments(stats, lang)})
             else:
                 ids=TERRAIN_ID_GROUPS.get(key,())
-                groups.append({'label':name,'segments':[(r['cells'],TERRAIN_COLORS[key],'')],'tooltip_details':{'':([_id_line('terrain',ids,fr,lang)] if ids else [])}})
+                groups.append({'label':name,'segments':[(r['cells'],TERRAIN_COLORS[key],'',[],{'kind':'terrain_ids','ids':tuple(ids)})],'tooltip_details':{'':([_id_line('terrain',ids,fr,lang)] if ids else [])}})
         return _vertical_chart(groups,title,width,height,dark,tr('cases','cells','Zellen','celdas'),return_regions=return_regions)
     if chart_key=='mineral_stock':
         groups=[]
         for key,v in stats['resources']['minerals'].items():
             base=MINERAL_COLORS[key];snow=_lerp(base,(235,235,235),0.58)
             mineral_name=MINERAL_NAMES_I18N[lang][key];open_label=tr('Libre','Open','Frei','Libre');snow_label=tr('Sous neige','Snow-covered','Unter Schnee','Bajo nieve')
-            groups.append({'label':mineral_name,'segments':[(v.get('open_stock',v['stock']),base,open_label),(v.get('snow_covered_stock',0),snow,snow_label)],
+            groups.append({'label':mineral_name,'segments':[(v.get('open_stock',v['stock']),base,open_label,[],{'kind':'resource_family','family':key,'scope':'open'}),(v.get('snow_covered_stock',0),snow,snow_label,[],{'kind':'resource_family','family':key,'scope':'snow'})],
                            'tooltip_details':{open_label:[_resource_id_line(mineral_name,RESOURCE_IDS[key],fr,lang),_id_line('terrain',TERRAIN_ID_GROUPS['rock_open'],fr,lang)],snow_label:[_resource_id_line(mineral_name,RESOURCE_IDS[key],fr,lang),_id_line('terrain',TERRAIN_ID_GROUPS['snow'],fr,lang)]}})
         legend=[(MINERAL_NAMES_I18N[lang][k],MINERAL_COLORS[k]) for k in ('coal','iron','gold','gems','sulfur')]
         note=tr('Teinte claire = sous neige','Lighter shade = snow-covered','Heller Farbton = unter Schnee','Tono claro = bajo nieve')
@@ -603,14 +612,16 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             u=r['units_each'];lab=(f'{u} '+tr('pierres','stones','Steine','piedras')) if u>1 else (tr('1 pierre','1 stone','1 Stein','1 piedra') if u==1 else tr('Épuisé','Exhausted','Erschöpft','Agotado'))
             items.append((lab,r['anchors']))
         groups=_simple_groups(items,colors)
-        for group,row in zip(groups,rows):group['tooltip_details']={'':[_id_line('object',(row['object_id'],),fr,lang)]}
+        for group,row in zip(groups,rows):
+            group['tooltip_details']={'':[_id_line('object',(row['object_id'],),fr,lang)]}
+            group['focus']={'kind':'object_ids','ids':(int(row['object_id']),)}
         return _vertical_chart(groups,title,width,height,dark,tr('piles','piles','Haufen','pilas'),return_regions=return_regions)
     if chart_key=='forestry':
         segments = _forestry_segments(stats, lang)
         groups = [
-            {'label': label, 'segments': [(value, color, '')],
+            {'label': label, 'segments': [(value, color, '', details, focus)],
              'tooltip_details': {'': details}}
-            for value, color, label, details in segments
+            for value, color, label, details, focus in segments
         ]
         return _vertical_chart(groups,title,width,height,dark,tr('objets','objects','Objekte','objetos'),return_regions=return_regions)
     if chart_key=='decorative_objects':
@@ -634,18 +645,25 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
         )
     if chart_key=='height':
         h=stats['height'].get('land_distribution',stats['height']['distribution']);keys=('p10','p25','median','p75','p90','p95','p99','max');names=tuple(tr(a,b,c,d) for a,b,c,d in [('P10 bas','P10 low','P10 niedrig','P10 bajo'),('P25 bas','P25 low','P25 niedrig','P25 bajo'),('Médiane','Median','Median','Mediana'),('P75 haut','P75 high','P75 hoch','P75 alto'),('P90 haut','P90 high','P90 hoch','P90 alto'),('P95 haut','P95 high','P95 hoch','P95 alto'),('P99 haut','P99 high','P99 hoch','P99 alto'),('Maximum','Maximum','Maximum','Máximo')]);items=[(names[i],float(h[k])) for i,k in enumerate(keys)]
-        return _vertical_chart(_simple_groups(items,_gradient_colors(len(items),(226,236,220),(92,88,79))),title,width,height,dark,tr('hauteur','height','Höhe','altura'),return_regions=return_regions)
+        groups=_simple_groups(items,_gradient_colors(len(items),(226,236,220),(92,88,79)))
+        for group,key,value in zip(groups,keys,items):
+            mode='le' if key in ('p10','p25','median') else ('eq' if key=='max' else 'ge')
+            group['focus']={'kind':'height_band','mode':mode,'threshold':float(value[1])}
+        return _vertical_chart(groups,title,width,height,dark,tr('hauteur','height','Höhe','altura'),return_regions=return_regions)
     if chart_key=='agriculture':
         ag=stats['agriculture'];items=[(tr('Blé','Wheat','Weizen','Trigo'),ag['wheat']),(tr('Vigne','Vine','Weinreben','Vid'),ag['vine']),(tr('Riz','Rice','Reis','Arroz'),ag['rice']),(tr('Nids d’abeilles','Bee nests','Bienennester','Nidos de abejas'),ag.get('bee_nests',0))]
         groups=_simple_groups(items,[AGRI_COLORS['wheat'],AGRI_COLORS['vine'],AGRI_COLORS['rice'],AGRI_COLORS['bee_nests']])
         ids=(range(85,94),range(94,103),range(103,111),BEE_NEST_IDS)
-        for group,obj_ids in zip(groups,ids):group['tooltip_details']={'':[_id_line('object',obj_ids,fr,lang)]}
+        for group,obj_ids in zip(groups,ids):
+            group['tooltip_details']={'':[_id_line('object',obj_ids,fr,lang)]}
+            group['focus']={'kind':'object_ids','ids':tuple(obj_ids),'view':'crops'}
         return _vertical_chart(groups,title,width,height,dark,tr('cases','cells','Zellen','celdas'),return_regions=return_regions)
     if chart_key=='nearest_starts':
-        rows=stats['players']['nearest_start'];vals=[r['distance'] for r in rows];colors=_three_color_series(vals,zero_floor=False);groups=[]
+        rows=stats['players']['nearest_start'];vals=[r['distance'] for r in rows];colors=_three_color_series(vals,zero_floor=True);groups=[]
         for i,r in enumerate(rows):
             opp=r.get('nearest_player');lab=f"P{r['player']}"
-            g={'label':lab,'segments':[(r['distance'],colors[i],'')],'swatches':[PLAYER_COLORS[(r['player']-1)%len(PLAYER_COLORS)]]}
+            focus={'kind':'start_player','player':int(r['player']),'nearest_player':int(opp) if opp else None}
+            g={'label':lab,'segments':[(r['distance'],colors[i],'',[],focus)],'allow_zero_region':True,'swatches':[PLAYER_COLORS[(r['player']-1)%len(PLAYER_COLORS)]]}
             if opp:
                 g['top_annotation']=f"P{opp}";g['top_swatch']=PLAYER_COLORS[(opp-1)%len(PLAYER_COLORS)]
             groups.append(g)
@@ -663,7 +681,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             near=metric(row['radii'].get('50',{}));total100=metric(row['radii'].get('100',{}));far=max(0,total100-near);raw.append((row['player'],near,far,total100))
         basecols=_three_color_series([r[3] for r in raw],zero_floor=True);groups=[]
         for i,(player,near,far,total) in enumerate(raw):
-            c=basecols[i];groups.append({'label':f'P{player}','swatches':[PLAYER_COLORS[(player-1)%len(PLAYER_COLORS)]],'segments':[(near,c,'0–50 HEX'),(far,_lerp(c,(245,245,245),0.34),'50–100 HEX')]})
+            c=basecols[i];groups.append({'label':f'P{player}','swatches':[PLAYER_COLORS[(player-1)%len(PLAYER_COLORS)]],'segments':[(near,c,'0–50 HEX',[],{'kind':'player_local','player':int(player),'radius':50,'inner':True,'resource':key}),(far,_lerp(c,(245,245,245),0.34),'50–100 HEX',[],{'kind':'player_local','player':int(player),'radius':100,'inner':False,'resource':key})]})
         note=tr('Foncé : 0–50 HEX · clair : 50–100 HEX','Dark: 0–50 HEX · light: 50–100 HEX','Dunkel: 0–50 HEX · hell: 50–100 HEX','Oscuro: 0–50 HEX · claro: 50–100 HEX')
         return _vertical_chart(groups,title,width,height,dark,tr('stock','stock','Vorrat','reserva') if key!='trees' else tr('arbres','trees','Bäume','árboles'),footer_note=note,legend_override=[],return_regions=return_regions)
     if chart_key=='player_mining_r40':
@@ -673,18 +691,23 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             near=[];far=[]
             for key in ('coal','iron','gold','gems','sulfur'):
                 a=int(r50.get(key,{}).get('stock',0));b=max(0,int(r100.get(key,{}).get('stock',0))-a);label=MINERAL_NAMES_I18N[lang][key];color=MINERAL_COLORS[key]
-                near.append((a,color,f'0–50 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)]));far.append((b,color,f'50–100 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)]))
+                near.append((a,color,f'0–50 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':50,'inner':True,'resource':'minerals','family':key}));far.append((b,color,f'50–100 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':100,'inner':False,'resource':'minerals','family':key}))
             pnum=row['player'];groups.append({'label':'','segments':near,'pair_label':f'P{pnum}','tooltip_label':f'P{pnum}','pair_swatch':PLAYER_COLORS[(pnum-1)%len(PLAYER_COLORS)]});groups.append({'label':'','segments':far,'tooltip_label':f'P{pnum}'})
         legend=[(MINERAL_NAMES_I18N[lang][k],MINERAL_COLORS[k]) for k in ('coal','iron','gold','gems','sulfur')]
         note=tr('Barre gauche : 0–50 HEX · droite : 50–100 HEX','Left bar: 0–50 HEX · right: 50–100 HEX','Linker Balken: 0–50 HEX · rechter: 50–100 HEX','Barra izquierda: 0–50 HEX · derecha: 50–100 HEX')
         return _vertical_chart(groups,title,width,height,dark,tr('stock','stock','Vorrat','reserva'),footer_note=note,legend_override=legend,return_regions=return_regions)
     if chart_key in ('mountain_components','lake_components','river_components'):
-        if chart_key=='mountain_components':vals=[r['cells'] for r in stats.get('spatial',{}).get('mountains',{}).get('components',[])[:20]]
-        elif chart_key=='lake_components':vals=sorted(stats.get('hydrology',{}).get('inland_water_sizes',[]),reverse=True)[:20]
-        else:vals=[r['cells'] for r in stats.get('hydrology',{}).get('river_details',[])[:20]]
-        items=[(f'#{i+1}',v) for i,v in enumerate(vals)];base={'mountain_components':((75,75,72),(175,175,170)),'lake_components':((20,85,160),(125,205,245)),'river_components':((20,105,175),(115,210,235))}[chart_key]
+        if chart_key=='mountain_components':
+            rows=stats.get('spatial',{}).get('mountains',{}).get('components',[])[:20];family='mountain'
+        elif chart_key=='lake_components':
+            rows=stats.get('hydrology',{}).get('inland_water_details',[])[:20];family='water'
+        else:
+            rows=stats.get('hydrology',{}).get('river_details',[])[:20];family='river'
+        items=[(f'#{i+1}',int(row.get('cells',0))) for i,row in enumerate(rows)];base={'mountain_components':((75,75,72),(175,175,170)),'lake_components':((20,85,160),(125,205,245)),'river_components':((20,105,175),(115,210,235))}[chart_key]
         groups=_simple_groups(items,_gradient_colors(len(items),base[0],base[1]))
-        for i,g in enumerate(groups[:3]):g['medal_rank']=i+1
+        for i,g in enumerate(groups):
+            if i<3:g['medal_rank']=i+1
+            g['focus']={'kind':'component','family':family,'component_id':int(rows[i]['id'])}
         return _vertical_chart(groups,title,width,height,dark,tr('cases','cells','Zellen','celdas'),return_regions=return_regions)
     if chart_key=='ab_summary':
         if not(compare_stats and len(compare_stats)==2 and all(compare_stats)):return _paired_ab_chart([],title,width,height,dark,return_regions=return_regions)

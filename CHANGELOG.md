@@ -1,5 +1,71 @@
 # Changelog
 
+## v2.0 DEV_4 — 2026-09-03 — miroir et tailles de marqueurs
+
+- Retire le verrou du miroir pour Upgraded dans le générateur principal et
+  dans Batch : Axe long, Axe court et Les deux sont désormais transmissibles
+  aux chemins natifs exposés, sans refus d’interface.
+- Ajoute le niveau **Petits** et renomme les tailles affichées en
+  **Petits**, **Normaux** et **Grands** ; les préférences historiques
+  `small` et `normal` conservent leurs pixels et changent seulement de libellé
+  pour suivre ce décalage.
+- Propage ces quatre états aux vues Départs, aux aperçus Batch et à
+  l’historique, avec une échelle 0,5× / 1× / 2×.
+
+Les contrôles de viabilité et la limite de décodage `.sav` restent informatifs
+et documentés ; les ajouts statistiques sont reportés à Stats V2.
+
+## v2.0 DEV_4_R3 — 2026-09-03 — export multi-taille et ancrage des vues
+
+- Corrige le crash du centre d’export hors 768 : le message de taille
+  expérimentale est désormais traduit dans les quatre langues, donc le bouton,
+  les informations et les fichiers prévus restent affichés pour 256–1024.
+- Supprime le refus CLI fondé uniquement sur une validation de viabilité : les
+  générations et exports restent disponibles pour tester les tailles signalées.
+- Ancre les flèches de proximité entre les bordures des territoires de départ
+  d’origine, en conservant la couleur du joueur sélectionné.
+- Renomme le réglage en **Marqueurs de départ** et l’applique aussi à la vue
+  Départs ; les graphes **X proche(s)** ouvrent désormais cette vue.
+- Ignore `references/` pour GitHub tout en le réintégrant explicitement dans
+  les ZIP sources remis avec les candidates.
+- Conserve la limite `.sav` connue : des récifs peuvent apparaître sur des
+  cases terrestres à cause d’un décodage probablement incorrect ; correction
+  reportée.
+
+## v2.0 DEV_4_R2 — 2026-09-02 — corrections Graphiques → Vue, tailles et exports
+
+- Retire la liaison graphique → vue du graphique de comparaison A/B ; ce
+  graphique reste réservé à la comparaison et aux tooltips.
+- Route les graphes de pierres de construction vers la vue Globale, avec cache
+  des masques / composites de surbrillance déjà visités.
+- Corrige le graphe des distances adversaires : retrait des deux rayons de base,
+  échelle couleur ancrée à zéro et flèche colorée du joueur vers l’adversaire
+  le plus proche dans la vue Départs. Les distances nulles restent survolables.
+- Rend la génération Upgraded disponible sur toutes les tailles natives du
+  contrat ; les quotas calibrés 768 restent inchangés à 768, avec scaling
+  proportionnel hors 768 pour garder la génération fonctionnelle.
+- Maintient le bouton Exporter et les messages d’information lorsque des
+  contrôles de viabilité échouent ; l’export reste disponible pour test.
+- Note la limite `.sav` connue : des IDs de récifs peuvent actuellement être
+  affichés sur terre, probablement à cause du décodage ; correction reportée.
+- Candidate locale : **293 tests automatisés passés**, matrice Upgraded des
+  13 tailles et limites joueurs passée, self-test source **PASS** ; validation
+  visuelle Windows encore requise.
+
+## v2.0 DEV_4_R1 — 2026-09-02 — candidate Graphiques → Vue et cadrage
+
+- Ajoute le bouton **Lier à la vue** : le survol d’une région de graphique
+  conserve le tooltip et cible les cellules exactes correspondantes dans la
+  vue principale, avec changement de couche temporaire si nécessaire.
+- Ajoute les payloads sémantiques pour terrains, neige, minerais, objets,
+  arbres, agriculture, départs, rayons locaux et composantes de montagnes,
+  lacs et rivières.
+- Conserve le point d’ancrage, le zoom et le cadrage lors d’un changement de
+  carte, d’une importation, d’un switch d’historique, d’une langue, d’une vue,
+  d’une opacité ou d’une projection.
+- Candidate locale : tests automatisés et self-test passés ; validation
+  visuelle Windows encore requise.
+
 ## v2.0 DEV_3 — 2026-09-02 — calibration des formes et analyse des terrains
 
 - Conserve le no-gap et les quotas des minerais, mais évalue désormais la

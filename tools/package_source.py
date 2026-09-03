@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ARCHIVE_TIMESTAMP = (2020, 1, 1, 0, 0, 0)
+REFERENCE_ROOT = "references"
 
 REQUIRED_SOURCE_PATHS = (
     "AGENTS.md",
@@ -108,7 +109,7 @@ def _filesystem_source_files(project_root: Path) -> list[Path]:
 
 
 def _source_files(project_root: Path) -> list[Path]:
-    """List Git candidate files, with a clean extracted-source fallback."""
+    """List Git candidates plus local references retained for source ZIPs."""
 
     command = (
         "git",
@@ -134,7 +135,15 @@ def _source_files(project_root: Path) -> list[Path]:
         if raw
     ]
     files = [path for path in relative_paths if (project_root / path).is_file()]
-    return sorted(files, key=lambda path: path.as_posix())
+    # ``references/`` is intentionally ignored by the GitHub working tree, but
+    # it remains part of the hand-off source ZIP so the recovery/audit context
+    # is not lost between candidate packages.
+    files.extend(
+        path
+        for path in _filesystem_source_files(project_root)
+        if path.parts and path.parts[0] == REFERENCE_ROOT
+    )
+    return sorted(set(files), key=lambda path: path.as_posix())
 
 
 def _validate_input_files(project_root: Path, files: list[Path]) -> None:

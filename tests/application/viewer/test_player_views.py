@@ -33,5 +33,5 @@ def test_starts_view_uses_the_opacity_slider_while_global_remains_locked():
 def test_batch_previews_use_compact_start_sprites_without_start_boundaries():
     assert "render_square_base(out.state,view='global'" in SRC
     assert "compose_start_markers(base,out.state" in SRC
-    assert "scale=2 if marker_mode=='normal' else 1" in SRC
+    assert "scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small'])" in SRC
     assert "self.prefs.get('preview_start_markers','small')" in SRC

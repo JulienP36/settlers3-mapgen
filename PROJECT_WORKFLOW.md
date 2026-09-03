@@ -82,11 +82,29 @@ Checklist obligatoire à chaque étape validée :
 
 The project owner authorizes Codex to create, modify, rename and delete project files, then make non-destructive commits and pushes to the public repository `JulienP36/settlers3-mapgen` on branch `dev`, without requesting confirmation for every routine checkpoint.
 
-This standing authorization covers source code, tests, documentation, TODOs, snapshots, DEV notes, technical references and visual material explicitly provided by the project owner. Unless the owner states otherwise, files and images supplied for integration into this project may be published in that public repository.
+This standing authorization covers source code, tests, documentation, TODOs, snapshots, DEV notes and visual material explicitly provided by the project owner. The local `references/` recovery/audit tree is deliberately retained in hand-off ZIPs and excluded from ordinary GitHub pushes under `GITHUB_STORAGE_POLICY.md`.
 
 After every functional change, run the relevant validations and verify protected assets before pushing.
 
 This standing authorization does **not** cover `main`, tags, GitHub Releases, force-pushes, history rewrites, repository or branch deletion, repository settings, secrets/credentials, personal data, license changes, or publication of external assets whose provenance or rights are uncertain. Those actions always require explicit authorization.
+
+## Inter-chat Git continuity
+
+Une copie de travail issue d'un ZIP peut ne pas contenir `.git` : ce n'est pas
+un dépôt indépendant et ce n'est pas un blocage de publication. Pour reprendre
+un push dans un nouveau tchat, récupérer d'abord le HEAD réel de `dev` depuis
+GitHub, construire le nouvel arbre sur ce commit exact, puis créer un commit et
+mettre à jour la branche avec l'API GitHub connectée (ou avec un checkout
+persistant équivalent). Ne jamais initialiser une histoire Git détachée à partir
+d'un ZIP ni utiliser un force-push pour contourner une branche avancée.
+
+Le transfert compare les chemins locaux au tree distant, transmet uniquement
+les fichiers modifiés hors `references/`, et conserve les anciennes références
+distantes sans en ajouter ni les mettre à jour. Le script `tools/package_source.py`
+réintègre volontairement le dossier local `references/` dans les ZIP de reprise.
+Le SHA de branche et du commit publié doivent être consignés dans le compte
+rendu du checkpoint afin que le tchat suivant puisse reprendre sans dépendre de
+la mémoire de la conversation précédente.
 
 ## Protected generation and runtime baselines
 Do not alter these retained baselines without an explicit generation-engine

@@ -26,6 +26,8 @@ def test_preview_start_markers_default_to_small_and_invalid_values_are_cleaned(t
     monkeypatch.setenv('APPDATA', str(tmp_path))
     import s3mapgen.application.settings.preferences as p;importlib.reload(p)
     assert p.DEFAULTS['preview_start_markers']=='small'
+    p.save_settings({'preview_start_markers':'tiny'})
+    assert p.load_settings()['preview_start_markers']=='tiny'
     p.save_settings({'preview_start_markers':'oversized'})
     assert p.load_settings()['preview_start_markers']=='small'
 

@@ -23,5 +23,5 @@ class ImportController:
             elif ext in ('.edm','.map'):
                 state=read_area(p);state.starts=read_starts(p);state.metadata.update({'source_format':ext[1:].upper(),'source_path':str(p),'territories_available':False})
             else:raise ValueError('Extension non supportée')
-            self._task_progress(80,'Calcul des statistiques…');self.import_source=p;self.current=GenerationOutput(state,[],[f'import.{ext[1:]} — {p.name}']);self._populate_current(True);self._invalidate_preview();self._task_progress(92,'Construction de l’aperçu…');self._refresh_preview(True);self._task_done(f'Importé — {p.name} — {state.side}×{state.side}');self._register_import_history(self.current,self.import_source)
+            self._task_progress(80,'Calcul des statistiques…');self.import_source=p;self.current=GenerationOutput(state,[],[f'import.{ext[1:]} — {p.name}']);self._populate_current(True);self._invalidate_preview();self._task_progress(92,'Construction de l’aperçu…');self._refresh_preview(False);self._task_done(f'Importé — {p.name} — {state.side}×{state.side}');self._register_import_history(self.current,self.import_source)
         except Exception as e:self._task_error('Erreur import');messagebox.showerror('Import',f'{e}\n\n{traceback.format_exc()}')

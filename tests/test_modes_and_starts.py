@@ -33,6 +33,14 @@ def test_legacy_native_rebuild_is_reachable():
     assert len(result.state.starts)==2
     assert all(v.passed for v in result.validations if v.hard)
 
+def test_upgraded_native_mirror_is_reachable_on_small_test_maps():
+    result=gen().generate(2,2026081901,mode='upgraded',archetype='continental',side=256,mirror_mode=3)
+    assert result.state.metadata['mode_key']=='upgraded'
+    assert result.state.metadata['native_mode_mask']==3
+    assert result.state.metadata['native_mirror_main_diagonal'] is True
+    assert result.state.metadata['native_mirror_anti_diagonal'] is True
+    assert all(v.passed for v in result.validations if v.hard)
+
 def test_reported_small_seed_finishes_without_relief_loop():
     result=gen().generate(2,297650040,mode='legacy',archetype='continental',side=256)
     assert result.state.side==256

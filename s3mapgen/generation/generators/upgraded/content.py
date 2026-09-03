@@ -40,6 +40,8 @@ def _make_blob_sizes(total: int, count: int, rng: np.random.Generator, pr: rando
     total = int(total)
     if total <= 0:
         return []
+    if total < int(minimum):
+        return [total]
     count = max(1, min(int(count), total // max(1, int(minimum))))
     mean = total / count
     raw = rng.lognormal(mean=math.log(max(5, mean)) - 0.10, sigma=0.34, size=count)
@@ -131,12 +133,18 @@ class UpgradedContent:
         self.profile = profile
         self.progress = progress
         self.side = 0
+        self.reference_side = max(1, int(profile.get("side", 768)))
         self._stage_log: list[str] = []
 
     def log(self, stage: str, detail: str = "") -> None:
         self._stage_log.append(stage + (f" — {detail}" if detail else ""))
         if self.progress is not None:
             self.progress(stage, detail)
+
+    def _scaled_target(self, value: int) -> int:
+        """Scale a 768-calibrated quota by map area, without changing 768."""
+        ratio = float(self.side) / float(self.reference_side)
+        return max(0, int(round(int(value) * ratio * ratio)))
 
     def _core_mask(self, state, radius: int) -> np.ndarray:
         mask = np.zeros((state.side, state.side), dtype=bool)
@@ -199,6 +207,7 @@ class UpgradedContent:
 
         occupied = np.zeros_like(support, bool)
         blob_counts: dict[int, int] = {}
+        fallback_families: list[int] = []
         for family in order:
             fcfg = families[family]
             requested = max(1, round(targets[family] * int(fcfg["blobs"]) / max(1, int(fcfg["cells"]))))
@@ -223,17 +232,34 @@ class UpgradedContent:
                     if cells is not None:
                         break
                 if cells is None:
-                    raise RuntimeError(f"Upgraded mineral placement failed for family {family:#x}")
+                    if self.side == self.reference_side:
+                        raise RuntimeError(f"Upgraded mineral placement failed for family {family:#x}")
+                    # The copied no-gap morphology remains the calibrated
+                    # 768×768 path.  Other editor sizes must still generate
+                    # even when their fragmented support cannot accommodate
+                    # the calibrated blob geometry; use deterministic
+                    # individual support cells and expose the fallback in
+                    # metadata rather than aborting the map.
+                    available = np.argwhere(support & ~occupied)
+                    if not len(available):
+                        continue
+                    fallback_families.append(int(family))
+                    count = min(int(size), len(available))
+                    chosen = available[rng.choice(len(available), count, replace=False)]
+                    cells = [(int(x), int(y)) for y, x in chosen]
                 q0 = rng.integers(1, 16, len(cells), dtype=np.uint8)
                 q = np.minimum(int(cfg["quantity_cap"]), np.floor(q0.astype(float) * float(cfg["quantity_multiplier"]) + .5)).astype(np.uint8)
                 for (x, y), quantity in zip(cells, q):
                     resources[y, x] = family | int(quantity)
                     occupied[y, x] = True
                 placed += len(cells)
-            if placed != targets[family]:
+            if placed != targets[family] and self.side == self.reference_side:
                 raise RuntimeError(f"Upgraded mineral target mismatch {family:#x}: {placed}/{targets[family]}")
+            if placed != targets[family]:
+                targets[family] = placed
             blob_counts[family] = len(sizes)
 
+        target_total = sum(targets.values())
         metadata = {
             "model": "upgraded_v7_nogap",
             "shape_variant": str(cfg.get("shape_variant", "round_parallelogram_compensated_test")),
@@ -243,6 +269,7 @@ class UpgradedContent:
             "target_total": target_total,
             "targets": {f"{key:02x}": value for key, value in targets.items()},
             "blob_counts": {f"{key:02x}": value for key, value in blob_counts.items()},
+            "non_reference_fallback_families": [f"{family:02x}" for family in sorted(set(fallback_families))],
         }
         state.metadata["upgraded_minerals"] = metadata
         state.metadata["upgraded_mineral_targets"] = metadata["targets"]
@@ -290,7 +317,8 @@ class UpgradedContent:
         border[:, [0, -1]] = True
         eligible = water & (distance >= 1) & (distance <= int(cfg["max_shore_hex_distance"])) & ~border
         selected &= ~border
-        target = int(cfg["target_cells"])
+        profile_target = int(cfg["target_cells"])
+        target = min(self._scaled_target(profile_target), int(eligible.sum()))
         current = int(selected.sum())
         if current < target:
             candidates = np.argwhere(eligible & ~selected)
@@ -305,8 +333,15 @@ class UpgradedContent:
         q0 = rng.integers(1, 16, target, dtype=np.uint8)
         quantities = np.minimum(int(cfg["quantity_cap"]), np.floor(q0.astype(float) * float(cfg["quantity_multiplier"]) + .5)).astype(np.uint8)
         resources[selected] = quantities
-        metadata = {"model": "upgraded_shore_bands", "cells": int(selected.sum()), "max_distance": int(cfg["max_shore_hex_distance"])}
+        metadata = {
+            "model": "upgraded_shore_bands",
+            "cells": int(selected.sum()),
+            "target": target,
+            "profile_target_768": profile_target,
+            "max_distance": int(cfg["max_shore_hex_distance"]),
+        }
         state.metadata["upgraded_fish"] = metadata
+        state.metadata["upgraded_fish_target"] = target
         self.log("resources.upgraded_fish", f"cells={metadata['cells']}")
 
     def _place_decorations(self, state, rng: np.random.Generator, pr: random.Random) -> None:
@@ -329,14 +364,14 @@ class UpgradedContent:
             return placed
 
         desert = np.argwhere(np.isin(terrain, DESERT_IDS) & ~core & (objects == 0))
-        desert_count = place(desert, min(int(cfg.get("desert_target", 0)), len(desert)), cfg.get("desert_ids", ()), True) if len(desert) else 0
+        desert_count = place(desert, min(self._scaled_target(cfg.get("desert_target", 0)), len(desert)), cfg.get("desert_ids", ()), True) if len(desert) else 0
         swamp = np.argwhere(np.isin(terrain, SWAMP_IDS) & ~core & (objects == 0))
-        swamp_count = place(swamp, min(int(cfg.get("swamp_target", 0)), len(swamp)), cfg.get("swamp_reed_ids", ()), False) if len(swamp) else 0
+        swamp_count = place(swamp, min(self._scaled_target(cfg.get("swamp_target", 0)), len(swamp)), cfg.get("swamp_reed_ids", ()), False) if len(swamp) else 0
         grass = np.argwhere((terrain == GRASS) & ~core & (objects == 0))
-        decorative_count = place(grass, min(int(cfg.get("decorative_stone_target", 0)), len(grass)), range(1, 29), True) if len(grass) else 0
+        decorative_count = place(grass, min(self._scaled_target(cfg.get("decorative_stone_target", 0)), len(grass)), range(1, 29), True) if len(grass) else 0
         water = np.isin(terrain, WATER_IDS)
         deep = np.argwhere((terrain == 7) & (neighbor_count(~water) == 0) & (objects == 0))
-        reef_count = place(deep, min(int(cfg.get("reef_target", 0)), len(deep)), range(111, 115), True) if len(deep) else 0
+        reef_count = place(deep, min(self._scaled_target(cfg.get("reef_target", 0)), len(deep)), range(111, 115), True) if len(deep) else 0
         metadata = {"desert": desert_count, "swamp_reeds": swamp_count, "decorative_stones": decorative_count, "reefs": reef_count}
         state.metadata["upgraded_decorations"] = metadata
         self.log("objects.upgraded_decorations", str(metadata))
@@ -346,7 +381,8 @@ class UpgradedContent:
         cfg = self.profile["trees"]
         core = self._core_mask(state, max(self.profile["starts"]["technical_clear_hex"], self.profile["starts"].get("editor_object_clear_hex", 14)))
         grass = (terrain == GRASS) & ~core & (objects == 0)
-        target = min(int(cfg["adult_global_target"]), int(grass.sum()))
+        profile_target = int(cfg["adult_global_target"])
+        target = min(self._scaled_target(profile_target), int(grass.sum()))
         ids = np.asarray(cfg["adult_ids"], dtype=np.uint8)
         weights = np.asarray(cfg.get("adult_weights", np.ones(len(ids))), dtype=float)
         weights /= weights.sum()
@@ -382,7 +418,8 @@ class UpgradedContent:
                 placed += 1
         desert = np.isin(terrain, DESERT_IDS) & ~core & (objects == 0)
         palm_points = np.argwhere(desert)
-        palm_target = min(int(cfg.get("palm_target", 0)), len(palm_points))
+        palm_profile_target = int(cfg.get("palm_target", 0))
+        palm_target = min(self._scaled_target(palm_profile_target), len(palm_points))
         palms = 0
         for index in rng.permutation(len(palm_points)):
             if palms >= palm_target:
@@ -394,7 +431,8 @@ class UpgradedContent:
                 palms += 1
         small_id = int(cfg.get("small_tree_id", 84))
         small_points = np.argwhere(grass & (objects == 0))
-        small_target = min(int(cfg.get("small_tree_target", 0)), len(small_points))
+        small_profile_target = int(cfg.get("small_tree_target", 0))
+        small_target = min(self._scaled_target(small_profile_target), len(small_points))
         small = 0
         for index in rng.permutation(len(small_points)):
             if small >= small_target:
@@ -406,8 +444,25 @@ class UpgradedContent:
                 small += 1
         if placed < target or palms < palm_target or small < small_target:
             raise RuntimeError(f"Upgraded tree quotas not reached: adult={placed}/{target}, palms={palms}/{palm_target}, small={small}/{small_target}")
-        metadata = {"adult_trees": placed, "palm_trees": palms, "small_trees": small, "adult_target": target, "small_target": small_target}
+        metadata = {
+            "adult_trees": placed,
+            "palm_trees": palms,
+            "small_trees": small,
+            "adult_target": target,
+            "small_target": small_target,
+            "palm_target": palm_target,
+            "profile_targets_768": {
+                "adult": profile_target,
+                "small": small_profile_target,
+                "palm": palm_profile_target,
+            },
+        }
         state.metadata["upgraded_trees"] = metadata
+        state.metadata["upgraded_tree_targets"] = {
+            "adult": target,
+            "small": small_target,
+            "palm": palm_target,
+        }
         self.log("objects.upgraded_trees", str(metadata))
 
     def _place_building_stones(self, state, rng: np.random.Generator, pr: random.Random) -> None:
@@ -437,7 +492,8 @@ class UpgradedContent:
             return True
 
         candidates = np.argwhere((terrain == GRASS) & ~core & (objects == 0))
-        target = int(cfg["global_anchor_target"])
+        requested_target = self._scaled_target(cfg["global_anchor_target"])
+        target = min(requested_target, len(candidates))
         for index in rng.permutation(len(candidates)):
             if len(anchors) >= target:
                 break
@@ -450,10 +506,17 @@ class UpgradedContent:
                 covered[y + dy, x + dx] = True
             mark(x, y)
             anchors.append((x, y, 8))
-        if len(anchors) < target:
+        if len(anchors) < target and self.side == self.reference_side:
             raise RuntimeError(f"Upgraded building-stone quota not reached: {len(anchors)}/{target}")
-        quantities = np.full(len(anchors), 8, dtype=int)
-        stock_target = int(cfg["global_stock_target"])
+        target = len(anchors)
+        profile_stock_target = int(cfg["global_stock_target"])
+        stock_target = self._scaled_target(profile_stock_target)
+        if target:
+            stock_target = max(target, min(target * 12, stock_target))
+        else:
+            stock_target = 0
+        base_quantity = min(8, max(1, stock_target // target)) if target else 0
+        quantities = np.full(len(anchors), base_quantity, dtype=int)
         while int(quantities.sum()) < stock_target:
             eligible = np.where(quantities < 12)[0]
             if not len(eligible):
@@ -466,8 +529,19 @@ class UpgradedContent:
             quantities[int(rng.choice(eligible))] -= 1
         for (x, y, _), quantity in zip(anchors, quantities):
             objects[y, x] = int(cfg["exhausted_id"]) - int(quantity)
-        metadata = {"anchors": len(anchors), "stock": int(quantities.sum()), "start_bonus_deferred": True}
+        metadata = {
+            "anchors": len(anchors),
+            "stock": int(quantities.sum()),
+            "anchor_target": target,
+            "stock_target": stock_target,
+            "profile_targets_768": {
+                "anchors": int(cfg["global_anchor_target"]),
+                "stock": profile_stock_target,
+            },
+            "start_bonus_deferred": True,
+        }
         state.metadata["upgraded_stones"] = metadata
+        state.metadata["upgraded_stone_targets"] = {"anchors": target, "stock": stock_target}
         state.metadata["building_stone_anchors"] = [(x, y, int(q), "global") for (x, y, _), q in zip(anchors, quantities)]
         state.metadata["building_stone_footprint_cells"] = [(x + dx, y + dy) for x, y, _ in anchors for dx, dy in footprint]
         self.log("objects.upgraded_building_stones", str(metadata))

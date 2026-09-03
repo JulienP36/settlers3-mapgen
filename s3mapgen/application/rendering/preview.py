@@ -73,6 +73,11 @@ def _load_player_start_markers(path=START_MARKER_SHEET)->tuple[Image.Image,...]:
 
 PLAYER_START_MARKERS=_load_player_start_markers()
 
+# The preference keys remain stable for existing settings files.  ``small``
+# therefore keeps the former small sprite, while ``normal`` keeps the former
+# normal sprite; the labels are shifted in the UI and ``tiny`` is new.
+START_MARKER_SCALES={'tiny':0.5,'small':1.0,'normal':2.0}
+
 HEATMAP_RESOURCES={
     'trees':'Trees','building_stones':'Building Stones','fish':'Fish',
     'coal':'Coal','iron':'Iron','gold':'Gold','gems':'Gemstones','sulfur':'Sulfur',
@@ -218,8 +223,21 @@ def _blend(global_rgb,overlay_rgb,alpha):
 
 def _project_point(x,y,source_height):return 2*x+(source_height-1-y),2*y
 
-def _fallback_start_marker(player_index:int,projected:bool=False,scale:int=1)->Image.Image:
-    base=(36,48) if projected else (18,24);size=(base[0]*scale,base[1]*scale);w,h=size;color=PLAYER_COLORS[player_index%len(PLAYER_COLORS)]
+def _marker_scale(scale:float=1.0)->float:
+    try:
+        value=float(scale)
+    except (TypeError,ValueError):
+        return 1.0
+    return max(0.5,value) if math.isfinite(value) else 1.0
+
+
+def _scaled_marker_size(size:tuple[int,int],scale:float=1.0)->tuple[int,int]:
+    factor=_marker_scale(scale)
+    return tuple(max(1,int(round(int(dimension)*factor))) for dimension in size)
+
+
+def _fallback_start_marker(player_index:int,projected:bool=False,scale:float=1.0)->Image.Image:
+    base=(36,48) if projected else (18,24);size=_scaled_marker_size(base,scale);w,h=size;color=PLAYER_COLORS[player_index%len(PLAYER_COLORS)]
     marker=Image.new('RGBA',size,(0,0,0,0));draw=ImageDraw.Draw(marker)
     draw.ellipse((1,1,w-2,w-2),fill=color,outline=(0,0,0,255),width=max(1,w//12))
     draw.polygon(((w//2,h-1),(w//2-w//5,w-2),(w//2+w//5,w-2)),fill=color,outline=(0,0,0,255))
@@ -235,11 +253,11 @@ def _apply_marker_opacity(marker:Image.Image,opacity:int)->Image.Image:
     marker.putalpha(Image.fromarray(((alpha*opacity+50)//100).astype(np.uint8),'L'))
     return marker
 
-def _start_marker(player_index:int,projected:bool=False,scale:int=1,opacity:int=100)->Image.Image:
+def _start_marker(player_index:int,projected:bool=False,scale:float=1.0,opacity:int=100)->Image.Image:
     if PLAYER_START_MARKERS:
         marker=PLAYER_START_MARKERS[player_index%len(PLAYER_START_MARKERS)]
         base=(marker.width,marker.height) if projected else (max(1,marker.width//2),max(1,marker.height//2))
-        target=(base[0]*scale,base[1]*scale)
+        target=_scaled_marker_size(base,scale)
         if marker.size!=target:marker=marker.resize(target,Image.Resampling.NEAREST)
         return _apply_marker_opacity(marker,opacity)
     return _apply_marker_opacity(_fallback_start_marker(player_index,projected,scale),opacity)
@@ -264,7 +282,7 @@ def _ordered_boundary_offsets(projected:bool)->tuple[tuple[int,int],...]:
         return (2*x-y,2*y) if projected else (x,y)
     return tuple(sorted(_CANONICAL_BOUNDARY,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
-def _draw_square_start_markers(im:Image.Image,state:MapState,scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+def _draw_square_start_markers(im:Image.Image,state:MapState,scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
     for i,(x,y) in enumerate(state.starts):
         marker=_start_marker(i,False,scale,opacity)
         if include_boundaries:
@@ -273,7 +291,7 @@ def _draw_square_start_markers(im:Image.Image,state:MapState,scale:int=1,include
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,bx,by),boundary_marker)
         im.paste(marker,_centered_marker_origin(marker,x,y),marker)
 
-def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:int,scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:int,scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
     for i,(x,y) in enumerate(state.starts):
         marker=_start_marker(i,True,scale,opacity)
         if include_boundaries:
@@ -284,14 +302,35 @@ def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:in
         X,Y=_project_point(x,y,source_height)
         im.paste(marker,_centered_marker_origin(marker,X,Y),marker)
 
-def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->None:
+def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
     """Draw only the start-marker layer on an already rendered map image."""
-    scale=max(1,int(scale))
+    scale=_marker_scale(scale)
     include_boundaries=bool(include_boundaries and _has_initial_mask_or_estimate(state))
     if projection=='parallelogram':
         _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity)
     else:
         _draw_square_start_markers(im,state,scale,include_boundaries,opacity)
+
+def _draw_nearest_opponent_arrow(im:Image.Image,state:MapState,focus,projection:str='square')->None:
+    """Draw the selected player's colored arrow to its nearest opponent."""
+    if not isinstance(focus,dict):return
+    try:
+        player=int(focus.get('player'))-1
+        opponent=int(focus.get('nearest_player'))-1
+    except (IndexError,TypeError,ValueError):return
+    if player<0 or opponent<0 or player>=len(state.starts) or opponent>=len(state.starts):return
+    pair=_nearest_initial_boundary_pair(state,player,opponent,projection)
+    if pair is None:return
+    sx,sy,tx,ty=pair;width=2 if projection=='parallelogram' else 1
+    dx,dy=tx-sx,ty-sy;length=math.hypot(dx,dy)
+    if length<1:return
+    color=PLAYER_COLORS[player%len(PLAYER_COLORS)]
+    draw=ImageDraw.Draw(im)
+    draw.line((sx,sy,tx,ty),fill=color,width=width)
+    angle=math.atan2(dy,dx);head=max(4.0,min(14.0,length*.18))
+    left=(tx-head*math.cos(angle-math.pi/6),ty-head*math.sin(angle-math.pi/6))
+    right=(tx-head*math.cos(angle+math.pi/6),ty-head*math.sin(angle+math.pi/6))
+    draw.polygon(((int(tx),int(ty)),(round(left[0]),round(left[1])),(round(right[0]),round(right[1]))),fill=color)
 
 def _has_direct_initial_mask(state:MapState)->bool:
     """Return whether the source supplied actual initial-mask cells.
@@ -384,13 +423,44 @@ def _initial_boundary_cells(state:MapState,player_index:int)->set[tuple[int,int]
         return initial_territory_cells(state.starts[player_index],state.side)
     return set()
 
-def _ordered_initial_boundary(state:MapState,player_index:int,projected:bool)->tuple[tuple[int,int],...]:
+def _initial_boundary(state:MapState,player_index:int)->set[tuple[int,int]]:
+    """Return the cells on one player's original start-territory border."""
     cells=_initial_boundary_cells(state,player_index)
-    if not cells:return ()
-    boundary=frozenset(
+    if not cells:return set()
+    return {
         (x,y) for x,y in cells
         if any(((x+dx)%state.side,(y+dy)%state.side) not in cells for dx,dy in HEX6)
-    )
+    }
+
+def _rendered_cell_center(x:int,y:int,state:MapState,projection:str)->tuple[int,int]:
+    if projection=='parallelogram':
+        px,py=_project_point(int(x),int(y),state.side)
+        return px+1,py+1
+    return int(x),int(y)
+
+def _nearest_initial_boundary_pair(state:MapState,player_index:int,opponent_index:int,projection:str='square')->tuple[int,int,int,int]|None:
+    """Find the closest rendered cells on the two original start borders.
+
+    The semantic distance chart identifies the players; the arrow itself must
+    identify the corresponding territory edges.  This keeps the arrow tied to
+    the same direct/known-radius outlines that are rendered in Starts rather
+    than drawing a misleading centre-to-centre line.
+    """
+    source=_initial_boundary(state,player_index)
+    target=_initial_boundary(state,opponent_index)
+    if not source or not target:return None
+    source_points=tuple((_rendered_cell_center(x,y,state,projection),x,y) for x,y in source)
+    target_points=tuple((_rendered_cell_center(x,y,state,projection),x,y) for x,y in target)
+    best=None
+    for (sx,sy),source_x,source_y in source_points:
+        for (tx,ty),target_x,target_y in target_points:
+            candidate=((tx-sx)*(tx-sx)+(ty-sy)*(ty-sy),source_x,source_y,target_x,target_y,sx,sy,tx,ty)
+            if best is None or candidate<best:best=candidate
+    return None if best is None else best[5:]
+
+def _ordered_initial_boundary(state:MapState,player_index:int,projected:bool)->tuple[tuple[int,int],...]:
+    boundary=_initial_boundary(state,player_index)
+    if not boundary:return ()
     sx,sy=state.starts[player_index]
     def screen_point(point):
         x,y=point
@@ -414,7 +484,7 @@ def _ordered_direct_initial_boundary(state:MapState,player_index:int,projected:b
         return (2*dx-dy,2*dy) if projected else (dx,dy)
     return tuple(sorted(boundary,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
-def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:int=1,include_boundaries:bool=False,opacity:int=100)->Image.Image:
+def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->Image.Image:
     """Return a copy of a marker-free raster with the start layer composed over it."""
     image=base.copy()
     _draw_start_marker_layer(image,state,projection,scale,include_boundaries,opacity)
@@ -431,19 +501,21 @@ def render_square_base(state,view='global',overlay_alpha=100,heatmap_resource='t
     base=_global_rgb(state);rgb=base.copy() if view in ('global','starts') else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
     return Image.fromarray(rgb,'RGB')
 
-def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=False,start_marker_scale=1)->Image.Image:
+def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=None,start_marker_scale:float=1.0,focus=None)->Image.Image:
     """Project and decorate a cached square raster without mutating that base."""
     im=project_parallelogram(base) if projection=='parallelogram' else base.copy()
-    draw_start_markers=(labels and view=='starts') or bool(start_markers)
+    draw_start_markers=(labels and view=='starts') if start_markers is None else bool(start_markers)
     # Starts use direct cells when decoded, otherwise the known-radius outline.
     # Territories remains conservative for SAVs; batch marker mode remains
     # centre-only.
-    draw_start_boundaries=labels and view=='starts' and _has_initial_mask_or_estimate(state)
+    draw_start_boundaries=draw_start_markers and labels and view=='starts' and _has_initial_mask_or_estimate(state)
     marker_opacity=overlay_alpha if draw_start_boundaries else 100
     if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
+    if isinstance(focus,dict) and focus.get('kind')=='start_player':
+        _draw_nearest_opponent_arrow(im,state,focus,projection)
     return im
 
-def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=False, start_marker_scale=1):
+def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=None, start_marker_scale:float=1.0):
     base=render_square_base(state,view,overlay_alpha,heatmap_resource)
     im=compose_rendered_map(base,state,labels,view,overlay_alpha,projection,start_markers,start_marker_scale)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)

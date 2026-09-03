@@ -83,8 +83,6 @@ class GenerationWorkflowController:
         mode=MODE_LABELS[lang][mkey];arch=ARCHETYPE_LABELS[lang][akey];modifiers=self._modifier_summary()
         if not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
         elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
-        elif self._mirror_key() and not (mkey=='legacy' and akey=='continental'):self._feedback('mirror_reserved','warning')
-        elif mkey!='legacy' and s!=768:self._feedback('size_reserved','warning',side=s,max_players=NATIVE_LIMITS[s])
         elif warning_key:self._feedback(warning_key,'warning',side=s,max_players=NATIVE_LIMITS[s])
         else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
 
@@ -115,16 +113,19 @@ class GenerationWorkflowController:
             mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
             warning_key=self._legacy_size_warning_key(key.mode,key.archetype,key.side)
             if cached is not None:
-                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(True);self._refresh_history()
+                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(False);self._refresh_history()
                 if warning_key:self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
                 else:self._feedback('cache_hit','success',seed=key.seed)
                 return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
             self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key())
-            retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+            retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(False)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
             if warning_key:
                 self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
-            elif not retained:self._feedback('history_not_retained','warning')
+            elif not retained:
+                self._feedback('history_not_retained','warning')
+            elif hasattr(self,'_set_generated_status'):
+                self._set_generated_status()
         except Exception as e:
             import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')

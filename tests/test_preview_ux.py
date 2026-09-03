@@ -1,7 +1,7 @@
 import numpy as np
 from s3mapgen.map_data.model import MapState
 from s3mapgen.map_data.constants import GRASS
-from s3mapgen.application.rendering.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _ordered_boundary_offsets, compose_start_markers, initial_territory_cells, initial_territory_boundary, render
+from s3mapgen.application.rendering.preview import BOUNDARY_START_MARKER_SIZE_PROJECTED, BOUNDARY_START_MARKER_SIZE_SQUARE, PLAYER_COLORS, PLAYER_START_MARKERS, START_MARKER_SCALES, START_TERRITORY_RADIUS, INITIAL_TERRITORY_ROW_RANGES, _centered_marker_origin, _initial_boundary, _nearest_initial_boundary_pair, _ordered_boundary_offsets, _rendered_cell_center, _start_marker, compose_rendered_map, compose_start_markers, initial_territory_cells, initial_territory_boundary, render, render_square_base
 
 def _state(side=128):
     s=MapState.empty(side);s.terrain[:]=GRASS;s.height[:]=np.arange(side,dtype=np.uint8)[:,None];s.resources[8:12,8:12]=0x1f;s.claim[4:20,4:20]=0;return s
@@ -86,6 +86,11 @@ def test_start_marker_reference_extracts_twenty_ordered_native_sprites():
     assert {marker.size for marker in PLAYER_START_MARKERS}=={(36,48)}
     assert all(marker.mode=='RGBA' and marker.getchannel('A').getbbox() for marker in PLAYER_START_MARKERS)
 
+def test_start_marker_sizes_are_tiny_normal_and_large():
+    assert START_MARKER_SCALES=={'tiny':0.5,'small':1.0,'normal':2.0}
+    sizes=[_start_marker(0,False,START_MARKER_SCALES[key]).size for key in ('tiny','small','normal')]
+    assert sizes==[(9,12),(18,24),(36,48)]
+
 def test_global_batch_marker_mode_adds_centers_without_initial_boundaries():
     s=_state();s.starts=[(64,64)]
     clean=np.asarray(render(s,labels=False,view='global'))[:,:,:3]
@@ -146,6 +151,32 @@ def test_starts_without_direct_mask_uses_known_radius_boundary_for_sav():
     assert not np.array_equal(starts,global_view)
     boundary=initial_territory_boundary((64,64),128)
     assert any(not np.array_equal(starts[y,x],global_view[y,x]) for x,y in boundary)
+
+def test_nearest_opponent_arrow_uses_the_two_original_start_borders():
+    s=_state(256);s.starts=[(64,64),(192,192)]
+    focus={'kind':'start_player','player':1,'nearest_player':2}
+    for projection in ('square','parallelogram'):
+        pair=_nearest_initial_boundary_pair(s,0,1,projection)
+        assert pair is not None
+        source=tuple(pair[:2]);target=tuple(pair[2:])
+        assert source==_rendered_cell_center(*next(cell for cell in _initial_boundary(s,0) if _rendered_cell_center(*cell,s,projection)==source),s,projection)
+        assert target==_rendered_cell_center(*next(cell for cell in _initial_boundary(s,1) if _rendered_cell_center(*cell,s,projection)==target),s,projection)
+        assert source!=_rendered_cell_center(*s.starts[0],s,projection)
+        assert target!=_rendered_cell_center(*s.starts[1],s,projection)
+        base=render_square_base(s,view='global')
+        arrow=np.asarray(compose_rendered_map(base,s,labels=False,view='starts',projection=projection,focus=focus))[:,:,:3]
+        assert tuple(arrow[source[1],source[0]])==PLAYER_COLORS[0]
+        assert tuple(arrow[target[1],target[0]])==PLAYER_COLORS[0]
+
+def test_start_marker_setting_can_hide_or_scale_markers_in_starts_view():
+    s=_state();s.starts=[(64,64)]
+    clean=np.asarray(render(s,labels=False,view='global'))
+    hidden=np.asarray(render(s,labels=True,view='starts',start_markers=False))
+    small=np.asarray(render(s,labels=True,view='starts',start_markers=True,start_marker_scale=1))
+    normal=np.asarray(render(s,labels=True,view='starts',start_markers=True,start_marker_scale=2))
+    assert np.array_equal(hidden,clean)
+    assert not np.array_equal(small,clean)
+    assert not np.array_equal(normal,small)
 
 def test_territories_without_source_claims_estimate_non_sav_initial_claim():
     s=_state();s.claim[:]=255;s.starts=[(64,64)]

@@ -46,19 +46,26 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_3 / Upgraded calibration
+## Current state — v2.0 DEV_4 / Upgraded calibration
 
 The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` was
 the validated native reset checkpoint, and `DEV_3` is now the validated and
 published checkpoint: the old procedural Legacy
 generator and its derived libraries were removed and replaced by a separate
 native-inspired v1 port. The Upgraded engine is now rebuilt as an independent
-copy of that pipeline.
+copy of that pipeline. DEV_4 adds temporary Charts → View linking, keeps the
+A/B comparison tooltip-only, fixes the non-768 export dialog, unlocks all
+three mirror modes for Upgraded, and exposes Upgraded on every native contract
+size; 768 keeps its calibrated quotas while other sizes use proportional
+quotas so they remain generatable. No contract size is blocked as “untested”;
+warnings remain informational. **Start markers** now offer Tiny, Normal and
+Large, plus Hidden, in the Starts view, Batch and History.
 
 The **Legacy** engine now implements the Continental v1 native reconstruction:
 relief, terrain, hydrology, objects, resources, starts and runtime metadata.
 The **Upgraded** engine owns an independent copy of the native terrain
-pipeline, calibrated for Continental 768×768. It adds only its explicit
+pipeline, calibrated for Continental 768×768 but generatable on every contract
+size. It adds only its explicit
 differences: v7 minerals, fish, trees/decorations and building stones, with no
 Mud generation.
 The Continental archetype supplies the macro-geographic context; it does not
@@ -112,11 +119,13 @@ The main Python dependencies are NumPy, SciPy and Pillow. A separate installatio
 
 ## Important limits
 
-- Native Legacy generation is available for the native map sizes. Sizes below
+- Native Legacy and Upgraded generation are available for the native map sizes. Sizes below
   384 and above 768 are deliberately exportable test candidates and are warned
-  about in the feedback area. The Upgraded generator remains calibrated for
-  Continental 768×768.
+  about in the feedback area. Upgraded remains calibrated against Continental
+  768×768, while proportional quotas are used outside that reference size.
 - The project has no `.SAV` writer. Imported saves are read for supported data and may only be copied unchanged.
+- Known SAV limitation: some imports may display reef IDs on land, probably due
+  to an incorrect decoder mapping; this is explicitly deferred.
 - The native initial territory mask is read directly from type-3 byte 8 of an
   immediate SAV when the confirmed signature is present; no start-based shape
   reconstruction is used. EDM/MAP claim-less sources remain neutral in that

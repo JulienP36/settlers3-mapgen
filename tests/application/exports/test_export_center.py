@@ -26,7 +26,7 @@ def test_export_basename_is_windows_safe_and_never_empty():
 def test_map_capabilities_follow_validated_writer_rules(tmp_path):
     sav=tmp_path/'source.sav';sav.write_bytes(b'S3')
     assert map_export_capabilities(768,sav)=={'edm':True,'map':True,'sav':True,'png_global':True,'png_current':True}
-    for side in (640, 832, 896, 960, 1024):
+    for side in (256, 320, 384, 448, 512, 576, 640, 704, 832, 896, 960, 1024):
         assert map_export_capabilities(side,sav)=={'edm':True,'map':True,'sav':True,'png_global':True,'png_current':True}
     assert map_export_capabilities(768,tmp_path/'missing.sav')['sav'] is False
     assert map_export_capabilities(768,tmp_path/'source.edm')['sav'] is False
@@ -65,6 +65,20 @@ def test_map_center_keeps_sav_copy_only_and_two_distinct_real_png_renders():
     assert "render(state,paths['png_current'],labels=True,**self._render_options())" in center
     assert "self._confirm_export_conflicts(paths,w,text)" in center
     assert 'write_sav' not in center
+
+
+def test_non_768_export_hint_exists_in_every_language_and_does_not_disable_formats():
+    for language in ('fr', 'en', 'de', 'es'):
+        assert EXPORT_TEXT[language]['binary_experimental']
+    center=EXPORT_SRC[EXPORT_SRC.index('def _open_map_export_center'):]
+    assert "elif state.side!=768:hints.append(text['binary_experimental'])" in center
+    assert "formats={key:tk.BooleanVar(value=(capabilities[key]" in center
+
+
+def test_cli_keeps_generation_and_export_enabled_when_validation_warns():
+    cli=Path('s3mapgen/application/cli.py').read_text(encoding='utf-8')
+    assert 'generation and export remain enabled' in cli
+    assert 'Export refused:' not in cli
 
 
 def test_global_view_disables_redundant_current_view_png_and_selects_global_png():

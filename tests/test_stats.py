@@ -3,6 +3,8 @@ import json
 import numpy as np
 
 from s3mapgen.map_data.model import MapState
+from s3mapgen.map_data.hexgrid import hex_distance
+from s3mapgen.application.rendering.preview import START_TERRITORY_RADIUS
 from s3mapgen.application.analysis.core import analyze_map, format_stats_report, stats_json, stats_csv
 from s3mapgen.application.analysis.charts import render_stats_chart, CHART_KEYS, build_ab_metrics
 
@@ -61,7 +63,15 @@ def test_start_distance_distribution_and_claims():
     s=analyze_map(sample_state())
     assert len(s['players']['nearest_start']) == 3
     assert s['players']['claims']['1'] == 9
-    assert all(row['distance'] > 0 for row in s['players']['nearest_start'])
+    starts=sample_state().starts
+    for row in s['players']['nearest_start']:
+        index=row['player']-1
+        expected=min(
+            max(0, hex_distance(*starts[index], *other)-2*START_TERRITORY_RADIUS)
+            for j, other in enumerate(starts) if j != index
+        )
+        assert row['distance'] == expected
+    assert all(row['distance'] >= 0 for row in s['players']['nearest_start'])
 
 
 def test_exports_roundtrip():

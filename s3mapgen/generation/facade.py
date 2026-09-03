@@ -88,8 +88,8 @@ class MapGenerator:
             raise NotImplementedError("Le mode Custom n'est pas encore implémenté")
         if mode != "upgraded":
             raise ValueError(f"Mode de génération inconnu : {mode}")
-        if mirror_mode:
-            raise ValueError("Le mode mirror Upgraded sera traité lors de sa passe dédiée")
+        if mirror_mode not in (0, 1, 2, 3):
+            raise ValueError("mirror_mode doit être compris entre 0 et 3")
         callback = progress_callback or self.progress_callback
         events: list[str] = []
 

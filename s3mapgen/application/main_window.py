@@ -59,8 +59,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         # visual order is deliberately independent from the real LRU order.
         self._manual_history_locks=[];self._history_visual_order=[]
         self.session_cache.set_protected_provider(lambda:(getattr(self,'current',None),self._compare_slots.get('A'),self._compare_slots.get('B'),*self._manual_history_locks))
-        self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._prefs_save_after=None
-        self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._bound_shortcuts=[];self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
+        self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._preview_focus_mask_cache={};self._prefs_save_after=None
+        self._display_origin=(0,0);self._display_factor=1.0;self._display_base_size=(1,1);self._pending_view_anchor=None;self._bound_shortcuts=[];self._task_overlay=None;self._task_overlay_value=0;self._task_overlay_detail='';self._status_kind='ready';self._feedback_key=None;self._feedback_values={};self._responsive_mode=None;self._layout_after=None
         self._batch_window=None;self._batch_rows=[];self._batch_queue=[];self._batch_running=False;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None;self._batch_active_count=0
         self._batch_preview_window=None;self._batch_preview_label=None;self._batch_preview_photo=None;self._batch_preview_row=None;self._batch_preview_pinned=False;self._batch_preview_projection=None;self._batch_preview_drag_origin=None;self._batch_preview_zoom=1.0;self._batch_hover_after=None;self._batch_i18n={}
         self._map_export_window=None;self._stats_export_window=None

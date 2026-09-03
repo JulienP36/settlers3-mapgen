@@ -53,16 +53,24 @@ class ShellWindow(tk.Tk):
 
     def random_seed(self):self.seed.set(str(random.randint(1,2_147_483_647)))
 
+    def _set_generated_status(self):
+        """Keep validation information and export availability visible after a task closes."""
+        if not self.current:return
+        hard_fail=[v for v in self.current.validations if v.hard and not v.passed]
+        status=f'Généré — {len(self.current.validations)-len(hard_fail)}/{len(self.current.validations)} checks OK'
+        if hard_fail:status+=f' — {len(hard_fail)} contrôles non validés'
+        self.status.set(status+' — EXPORT AUTORISÉ')
+        getattr(self,'_sync_status_display',lambda:None)()
+
     def _size_changed(self):
         s=int(self.size.get());mx=NATIVE_LIMITS[s];self.players_spin.configure(to=mx)
         if self.players.get()>mx:self.players.set(mx)
         self._selection_changed()
 
     def _populate_current_base(self,imported=False):
-        hard_fail=[v for v in self.current.validations if v.hard and not v.passed]
         self.validation.delete('1.0','end');self.validation.insert('end','Fichier importé : validations de génération non exécutées.\n' if imported else ''.join(v.label()+'\n' for v in self.current.validations))
         self.pipeline.delete('1.0','end');self.pipeline.insert('end','\n'.join(self.current.stage_log))
         self.meta.delete('1.0','end');self.meta.insert('end',json.dumps(self.current.state.metadata,indent=2,ensure_ascii=False,default=str))
         self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(analyze_map(self.current.state)))
-        self.export_btn.configure(state='normal' if imported or not hard_fail else 'disabled')
-        if not imported:self.status.set(f'Généré — {len(self.current.validations)-len(hard_fail)}/{len(self.current.validations)} checks OK'+(' — EXPORT AUTORISÉ' if not hard_fail else f' — {len(hard_fail)} HARD FAIL'))
+        self.export_btn.configure(state='normal' if self.current else 'disabled')
+        if not imported:self._set_generated_status()

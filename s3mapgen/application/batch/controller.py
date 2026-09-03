@@ -12,7 +12,7 @@ from PIL import Image, ImageTk
 from ...generation.archetypes import ARCHETYPES, ARCHETYPE_ORDER
 from ...generation.core import native_size_warning_kind
 from ...generation.modes import MODES, MODE_ORDER, cache_engine_revision
-from ..rendering.preview import compose_start_markers, project_parallelogram, render_square_base
+from ..rendering.preview import START_MARKER_SCALES, compose_start_markers, project_parallelogram, render_square_base
 from ..session.cache import GenerationCacheKey
 from ..shell import NATIVE_LIMITS
 from ..ui.i18n.batch import BATCH_HINTS, BATCH_TEXT, _BATCH_CAPACITY_TEXT
@@ -180,7 +180,7 @@ class BatchController:
         if base is None or out is None:return None
         marker_mode=self.prefs.get('preview_start_markers','small')
         if marker_mode=='hidden':return base
-        return compose_start_markers(base,out.state,projection=self.prefs.get('projection','square'),scale=2 if marker_mode=='normal' else 1)
+        return compose_start_markers(base,out.state,projection=self.prefs.get('projection','square'),scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
 
     def _refresh_batch_previews(self):
         if not getattr(self,'_batch_rows',None):return
@@ -409,8 +409,6 @@ class BatchController:
             if side not in NATIVE_LIMITS:error=BATCH_TEXT[lang]['unsupported_size']
             elif not MODES[mode].implemented:error=BATCH_TEXT[lang]['unsupported_mode']
             elif not ARCHETYPES[archetype].implemented:error=BATCH_TEXT[lang]['unsupported_archetype']
-            elif mode!='legacy' and side!=768:error=BATCH_TEXT[lang]['unsupported_mode_size']
-            elif mirror and not (mode=='legacy' and archetype=='continental'):error=BATCH_TEXT[lang]['unsupported_mirror']
             elif not 2<=players<=NATIVE_LIMITS[side]:error=BATCH_TEXT[lang]['invalid_players'].format(maximum=NATIVE_LIMITS[side])
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
@@ -544,7 +542,7 @@ class BatchController:
             # Batch is a producer, not an implicit navigation command. It fills an
             # empty viewer for convenience, but never replaces an existing map.
             if self._batch_should_autodisplay():
-                self.current=self._batch_last_success;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+                self.current=self._batch_last_success;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(False)
             # Re-touch successful rows under the final protection set so the
             # preflight forecast and the actual retained set follow the same rule.
             for row in active:
@@ -565,7 +563,7 @@ class BatchController:
     def _batch_show_result(self,row):
         out=row.get('result')
         if out is None:return
-        self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(True)
+        self.current=out;self.import_source=None;self._populate_current();self._invalidate_preview();self._refresh_preview(False)
 
     def _batch_assign_result(self,row,slot):
         out=row.get('result')

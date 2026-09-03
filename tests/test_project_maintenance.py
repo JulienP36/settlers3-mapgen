@@ -7,6 +7,7 @@ import sys
 import zipfile
 from pathlib import Path
 
+import tools.package_source as package_source
 from s3mapgen.application.ui.i18n.history import _CONTEXT_TEXT
 from s3mapgen.application.ui.i18n.shortcuts import SHORTCUT_UI_TEXT
 from s3mapgen.application.history.order import (
@@ -23,6 +24,15 @@ from s3mapgen.version import APP_VERSION
 
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_source_zip_readds_references_when_git_excludes_them(monkeypatch):
+    class GitResult:
+        stdout = b'AGENTS.md\0'
+
+    monkeypatch.setattr(package_source.subprocess, 'run', lambda *args, **kwargs: GitResult())
+    files = package_source._source_files(ROOT)
+    assert any(path.parts and path.parts[0] == 'references' for path in files)
 
 
 def test_visual_order_helpers_keep_manual_order_and_drop_evictions():
@@ -103,10 +113,16 @@ def test_source_zip_is_complete_clean_and_self_tests_after_extraction(tmp_path):
 def test_publication_and_maintenance_docs_are_linked_and_packaged():
     readme = (ROOT / 'README.md').read_text(encoding='utf-8')
     english = (ROOT / 'README_EN.md').read_text(encoding='utf-8')
+    gitignore = (ROOT / '.gitignore').read_text(encoding='utf-8')
+    github_policy = (ROOT / 'GITHUB_STORAGE_POLICY.md').read_text(encoding='utf-8')
+    github_publication = (ROOT / 'docs/GITHUB_PUBLICATION.md').read_text(encoding='utf-8')
 
     assert '[English](README_EN.md)' in readme
     assert '[Français](README.md)' in english
     assert 'Settlers III' in readme and 'Settlers III' in english
+    assert 'references/' in gitignore
+    assert 'pushed to GitHub' in github_policy
+    assert 'ZIP' in github_policy and 'ZIP' in github_publication
     for relative_path in (
         'AGENTS.md',
         'docs/ARCHITECTURE.md',

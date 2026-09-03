@@ -7,7 +7,8 @@ from tkinter import ttk
 
 from PIL import Image, ImageTk
 
-from ..rendering.preview import compose_rendered_map, render_square_base
+from ..rendering.focus import apply_focus_overlay, focus_mask, focus_signature, focus_view
+from ..rendering.preview import START_MARKER_SCALES, compose_rendered_map, render_square_base
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.shell import (
     PREVIEW_START_MARKER_LABELS,
@@ -128,10 +129,10 @@ class ViewerController:
         return 'trees'
 
     def _projection_changed(self):
-        self.prefs['projection']=self._projection_key();self._save_prefs();self._refresh_preview(True);self._refresh_batch_previews();self._refresh_history_preview()
+        self.prefs['projection']=self._projection_key();self._save_prefs();self._refresh_preview(False);self._refresh_batch_previews();self._refresh_history_preview()
 
     def _preview_marker_changed(self):
-        self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_batch_previews();self._refresh_history_preview()
+        self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_preview(False);self._refresh_batch_previews();self._refresh_history_preview()
 
     def _opacity_changed(self):
         self.opacity_label.configure(text=f'{int(self.opacity_var.get())} %');self.prefs['overlay_alpha']=int(self.opacity_var.get());self._schedule_prefs_save()
@@ -149,27 +150,79 @@ class ViewerController:
             locked=view!='heatmap';self.heatmap_combo.set_enabled(not locked)
             if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text='Filtre carte thermique' if lang=='fr' else TEXTS['Filtre carte thermique'].get(lang,TEXTS['Filtre carte thermique']['en']),image=self._lock_closed_icon if locked else self._lock_open_icon)
 
-    def _view_changed(self):self._update_view_controls();self._refresh_preview(True)
+    def _view_changed(self):self._update_view_controls();self._refresh_preview(False)
 
-    def _heatmap_changed(self):self._refresh_preview(True)
+    def _heatmap_changed(self):self._refresh_preview(False)
 
     def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._refresh_preview(True);self._feedback('view_reset','info')
 
     def _render_options(self):
-        view=self._view_key();return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key()}
+        view=self._view_key();marker_mode=self.prefs.get('preview_start_markers','small')
+        return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key(),'start_markers':bool(view=='starts' and marker_mode!='hidden'),'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small'])}
+
+    def _chart_focus_options(self, options):
+        """Temporarily route the preview through the hovered chart semantic."""
+        focus=None
+        link_var=getattr(self,'stats_link_var',None)
+        if link_var is not None and link_var.get():
+            focus=getattr(self,'_chart_link_focus',None)
+        if not focus:
+            return options,None
+        effective=dict(options);effective['view']=focus_view(focus);effective['overlay_alpha']=100
+        return effective,focus
+
+    def _capture_view_anchor(self):
+        """Capture the map point currently at the centre of the canvas."""
+        image=getattr(self,'_preview_base',None)
+        factor=float(getattr(self,'_display_factor',0.0) or 0.0)
+        if image is None or factor<=0 or not hasattr(self,'canvas'):
+            return None
+        try:
+            cw=max(100,int(self.canvas.winfo_width()));ch=max(100,int(self.canvas.winfo_height()))
+            left=float(self.canvas.canvasx(0));top=float(self.canvas.canvasy(0))
+        except (tk.TclError,TypeError,ValueError):
+            return None
+        origin=getattr(self,'_display_origin',(0,0));width,height=getattr(self,'_display_base_size',image.size)
+        px=(left+cw/2-float(origin[0]))/factor;py=(top+ch/2-float(origin[1]))/factor
+        return {'x':px,'y':py,'x_ratio':px/max(1.0,float(width)),'y_ratio':py/max(1.0,float(height)),'size':(int(width),int(height))}
+
+    def _remember_view_anchor(self):
+        anchor=self._capture_view_anchor()
+        if anchor is not None and getattr(self,'_pending_view_anchor',None) is None:
+            self._pending_view_anchor=anchor
+
+    def _restore_view_anchor(self,anchor,image_size,origin,factor,cw,ch,scroll_width,scroll_height):
+        """Move the canvas so the captured source point remains centred."""
+        if not anchor:
+            self.canvas.xview_moveto(0);self.canvas.yview_moveto(0);return
+        old_size=tuple(anchor.get('size',(0,0)));new_size=tuple(image_size)
+        if old_size==new_size:
+            px=float(anchor.get('x',new_size[0]/2));py=float(anchor.get('y',new_size[1]/2))
+        else:
+            px=float(anchor.get('x_ratio',.5))*new_size[0];py=float(anchor.get('y_ratio',.5))*new_size[1]
+        px=max(0.0,min(float(new_size[0]),px));py=max(0.0,min(float(new_size[1]),py))
+        target_left=float(origin[0])+px*float(factor)-cw/2
+        target_top=float(origin[1])+py*float(factor)-ch/2
+        target_left=max(0.0,min(max(0.0,float(scroll_width-cw)),target_left))
+        target_top=max(0.0,min(max(0.0,float(scroll_height-ch)),target_top))
+        self.canvas.xview_moveto(target_left/max(1.0,float(scroll_width)));self.canvas.yview_moveto(target_top/max(1.0,float(scroll_height)))
 
     def _invalidate_preview(self):
         """Discard both the colorized square layer and its projected composites."""
-        self._preview_base=None;self._preview_key=None;self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={}
+        self._remember_view_anchor()
+        self._preview_base=None;self._preview_key=None;self._preview_layer_base=None;self._preview_layer_key=None;self._preview_projection_cache={};self._preview_focus_mask_cache={}
 
     def _invalidate_preview_composite(self):
         """Keep the costly colorized layer and discard only cheap decorations."""
+        self._remember_view_anchor()
         self._preview_base=None;self._preview_key=None;self._preview_projection_cache={}
 
     def _refresh_preview(self,reset_pan=False):
         self._zoom_after=None
         if not self.current:return
-        self._update_view_controls();opts=self._render_options();state=self.current.state
+        anchor=None if reset_pan else (getattr(self,'_pending_view_anchor',None) or self._capture_view_anchor())
+        self._pending_view_anchor=None
+        self._update_view_controls();opts=self._render_options();opts,focus=self._chart_focus_options(opts);state=self.current.state
         # Global and Starts share the same marker-free terrain raster.  Starts
         # opacity affects only its sprite layer, so changing it never recolors
         # the map.  Other overlays bake their opacity into the square layer.
@@ -177,13 +230,23 @@ class ViewerController:
         layer_alpha=100 if layer_view=='global' else opts['overlay_alpha']
         layer_key=(id(state),layer_view,layer_alpha,opts['heatmap_resource'])
         if layer_key!=self._preview_layer_key:
+            if self._preview_layer_key is not None and self._preview_layer_key[0]!=id(state):
+                self._preview_focus_mask_cache={}
             self._preview_layer_base=render_square_base(state,layer_view,layer_alpha,opts['heatmap_resource']);self._preview_layer_key=layer_key;self._preview_projection_cache={}
-        composite_key=(opts['projection'],opts['view'],opts['overlay_alpha'])
+        composite_key=(opts['projection'],opts['view'],opts['overlay_alpha'],opts.get('start_markers'),opts.get('start_marker_scale'),focus_signature(focus))
         if composite_key not in self._preview_projection_cache:
-            self._preview_projection_cache[composite_key]=compose_rendered_map(self._preview_layer_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'])
+            if focus is None:
+                self._preview_projection_cache[composite_key]=compose_rendered_map(self._preview_layer_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1))
+            else:
+                mask_key=(id(state),focus_signature(focus))
+                mask=self._preview_focus_mask_cache.get(mask_key)
+                if mask is None:
+                    mask=focus_mask(state,focus);self._preview_focus_mask_cache[mask_key]=mask
+                focused_base=apply_focus_overlay(self._preview_layer_base,state,focus,mask)
+                self._preview_projection_cache[composite_key]=compose_rendered_map(focused_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),focus=focus)
         self._preview_base=self._preview_projection_cache[composite_key];self._preview_key=(layer_key,composite_key)
         im=self._preview_base;cw=max(100,self.canvas.winfo_width());ch=max(100,self.canvas.winfo_height());factor=max(.05,min((cw-10)/im.width,(ch-10)/im.height)*self.zoom);new=(max(1,int(im.width*factor)),max(1,int(im.height*factor)))
-        oldx=0 if reset_pan else self.canvas.xview()[0];oldy=0 if reset_pan else self.canvas.yview()[0];shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);self.canvas.delete('all');sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2);self.canvas.create_image(x,y,image=self.photo,anchor='nw');self.canvas.configure(scrollregion=(0,0,sw,sh));self.canvas.xview_moveto(oldx);self.canvas.yview_moveto(oldy)
+        shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);self.canvas.delete('all');sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2);self.canvas.create_image(x,y,image=self.photo,anchor='nw');self.canvas.configure(scrollregion=(0,0,sw,sh));self._restore_view_anchor(anchor,im.size,(x,y),new[0]/im.width,cw,ch,sw,sh)
         self._display_origin=(x,y);self._display_factor=new[0]/im.width;self._display_base_size=im.size
 
     def _source_cell_from_canvas(self,event):

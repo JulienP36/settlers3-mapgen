@@ -125,8 +125,11 @@ validée, avec uniquement ses différences explicites.
   objets/décorations et les validations Legacy avec les mesures natives ; les
   objets/ressources de départ, colons et writer SAV restent hors périmètre.
 - [x] Exposer les tailles natives 256–1024, les miroirs Axe long/Axe court/Les
-  deux, les avertissements de viabilité et l'export MAP/EDM multi-tailles via
-  scaffold de test.
+  deux pour Legacy et Upgraded, les avertissements de viabilité et l'export
+  MAP/EDM multi-tailles via scaffold de test.
+- [x] Laisser toutes les tailles du contrat générables et exportables pour
+  test, sans refus lié au statut « non testé » ; conserver les avertissements
+  uniquement comme information.
 - [ ] Ajouter modificateurs et autres archétypes après ce socle.
 - [ ] Concevoir ensuite le mode **Custom laboratoire** séparé : catalogue,
   presets, batch, diagnostics et garde-fous.
@@ -156,8 +159,19 @@ validée, avec uniquement ses différences explicites.
 - [ ] Garder exactement deux rayons configurables pour les ressources proches.
 - [ ] Revoir résolution des exports PNG et éventuellement transformer Hauteurs
   en carte topographique/classes d'altitude.
-- [ ] Concevoir les vues composables, légendes, conflits et le Pilotage de la
-  vue depuis les Graphiques.
+- [x] Première liaison Graphiques → Vue avec payloads sémantiques, cache de
+  surbrillance et conservation du cadrage ; A/B reste volontairement
+  informatif (tooltip uniquement).
+- [x] Router tous les graphes **X proche(s)** vers Départs, ancrer leur flèche
+  aux bordures des territoires de départ d’origine et appliquer à cette vue le
+  réglage court **Marqueurs de départ**.
+- [x] Ajouter les tailles de marqueurs Très petits / Normaux / Grands (plus
+  Masqués), conserver la compatibilité des préférences historiques et propager
+  le réglage à Départs, Batch et Historique.
+- [x] Corriger le centre d’export multi-taille et conserver `references/` dans
+  les ZIP sources tout en l’excluant des commits/push GitHub.
+- [ ] Étendre le pilotage de la vue depuis les Graphiques : légendes, conflits,
+  clic persistant et multi-cartes 3+.
 - [ ] Repenser Comparaison, signalétique Chargée/Affichée/Affectée et A/B avancé
   seulement si l'usage le justifie ; multi-cartes 3+ après le générateur.
 - [ ] Concevoir labels J1–J20, loupe locale, inspecteur près du curseur et

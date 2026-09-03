@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
 from .order import cached_protected_outputs, move_visual_key, reconcile_visual_order
-from ..rendering.preview import render
+from ..rendering.preview import START_MARKER_SCALES, render
 from ..session.cache import ImportedHistoryKey
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.history import HISTORY_TEXT, _CONTEXT_TEXT, _HISTORY_CAPACITY_DIALOG_TEXT
@@ -145,7 +145,7 @@ class HistoryController:
         need_stats=self.session_stats_cache.get(out.state) is None
         if need_stats:self._task_begin(_lang_text(self.prefs.get('language','fr'),'Chargement de l’historique…','Loading history…','Verlauf wird geladen…','Cargando historial…'),10)
         self.current=out;source=self.session_cache.metadata(key).get('source_path');self.import_source=Path(source) if source else None
-        self._populate_current(imported=isinstance(key,ImportedHistoryKey));self._invalidate_preview();self._refresh_preview(True);self._refresh_history()
+        self._populate_current(imported=isinstance(key,ImportedHistoryKey));self._invalidate_preview();self._refresh_preview(False);self._refresh_history()
         if need_stats:self._task_done(FEEDBACK_TEXT[self.prefs.get('language','fr')]['history_loaded'])
         else:self._feedback('history_loaded','success')
 
@@ -350,7 +350,7 @@ class HistoryController:
         marker_mode=self.prefs.get('preview_start_markers','small')
         preview_key=(id(out.state),self.prefs.get('projection','square'),marker_mode)
         if preview_key!=self._history_preview_key or getattr(self,'_history_preview_base_image',None) is None:
-            image=render(out.state,labels=False,view='global',projection=self.prefs.get('projection','square'),start_markers=marker_mode!='hidden',start_marker_scale=2 if marker_mode=='normal' else 1)
+            image=render(out.state,labels=False,view='global',projection=self.prefs.get('projection','square'),start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
             image.thumbnail((300,210),Image.Resampling.NEAREST);self._history_preview_base_image=image;self._history_preview_key=preview_key
         self._history_refresh_thumbnail_photo()
         slots=[slot for slot,value in self._compare_slots.items() if value is out];parts=[text['comparison'].format(slots='/'.join(slots) if slots else text['none'])]
@@ -424,7 +424,7 @@ class HistoryController:
         marker_mode=self.prefs.get('preview_start_markers','small');projection=self.prefs.get('projection','square')
         render_key=(key,id(out.state),projection,marker_mode)
         if render_key!=self._history_large_key or self._history_large_image is None:
-            self._history_large_image=render(out.state,labels=False,view='global',projection=projection,start_markers=marker_mode!='hidden',start_marker_scale=2 if marker_mode=='normal' else 1)
+            self._history_large_image=render(out.state,labels=False,view='global',projection=projection,start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
             self._history_large_key=render_key
         if pinned:
             shown,size=self._history_large_scaled_image(self._history_large_image)

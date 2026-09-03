@@ -80,6 +80,13 @@ def test_batch_collects_native_size_and_mirror_parameters():
     assert request.mirror_mode == 1
 
 
+def test_batch_accepts_mirror_for_upgraded_maps():
+    dummy = batch_dummy([row(1, mode="Amélioré (Upgraded)", side="256", players="2", mirror="Les deux")])
+    request = MainWindow._batch_collect_requests(dummy)[0]["key"]
+    assert request.mode == "upgraded"
+    assert request.mirror_mode == 3
+
+
 def test_batch_rejects_unknown_sizes_before_starting():
     dummy = batch_dummy([row(1, side="192")])
     with pytest.raises(ValueError, match="native"):

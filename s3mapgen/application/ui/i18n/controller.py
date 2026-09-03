@@ -84,4 +84,4 @@ class LanguageController:
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
 
     def _language_changed(self):
-        selected=self.lang_var.get();self.prefs['language']=next((key for key,label in LANGUAGE_LABELS.items() if label==selected),'en');self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(True)
+        selected=self.lang_var.get();self.prefs['language']=next((key for key,label in LANGUAGE_LABELS.items() if label==selected),'en');self._save_prefs();self._apply_language();self._retranslate_batch_window();self._refresh_preview(False)

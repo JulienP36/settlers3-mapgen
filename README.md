@@ -48,19 +48,28 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_3 / calibration Upgraded
+## État actuel — v2.0 DEV_4 / calibration Upgraded
 
 La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` a été
 le checkpoint validé du reset natif, et `DEV_3` est maintenant le checkpoint
 validé et publié : l'ancien générateur Legacy
 procédural et ses bibliothèques dérivées ont été retirés, puis remplacés par
 un portage natif v1. Le moteur Upgraded est maintenant reconstruit dans une
-copie indépendante de ce pipeline.
+copie indépendante de ce pipeline. DEV_4 ajoute la liaison temporaire
+Graphiques → Vue, sans liaison dans A/B, corrige le dialogue d’export hors 768,
+déverrouille les trois miroirs aussi en Upgraded et rend ce mode disponible sur
+toutes les tailles natives du contrat ; 768
+conserve les quotas calibrés et les autres tailles utilisent des quotas
+proportionnels pour rester générables. Aucune taille du contrat n’est bloquée
+par un statut « non testé » : les avertissements restent informatifs. Le
+réglage **Marqueurs de départ** propose désormais Petits, Normaux et
+Grands, en plus de Masqués, dans la vue Départs, Batch et Historique.
 
 Le moteur **Legacy** implémente Continental v1 avec le relief, les terrains,
 l'hydrologie, les objets, les ressources, les départs et les métadonnées de
 partie observés dans S3.EXE. Le moteur **Upgraded** possède sa propre copie du
-pipeline, calibrée sur Continental 768×768. Il ajoute uniquement ses différences
+pipeline, calibrée sur Continental 768×768 mais générable sur toutes les tailles
+du contrat. Il ajoute uniquement ses différences
 explicites : minerais v7, poissons, arbres/décorations et pierres de
 construction, sans boue. L'archétype Continental fournit le contexte macro-géographique ;
 il ne sculpte pas une seconde forme par-dessus le noyau natif.
@@ -104,7 +113,7 @@ Masque initial affiche exclusivement les coordonnées directes du byte 8 d'un
 SAV immédiat reconnu, tandis que Territoires affiche les claims runtime
 réellement lus dans le SAV.
 
-> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP utilisent pour l'instant le scaffold 768 comme enveloppe de test, y compris pour les tailles étendues ; leur compatibilité avec l'éditeur/jeu doit encore être vérifiée. Le chemin Upgraded reste calibré sur 768×768.
+> Le writer SAV n'est toujours pas implémenté : un SAV importé peut être lu et copié inchangé, jamais réinventé. Les exports EDM/MAP utilisent pour l'instant le scaffold 768 comme enveloppe de test, y compris pour les tailles étendues ; leur compatibilité avec l'éditeur/jeu doit encore être vérifiée. Le chemin Upgraded reste calibré sur 768×768, mais ses autres tailles sont désormais générables pour test. Limite connue : certains SAV peuvent afficher des récifs sur terre à cause d'un décodage d'ID probablement incorrect ; correction reportée.
 
 La **v1.7 STABLE** clôt le socle Statistiques / Graphiques. La **v1.8** a construit la passe Workflow / accessibilité / production. La **v1.9** consolide maintenant l’architecture interne avant de terminer par l’archéologie/data mapping. Le retour profond au générateur reste prévu pour la v1.10.
 
@@ -121,7 +130,7 @@ qui ne tiennent pas dans l'Area sont reportées explicitement dans le rapport.
 
 ### Upgraded
 
-Preset amélioré du projet. Il intègre les règles validées au fil des tests et du long-play : hydrologie corrigée, poissons et minerais rééquilibrés, SmallTree84, Building Stones avec footprint, décorations contrôlées, règles de transitions et validators spécifiques. Le placement des joueurs est actuellement un pont provisoire ; son comportement natif sera traité dans une passe dédiée.
+Preset amélioré du projet, disponible sur les tailles natives du contrat. Il intègre les règles validées au fil des tests et du long-play : hydrologie corrigée, poissons et minerais rééquilibrés, SmallTree84, Building Stones avec footprint, décorations contrôlées, règles de transitions et validators spécifiques. Le placement des joueurs est actuellement un pont provisoire ; son comportement natif sera traité dans une passe dédiée.
 
 La matrice détaillée est disponible dans `references/SETTLERS3_UPGRADED_RULE_MATRIX_v1.md`.
 

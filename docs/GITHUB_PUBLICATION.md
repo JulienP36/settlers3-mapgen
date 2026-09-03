@@ -31,6 +31,13 @@ Ne multiplier ni les variantes orthographiques ni les tags populaires sans rappo
 - Les GitHub Releases sont une tâche de publication STABLE.
 - Aucun de ces éléments ne doit être transformé automatiquement en campagne SEO ou communautaire.
 
+## Dossier `references/`
+
+Le dossier local `references/` est volontairement ignoré pour les commits et
+push GitHub pendant la réorganisation des notes d’audit et de récupération. Il
+reste conservé dans les ZIP sources remis avec chaque candidate : le script de
+packaging le réintègre explicitement même lorsqu’il est ignoré par Git.
+
 ## README publication checklist
 
 - French remains the primary historical README.

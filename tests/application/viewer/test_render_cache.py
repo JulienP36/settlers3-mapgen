@@ -47,6 +47,8 @@ def test_main_preview_reuses_square_layer_and_bounds_projection_composites():
     assert "layer_view='global' if opts['view'] in ('global','starts')" in refresh
     assert 'render_square_base(state,layer_view,layer_alpha' in refresh
     assert 'if composite_key not in self._preview_projection_cache' in refresh
+    assert "opts.get('start_markers')" in refresh
+    assert "opts.get('start_marker_scale',1)" in refresh
     assert 'compose_rendered_map(self._preview_layer_base,state' in refresh
     invalidate=VIEWER_SRC[VIEWER_SRC.index('def _invalidate_preview(self)'):VIEWER_SRC.index('def _refresh_preview')]
     assert 'self._preview_projection_cache={}' in invalidate

@@ -20,7 +20,7 @@ from ...map_data.constants import (
     DESERT_TRANS, SWAMP, SWAMP_TRANS, RIVER_IDS, SNOW, SNOW_TRANS,
     MOUNTAIN_IDS, PALM_TREE_IDS, DESERT_IDS, SWAMP_IDS,
 )
-from ..rendering.preview import PLAYER_COLORS
+from ..rendering.preview import PLAYER_COLORS, START_TERRITORY_RADIUS
 from ...map_data.hexgrid import component_labels, hex_distance, neighbor_count
 
 
@@ -478,9 +478,25 @@ def analyze_map(state) -> dict[str, Any]:
     edge_ids = _edge_component_ids(labels)
     inland_sizes = []
     ocean_sizes = []
+    inland_water_details = []
+    ocean_water_details = []
     for cid in range(1, n_water_components + 1):
         size = int((labels == cid).sum())
-        (ocean_sizes if cid in edge_ids else inland_sizes).append(size)
+        if cid in edge_ids:
+            ocean_sizes.append(size)
+            target = ocean_water_details
+        else:
+            inland_sizes.append(size)
+            target = inland_water_details
+        ys, xs = np.where(labels == cid)
+        target.append({
+            'id': int(cid),
+            'cells': size,
+            'bbox': [int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())],
+            'centroid': [round(float(xs.mean()), 3), round(float(ys.mean()), 3)],
+        })
+    inland_water_details.sort(key=lambda row: (-row['cells'], row['id']))
+    ocean_water_details.sort(key=lambda row: (-row['cells'], row['id']))
     ocean_mask = np.isin(labels, list(edge_ids)) if edge_ids else np.zeros_like(water)
     inland_water_mask = water & ~ocean_mask
     ocean_cells = int(ocean_mask.sum())
@@ -512,9 +528,12 @@ def analyze_map(state) -> dict[str, Any]:
         opponents = []
         for j, (x2, y2) in enumerate(state.starts):
             if i == j: continue
-            d = int(hex_distance(int(x1), int(y1), int(x2), int(y2)))
-            distances.append(d); opponents.append((d,j+1))
-            if i < j: pair_distances.append(d)
+            center_distance = int(hex_distance(int(x1), int(y1), int(x2), int(y2)))
+            # Measure the gap between the two closest base borders rather than
+            # the distance between their anchor cells.
+            border_distance = max(0, center_distance - 2 * START_TERRITORY_RADIUS)
+            distances.append(border_distance); opponents.append((border_distance,j+1))
+            if i < j: pair_distances.append(border_distance)
         nearest_distance = min(distances) if distances else 0
         nearest_player = min(opponents)[1] if opponents else None
         nearest.append({'player': i+1, 'distance': nearest_distance, 'nearest_player': nearest_player})
@@ -603,6 +622,7 @@ def analyze_map(state) -> dict[str, Any]:
         'hydrology': {
             'water_components': int(n_water_components), 'ocean_components': len(ocean_sizes),
             'inland_water_components': len(inland_sizes), 'inland_water_sizes': inland_sizes,
+            'inland_water_details': inland_water_details, 'ocean_water_details': ocean_water_details,
             'largest_inland_water': max(inland_sizes) if inland_sizes else 0,
             'river_components': len(river_details), 'river_sizes': [d['cells'] for d in river_details],
             'river_component_stats': _component_summary(river_details), 'river_details': river_details,

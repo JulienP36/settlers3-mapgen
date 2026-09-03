@@ -55,8 +55,6 @@ def generate(
         raise ValueError("Le mode miroir doit être compris entre 0 et 3")
 
     profile = load_profile(profile_path) if profile_path is not None else load_profile()
-    if int(request.side) != int(profile["side"]):
-        raise ValueError("Le moteur Upgraded est d'abord calibré pour 768×768")
 
     events: list[str] = []
     result = _stage(
