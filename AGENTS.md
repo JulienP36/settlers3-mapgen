@@ -1,9 +1,9 @@
 # Settlers III MapGen — instructions de travail
 
 - Répondre en français sauf demande contraire.
-- Au début d’une tâche, lire `PROJECT_WORKFLOW.md`,
-  `references/SETTLERS3_CURRENT_SNAPSHOT.md`, puis uniquement la section utile
-  de `TODO_MAPGEN.md`.
+- Au début d’une tâche, lire `PROJECT_WORKFLOW.md`, puis, lorsqu’il est présent
+  dans la copie source/ZIP, `references/SETTLERS3_CURRENT_SNAPSHOT.md` et
+  uniquement la section utile de `TODO_MAPGEN.md`.
 - Ordre de confiance : dernière validation utilisateur, build exacte testée,
   état Git vérifié, documentation correspondant à cette build, puis références
   historiques.

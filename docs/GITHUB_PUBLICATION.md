@@ -36,7 +36,9 @@ Ne multiplier ni les variantes orthographiques ni les tags populaires sans rappo
 Le dossier local `references/` est volontairement ignoré pour les commits et
 push GitHub pendant la réorganisation des notes d’audit et de récupération. Il
 reste conservé dans les ZIP sources remis avec chaque candidate : le script de
-packaging le réintègre explicitement même lorsqu’il est ignoré par Git.
+packaging le réintègre explicitement même lorsqu’il est ignoré par Git. Les
+ressources nécessaires à l’exécution, comme les marqueurs de départ, vivent
+dans `data/` et restent donc disponibles dans le dépôt public.
 
 ## README publication checklist
 

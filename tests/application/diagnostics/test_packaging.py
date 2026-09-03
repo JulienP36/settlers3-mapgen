@@ -42,8 +42,9 @@ def test_source_package_self_test_reads_all_required_resources():
 
 def test_pyinstaller_spec_is_onedir_and_bundles_runtime_resources():
     spec=(ROOT/'build/windows/settlers3_mapgen.spec').read_text(encoding='utf-8')
-    for resource in ('config','data','SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png'):
+    for resource in ('config','data'):
         assert resource in spec
+    assert "'references'" not in spec
     assert 'COLLECT(' in spec
     assert "name='Settlers3MapGen'" in spec
     assert 'optional_icon' in spec

@@ -3,7 +3,7 @@
 Tracked in normal GitHub Git:
 - source code and tests;
 - configs and generation profiles;
-- compact engine data required at runtime (`data/*.npz`, scaffold/reference EDM/MAP files) while each file remains comfortably below GitHub's 100 MB hard file limit.
+- compact engine data required at runtime (`data/*.npz`, scaffold/reference EDM/MAP files and the start-marker sheet) while each file remains comfortably below GitHub's 100 MB hard file limit.
 
 Ignored by default:
 - `output/` generated maps/previews/reports;

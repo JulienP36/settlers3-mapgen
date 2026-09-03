@@ -6,10 +6,13 @@ This file defines how the project is resumed, developed, validated, checkpointed
 
 ## Session start
 1. Read `PROJECT_WORKFLOW.md`.
-2. Read `references/SETTLERS3_CURRENT_SNAPSHOT.md`.
+2. Read `references/SETTLERS3_CURRENT_SNAPSHOT.md` when the local source ZIP
+   contains it; GitHub checkouts intentionally omit the research/recovery tree.
 3. Read `TODO_MAPGEN.md`.
 4. Work on the correct permanent branch.
-5. If generation/export rules are touched, also read `references/SETTLERS3_PREGEN_READ_FIRST.md` and the references it requires.
+5. If generation/export rules are touched and the local recovery references are
+   available, also read `references/SETTLERS3_PREGEN_READ_FIRST.md` and the
+   references it requires.
 
 Do not rely on conversation memory when the repository contains a newer canonical state.
 

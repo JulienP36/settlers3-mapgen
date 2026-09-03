@@ -63,11 +63,7 @@ REQUIRED_SOURCE_PATHS = (
     "data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz",
     "data/scaffold_768.edm",
     "data/scaffold_768.map",
-    "references/SETTLERS3_CURRENT_SNAPSHOT.md",
-    "references/SETTLERS3_PREGEN_READ_FIRST.md",
-    "references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md",
-    "references/dev_notes/V1_8_DEVELOPMENT_LOG.md",
-    "references/dev_notes/V1_9_DEVELOPMENT_LOG.md",
+    "data/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png",
 )
 
 FORBIDDEN_ARCHIVE_PARTS = {
