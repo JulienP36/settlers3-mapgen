@@ -32,6 +32,16 @@ def test_preview_start_markers_default_to_small_and_invalid_values_are_cleaned(t
     assert p.load_settings()['preview_start_markers']=='small'
 
 
+def test_preview_start_circles_default_off_and_roundtrip_as_a_strict_boolean(tmp_path, monkeypatch):
+    monkeypatch.setenv('APPDATA', str(tmp_path))
+    import s3mapgen.application.settings.preferences as p;importlib.reload(p)
+    assert p.DEFAULTS['preview_start_circles'] is False
+    p.save_settings({'preview_start_circles':True})
+    assert p.load_settings()['preview_start_circles'] is True
+    p.save_settings({'preview_start_circles':1})
+    assert p.load_settings()['preview_start_circles'] is False
+
+
 def test_shift_shortcuts_use_uppercase_tk_keysym():
     from s3mapgen.application.main_window import MainWindow
     assert MainWindow._tk_sequence('Ctrl+Shift+T') == '<Control-Shift-T>'

@@ -11,6 +11,7 @@ from ...map_data.model import MapState
 from ..paths import START_MARKER_SHEET
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
+REEF_COLOR=(66,60,57)
 # ID 34 is the native one-cell rocky-grass patch.  The muted yellow/olive
 # sample keeps it distinct from Rocky while staying close to the reference
 # texture shown in the native editor.
@@ -144,6 +145,7 @@ def _global_rgb(state:MapState)->np.ndarray:
     adult=(O>=68)&(O<=81)&~np.isin(O,[78,79])
     rgb[adult]=(25,88,34);rgb[np.isin(O,[78,79])]=(46,113,51);rgb[O==84]=(81,145,73)
     rgb[(O>=115)&(O<=126)]=(205,205,198);rgb[O==127]=(150,150,145)
+    rgb[np.isin(O,REEF_IDS)]=REEF_COLOR
     return rgb
 
 def _resource_density(state:MapState,resource:str)->np.ndarray:
@@ -282,34 +284,36 @@ def _ordered_boundary_offsets(projected:bool)->tuple[tuple[int,int],...]:
         return (2*x-y,2*y) if projected else (x,y)
     return tuple(sorted(_CANONICAL_BOUNDARY,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
-def _draw_square_start_markers(im:Image.Image,state:MapState,scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
+def _draw_square_start_markers(im:Image.Image,state:MapState,scale:float=1.0,include_boundaries:bool=False,opacity:int=100,draw_markers:bool=True)->None:
     for i,(x,y) in enumerate(state.starts):
-        marker=_start_marker(i,False,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,False,opacity)
             for bx,by in _ordered_initial_boundary(state,i,False):
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,bx,by),boundary_marker)
-        im.paste(marker,_centered_marker_origin(marker,x,y),marker)
+        if draw_markers:
+            marker=_start_marker(i,False,scale,opacity)
+            im.paste(marker,_centered_marker_origin(marker,x,y),marker)
 
-def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:int,scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
+def _draw_projected_start_markers(im:Image.Image,state:MapState,source_height:int,scale:float=1.0,include_boundaries:bool=False,opacity:int=100,draw_markers:bool=True)->None:
     for i,(x,y) in enumerate(state.starts):
-        marker=_start_marker(i,True,scale,opacity)
         if include_boundaries:
             boundary_marker=_boundary_start_marker(i,True,opacity)
             for bx,by in _ordered_initial_boundary(state,i,True):
                 X,Y=_project_point(bx,by,source_height)
                 im.paste(boundary_marker,_centered_marker_origin(boundary_marker,X,Y),boundary_marker)
-        X,Y=_project_point(x,y,source_height)
-        im.paste(marker,_centered_marker_origin(marker,X,Y),marker)
+        if draw_markers:
+            marker=_start_marker(i,True,scale,opacity)
+            X,Y=_project_point(x,y,source_height)
+            im.paste(marker,_centered_marker_origin(marker,X,Y),marker)
 
-def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->None:
-    """Draw only the start-marker layer on an already rendered map image."""
+def _draw_start_marker_layer(im:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100,draw_markers:bool=True)->None:
+    """Draw the independent start-marker and initial-circle layers."""
     scale=_marker_scale(scale)
     include_boundaries=bool(include_boundaries and _has_initial_mask_or_estimate(state))
     if projection=='parallelogram':
-        _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity)
+        _draw_projected_start_markers(im,state,state.side,scale,include_boundaries,opacity,draw_markers)
     else:
-        _draw_square_start_markers(im,state,scale,include_boundaries,opacity)
+        _draw_square_start_markers(im,state,scale,include_boundaries,opacity,draw_markers)
 
 def _draw_nearest_opponent_arrow(im:Image.Image,state:MapState,focus,projection:str='square')->None:
     """Draw the selected player's colored arrow to its nearest opponent."""
@@ -357,12 +361,12 @@ def _allows_estimated_initial_mask(state:MapState)->bool:
     return _source_format(state) != 'SAV' and bool(state.starts)
 
 def _allows_estimated_start_boundary(state:MapState)->bool:
-    """Allow Starts to show the known-radius outline for every decoded start.
+    """Allow the shared circle layer to show the known-radius outline.
 
     A SAV may not expose its initial claim raster in the current decoder, but
     its decoded start coordinates still justify the established visual
-    boundary.  This fallback is deliberately limited to the Starts overlay;
-    the Territories view keeps SAV runtime claims authoritative.
+    boundary.  This is a display-only fallback for the optional circle layer;
+    the Territories and Initial mask views keep their own source semantics.
     """
     return bool(state.starts)
 
@@ -484,10 +488,17 @@ def _ordered_direct_initial_boundary(state:MapState,player_index:int,projected:b
         return (2*dx-dy,2*dy) if projected else (dx,dy)
     return tuple(sorted(boundary,key=lambda p:(math.atan2(screen_point(p)[1],screen_point(p)[0]),screen_point(p)[0],screen_point(p)[1])))
 
-def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100)->Image.Image:
-    """Return a copy of a marker-free raster with the start layer composed over it."""
+def compose_start_markers(base:Image.Image,state:MapState,projection:str='square',scale:float=1.0,include_boundaries:bool=False,opacity:int=100,*,start_markers:bool=True,start_circles:bool|None=None)->Image.Image:
+    """Return a copy with the independent start marker/circle layers composed.
+
+    ``include_boundaries`` is retained as a positional compatibility alias for
+    the former Starts view.  New callers should use ``start_circles``.  The
+    marker layer never receives the opacity of an underlying view.
+    """
+    if start_circles is None:
+        start_circles=include_boundaries
     image=base.copy()
-    _draw_start_marker_layer(image,state,projection,scale,include_boundaries,opacity)
+    _draw_start_marker_layer(image,state,projection,scale,bool(start_circles),opacity,bool(start_markers))
     return image
 
 def project_parallelogram(im):
@@ -498,26 +509,28 @@ def project_parallelogram(im):
 
 def render_square_base(state,view='global',overlay_alpha=100,heatmap_resource='trees')->Image.Image:
     """Colorize one map/view into its reusable, marker-free square raster."""
-    base=_global_rgb(state);rgb=base.copy() if view in ('global','starts') else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
+    base=_global_rgb(state);rgb=base.copy() if view=='global' else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
+    # Keep reefs visible as dark rock anchors even when an overlay is fully opaque.
+    if view!='heatmap':
+        rgb[np.isin(state.objects,REEF_IDS)]=REEF_COLOR
     return Image.fromarray(rgb,'RGB')
 
-def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=None,start_marker_scale:float=1.0,focus=None)->Image.Image:
+def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=None,start_marker_scale:float=1.0,focus=None,start_circles:bool=False)->Image.Image:
     """Project and decorate a cached square raster without mutating that base."""
     im=project_parallelogram(base) if projection=='parallelogram' else base.copy()
-    draw_start_markers=(labels and view=='starts') if start_markers is None else bool(start_markers)
-    # Starts use direct cells when decoded, otherwise the known-radius outline.
-    # Territories remains conservative for SAVs; batch marker mode remains
-    # centre-only.
-    draw_start_boundaries=draw_start_markers and labels and view=='starts' and _has_initial_mask_or_estimate(state)
-    marker_opacity=overlay_alpha if draw_start_boundaries else 100
-    if draw_start_markers:_draw_start_marker_layer(im,state,projection,start_marker_scale,draw_start_boundaries,marker_opacity)
+    draw_start_markers=labels if start_markers is None else bool(start_markers)
+    # Circles and markers are independent of the selected raster view and of
+    # its opacity.  This is also what lets chart focus keep the player's
+    # original boundary visible while highlighting another semantic family.
+    if draw_start_markers or start_circles:
+        _draw_start_marker_layer(im,state,projection,start_marker_scale,bool(start_circles),100,draw_start_markers)
     if isinstance(focus,dict) and focus.get('kind')=='start_player':
         _draw_nearest_opponent_arrow(im,state,focus,projection)
     return im
 
-def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=None, start_marker_scale:float=1.0):
+def render(state, output=None, scale=1, labels=True, view='global', overlay_alpha=100, projection='square', heatmap_resource='trees', start_markers=None, start_marker_scale:float=1.0,start_circles:bool=False):
     base=render_square_base(state,view,overlay_alpha,heatmap_resource)
-    im=compose_rendered_map(base,state,labels,view,overlay_alpha,projection,start_markers,start_marker_scale)
+    im=compose_rendered_map(base,state,labels,view,overlay_alpha,projection,start_markers,start_marker_scale,start_circles=start_circles)
     if scale!=1:im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST)
     if output:im.save(output)
     return im

@@ -13,6 +13,7 @@ DEFAULTS = {
     'overlay_alpha': 75,
     'projection': 'square',
     'preview_start_markers': 'small',
+    'preview_start_circles': False,
     'history_capacity': 8,
     'wheel_zoom': 1.10,
     'language': 'fr',
@@ -50,6 +51,7 @@ def load_settings() -> dict:
     cfg['theme'] = 'dark' if cfg.get('theme') == 'dark' else 'light'
     cfg['projection'] = 'parallelogram' if cfg.get('projection') == 'parallelogram' else 'square'
     cfg['preview_start_markers'] = cfg.get('preview_start_markers') if cfg.get('preview_start_markers') in ('hidden', 'tiny', 'small', 'normal') else 'small'
+    cfg['preview_start_circles'] = cfg.get('preview_start_circles') is True
     cfg['history_capacity'] = int(cfg.get('history_capacity', 8)) if str(cfg.get('history_capacity', 8)) in ('4','8','12','16') else 8
     cfg['overlay_alpha'] = max(0, min(100, int(cfg.get('overlay_alpha', 75))))
     cfg['wheel_zoom'] = max(1.02, min(1.30, float(cfg.get('wheel_zoom', 1.10))))

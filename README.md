@@ -26,7 +26,7 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 ### Génération et Viewer
 
-![Génération Legacy 768×768 et vue Départs dans le Viewer](docs/screenshots/v1_8_generation_viewer.png)
+![Génération Legacy 768×768 et marqueurs de départ dans le Viewer](docs/screenshots/v1_8_generation_viewer.png)
 
 *Carte réellement générée, projection parallélogramme et zones de départ des quatre joueurs.*
 
@@ -48,7 +48,7 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_4 / calibration Upgraded
+## État actuel — v2.0 DEV_5 / finitions Upgraded
 
 La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` a été
 le checkpoint validé du reset natif, et `DEV_3` est maintenant le checkpoint
@@ -63,7 +63,11 @@ conserve les quotas calibrés et les autres tailles utilisent des quotas
 proportionnels pour rester générables. Aucune taille du contrat n’est bloquée
 par un statut « non testé » : les avertissements restent informatifs. Le
 réglage **Marqueurs de départ** propose désormais Petits, Normaux et
-Grands, en plus de Masqués, dans la vue Départs, Batch et Historique.
+Grands, en plus de Masqués, dans toutes les vues, Batch et Historique ; une
+option indépendante permet aussi d’afficher les cercles de départ partout.
+DEV_5 ajoute le contenu Upgraded autour des départs : objets statiques calqués
+sur Legacy, mini-forêts, bonus arbres/pierres et mini-marais, tout en
+conservant les récifs spécifiques Upgraded.
 
 Le moteur **Legacy** implémente Continental v1 avec le relief, les terrains,
 l'hydrologie, les objets, les ressources, les départs et les métadonnées de
@@ -73,9 +77,10 @@ du contrat. Il ajoute uniquement ses différences
 explicites : minerais v7, poissons, arbres/décorations et pierres de
 construction, sans boue. L'archétype Continental fournit le contexte macro-géographique ;
 il ne sculpte pas une seconde forme par-dessus le noyau natif.
-Le positionnement Upgraded actuellement exposé est un pont provisoire isolé ;
-les ressources, objets et colons de départ restent différés à la future passe
-`.sav`.
+**DEV_5** conserve le pont provisoire de positionnement des starts,
+mais rétablit les bonus arbres, pierres et mini-marais autour de ces
+coordonnées. Les prochaines étapes prévues sont Dev 6 générateur Custom, Dev 7
+archétype Custom et Dev 8 premiers modificateurs.
 
 La comparaison des minerais a été faite avant la suppression : l'ancien
 générateur avait un mix global proche des SAV natifs, mais des composants et

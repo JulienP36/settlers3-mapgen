@@ -112,10 +112,39 @@ def validate(state, profile: dict) -> list[ValidationResult]:
     add("UPGRADED_STONE_STOCK", stock == target_stock, f"{stock}/{target_stock}")
     add("UPGRADED_STONES_ON_GRASS", not np.any((stone | exhausted) & (terrain != GRASS)), "grass only")
 
+    stone_meta = state.metadata.get("upgraded_stones", {})
+    if isinstance(stone_meta, dict):
+        global_anchors = int(stone_meta.get("global_anchors", 0))
+        cluster_placed = int(stone_meta.get("cluster_placed", 0))
+        cluster_target = int(stone_meta.get("cluster_target", 0))
+        add(
+            "UPGRADED_STONE_CLUSTERS",
+            cluster_placed == cluster_target,
+            f"{cluster_placed}/{cluster_target}",
+        )
+        if global_anchors:
+            expected_exhausted = min(
+                int(profile["building_stones"].get("global_exhausted_anchor_target", 0)),
+                global_anchors,
+            )
+            actual_exhausted = int(np.count_nonzero(objects == int(profile["building_stones"]["exhausted_id"])))
+            add("UPGRADED_STONE_EXHAUSTED_STATES", actual_exhausted == expected_exhausted, f"{actual_exhausted}/{expected_exhausted}")
+
     reeds = np.isin(objects, profile["decor"].get("swamp_reed_ids", []))
     add("UPGRADED_SWAMP_REEDS", not np.any((objects != 0) & np.isin(terrain, SWAMP_IDS) & ~reeds), "reeds only")
     add("UPGRADED_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
-    add("UPGRADED_START_CONTENT_DEFERRED", bool(state.metadata.get("upgraded_start_content_deferred")), "start objects/resources deferred")
+    mini_swamps = state.metadata.get("upgraded_start_mini_swamps", {})
+    placed_swamps = mini_swamps.get("placed_cells_per_start", []) if isinstance(mini_swamps, dict) else []
+    add(
+        "UPGRADED_START_MINI_SWAMPS",
+        len(placed_swamps) == len(state.starts) and all(int(value) > 0 for value in placed_swamps),
+        f"starts={sum(int(value) > 0 for value in placed_swamps)}/{len(state.starts)}",
+    )
+    add(
+        "UPGRADED_START_CONTENT_RESTORED",
+        not bool(state.metadata.get("upgraded_start_content_deferred")),
+        "start forest, stone and mini-swamp bonuses active",
+    )
     return out
 
 

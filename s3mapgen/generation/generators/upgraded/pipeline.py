@@ -86,14 +86,15 @@ def generate(
             "engine_revision": "continental_upgraded-native-v1",
             "upgraded_base_pipeline": "independent_copy_of_continental_legacy_native",
             "upgraded_mud_generation": False,
-            "upgraded_start_content_deferred": True,
+            "upgraded_start_content_deferred": False,
             "upgraded_start_bonus_rules": profile.get("start_bonus", {}),
             **result.metadata,
         },
     )
 
-    # Start placement is intentionally an isolated provisional bridge.  It is
-    # not allowed to become an implicit source of start resources or settlers.
+    # Start placement remains an isolated provisional bridge.  Dev 5 now
+    # consumes those coordinates for content bonuses without recalculating
+    # or otherwise changing the positions themselves.
     _stage(
         progress,
         events,
@@ -127,6 +128,7 @@ def generate(
         "archetype.macro_layout",
         "upgraded.native_terrain_copy",
         "upgraded.starts_bridge",
+        "biomes.upgraded_start_mini_swamps",
         "resources.upgraded_minerals_v7",
         "resources.upgraded_fish",
         "objects.upgraded_decorations",
@@ -139,9 +141,9 @@ def generate(
         "terrain": "independent copy of Legacy native terrain sequence",
         "minerals": "retained calibrated v7 no-gap routine",
         "fish": "retained upgraded shore-band routine",
-        "objects": "retained upgraded trees/decorations/building-stones routines",
+        "objects": "Legacy static families plus upgraded reefs, start forests and stone clusters",
         "mud": "disabled",
-        "starts": "provisional bridge; separate future pass",
+        "starts": "provisional bridge coordinates retained; Dev 5 content bonuses restored",
     }
     return state, validations
 

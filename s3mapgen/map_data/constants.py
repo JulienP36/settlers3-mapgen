@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 WATER_IDS = tuple(range(8))
+REEF_IDS = (111, 112, 113, 114)
 GRASS = 16
 GRASS_DETAIL_IDS = (18, 19)
 DRY_GRASS = 24

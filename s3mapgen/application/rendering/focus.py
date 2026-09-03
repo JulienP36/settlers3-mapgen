@@ -20,6 +20,7 @@ from ...map_data.constants import (
     MOUNTAIN_FAMILY_IDS,
     PALM_TREE_IDS,
     PLANTATION_IDS,
+    REEF_IDS,
     RIVER_IDS,
     SAPLING_STAGE_1_IDS,
     SAPLING_STAGE_2_IDS,
@@ -53,7 +54,7 @@ _OBJECT_FAMILY_IDS = {
     'reeds': tuple(range(62, 68)),
     'adult_trees': ADULT_TREE_IDS + PALM_TREE_IDS,
     'small_trees': PLANTATION_IDS,
-    'reefs': tuple(range(111, 115)),
+    'reefs': REEF_IDS,
     'building_stones': STONE_FOCUS_IDS,
 }
 
@@ -243,18 +244,18 @@ def focus_mask(state, focus) -> np.ndarray:
 def focus_view(focus) -> str:
     """Choose the most useful existing viewer layer for a focus payload."""
     if isinstance(focus, Mapping) and focus.get('view') in {
-        'global', 'heightmap', 'resources', 'territories', 'initial_territory', 'paths', 'crops', 'heatmap', 'starts',
+        'global', 'heightmap', 'resources', 'territories', 'initial_territory', 'paths', 'crops', 'heatmap',
     }:
         return str(focus['view'])
     kind = focus.get('kind') if isinstance(focus, Mapping) else None
     if kind == 'height_band':
         return 'heightmap'
     if kind == 'start_player':
-        return 'starts'
+        return 'global'
     if kind == 'resource_family':
         return 'resources'
     if kind == 'player_local':
-        return 'starts'
+        return 'global'
     return 'global'
 
 

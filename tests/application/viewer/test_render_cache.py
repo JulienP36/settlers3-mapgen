@@ -23,7 +23,7 @@ def _reference_state():
 
 def test_split_renderer_is_pixel_identical_to_public_render_for_both_projections():
     state=_reference_state()
-    for view,alpha in (('global',100),('starts',63),('territories',72)):
+    for view,alpha in (('global',100),('territories',72)):
         base=render_square_base(state,view=view,overlay_alpha=alpha)
         for projection in ('square','parallelogram'):
             split=compose_rendered_map(base,state,labels=True,view=view,overlay_alpha=alpha,projection=projection)
@@ -44,11 +44,12 @@ def test_language_theme_and_projection_do_not_invalidate_colorized_map_layer():
 
 def test_main_preview_reuses_square_layer_and_bounds_projection_composites():
     refresh=VIEWER_SRC[VIEWER_SRC.index('def _refresh_preview'):VIEWER_SRC.index('def _source_cell_from_canvas')]
-    assert "layer_view='global' if opts['view'] in ('global','starts')" in refresh
+    assert "layer_view=opts['view']" in refresh
     assert 'render_square_base(state,layer_view,layer_alpha' in refresh
     assert 'if composite_key not in self._preview_projection_cache' in refresh
     assert "opts.get('start_markers')" in refresh
     assert "opts.get('start_marker_scale',1)" in refresh
+    assert "opts.get('start_circles',False)" in refresh
     assert 'compose_rendered_map(self._preview_layer_base,state' in refresh
     invalidate=VIEWER_SRC[VIEWER_SRC.index('def _invalidate_preview(self)'):VIEWER_SRC.index('def _refresh_preview')]
     assert 'self._preview_projection_cache={}' in invalidate
@@ -56,10 +57,10 @@ def test_main_preview_reuses_square_layer_and_bounds_projection_composites():
     assert '_invalidate_preview' not in view_change
 
 
-def test_starts_opacity_discards_only_composites_while_other_overlays_recolor():
+def test_opacity_rebuilds_the_raster_layer_without_a_starts_special_case():
     changed=VIEWER_SRC[VIEWER_SRC.index('def _opacity_changed'):VIEWER_SRC.index('def _wheel_changed')]
-    assert "if self._view_key()=='starts':self._invalidate_preview_composite()" in changed
-    assert 'else:self._invalidate_preview()' in changed
+    assert "if self._view_key()=='starts'" not in changed
+    assert 'self._invalidate_preview()' in changed
 
 
 def test_batch_keeps_one_square_and_one_projected_base_per_result():

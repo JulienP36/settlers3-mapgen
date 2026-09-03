@@ -113,7 +113,7 @@ TEXTS={
  'Générer':{'en':'Generate'},'Générer lot…':{'en':'Generate batch…'},'Importer…':{'en':'Import…'},'Exporter…':{'en':'Export…'},'Aperçu PNG':{'en':'PNG Preview'},'Vue':{'en':'View'},
  'Affichage':{'en':'Display'},'Thème':{'en':'Theme'},'Opacité couche':{'en':'Layer opacity'},'0 % = map globale · 100 % = couche seule':{'en':'0 % = global map · 100 % = overlay only'},
  'Projection':{'en':'Projection'},'Le parallélogramme modifie uniquement le rendu, jamais les données.':{'en':'Parallelogram changes rendering only, never map data.'},
- 'Marqueurs de départ':{'en':'Start markers'},'Ce réglage affecte les marqueurs de départ et les aperçus du lot.':{'en':'This setting affects start markers and batch previews.'},
+ 'Marqueurs de départ':{'en':'Start markers'},'Ce réglage affecte les marqueurs de départ dans toutes les vues et previews.':{'en':'This setting affects start markers in every view and preview.'},'Cercles de départ':{'en':'Start circles'},'Afficher le contour du territoire initial dans toutes les vues et previews.':{'en':'Show the initial-territory outline in every view and preview.'},
  'Sensibilité molette':{'en':'Mouse-wheel sensitivity'},'Navigation':{'en':'Navigation'},'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':{'en':'Mouse wheel: zoom\nLeft click + drag: move map\nZoom refresh is delayed to reduce recalculation.'},
  'Paramètres':{'en':'Settings'},'Validations':{'en':'Validations'},'Pipeline':{'en':'Pipeline'},'Métadonnées':{'en':'Metadata'},'Statistiques':{'en':'Statistics'},'Graphiques':{'en':'Charts'},'Lier à la vue':{'en':'Link to view'},'Exporter JSON':{'en':'Export JSON'},'Exporter CSV':{'en':'Export CSV'},'Exporter PNG':{'en':'Export PNG'},'Ressource Heatmap':{'en':'Heatmap resource'},'Filtre carte thermique':{'en':'Heatmap filter'},
  'Recentrer':{'en':'Reset view'},'Copier seed':{'en':'Copy seed'},'Langue':{'en':'Language'},'Aide':{'en':'Help'},'Historique session':{'en':'Session history'},
@@ -143,8 +143,8 @@ THEME_LABELS.update({'de':{'dark':'Dunkel','light':'Hell'},'es':{'dark':'Oscuro'
 PROJECTION_LABELS.update({'de':{'square':'Quadratisch','parallelogram':'Parallelogramm'},'es':{'square':'Cuadrada','parallelogram':'Paralelogramo'}})
 
 PREVIEW_START_MARKER_LABELS.update({
- 'de':{'hidden':'Ausgeblendet','tiny':'Sehr klein','small':'Normal','normal':'Groß'},
- 'es':{'hidden':'Ocultos','tiny':'Muy pequeños','small':'Normales','normal':'Grandes'},
+ 'de':{'hidden':'Ausgeblendet','tiny':'Klein','small':'Normal','normal':'Groß'},
+ 'es':{'hidden':'Ocultos','tiny':'Pequeños','small':'Normales','normal':'Grandes'},
 })
 
 _TEXTS_DE_ES={
@@ -152,7 +152,7 @@ _TEXTS_DE_ES={
  'Générer':('Generieren','Generar'),'Générer lot…':('Stapel generieren…','Generar lote…'),'Importer…':('Importieren…','Importar…'),'Exporter…':('Exportieren…','Exportar…'),'Aperçu PNG':('PNG-Vorschau','Vista previa PNG'),'Vue':('Ansicht','Vista'),
  'Affichage':('Anzeige','Visualización'),'Thème':('Design','Tema'),'Opacité couche':('Ebenendeckkraft','Opacidad de capa'),'0 % = map globale · 100 % = couche seule':('0 % = globale Karte · 100 % = nur Ebene','0 % = mapa global · 100 % = solo capa'),
  'Projection':('Projektion','Proyección'),'Le parallélogramme modifie uniquement le rendu, jamais les données.':('Das Parallelogramm ändert nur die Darstellung, niemals die Daten.','El paralelogramo solo cambia la visualización, nunca los datos.'),
- 'Marqueurs de départ':('Startmarker','Marcadores de inicio'),'Ce réglage affecte les marqueurs de départ et les aperçus du lot.':('Diese Einstellung betrifft Startmarker und Stapelvorschauen.','Este ajuste afecta a los marcadores de inicio y a las vistas previas del lote.'),
+ 'Marqueurs de départ':('Startmarker','Marcadores de inicio'),'Ce réglage affecte les marqueurs de départ dans toutes les vues et previews.':('Diese Einstellung betrifft Startmarker in jeder Ansicht und Vorschau.','Este ajuste afecta a los marcadores de inicio en todas las vistas y previsualizaciones.'),'Cercles de départ':('Startkreise','Círculos de inicio'),'Afficher le contour du territoire initial dans toutes les vues et previews.':('Die Umrisslinie des Anfangsgebiets in jeder Ansicht und Vorschau anzeigen.','Mostrar el contorno del territorio inicial en todas las vistas y previsualizaciones.'),
  'Sensibilité molette':('Mausrad-Empfindlichkeit','Sensibilidad de la rueda'),'Navigation':('Navigation','Navegación'),'Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.':('Mausrad: zoomen\nLinksklick + Ziehen: Karte verschieben\nDer Zoom wird verzögert, um Neuberechnungen zu begrenzen.','Rueda: zoom\nClic izquierdo + arrastrar: mover el mapa\nEl zoom se retrasa para limitar los recálculos.'),
  'Paramètres':('Einstellungen','Ajustes'),'Validations':('Prüfungen','Validaciones'),'Pipeline':('Pipeline','Proceso'),'Métadonnées':('Metadaten','Metadatos'),'Statistiques':('Statistiken','Estadísticas'),'Graphiques':('Diagramme','Gráficos'),'Lier à la vue':('Mit der Ansicht verknüpfen','Vincular a la vista'),'Exporter JSON':('JSON exportieren','Exportar JSON'),'Exporter CSV':('CSV exportieren','Exportar CSV'),'Exporter PNG':('PNG exportieren','Exportar PNG'),'Ressource Heatmap':('Heatmap-Ressource','Recurso del mapa de calor'),'Filtre carte thermique':('Heatmap-Filter','Filtro del mapa de calor'),
  'Recentrer':('Zentrieren','Centrar'),'Copier seed':('Seed kopieren','Copiar seed'),'Langue':('Sprache','Idioma'),'Aide':('Hilfe','Ayuda'),'Historique session':('Sitzungsverlauf','Historial de sesión'),

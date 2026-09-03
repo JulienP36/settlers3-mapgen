@@ -63,14 +63,18 @@ def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal(upgraded4):
     rules={v.rule_id:v for v in upgraded4.validations};assert rules['UPGRADED_WATER_ACCESS'].passed;assert rules['UPGRADED_NO_MUD'].passed
 
 
-def test_upgraded_is_independent_and_omits_start_content(upgraded4):
+def test_upgraded_is_independent_and_restores_start_content(upgraded4):
     assert upgraded4.state.metadata['generator'] == 'continental_upgraded_native'
     assert upgraded4.state.metadata['upgraded_base_pipeline'] == 'independent_copy_of_continental_legacy_native'
-    assert upgraded4.state.metadata['upgraded_start_content_deferred'] is True
+    assert upgraded4.state.metadata['upgraded_start_content_deferred'] is False
+    assert all(value > 0 for value in upgraded4.state.metadata['upgraded_start_mini_swamps']['placed_cells_per_start'])
+    assert upgraded4.state.metadata['upgraded_trees']['adult_start_bonus_placed'] == 41 * 4
+    assert upgraded4.state.metadata['upgraded_trees']['small_start_bonus_placed'] == 21 * 4
+    assert upgraded4.state.metadata['upgraded_stones']['start_bonus_stock'] == 53 * 4
     assert not any(int(v) in (23, 144, 145) for v in upgraded4.state.terrain.flat)
 
 
-def test_upgraded_profile_exposes_round_mineral_test_and_deferred_start_rules():
+def test_upgraded_profile_exposes_round_mineral_and_start_rules():
     from s3mapgen.generation.generators.upgraded.profile import load_profile
     profile = load_profile()
     minerals = profile['minerals']
@@ -79,6 +83,10 @@ def test_upgraded_profile_exposes_round_mineral_test_and_deferred_start_rules():
     assert minerals['blob_aspect_min'] == minerals['blob_aspect_max'] == 1.0
     assert profile['start_bonus']['building_stones']['stock_units_per_player'] == 53
     assert profile['start_bonus']['mini_swamp']['outside_technical_zone'] is True
+    assert profile['trees']['adult_global_target'] == 2736
+    assert profile['trees']['adult_cluster_share'] == 0.30
+    assert profile['building_stones']['global_stock_target'] == 16338
+    assert len(profile['decor']['legacy_static_families']) == 16
 
 
 def test_upgraded_generation_records_the_active_mineral_shape_variant(upgraded4):
@@ -89,3 +97,59 @@ def test_upgraded_generation_records_the_active_mineral_shape_variant(upgraded4)
     rules = upgraded4.state.metadata['upgraded_start_bonus_rules']
     assert rules['outside_global_quota'] is True
     assert rules['building_stones']['stock_units_per_player'] == 53
+
+
+def test_upgraded_uses_legacy_static_quotas_and_stone_states(upgraded4):
+    decorations = upgraded4.state.metadata['upgraded_decorations']
+    assert not any(decorations['legacy_static_shortfalls'].values())
+    assert decorations['legacy_static']['reefs'] == 11
+    stones = upgraded4.state.metadata['upgraded_stones']
+    assert stones['global_anchors'] == 1683
+    assert stones['global_stock'] == 16338
+    assert stones['global_exhausted_anchors'] == 20
+    assert stones['cluster_placed'] == stones['cluster_target']
+    assert all(stones['id_counts'][str(object_id)] > 0 for object_id in range(115, 127))
+
+
+def test_upgraded_start_bonuses_are_additional_and_forests_keep_legacy_spacing(upgraded4):
+    from s3mapgen.map_data.hexgrid import hex_distance
+    import numpy as np
+
+    trees = upgraded4.state.metadata['upgraded_trees']
+    assert trees['global_quota_excludes_start_bonus'] is True
+    assert trees['adult_global_placed'] == trees['adult_global_requested'] == 2736
+    assert trees['small_global_placed'] == trees['small_global_requested'] == 1067
+    assert trees['adult_trees'] == trees['adult_global_placed'] + trees['adult_start_bonus_placed']
+    assert trees['small_trees'] == trees['small_global_placed'] + trees['small_start_bonus_placed']
+    assert trees['adult_start_bonus_placed'] == 41 * 4
+    assert trees['small_start_bonus_placed'] == 21 * 4
+    assert trees['adult_forest_min_hex_distance'] == 3
+    assert all(row['adult'] == 41 for row in trees['start_forests'])
+
+    adult_ids = tuple(range(68, 78)) + (80, 81)
+    adult_points = [
+        (int(x), int(y))
+        for y, x in np.argwhere(np.isin(upgraded4.state.objects, adult_ids))
+    ]
+    for forest in trees['global_forests'] + trees['start_forests']:
+        if 'center_x' not in forest:
+            continue
+        points = [
+            (x, y)
+            for x, y in adult_points
+            if hex_distance(forest['center_x'], forest['center_y'], x, y)
+            <= forest.get('effective_radius', forest['radius'])
+        ]
+        for index, (x, y) in enumerate(points):
+            nearest = min(
+                (hex_distance(x, y, xx, yy) for other, (xx, yy) in enumerate(points) if other != index),
+                default=trees['adult_forest_min_hex_distance'],
+            )
+            assert nearest >= trees['adult_forest_min_hex_distance']
+
+    stones = upgraded4.state.metadata['upgraded_stones']
+    assert stones['global_quota_excludes_start_bonus'] is True
+    assert stones['anchors'] == stones['global_anchors'] + stones['start_bonus_anchors']
+    assert stones['stock'] == stones['global_stock'] + stones['start_bonus_stock']
+    assert stones['global_anchors'] == 1683
+    assert stones['global_stock'] == 16338

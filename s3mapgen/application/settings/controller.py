@@ -112,7 +112,7 @@ class SettingsController:
         self._scroll_tab_surfaces.append(canvas);return inner
 
     def _settings_tab(self):
-        """Build display settings, including preview-only start markers."""
+        """Build display settings shared by the viewer and every preview."""
         f=self._scroll_notebook_tab('Paramètres');f.columnconfigure(1,weight=1)
         ttk.Label(f,text='Affichage',style='Section.TLabel').grid(row=0,column=0,columnspan=3,sticky='w',pady=(0,10))
         ttk.Label(f,text='Thème').grid(row=1,column=0,sticky='w',pady=6)
@@ -133,19 +133,23 @@ class SettingsController:
         self.preview_marker_var=tk.StringVar(value=PREVIEW_START_MARKER_LABELS[lang][marker_key])
         self.preview_marker_combo=ttk.Combobox(f,textvariable=self.preview_marker_var,values=list(PREVIEW_START_MARKER_LABELS[lang].values()),state='readonly')
         self.preview_marker_combo.grid(row=6,column=1,sticky='ew');self.preview_marker_combo.bind('<<ComboboxSelected>>',lambda e:self._preview_marker_changed())
-        ttk.Label(f,text='Ce réglage affecte les marqueurs de départ et les aperçus du lot.',style='Hint.TLabel',wraplength=360).grid(row=7,column=0,columnspan=3,sticky='w')
-        ttk.Label(f,text="Capacité de l'historique").grid(row=8,column=0,sticky='w',pady=(14,6))
+        ttk.Label(f,text='Ce réglage affecte les marqueurs de départ dans toutes les vues et previews.',style='Hint.TLabel',wraplength=360).grid(row=7,column=0,columnspan=3,sticky='w')
+        self.preview_start_circles_var=tk.BooleanVar(value=bool(self.prefs.get('preview_start_circles',False)))
+        self.preview_start_circles_check=ttk.Checkbutton(f,text='Cercles de départ',variable=self.preview_start_circles_var,command=self._preview_start_circles_changed)
+        self.preview_start_circles_check.grid(row=8,column=0,columnspan=2,sticky='w',pady=(10,0))
+        ttk.Label(f,text='Afficher le contour du territoire initial dans toutes les vues et previews.',style='Hint.TLabel',wraplength=360).grid(row=9,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text="Capacité de l'historique").grid(row=10,column=0,sticky='w',pady=(14,6))
         self.history_capacity_var=tk.StringVar(value=str(self.prefs.get('history_capacity',8)))
         self.history_capacity_combo=ttk.Combobox(f,textvariable=self.history_capacity_var,values=('4','8','12','16'),state='readonly',width=8)
-        self.history_capacity_combo.grid(row=8,column=1,sticky='w');self.history_capacity_combo.bind('<<ComboboxSelected>>',lambda e:self._history_capacity_changed())
-        ttk.Label(f,text='Cartes conservées uniquement pendant cette session.',style='Hint.TLabel',wraplength=360).grid(row=9,column=0,columnspan=3,sticky='w')
-        ttk.Label(f,text='Sensibilité molette').grid(row=10,column=0,sticky='w',pady=(14,6))
+        self.history_capacity_combo.grid(row=10,column=1,sticky='w');self.history_capacity_combo.bind('<<ComboboxSelected>>',lambda e:self._history_capacity_changed())
+        ttk.Label(f,text='Cartes conservées uniquement pendant cette session.',style='Hint.TLabel',wraplength=360).grid(row=11,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Sensibilité molette').grid(row=12,column=0,sticky='w',pady=(14,6))
         self.wheel_var=tk.DoubleVar(value=float(self.prefs['wheel_zoom']))
-        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=10,column=1,sticky='ew')
-        self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=10,column=2,padx=(8,0))
-        ttk.Separator(f).grid(row=11,column=0,columnspan=3,sticky='ew',pady=16)
-        ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=12,column=0,columnspan=3,sticky='w')
-        ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=13,column=0,columnspan=3,sticky='w',pady=(6,0))
+        self.wheel_scale=ttk.Scale(f,from_=1.04,to=1.20,variable=self.wheel_var,command=lambda v:self._wheel_changed());self.wheel_scale.grid(row=12,column=1,sticky='ew')
+        self.wheel_label=ttk.Label(f,text=f"×{self.wheel_var.get():.2f}",width=7);self.wheel_label.grid(row=12,column=2,padx=(8,0))
+        ttk.Separator(f).grid(row=13,column=0,columnspan=3,sticky='ew',pady=16)
+        ttk.Label(f,text='Navigation',style='Section.TLabel').grid(row=14,column=0,columnspan=3,sticky='w')
+        ttk.Label(f,text='Molette : zoom\nClic gauche + glisser : déplacer la carte\nLe zoom est temporisé pour limiter les recalculs.',style='Hint.TLabel',justify='left').grid(row=15,column=0,columnspan=3,sticky='w',pady=(6,0))
 
     def _find_combo_for_var(self,var):
         target=str(var)
@@ -164,7 +168,7 @@ class SettingsController:
         return self.prefs.get('theme','dark')
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _schedule_prefs_save(self):
         if self._prefs_save_after is not None:

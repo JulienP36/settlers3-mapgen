@@ -56,7 +56,7 @@ def test_focus_masks_match_chart_semantics_and_choose_relevant_views():
     assert focus_view({'kind': 'resource_family', 'family': 'coal'}) == 'resources'
     assert focus_view({'kind': 'object_ids', 'ids': (115,)}) == 'global'
     for resource in ('trees', 'stone', 'fish', 'minerals'):
-        assert focus_view({'kind': 'player_local', 'player': 1, 'radius': 50, 'resource': resource}) == 'starts'
+        assert focus_view({'kind': 'player_local', 'player': 1, 'radius': 50, 'resource': resource}) == 'global'
     assert focus_signature({'kind': 'terrain_ids', 'ids': [16, 18]}) == focus_signature({'ids': (16, 18), 'kind': 'terrain_ids'})
 
 
@@ -84,3 +84,20 @@ def test_comparison_regions_are_tooltip_only_and_zero_distance_stays_linkable():
     )
     assert regions
     assert all('focus' not in region for region in regions)
+
+
+def test_nearest_and_nearby_player_charts_route_to_global_view_with_start_context():
+    state = _state_with_content()
+    state.terrain[1, 1] = 1
+    state.resources[1, 1] = 3
+    stats = analyze_map(state)
+    for chart_key in (
+        'nearest_starts',
+        'player_trees_r30',
+        'player_stone_r30',
+        'player_fish_r30',
+        'player_mining_r40',
+    ):
+        _image, regions = render_stats_chart(stats, chart_key, return_regions=True)
+        assert regions
+        assert all(region.get('focus', {}).get('view') == 'global' for region in regions)

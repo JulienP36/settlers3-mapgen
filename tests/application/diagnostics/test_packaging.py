@@ -12,9 +12,9 @@ ROOT=Path(__file__).resolve().parents[3]
 
 
 def test_current_version_metadata():
-    assert APP_VERSION=='2.0 DEV_4'
+    assert APP_VERSION=='2.0 DEV_5'
     assert ENGINE_VERSION=='2.0'
-    assert WINDOWS_FILE_VERSION==(2,0,4,0)
+    assert WINDOWS_FILE_VERSION==(2,0,5,0)
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):

@@ -26,13 +26,17 @@ def test_initial_territory_wraps_without_losing_cells():
 def test_player_marker_palette_supports_twenty_players():
     assert len(PLAYER_COLORS)==20 and len(set(PLAYER_COLORS))==20
 
-def test_global_is_clean_and_starts_view_adds_sprite_boundary():
+def test_start_markers_and_circles_are_available_in_global_view():
     s=_state();s.starts=[(64,64)]
-    clean=np.asarray(render(s,labels=True,view='global',projection='square'))
-    baseline=np.asarray(render(s,labels=False,view='global',projection='square'))
-    assert np.array_equal(clean,baseline)
-    starts=np.asarray(render(s,labels=True,view='starts',projection='square'))
-    assert not np.array_equal(starts,baseline)
+    baseline=np.asarray(render(s,labels=False,view='global',projection='square',start_markers=False,start_circles=False))
+    markers=np.asarray(render(s,labels=False,view='global',projection='square',start_markers=True,start_circles=False))
+    assert not np.array_equal(markers,baseline)
+    x,y=next(iter(initial_territory_boundary((64,64),128)))
+    assert tuple(markers[y,x])==tuple(baseline[y,x])
+    circles=np.asarray(render(s,labels=False,view='global',projection='square',start_markers=False,start_circles=True))
+    assert not np.array_equal(circles,baseline)
+    boundary=initial_territory_boundary((64,64),128)
+    assert any(not np.array_equal(circles[y,x],baseline[y,x]) for x,y in boundary)
 
 def test_crops_view_uses_distinct_wheat_vine_rice_colors():
     s=_state(32)
@@ -138,19 +142,19 @@ def test_sprite_boundary_uses_all_210_cells_of_the_exact_native_outline():
 
 def test_starts_without_direct_mask_uses_known_radius_boundary_for_non_sav():
     s=_state();s.starts=[(64,64)];s.metadata['source_format']='EDM'
-    global_view=np.asarray(render(s,labels=True,view='global',projection='square'))
-    starts=np.asarray(render(s,labels=True,view='starts',overlay_alpha=100,projection='square'))
-    assert not np.array_equal(starts,global_view)
+    global_view=np.asarray(render(s,labels=False,view='global',projection='square',start_markers=False,start_circles=False))
+    circles=np.asarray(render(s,labels=False,view='global',start_markers=False,start_circles=True,overlay_alpha=100,projection='square'))
+    assert not np.array_equal(circles,global_view)
     boundary=initial_territory_boundary((64,64),128)
-    assert any(not np.array_equal(starts[y,x],global_view[y,x]) for x,y in boundary)
+    assert any(not np.array_equal(circles[y,x],global_view[y,x]) for x,y in boundary)
 
 def test_starts_without_direct_mask_uses_known_radius_boundary_for_sav():
     s=_state();s.starts=[(64,64)];s.metadata.update(source_format='SAV',territories_available=False)
-    global_view=np.asarray(render(s,labels=True,view='global',projection='square'))
-    starts=np.asarray(render(s,labels=True,view='starts',overlay_alpha=100,projection='square'))
-    assert not np.array_equal(starts,global_view)
+    global_view=np.asarray(render(s,labels=False,view='global',projection='square',start_markers=False,start_circles=False))
+    circles=np.asarray(render(s,labels=False,view='global',start_markers=False,start_circles=True,overlay_alpha=100,projection='square'))
+    assert not np.array_equal(circles,global_view)
     boundary=initial_territory_boundary((64,64),128)
-    assert any(not np.array_equal(starts[y,x],global_view[y,x]) for x,y in boundary)
+    assert any(not np.array_equal(circles[y,x],global_view[y,x]) for x,y in boundary)
 
 def test_nearest_opponent_arrow_uses_the_two_original_start_borders():
     s=_state(256);s.starts=[(64,64),(192,192)]
@@ -164,19 +168,31 @@ def test_nearest_opponent_arrow_uses_the_two_original_start_borders():
         assert source!=_rendered_cell_center(*s.starts[0],s,projection)
         assert target!=_rendered_cell_center(*s.starts[1],s,projection)
         base=render_square_base(s,view='global')
-        arrow=np.asarray(compose_rendered_map(base,s,labels=False,view='starts',projection=projection,focus=focus))[:,:,:3]
+        arrow=np.asarray(compose_rendered_map(base,s,labels=False,view='global',projection=projection,focus=focus))[:,:,:3]
         assert tuple(arrow[source[1],source[0]])==PLAYER_COLORS[0]
         assert tuple(arrow[target[1],target[0]])==PLAYER_COLORS[0]
 
-def test_start_marker_setting_can_hide_or_scale_markers_in_starts_view():
+def test_start_marker_setting_can_hide_or_scale_markers_in_every_view():
     s=_state();s.starts=[(64,64)]
-    clean=np.asarray(render(s,labels=False,view='global'))
-    hidden=np.asarray(render(s,labels=True,view='starts',start_markers=False))
-    small=np.asarray(render(s,labels=True,view='starts',start_markers=True,start_marker_scale=1))
-    normal=np.asarray(render(s,labels=True,view='starts',start_markers=True,start_marker_scale=2))
+    clean=np.asarray(render(s,labels=False,view='resources',start_markers=False,start_circles=False))
+    hidden=np.asarray(render(s,labels=True,view='resources',start_markers=False,start_circles=False))
+    small=np.asarray(render(s,labels=True,view='resources',start_markers=True,start_marker_scale=1))
+    normal=np.asarray(render(s,labels=True,view='resources',start_markers=True,start_marker_scale=2))
     assert np.array_equal(hidden,clean)
     assert not np.array_equal(small,clean)
     assert not np.array_equal(normal,small)
+
+
+def test_start_markers_and_circles_are_independent_of_view_opacity():
+    s=_state();s.starts=[(64,64)]
+    for view in ('global','territories','initial_territory','heightmap','resources','paths','crops','heatmap'):
+        low=np.asarray(render(s,labels=False,view=view,overlay_alpha=0,start_markers=True,start_marker_scale=1,start_circles=True))
+        high=np.asarray(render(s,labels=False,view=view,overlay_alpha=100,start_markers=True,start_marker_scale=1,start_circles=True))
+        low_base=np.asarray(render(s,labels=False,view=view,overlay_alpha=0,start_markers=False,start_circles=False))
+        high_base=np.asarray(render(s,labels=False,view=view,overlay_alpha=100,start_markers=False,start_circles=False))
+        assert not np.array_equal(low,low_base)
+        assert not np.array_equal(high,high_base)
+        assert tuple(low[64,64])==tuple(high[64,64])
 
 def test_territories_without_source_claims_estimate_non_sav_initial_claim():
     s=_state();s.claim[:]=255;s.starts=[(64,64)]

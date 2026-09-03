@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS, ROCKY_GRASS_PATCH_COLOR
+from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS, ROCKY_GRASS_PATCH_COLOR, REEF_COLOR
 from ...map_data.constants import (
     BEE_NEST_IDS, GRASS, GRASS_DETAIL_IDS, ADULT_TREE_IDS, PALM_TREE_IDS,
     TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
@@ -13,6 +13,17 @@ from ...map_data.constants import (
     ROCKY, ROCKY_DETAIL, DESERT, SWAMP, SHORE,
 )
 from .core import DECORATIVE_OBJECT_FAMILIES
+
+# Presentation order for the combined object-family chart.  This is the
+# user-validated red-number order from the reference image, not dictionary or
+# object-ID order.  Keep it separate from the statistics dictionary so future
+# analysis fields cannot reorder the columns.
+OBJECT_FAMILY_CHART_ORDER = (
+    'adult_trees', 'small_trees', 'plants_fungi', 'flowers_bushes', 'stumps',
+    'reeds', 'building_stones', 'decorative_stones', 'reefs', 'desert_props',
+    'dead_trees', 'graves', 'wrecks',
+)
+OBJECT_FAMILY_IDS = dict(DECORATIVE_OBJECT_FAMILIES)
 
 CHART_KEYS = (
     'terrain_families','mineral_stock','building_stones','forestry','decorative_objects','height','agriculture','nearest_starts',
@@ -23,25 +34,25 @@ CHART_KEYS = (
 CHART_LABELS = {
     'fr': {
         'terrain_families':'Familles de terrain','mineral_stock':'Stock minier','building_stones':'Stock des pierres de construction',
-        'forestry':'Arbres et pousses','decorative_objects':'Familles d’objets décoratifs','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
+        'forestry':'Arbres et pousses','decorative_objects':'Familles d’objets','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
         'player_trees_r30':'Arbres proches','player_stone_r30':'Pierres proches','player_fish_r30':'Poissons proches','player_mining_r40':'Stock minier proche',
         'mountain_components':'Taille des massifs','lake_components':'Taille des lacs','river_components':'Taille des rivières','ab_summary':'Comparaison A/B',
     },
     'en': {
         'terrain_families':'Terrain families','mineral_stock':'Mining stock','building_stones':'Building stone stock',
-        'forestry':'Trees and saplings','decorative_objects':'Decorative object families','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
+        'forestry':'Trees and saplings','decorative_objects':'Object families','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
         'player_trees_r30':'Nearby trees','player_stone_r30':'Nearby stone stock','player_fish_r30':'Nearby fish stock','player_mining_r40':'Nearby mining stock',
         'mountain_components':'Mountain sizes','lake_components':'Lake sizes','river_components':'River sizes','ab_summary':'A/B comparison',
     },
     'de': {
         'terrain_families':'Geländefamilien','mineral_stock':'Mineralvorrat','building_stones':'Bausteinvorrat',
-        'forestry':'Bäume und Setzlinge','decorative_objects':'Familien dekorativer Objekte','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
+        'forestry':'Bäume und Setzlinge','decorative_objects':'Objektfamilien','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
         'player_trees_r30':'Bäume in der Nähe','player_stone_r30':'Steinvorrat in der Nähe','player_fish_r30':'Fischvorrat in der Nähe','player_mining_r40':'Mineralvorrat in der Nähe',
         'mountain_components':'Gebirgsgrößen','lake_components':'Seegrößen','river_components':'Flussgrößen','ab_summary':'A/B-Vergleich',
     },
     'es': {
         'terrain_families':'Familias de terreno','mineral_stock':'Reservas minerales','building_stones':'Reservas de piedra de construcción',
-        'forestry':'Árboles y retoños','decorative_objects':'Familias de objetos decorativos','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
+        'forestry':'Árboles y retoños','decorative_objects':'Familias de objetos','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
         'player_trees_r30':'Árboles cercanos','player_stone_r30':'Piedra cercana','player_fish_r30':'Peces cercanos','player_mining_r40':'Minerales cercanos',
         'mountain_components':'Tamaño de macizos','lake_components':'Tamaño de lagos','river_components':'Tamaño de ríos','ab_summary':'Comparación A/B',
     },
@@ -80,7 +91,7 @@ DECORATIVE_FAMILY_COLORS = {
     'reeds': (88, 164, 92),
     'adult_trees': (45, 125, 60),
     'small_trees': (150, 210, 112),
-    'reefs': (38, 145, 196),
+    'reefs': REEF_COLOR,
     'building_stones': (185, 185, 170),
 }
 
@@ -478,11 +489,12 @@ def _forestry_segments(stats, lang='fr'):
 
 
 def _decorative_segments(stats, lang='fr'):
-    """Build one chart segment per known static-world decoration family."""
+    """Build one chart segment per known object family in chart order."""
     lang = lang if lang in DECORATIVE_FAMILY_LABELS else 'en'
     counts = stats.get('objects', {}).get('decorative_families', {})
     segments = []
-    for key, ids in DECORATIVE_OBJECT_FAMILIES:
+    for key in OBJECT_FAMILY_CHART_ORDER:
+        ids = OBJECT_FAMILY_IDS[key]
         label = DECORATIVE_FAMILY_LABELS[lang][key]
         details = [_id_line('object', ids, lang == 'fr', lang)]
         focus = {'kind': 'object_family', 'family': key, 'ids': tuple(ids)}
@@ -662,7 +674,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
         rows=stats['players']['nearest_start'];vals=[r['distance'] for r in rows];colors=_three_color_series(vals,zero_floor=True);groups=[]
         for i,r in enumerate(rows):
             opp=r.get('nearest_player');lab=f"P{r['player']}"
-            focus={'kind':'start_player','player':int(r['player']),'nearest_player':int(opp) if opp else None}
+            focus={'kind':'start_player','player':int(r['player']),'nearest_player':int(opp) if opp else None,'view':'global'}
             g={'label':lab,'segments':[(r['distance'],colors[i],'',[],focus)],'allow_zero_region':True,'swatches':[PLAYER_COLORS[(r['player']-1)%len(PLAYER_COLORS)]]}
             if opp:
                 g['top_annotation']=f"P{opp}";g['top_swatch']=PLAYER_COLORS[(opp-1)%len(PLAYER_COLORS)]
@@ -681,7 +693,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             near=metric(row['radii'].get('50',{}));total100=metric(row['radii'].get('100',{}));far=max(0,total100-near);raw.append((row['player'],near,far,total100))
         basecols=_three_color_series([r[3] for r in raw],zero_floor=True);groups=[]
         for i,(player,near,far,total) in enumerate(raw):
-            c=basecols[i];groups.append({'label':f'P{player}','swatches':[PLAYER_COLORS[(player-1)%len(PLAYER_COLORS)]],'segments':[(near,c,'0–50 HEX',[],{'kind':'player_local','player':int(player),'radius':50,'inner':True,'resource':key}),(far,_lerp(c,(245,245,245),0.34),'50–100 HEX',[],{'kind':'player_local','player':int(player),'radius':100,'inner':False,'resource':key})]})
+            c=basecols[i];groups.append({'label':f'P{player}','swatches':[PLAYER_COLORS[(player-1)%len(PLAYER_COLORS)]],'segments':[(near,c,'0–50 HEX',[],{'kind':'player_local','player':int(player),'radius':50,'inner':True,'resource':key,'view':'global'}),(far,_lerp(c,(245,245,245),0.34),'50–100 HEX',[],{'kind':'player_local','player':int(player),'radius':100,'inner':False,'resource':key,'view':'global'})]})
         note=tr('Foncé : 0–50 HEX · clair : 50–100 HEX','Dark: 0–50 HEX · light: 50–100 HEX','Dunkel: 0–50 HEX · hell: 50–100 HEX','Oscuro: 0–50 HEX · claro: 50–100 HEX')
         return _vertical_chart(groups,title,width,height,dark,tr('stock','stock','Vorrat','reserva') if key!='trees' else tr('arbres','trees','Bäume','árboles'),footer_note=note,legend_override=[],return_regions=return_regions)
     if chart_key=='player_mining_r40':
@@ -691,7 +703,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
             near=[];far=[]
             for key in ('coal','iron','gold','gems','sulfur'):
                 a=int(r50.get(key,{}).get('stock',0));b=max(0,int(r100.get(key,{}).get('stock',0))-a);label=MINERAL_NAMES_I18N[lang][key];color=MINERAL_COLORS[key]
-                near.append((a,color,f'0–50 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':50,'inner':True,'resource':'minerals','family':key}));far.append((b,color,f'50–100 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':100,'inner':False,'resource':'minerals','family':key}))
+                near.append((a,color,f'0–50 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':50,'inner':True,'resource':'minerals','family':key,'view':'global'}));far.append((b,color,f'50–100 HEX · {label}',[_resource_id_line(label,RESOURCE_IDS[key],fr,lang)],{'kind':'player_local','player':int(row['player']),'radius':100,'inner':False,'resource':'minerals','family':key,'view':'global'}))
             pnum=row['player'];groups.append({'label':'','segments':near,'pair_label':f'P{pnum}','tooltip_label':f'P{pnum}','pair_swatch':PLAYER_COLORS[(pnum-1)%len(PLAYER_COLORS)]});groups.append({'label':'','segments':far,'tooltip_label':f'P{pnum}'})
         legend=[(MINERAL_NAMES_I18N[lang][k],MINERAL_COLORS[k]) for k in ('coal','iron','gold','gems','sulfur')]
         note=tr('Barre gauche : 0–50 HEX · droite : 50–100 HEX','Left bar: 0–50 HEX · right: 50–100 HEX','Linker Balken: 0–50 HEX · rechter: 50–100 HEX','Barra izquierda: 0–50 HEX · derecha: 50–100 HEX')

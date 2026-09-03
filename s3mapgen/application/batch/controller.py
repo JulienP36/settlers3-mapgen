@@ -38,7 +38,10 @@ class BatchController:
             try:self._batch_window.deiconify();self._batch_window.lift();self._batch_window.focus_force();return
             except tk.TclError:self._batch_window=None
         lang=self.prefs.get('language','fr');bt=BATCH_TEXT[lang]
-        win=tk.Toplevel(self);self._batch_window=win
+        # Keep the window hidden while its rows, images and geometry are built.
+        # Creating it visible first caused a Windows taskbar/window-manager
+        # flash that looked like Batch opened, disappeared, then reopened.
+        win=tk.Toplevel(self);self._batch_window=win;win.withdraw()
         win.title(bt['title']);win.transient(self);win.geometry('1120x650');win.minsize(900,560)
         win.protocol('WM_DELETE_WINDOW',self._close_batch_window)
         shell=ttk.Frame(win,padding=12);shell.pack(fill='both',expand=True)
@@ -108,7 +111,7 @@ class BatchController:
         self._batch_start_button=ttk.Button(footer,text=bt['start'],command=self._start_batch);self._batch_start_button.pack(side='right',padx=(5,0))
         self._batch_cancel_button=ttk.Button(footer,text=bt['cancel'],command=self._cancel_batch,state='disabled');self._batch_cancel_button.pack(side='right',padx=(5,0))
         self._batch_close_button=ttk.Button(footer,text=bt['close'],command=self._close_batch_window);self._batch_close_button.pack(side='right')
-        self._batch_update_row_visibility();self._fit_batch_window_initial();self._feedback('batch_opened','info')
+        self._batch_update_row_visibility();self._fit_batch_window_initial();win.deiconify();win.lift();win.focus_force();self._feedback('batch_opened','info')
 
     def _fit_batch_window_initial(self):
         win=self._batch_window
@@ -179,8 +182,7 @@ class BatchController:
         base=row.get('preview_base_image');out=row.get('result')
         if base is None or out is None:return None
         marker_mode=self.prefs.get('preview_start_markers','small')
-        if marker_mode=='hidden':return base
-        return compose_start_markers(base,out.state,projection=self.prefs.get('projection','square'),scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
+        return compose_start_markers(base,out.state,projection=self.prefs.get('projection','square'),scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),start_markers=marker_mode!='hidden',start_circles=bool(self.prefs.get('preview_start_circles',False)))
 
     def _refresh_batch_previews(self):
         if not getattr(self,'_batch_rows',None):return

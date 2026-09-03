@@ -1,6 +1,6 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_3 continues from the validated DEV_2 reset: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_5 continues from the validated DEV_2 reset: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 

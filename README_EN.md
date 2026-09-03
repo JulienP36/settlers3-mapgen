@@ -24,7 +24,7 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 ### Generation and Viewer
 
-![Legacy 768×768 generation and Starts view in the Viewer](docs/screenshots/v1_8_generation_viewer.png)
+![Legacy 768×768 generation and start markers in the Viewer](docs/screenshots/v1_8_generation_viewer.png)
 
 *An actual generated map in parallelogram projection with all four player start areas.*
 
@@ -46,7 +46,7 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_4 / Upgraded calibration
+## Current state — v2.0 DEV_5 / Upgraded finishing pass
 
 The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` was
 the validated native reset checkpoint, and `DEV_3` is now the validated and
@@ -59,7 +59,11 @@ three mirror modes for Upgraded, and exposes Upgraded on every native contract
 size; 768 keeps its calibrated quotas while other sizes use proportional
 quotas so they remain generatable. No contract size is blocked as “untested”;
 warnings remain informational. **Start markers** now offer Tiny, Normal and
-Large, plus Hidden, in the Starts view, Batch and History.
+Large, plus Hidden, in every view, Batch and History; a separate option shows
+the start circles everywhere as well.
+DEV_5 restores the Upgraded content around starts: Legacy-shaped static
+objects, mini-forests, tree/stone bonuses and mini-swamps, while keeping
+Upgraded reefs.
 
 The **Legacy** engine now implements the Continental v1 native reconstruction:
 relief, terrain, hydrology, objects, resources, starts and runtime metadata.
@@ -70,9 +74,10 @@ differences: v7 minerals, fish, trees/decorations and building stones, with no
 Mud generation.
 The Continental archetype supplies the macro-geographic context; it does not
 apply a second sculpture over the native core.
-The current Upgraded start placement is an isolated provisional bridge; player
-start resources, objects and settlers remain deferred to the future `.sav`
-pass.
+DEV_5 keeps the provisional start-coordinate bridge, but restores the tree,
+building-stone and mini-swamp bonuses around those coordinates. The next
+planned steps are Dev 6 Custom generator, Dev 7 Custom archetype and Dev 8
+first modifiers.
 
 Minerals were compared before removal: the former generator had a globally
 similar family mix to the native SAV corpus, but its deposits were much too

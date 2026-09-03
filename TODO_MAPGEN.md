@@ -75,8 +75,8 @@ stabilisées.
 La **reconstruction complète des pipelines** est maintenant le périmètre v2.0.
 Le générateur procédural Continental de DEV_1 a été retiré et le Legacy natif
 est validé dans DEV_2. Le chantier Upgraded a été porté dans une copie
-indépendante du pipeline Legacy ; sa calibration visuelle DEV_3 est maintenant
-validée, avec uniquement ses différences explicites.
+indépendante du pipeline Legacy ; sa calibration DEV_3 et ses finitions DEV_5
+sont maintenant validées, avec uniquement ses différences explicites.
 
 ### v2.0 — Upgraded indépendant
 
@@ -84,6 +84,10 @@ validée, avec uniquement ses différences explicites.
   dépendance d’exécution vers `generators/legacy/`.
 - [x] Réintégrer la génération calibrée des minerais de montagnes.
 - [x] Réintégrer poissons, arbres, décorations et pierres de construction.
+- [x] Dev 5 validé : calquer les objets statiques sur les familles Legacy, conserver
+  les récifs Upgraded, restaurer les bonus arbres/pierres/mini-marais, placer
+  30 % des adultes en mini-forêts, réserver les pousses aux forêts et créer
+  les clusters de pierres.
 - [x] Désactiver toute génération de boue dans Upgraded.
 - [x] Garder le positionnement des joueurs isolé pour une passe dédiée ; le
   pont actuel reste provisoire et ne crée ni ressources ni colons de départ.
@@ -130,9 +134,10 @@ validée, avec uniquement ses différences explicites.
 - [x] Laisser toutes les tailles du contrat générables et exportables pour
   test, sans refus lié au statut « non testé » ; conserver les avertissements
   uniquement comme information.
-- [ ] Ajouter modificateurs et autres archétypes après ce socle.
-- [ ] Concevoir ensuite le mode **Custom laboratoire** séparé : catalogue,
-  presets, batch, diagnostics et garde-fous.
+- [ ] Dev 6 : implémenter le générateur **Custom** séparé : catalogue, presets,
+  batch, diagnostics et garde-fous.
+- [ ] Dev 7 : définir l’archétype **Custom** au-dessus du générateur dédié.
+- [ ] Dev 8 : ajouter les premiers modificateurs, après validation de l’archétype.
 - [ ] Revalider progressivement terrains, transitions, joueurs, ressources,
   macro-forme, côtes et exports 832–1024 dans l'éditeur communautaire/jeu.
 
@@ -162,12 +167,19 @@ validée, avec uniquement ses différences explicites.
 - [x] Première liaison Graphiques → Vue avec payloads sémantiques, cache de
   surbrillance et conservation du cadrage ; A/B reste volontairement
   informatif (tooltip uniquement).
-- [x] Router tous les graphes **X proche(s)** vers Départs, ancrer leur flèche
-  aux bordures des territoires de départ d’origine et appliquer à cette vue le
-  réglage court **Marqueurs de départ**.
-- [x] Ajouter les tailles de marqueurs Très petits / Normaux / Grands (plus
+- [x] Router tous les graphes **X proche(s)** vers la vue globale, ancrer leur
+  flèche aux bordures des territoires de départ d’origine et conserver le
+  contexte des départs via les marqueurs/cercle partagés.
+- [x] Ajouter les tailles de marqueurs Petits / Normaux / Grands (plus
   Masqués), conserver la compatibilité des préférences historiques et propager
-  le réglage à Départs, Batch et Historique.
+  le réglage à toutes les vues, Batch et Historique.
+- [x] Supprimer la vue dédiée Départs et ajouter l’option indépendante
+  **Cercles de départ**, propagée à toutes les vues et previews sans lien avec
+  l’opacité couche.
+- [x] Renommer le graphique des objets en **Familles d’objets** et figer son
+  ordre de colonnes sur les nombres rouges de la référence utilisateur.
+- [x] Corriger le flash initial de la fenêtre **Générer un lot** en la gardant
+  masquée pendant la construction de ses contrôles et de sa géométrie.
 - [x] Corriger le centre d’export multi-taille et conserver `references/` dans
   les ZIP sources tout en l’excluant des commits/push GitHub.
 - [ ] Étendre le pilotage de la vue depuis les Graphiques : légendes, conflits,
@@ -179,9 +191,9 @@ validée, avec uniquement ses différences explicites.
 - [ ] Reporter responsive UI v2, Status/Feedback v2, centres d'export et
   diagnostic mémoire v1.11 à une passe dédiée avec mesures factuelles.
 
-- [ ] Implémenter dans Upgraded la passe séparée du positionnement des starts,
-  bonus de départ et objets de départ ; ne pas mélanger cette passe avec la
-  calibration DEV_3 validée.
+- [ ] Implémenter dans Upgraded la passe séparée du positionnement des starts et
+  des données natives `.sav` ; Dev 5 utilise le pont de coordonnées existant
+  sans le recalculer.
 
 ## Personnalisation, après Continental et ENDGAME
 
@@ -200,7 +212,8 @@ validée, avec uniquement ses différences explicites.
   ressources et objets.
 - Legacy : terrain/objets/ressources avant re-seed, puis starts/ville/stock ;
   Upgraded : terrain copié indépendant, contenu global spécifique, minerais v7
-  no-gap préservés et contenu de départ différé.
+  no-gap préservés et bonus de contenu autour des coordonnées de départ
+  provisoires.
 - Aucun aperçu ou asset imaginaire ; SAV lu sans réinvention et copié inchangé.
 - IDs inconnus explicitement inconnus ; ne jamais repartir d'une version
   invalidée du générateur.

@@ -13,6 +13,8 @@ SRC = '\n'.join((MAIN_SRC, SETTINGS_SRC, VIEWER_SRC, BATCH_SRC))
 def test_preview_marker_setting_is_bilingual_and_lives_in_display_settings():
     assert PREVIEW_START_MARKER_LABELS['fr']=={'hidden':'Masqués','tiny':'Petits','small':'Normaux','normal':'Grands'}
     assert PREVIEW_START_MARKER_LABELS['en']=={'hidden':'Hidden','tiny':'Tiny','small':'Normal','normal':'Large'}
+    assert PREVIEW_START_MARKER_LABELS['de']['tiny']=='Klein'
+    assert PREVIEW_START_MARKER_LABELS['es']['tiny']=='Pequeños'
     settings=SETTINGS_SRC[SETTINGS_SRC.index('def _settings_tab'):SETTINGS_SRC.index('def _find_combo_for_var')]
     assert "text='Marqueurs de départ'" in settings
     assert "bind('<<ComboboxSelected>>',lambda e:self._preview_marker_changed())" in settings
@@ -26,18 +28,20 @@ def test_preview_marker_change_is_persisted_and_refreshes_open_batch_previews():
     assert 'self._refresh_batch_previews()' in changed
 
 
-def test_marker_modes_map_to_hidden_tiny_normal_and_large_in_batch_and_starts_views():
+def test_marker_modes_map_to_hidden_tiny_normal_and_large_in_batch_and_all_views():
     batch=SRC[SRC.index('def _batch_render_thumbnail'):SRC.index('def _refresh_batch_previews')]
     assert "row.get('preview_square_base_key')!=state_key" in batch
     assert "row.get('preview_projected_base_key')!=state_key" in batch
     assert "render_square_base(out.state,view='global'" in batch
     compose=SRC[SRC.index('def _batch_compose_preview'):SRC.index('def _refresh_batch_previews')]
-    assert "if marker_mode=='hidden':return base" in compose
+    assert "start_markers=marker_mode!='hidden'" in compose
+    assert "start_circles=bool(self.prefs.get('preview_start_circles',False))" in compose
     assert "compose_start_markers(base,out.state" in compose
     assert "scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small'])" in compose
     render_options=VIEWER_SRC[VIEWER_SRC.index('def _render_options'):VIEWER_SRC.index('def _refresh_preview')]
-    assert "'start_markers':bool(view=='starts' and marker_mode!='hidden')" in render_options
+    assert "'start_markers':bool(marker_mode!='hidden')" in render_options
     assert "'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small'])" in render_options
+    assert "'start_circles':bool(self.prefs.get('preview_start_circles',False))" in render_options
 
 
 def test_open_tooltip_is_updated_atomically_without_destroying_its_window():

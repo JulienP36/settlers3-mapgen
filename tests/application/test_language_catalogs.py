@@ -4,8 +4,8 @@ from s3mapgen.application.ui.viewer.options import HEATMAP_ICON_COLORS, VIEW_ICO
 
 
 def test_french_view_terms_are_localized():
-    assert VIEW_LABELS['fr']['starts']=='Départs'
-    assert VIEW_LABELS['en']['starts']=='Starts'
+    assert 'starts' not in VIEW_LABELS['fr']
+    assert 'starts' not in VIEW_LABELS['en']
     assert VIEW_LABELS['fr']['heightmap']=='Élévation'
     assert VIEW_LABELS['fr']['heatmap']=='Carte thermique'
     assert ARCHETYPE_LABELS['fr']['large_islands']=='Grandes îles'

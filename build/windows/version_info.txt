@@ -15,11 +15,11 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'Settlers III MapGen'),
          StringStruct('FileDescription', 'Settlers III MapGen'),
-         StringStruct('FileVersion', '2.0 DEV_4'),
+         StringStruct('FileVersion', '2.0 DEV_5'),
          StringStruct('InternalName', 'Settlers3MapGen'),
          StringStruct('OriginalFilename', 'Settlers3MapGen.exe'),
          StringStruct('ProductName', 'Settlers III MapGen'),
-         StringStruct('ProductVersion', '2.0 DEV_4')])
+         StringStruct('ProductVersion', '2.0 DEV_5')])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]

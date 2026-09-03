@@ -1,8 +1,8 @@
 """Viewer and heatmap translation catalogues."""
 
 VIEW_LABELS={
- 'fr':{'global':'Global','starts':'Départs','territories':'Territoires','initial_territory':'Masque initial','heightmap':'Élévation','resources':'Ressources','paths':'Chemins','crops':'Cultures','heatmap':'Carte thermique'},
- 'en':{'global':'Global','starts':'Starts','territories':'Territories','initial_territory':'Initial mask','heightmap':'Elevation','resources':'Resources','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
+ 'fr':{'global':'Global','territories':'Territoires','initial_territory':'Masque initial','heightmap':'Élévation','resources':'Ressources','paths':'Chemins','crops':'Cultures','heatmap':'Carte thermique'},
+ 'en':{'global':'Global','territories':'Territories','initial_territory':'Initial mask','heightmap':'Elevation','resources':'Resources','paths':'Paths','crops':'Crops','heatmap':'Heatmap'},
 }
 
 HEATMAP_LABELS={
@@ -11,8 +11,8 @@ HEATMAP_LABELS={
 }
 
 VIEW_LABELS.update({
- 'de':{'global':'Global','starts':'Startpositionen','territories':'Territorien','initial_territory':'Anfangsmaske','heightmap':'Höhen','resources':'Ressourcen','paths':'Wege','crops':'Anbau','heatmap':'Heatmap'},
- 'es':{'global':'Global','starts':'Inicios','territories':'Territorios','initial_territory':'Máscara inicial','heightmap':'Elevación','resources':'Recursos','paths':'Caminos','crops':'Cultivos','heatmap':'Mapa de calor'},
+ 'de':{'global':'Global','territories':'Territorien','initial_territory':'Anfangsmaske','heightmap':'Höhen','resources':'Ressourcen','paths':'Wege','crops':'Anbau','heatmap':'Heatmap'},
+ 'es':{'global':'Global','territories':'Territorios','initial_territory':'Máscara inicial','heightmap':'Elevación','resources':'Recursos','paths':'Caminos','crops':'Cultivos','heatmap':'Mapa de calor'},
 })
 
 HEATMAP_LABELS.update({

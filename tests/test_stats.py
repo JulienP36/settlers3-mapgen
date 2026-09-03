@@ -256,6 +256,25 @@ def test_decorative_object_families_are_counted_without_double_counting():
     assert 1 in stones['focus']['ids'] and 28 in stones['focus']['ids']
 
 
+def test_object_family_chart_has_the_combined_title_and_user_order():
+    from s3mapgen.application.analysis.charts import (
+        CHART_LABELS, OBJECT_FAMILY_CHART_ORDER, DECORATIVE_FAMILY_LABELS,
+        _decorative_segments,
+    )
+    stats = analyze_map(sample_state())
+    assert CHART_LABELS['fr']['decorative_objects'] == 'Familles d’objets'
+    assert CHART_LABELS['en']['decorative_objects'] == 'Object families'
+    segments = _decorative_segments(stats, 'fr')
+    assert [segment[2] for segment in segments] == [
+        DECORATIVE_FAMILY_LABELS['fr'][key] for key in OBJECT_FAMILY_CHART_ORDER
+    ]
+    assert OBJECT_FAMILY_CHART_ORDER == (
+        'adult_trees', 'small_trees', 'plants_fungi', 'flowers_bushes',
+        'stumps', 'reeds', 'building_stones', 'decorative_stones', 'reefs',
+        'desert_props', 'dead_trees', 'graves', 'wrecks',
+    )
+
+
 def test_chart_segment_totals_match_report_totals():
     st = sample_state()
     stats = analyze_map(st)

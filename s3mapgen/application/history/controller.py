@@ -348,9 +348,10 @@ class HistoryController:
         if out is None:
             self._history_preview_photo=None;self._history_preview_base_image=None;self._history_preview_key=None;label.configure(image='',text='—');self._history_preview_status.set(text['empty']);self._history_preview_source.set('');self._history_hide_large_preview();return
         marker_mode=self.prefs.get('preview_start_markers','small')
-        preview_key=(id(out.state),self.prefs.get('projection','square'),marker_mode)
+        circles=bool(self.prefs.get('preview_start_circles',False))
+        preview_key=(id(out.state),self.prefs.get('projection','square'),marker_mode,circles)
         if preview_key!=self._history_preview_key or getattr(self,'_history_preview_base_image',None) is None:
-            image=render(out.state,labels=False,view='global',projection=self.prefs.get('projection','square'),start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
+            image=render(out.state,labels=False,view='global',projection=self.prefs.get('projection','square'),start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),start_circles=circles)
             image.thumbnail((300,210),Image.Resampling.NEAREST);self._history_preview_base_image=image;self._history_preview_key=preview_key
         self._history_refresh_thumbnail_photo()
         slots=[slot for slot,value in self._compare_slots.items() if value is out];parts=[text['comparison'].format(slots='/'.join(slots) if slots else text['none'])]
@@ -422,9 +423,10 @@ class HistoryController:
             try:preserved=(old.winfo_x(),old.winfo_y())
             except tk.TclError:pass
         marker_mode=self.prefs.get('preview_start_markers','small');projection=self.prefs.get('projection','square')
-        render_key=(key,id(out.state),projection,marker_mode)
+        circles=bool(self.prefs.get('preview_start_circles',False))
+        render_key=(key,id(out.state),projection,marker_mode,circles)
         if render_key!=self._history_large_key or self._history_large_image is None:
-            self._history_large_image=render(out.state,labels=False,view='global',projection=projection,start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']))
+            self._history_large_image=render(out.state,labels=False,view='global',projection=projection,start_markers=marker_mode!='hidden',start_marker_scale=START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),start_circles=circles)
             self._history_large_key=render_key
         if pinned:
             shown,size=self._history_large_scaled_image(self._history_large_image)

@@ -1,5 +1,72 @@
 # Changelog
 
+## v2.0 DEV_5 — 2026-09-03 — finitions Upgraded validées
+
+- Clôt les finitions Upgraded : objets statiques calqués sur Legacy hors
+  récifs, bonus de départ, mini-forêts d’arbres, pousses limitées aux forêts,
+  pierres et clusters, sans compter les bonus dans les quotas globaux.
+- Conserve l’espacement forestier minimal de 3 HEX, la teinte rocheuse des
+  récifs carte/graphique et le pont provisoire de coordonnées des joueurs.
+- Supprime la vue dédiée **Départs** au profit de marqueurs et cercles
+  optionnels partagés entre toutes les vues, corrige le flash de **Générer un
+  lot**, et route les graphes proches vers la vue globale.
+- Titre le graphe **Familles d’objets** et fixe ses colonnes selon l’ordre exact
+  des nombres rouges de la référence utilisateur : arbres adultes, pousses,
+  plantes/champignons, fleurs/buissons, souches, roseaux, pierres de
+  construction, pierres décoratives, récifs, décors désertiques, arbres morts,
+  tombes, épaves.
+- Validation : **309 tests** passés, tests de maintenance du paquet **9/9**,
+  self-test runtime après extraction **PASS**, archive source finale de 298
+  fichiers après retrait de la feuille candidate.
+- Limite `.sav` connue conservée et documentée : des récifs peuvent apparaître
+  sur terre à cause d’un décodage probablement incorrect.
+
+## v2.0 DEV_5_R3 — 2026-09-03 — vues partagées des départs et familles d’objets
+
+- Renomme le graphe des objets en **Familles d’objets** et fige l’ordre de ses
+  colonnes sur la séquence native, avec les pierres de construction en dernier.
+- Supprime la vue dédiée **Départs** : les marqueurs de départ peuvent être
+  affichés dans toutes les vues, et l’option indépendante **Cercles de départ**
+  affiche les contours dans le Viewer, les previews Batch et l’Historique.
+- Décorrèle marqueurs et cercles de l’opacité de la couche sélectionnée.
+- Route les graphes **distance au plus proche adversaire** et **X proche(s)**
+  vers la vue globale, tout en conservant les flèches de bordure d’origine.
+- Corrige le flash de la fenêtre **Générer un lot** en construisant sa fenêtre
+  initiale hors écran avant de la rendre visible.
+- Candidate locale : **309 tests automatisés passés** ; validation visuelle
+  Windows encore requise avant publication de DEV_5.
+
+## v2.0 DEV_5_R2 — 2026-09-03 — cohérence des forêts, récifs et graphes
+
+- Confirme et teste la séparation des quotas globaux et des bonus de départ :
+  les bonus arbres/pierres s’ajoutent aux quotas globaux sans les consommer.
+- Aligne l’espacement minimal des arbres adultes en forêt sur 3 HEX, valeur
+  observée dans les sorties Legacy, sans réduire les quotas ni les bonus ; les
+  forêts sont agrandies localement seulement lorsque nécessaire pour conserver
+  le nombre demandé.
+- Remplace le bleu vif des récifs par une teinte rocheuse sombre commune au
+  rendu de carte et au graphique, inspirée de la capture fournie.
+- Rend explicite la cible `Départs` dans les payloads des graphes de distance
+  au plus proche adversaire et de ressources « proches ».
+- Candidate locale : 305 tests automatisés passés ; validation visuelle Windows
+  encore requise avant publication de DEV_5.
+
+## v2.0 DEV_5_R1 — 2026-09-03 — finitions du contenu Upgraded
+
+- Rétablit un mini-marais cohérent par départ sans recalculer les coordonnées
+  des joueurs ; les transitions marécageuses sont reconstruites avec la
+  profondeur HEX6 légale.
+- Aligne les objets statiques Upgraded sur les 16 familles natives Legacy et
+  conserve les récifs Upgraded sur les eaux profondes.
+- Aligne les quotas d’arbres adultes sur Legacy, place 30 % du quota global en
+  mini-forêts et conserve les pousses ID84 dans les forêts, avec les bonus de
+  départ séparés.
+- Restaure les bonus de pierres, les états actifs `115–126`, l’état épuisé
+  `127`, les empreintes complètes, 30 % de clusters et environ 50 % de pierres
+  récoltables supplémentaires au niveau global.
+- Candidat local : suite automatisée et matrice multi-tailles passées ;
+  validation visuelle Windows encore requise avant publication de DEV_5.
+
 ## v2.0 DEV_4 — 2026-09-03 — miroir et tailles de marqueurs
 
 - Retire le verrou du miroir pour Upgraded dans le générateur principal et

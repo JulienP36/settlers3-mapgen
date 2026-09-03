@@ -134,10 +134,12 @@ class ViewerController:
     def _preview_marker_changed(self):
         self.prefs['preview_start_markers']=self._preview_marker_key();self._save_prefs();self._refresh_preview(False);self._refresh_batch_previews();self._refresh_history_preview()
 
+    def _preview_start_circles_changed(self):
+        self.prefs['preview_start_circles']=bool(self.preview_start_circles_var.get());self._save_prefs();self._refresh_preview(False);self._refresh_batch_previews();self._refresh_history_preview()
+
     def _opacity_changed(self):
         self.opacity_label.configure(text=f'{int(self.opacity_var.get())} %');self.prefs['overlay_alpha']=int(self.opacity_var.get());self._schedule_prefs_save()
-        if self._view_key()=='starts':self._invalidate_preview_composite()
-        else:self._invalidate_preview()
+        self._invalidate_preview()
         self._schedule_preview()
 
     def _wheel_changed(self):
@@ -158,7 +160,7 @@ class ViewerController:
 
     def _render_options(self):
         view=self._view_key();marker_mode=self.prefs.get('preview_start_markers','small')
-        return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key(),'start_markers':bool(view=='starts' and marker_mode!='hidden'),'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small'])}
+        return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key(),'start_markers':bool(marker_mode!='hidden'),'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),'start_circles':bool(self.prefs.get('preview_start_circles',False))}
 
     def _chart_focus_options(self, options):
         """Temporarily route the preview through the hovered chart semantic."""
@@ -223,27 +225,26 @@ class ViewerController:
         anchor=None if reset_pan else (getattr(self,'_pending_view_anchor',None) or self._capture_view_anchor())
         self._pending_view_anchor=None
         self._update_view_controls();opts=self._render_options();opts,focus=self._chart_focus_options(opts);state=self.current.state
-        # Global and Starts share the same marker-free terrain raster.  Starts
-        # opacity affects only its sprite layer, so changing it never recolors
-        # the map.  Other overlays bake their opacity into the square layer.
-        layer_view='global' if opts['view'] in ('global','starts') else opts['view']
+        # Start markers/circles are composed after the selected raster layer,
+        # so their visibility and opacity never depend on that layer.
+        layer_view=opts['view']
         layer_alpha=100 if layer_view=='global' else opts['overlay_alpha']
         layer_key=(id(state),layer_view,layer_alpha,opts['heatmap_resource'])
         if layer_key!=self._preview_layer_key:
             if self._preview_layer_key is not None and self._preview_layer_key[0]!=id(state):
                 self._preview_focus_mask_cache={}
             self._preview_layer_base=render_square_base(state,layer_view,layer_alpha,opts['heatmap_resource']);self._preview_layer_key=layer_key;self._preview_projection_cache={}
-        composite_key=(opts['projection'],opts['view'],opts['overlay_alpha'],opts.get('start_markers'),opts.get('start_marker_scale'),focus_signature(focus))
+        composite_key=(opts['projection'],opts['view'],opts['overlay_alpha'],opts.get('start_markers'),opts.get('start_marker_scale'),opts.get('start_circles'),focus_signature(focus))
         if composite_key not in self._preview_projection_cache:
             if focus is None:
-                self._preview_projection_cache[composite_key]=compose_rendered_map(self._preview_layer_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1))
+                self._preview_projection_cache[composite_key]=compose_rendered_map(self._preview_layer_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),start_circles=opts.get('start_circles',False))
             else:
                 mask_key=(id(state),focus_signature(focus))
                 mask=self._preview_focus_mask_cache.get(mask_key)
                 if mask is None:
                     mask=focus_mask(state,focus);self._preview_focus_mask_cache[mask_key]=mask
                 focused_base=apply_focus_overlay(self._preview_layer_base,state,focus,mask)
-                self._preview_projection_cache[composite_key]=compose_rendered_map(focused_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),focus=focus)
+                self._preview_projection_cache[composite_key]=compose_rendered_map(focused_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),start_circles=opts.get('start_circles',False),focus=focus)
         self._preview_base=self._preview_projection_cache[composite_key];self._preview_key=(layer_key,composite_key)
         im=self._preview_base;cw=max(100,self.canvas.winfo_width());ch=max(100,self.canvas.winfo_height());factor=max(.05,min((cw-10)/im.width,(ch-10)/im.height)*self.zoom);new=(max(1,int(im.width*factor)),max(1,int(im.height*factor)))
         shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);self.canvas.delete('all');sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2);self.canvas.create_image(x,y,image=self.photo,anchor='nw');self.canvas.configure(scrollregion=(0,0,sw,sh));self._restore_view_anchor(anchor,im.size,(x,y),new[0]/im.width,cw,ch,sw,sh)

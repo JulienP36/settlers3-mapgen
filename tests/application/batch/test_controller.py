@@ -126,6 +126,12 @@ def test_open_batch_window_is_retranslated_live():
     assert "def _retranslate_batch_window" in SRC
 
 
+def test_batch_window_is_hidden_during_initial_widget_and_geometry_build():
+    open_window=SRC[SRC.index('def _open_batch_window'):SRC.index('def _fit_batch_window_initial')]
+    assert "win=tk.Toplevel(self);self._batch_window=win;win.withdraw()" in open_window
+    assert "self._batch_update_row_visibility();self._fit_batch_window_initial();win.deiconify()" in open_window
+
+
 def test_assignment_is_unique_and_batch_buttons_show_active_state():
     assert "moved=self._compare_slots.get(other) is out" in SRC
     assert "if moved:self._compare_slots[other]=None" in SRC
