@@ -98,10 +98,13 @@ mettre à jour la branche avec l'API GitHub connectée (ou avec un checkout
 persistant équivalent). Ne jamais initialiser une histoire Git détachée à partir
 d'un ZIP ni utiliser un force-push pour contourner une branche avancée.
 
-Le transfert compare les chemins locaux au tree distant, transmet uniquement
-les fichiers modifiés hors `references/`, et conserve les anciennes références
-distantes sans en ajouter ni les mettre à jour. Le script `tools/package_source.py`
-réintègre volontairement le dossier local `references/` dans les ZIP de reprise.
+Le transfert compare les chemins locaux au tree distant et exclut toujours
+`references/`. Si un ancien tree GitHub contient encore ce dossier, ses entrées
+doivent être retirées par un commit de nettoyage ordinaire ; elles restent
+récupérables dans l'historique Git et dans les ZIP de reprise. Les commits
+suivants n'ajoutent ni ne mettent à jour ce chemin. Le script
+`tools/package_source.py` réintègre volontairement le dossier local
+`references/` dans les ZIP de reprise.
 Le SHA de branche et du commit publié doivent être consignés dans le compte
 rendu du checkpoint afin que le tchat suivant puisse reprendre sans dépendre de
 la mémoire de la conversation précédente.
