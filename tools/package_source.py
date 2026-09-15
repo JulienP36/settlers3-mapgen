@@ -71,8 +71,6 @@ REQUIRED_SOURCE_PATHS = (
     "s3mapgen/generation/generators/upgraded/starts.py",
     "s3mapgen/generation/generators/upgraded/validators.py",
     "s3mapgen/map_data/binary.py",
-    "references/REFERENCE_INDEX.md",
-    "references/SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md",
     "config/legacy_768_v1.json",
     "data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz",
     "data/scaffold_768.edm",
@@ -83,6 +81,15 @@ REQUIRED_SOURCE_PATHS = (
     "data/mineral_icons/gold.png",
     "data/mineral_icons/gems.png",
     "data/mineral_icons/sulfur.png",
+)
+
+# The recovery/audit tree is deliberately kept out of ordinary GitHub
+# checkouts. It is still required whenever a local hand-off ZIP contains the
+# references tree, but a clean GitHub checkout must remain packageable without
+# it.
+REQUIRED_REFERENCE_PATHS = (
+    "references/REFERENCE_INDEX.md",
+    "references/SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md",
 )
 
 FORBIDDEN_ARCHIVE_PARTS = {
@@ -163,7 +170,10 @@ def _source_files(project_root: Path) -> list[Path]:
 
 def _validate_input_files(project_root: Path, files: list[Path]) -> None:
     relative_names = {path.as_posix() for path in files}
-    missing = [path for path in REQUIRED_SOURCE_PATHS if path not in relative_names]
+    required_paths = REQUIRED_SOURCE_PATHS
+    if (project_root / REFERENCE_ROOT).is_dir():
+        required_paths += REQUIRED_REFERENCE_PATHS
+    missing = [path for path in required_paths if path not in relative_names]
     if missing:
         raise SourcePackageError(
             "Required source-package files are missing: " + ", ".join(missing)
@@ -264,8 +274,15 @@ def validate_source_archive(
             for path in names
             if len(path.parts) > 1
         }
+        required_paths = REQUIRED_SOURCE_PATHS
+        has_references = any(
+            path == REFERENCE_ROOT or path.startswith(f"{REFERENCE_ROOT}/")
+            for path in archived_relative
+        )
+        if has_references:
+            required_paths += REQUIRED_REFERENCE_PATHS
         missing = [
-            path for path in REQUIRED_SOURCE_PATHS if path not in archived_relative
+            path for path in required_paths if path not in archived_relative
         ]
         if missing:
             raise SourcePackageError(

@@ -17,6 +17,7 @@ from s3mapgen.application.history.order import (
 )
 from tools.package_source import (
     FORBIDDEN_ARCHIVE_PARTS,
+    REQUIRED_REFERENCE_PATHS,
     REQUIRED_SOURCE_PATHS,
     build_source_archive,
 )
@@ -85,10 +86,10 @@ def test_source_zip_is_complete_clean_and_self_tests_after_extraction(tmp_path):
             not FORBIDDEN_ARCHIVE_PARTS.intersection(Path(name).parts)
             for name in names
         )
-        assert all(
-            f'mapgen_source_test/{required}' in names
-            for required in REQUIRED_SOURCE_PATHS
-        )
+        required_paths = REQUIRED_SOURCE_PATHS
+        if (ROOT / 'references').is_dir():
+            required_paths += REQUIRED_REFERENCE_PATHS
+        assert all(f'mapgen_source_test/{required}' in names for required in required_paths)
         archive.extractall(tmp_path / 'extracted')
 
     extracted_root = tmp_path / 'extracted' / 'mapgen_source_test'
@@ -194,7 +195,15 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
 
 
 def test_current_reference_index_keeps_recovery_sources_separated():
-    index = (ROOT / 'references/REFERENCE_INDEX.md').read_text(encoding='utf-8')
+    index_path = ROOT / 'references/REFERENCE_INDEX.md'
+    if not index_path.is_file():
+        gitignore = (ROOT / '.gitignore').read_text(encoding='utf-8')
+        github_policy = (ROOT / 'GITHUB_STORAGE_POLICY.md').read_text(encoding='utf-8')
+        assert 'references/' in gitignore
+        assert 'source-package builder' in github_policy
+        return
+
+    index = index_path.read_text(encoding='utf-8')
     matrix = (ROOT / 'references/SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md').read_text(encoding='utf-8')
     release = (ROOT / 'RELEASE_VALIDATION.md').read_text(encoding='utf-8')
     snapshot = (ROOT / 'references/SETTLERS3_CURRENT_SNAPSHOT.md').read_text(encoding='utf-8')
