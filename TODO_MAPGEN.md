@@ -35,7 +35,7 @@ Les bornes encore inconnues, les objets `82/83`, les champs SAV non décodés et
 les résidus de format sont suivis dans la section v2.0 « Résidus d’audit » ou
 dans les références spécialisées, jamais dans une ancienne liste v1.x.
 
-## v2.0 — reconstruction native Legacy, puis Custom
+## v2.1 — ouverture\n\n- [ ] Au tout début de `v2.1 DEV1`, lire le todo personnel de Julien comme entrée obligatoire de priorisation avant toute planification ou implémentation ; s’il n’est pas accessible dans le contexte du projet, le demander avant de poursuivre.\n\n## v2.0 — reconstruction native Legacy, puis Custom
 
 La **reconstruction complète des pipelines** est le périmètre v2.0. Le
 générateur procédural Continental DEV_1 a été retiré ; le Legacy natif est
