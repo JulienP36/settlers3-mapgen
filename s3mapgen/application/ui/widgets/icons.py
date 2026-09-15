@@ -1,6 +1,46 @@
 """Deterministic Pillow drawings used by Tk controls and map thumbnails."""
 
-from PIL import Image, ImageDraw, ImageTk
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageOps, ImageTk
+
+from ...paths import BASE
+
+
+_SEED_DICE_PATH = Path(__file__).with_name("assets") / "seed_dice.png"
+_MINERAL_ICON_PATHS = {
+    "coal": BASE / "data" / "mineral_icons" / "coal.png",
+    "iron": BASE / "data" / "mineral_icons" / "iron.png",
+    "gold": BASE / "data" / "mineral_icons" / "gold.png",
+    "gems": BASE / "data" / "mineral_icons" / "gems.png",
+    "sulfur": BASE / "data" / "mineral_icons" / "sulfur.png",
+}
+
+
+def seed_dice_icon(master):
+    """Load the 24px user-provided die used by every seed randomizer."""
+    with Image.open(_SEED_DICE_PATH) as source:
+        image = source.convert("RGBA")
+    return ImageTk.PhotoImage(image, master=master)
+
+
+def mineral_icon(master, key: str, *, disabled: bool = False):
+    """Load one exact 16×16 mineral sprite without changing row height.
+
+    The disabled variant keeps the supplied alpha channel and removes hue so
+    a selector can communicate that the corresponding mineral is inactive
+    without changing the compact row geometry.
+    """
+
+    path = _MINERAL_ICON_PATHS[str(key)]
+    with Image.open(path) as source:
+        image = source.convert("RGBA")
+    if image.size != (16, 16):
+        raise ValueError(f"L’icône de minerai {key!r} doit rester en 16×16 pixels")
+    if disabled:
+        alpha = image.getchannel("A")
+        image = ImageOps.grayscale(image.convert("RGB")).convert("RGBA")
+        image.putalpha(alpha)
+    return ImageTk.PhotoImage(image, master=master)
 
 
 def selector_icon_image(color, kind="dot", size=18):

@@ -124,6 +124,10 @@ def test_publication_and_maintenance_docs_are_linked_and_packaged():
     assert 'references/' in gitignore
     assert 'pushed to GitHub' in github_policy
     assert 'ZIP' in github_policy and 'ZIP' in github_publication
+    assert (ROOT / 'RELEASE_VALIDATION.md').is_file()
+    assert 'RELEASE_VALIDATION.md' in REQUIRED_SOURCE_PATHS
+    assert 'REFERENCE_INDEX.md' in readme and 'REFERENCE_INDEX.md' in english
+    assert 'SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md' in readme
     for relative_path in (
         'AGENTS.md',
         'docs/ARCHITECTURE.md',
@@ -164,6 +168,7 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
 
     assert len(agents.splitlines()) < 40
     assert 'PROJECT_WORKFLOW.md' in agents
+    assert 'REFERENCE_INDEX.md' in agents
     assert 'SETTLERS3_PREGEN_READ_FIRST.md' in agents
 
     if snapshot:
@@ -175,7 +180,7 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
 
     assert len(todo.splitlines()) < 220
     assert 'Roadmap orientée **travail restant**' in todo
-    assert '## v1.9 —' in todo and '## v2.0 — reconstruction native Legacy, puis Custom' in todo
+    assert '## Historique clôturé — v1.9' in todo and '## v2.0 — reconstruction native Legacy, puis Custom' in todo
     assert 'reconstruction complète des pipelines' in todo
 
     assert 'DEV complets uniquement' in workflow
@@ -186,6 +191,27 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
     assert 'Checklist obligatoire à chaque étape validée' in workflow
     assert 'avant de fabriquer l’archive ou le commit final correspondant' in workflow
     assert changelog.count('# Changelog') == 1
+
+
+def test_current_reference_index_keeps_recovery_sources_separated():
+    index = (ROOT / 'references/REFERENCE_INDEX.md').read_text(encoding='utf-8')
+    matrix = (ROOT / 'references/SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md').read_text(encoding='utf-8')
+    release = (ROOT / 'RELEASE_VALIDATION.md').read_text(encoding='utf-8')
+    snapshot = (ROOT / 'references/SETTLERS3_CURRENT_SNAPSHOT.md').read_text(encoding='utf-8')
+
+    for marker in (
+        'SETTLERS3_CURRENT_SNAPSHOT.md',
+        'TODO_MAPGEN.md',
+        'SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md',
+        'references/history/',
+        'aucun moteur Upgraded v1.5 actif',
+    ):
+        assert marker.casefold() in index.casefold()
+    assert APP_VERSION in matrix
+    assert 'Arbres' in matrix and 'Décorations' in matrix
+    assert APP_VERSION in release
+    assert 'S3_V1_5_V7NOGAP_CORRECTED_UPGRADED' not in release
+    assert APP_VERSION in snapshot
 
 
 def test_viewer_protection_exception_is_discoverable_in_every_language():

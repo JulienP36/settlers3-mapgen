@@ -1,20 +1,24 @@
-"""Loader for the independent Upgraded generation profile."""
+"""Loader for the active independent Upgraded generation profile."""
 
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
+from .profile_defaults import active_upgraded_profile
 
-PROFILE_PATH = Path(__file__).resolve().parents[4] / "config" / "upgraded_768_v1.json"
+def load_profile(path: Path | str | None = None) -> dict:
+    """Return active defaults, optionally loading an explicit override."""
 
-
-def load_profile(path: Path | str = PROFILE_PATH) -> dict:
-    with Path(path).open(encoding="utf-8") as source:
-        profile = json.load(source)
-    if profile.get("profile_kind") != "upgraded":
+    if path is None:
+        profile = active_upgraded_profile()
+    else:
+        with Path(path).open(encoding="utf-8") as source:
+            profile = deepcopy(json.load(source))
+    if not isinstance(profile, dict) or profile.get("profile_kind") != "upgraded":
         raise ValueError("Le profil Upgraded est requis")
     return profile
 
 
-__all__ = ("PROFILE_PATH", "load_profile")
+__all__ = ("load_profile",)

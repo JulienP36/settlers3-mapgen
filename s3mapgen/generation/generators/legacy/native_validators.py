@@ -1,4 +1,4 @@
-"""Validation limited to the recovered native primary terrain contract."""
+"""Validation limited to the native primary terrain contract."""
 
 from __future__ import annotations
 
@@ -57,6 +57,16 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
     def add(rule: str, passed: bool, message: str, hard: bool = True) -> None:
         out.append(ValidationResult(rule, bool(passed), message, hard))
 
+    if state.metadata.get("mode_key") == "custom":
+        from ...custom.terrain import terrain_transition_violations
+
+        transition_check = terrain_transition_violations(terrain)
+        add(
+            "CUSTOM_TERRAIN_TRANSITIONS",
+            int(transition_check["total"]) == 0,
+            f"illegal={int(transition_check['total'])}",
+        )
+
     unknown = sorted({int(value) for value in np.unique(terrain)} - _KNOWN_PRIMARY_IDS)
     add("NATIVE_PRIMARY_IDS", not unknown, f"unknown={unknown}")
     add("NATIVE_WATER_HEIGHT", not np.any(height[water] != 0), f"bad={int(np.count_nonzero(height[water] != 0))}")
@@ -90,7 +100,7 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
     river = np.isin(terrain, RIVER_IDS)
     fish = water & ((resources & 0xF0) == 0) & ((resources & 0x0F) > 0)
     mineral = (resources & 0xF0) != 0
-    # The recovered routine tests the terrain family nibble, not a short
+    # The native routine tests the terrain family nibble, not a short
     # enumerated list.  This includes native transition variants such as
     # 0x21/0x22/0x23 and 0x81 when they are present.
     mineral_support = ((terrain & 0xF0) == 0x20) | ((terrain & 0xF0) == 0x80)
@@ -101,12 +111,19 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
         "fish cells are water-only",
     )
     add("NATIVE_MINERALS_ON_SUPPORT", not np.any(mineral & ~mineral_support), "mineral cells use mountain support")
-    add("NATIVE_OBJECTS_OFF_WATER", not np.any((objects != 0) & water), "objects are not placed on water")
+    # Ordinary land decorations stay off water, but reefs are a legal static
+    # object family placed in open deep water by Custom.  Legacy's native
+    # default has none; the validator must nevertheless accept the explicit
+    # Custom reef override.
+    reefs = np.isin(objects, (111, 112, 113, 114))
+    add("NATIVE_OBJECTS_OFF_WATER", not np.any((objects != 0) & water & ~reefs), "objects are not placed on water")
     add("NATIVE_OBJECTS_OFF_MOUNTAIN", not np.any((objects != 0) & np.isin(terrain, MOUNTAIN_FAMILY_IDS)), "objects are not placed on mountain")
     add("NATIVE_WATER_ACCESS", not np.any(state.accessibility[water] != 1), "water is non-walkable")
     snow = np.isin(terrain, (SNOW_TRANS, SNOW))
     add("NATIVE_SNOW_ACCESS", not np.any(state.accessibility[snow] != 1), "snow is non-walkable")
-    add("NATIVE_OBJECT_ACCESS", not np.any(state.accessibility[objects != 0] != 1), "object cells are non-walkable")
+    add("NATIVE_OBJECT_ACCESS", not np.any(state.accessibility[(objects != 0) & (objects != 127)] != 1)
+        and not np.any(state.accessibility[objects == 127] != 0),
+        "object cells are non-walkable except exhausted stones")
     add("NATIVE_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
     return out
 

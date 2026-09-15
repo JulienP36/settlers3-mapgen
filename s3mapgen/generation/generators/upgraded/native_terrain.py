@@ -1,16 +1,15 @@
 """Independent Upgraded copy of the native Settlers III terrain core.
 
 This module is deliberately independent from ``generators.legacy``.  It owns
-the complete terrain pass copied from the recovered native algorithm; the
+the complete terrain pass copied from the native algorithm; the
 Upgraded pipeline adds its own content pass afterwards.  Player-start
 objects/resources, settlers and SAV-only records belong to later layers.
 
-The implementation follows the behavioural reconstruction kept in
-``analysis_recovered/Settlers III MapGen/S3_EXE_GENERATOR_RECONSTRUCTION...``.
-The native PRNG is reproduced exactly.  The application seed is passed to the
-PRNG as its 32-bit input; the active map side remains an independent argument
-so the project can expose deterministic seeds while the unresolved executable
-call-site seed transform stays explicit.
+The implementation follows the validated native behavior.  The native PRNG is
+reproduced exactly.  The application seed is passed to the PRNG as its 32-bit
+input; the active map side remains an independent argument so the project can
+expose deterministic seeds while the unresolved call-site seed transform stays
+explicit.
 """
 
 from __future__ import annotations
@@ -32,6 +31,7 @@ SWAMP = 0x50
 RIVER_FIRST = 0x60
 RIVER_LAST = 0x63
 SNOW = 0x80
+MUD = 0x90
 
 TEMP_70 = 0x70
 TEMP_F0 = 0xF0
@@ -81,10 +81,11 @@ class NativeTerrainResult:
     objects: np.ndarray | None = None
     resources: np.ndarray | None = None
     object_flags: np.ndarray | None = None
+    deferred: "DeferredTerrainPass | None" = None
 
 
 class NativeRng16:
-    """Three-word 16-bit generator at the recovered native addresses."""
+    """Three-word 16-bit generator used by the native pipeline."""
 
     __slots__ = ("a", "b", "c")
 
@@ -358,7 +359,7 @@ def _sculpt_candidate(grid: NativeTerrainGrid, row: int, col: int) -> None:
                             failed = True
                         else:
                             # This apparently asymmetric target is present in
-                            # the recovered native block and is intentional.
+                            # the native block and is intentional.
                             _set_terrain(grid, current_row - 1, current_col, TEMP_F0)
                             state = 4
                     elif d2 <= 5:
@@ -459,7 +460,7 @@ def _consume_sculpture_markers(grid: NativeTerrainGrid) -> None:
 
 
 def _relax_relief(grid: NativeTerrainGrid, alternate_mode: bool) -> int:
-    # This pass is intentionally kept in-place and ordered: the recovered
+    # This pass is intentionally kept in-place and ordered: the native
     # routine uses each write immediately for the following cell.  Binding
     # the three fields locally removes millions of bounds-check helper calls
     # while preserving that exact update order and uint8 wrapping.
@@ -670,12 +671,243 @@ def _river_window_conflict(grid: NativeTerrainGrid, row: int, col: int) -> bool:
     return bool(np.any(grid.marker[row - 4:row + 5, col - 4:col + 5] >= 8))
 
 
-def _generate_rivers(grid: NativeTerrainGrid, rng: NativeRng16) -> dict[str, int]:
+def grow_native_bonus_river(
+    terrain: np.ndarray,
+    height: np.ndarray,
+    start: tuple[int, int],
+    *,
+    marker: np.ndarray | None = None,
+    allowed: np.ndarray | None = None,
+) -> list[tuple[int, int]] | None:
+    """Grow one ordinary native river system from a raw Water cell.
+
+    This is the single-system form of :func:`_generate_rivers`.  It keeps the
+    native candidate filter, first-step choice, three-direction fan,
+    relief guard, marker neighbourhood, backtracking and normal path limit;
+    unlike the global pass it does not scan the map and it never searches for
+    a second water body.  ``start`` is expressed as ``(x, y)`` to match the
+    content layer.  ``allowed`` can restrict the Grass cells available to the
+    bonus route without changing the native terrain rules.
+
+    The normal (non-continuation) system writes ``RIVER_FIRST`` for every
+    committed cell, exactly as the native routine does.  The caller may keep
+    the returned marker field to place several independent systems while
+    retaining native spacing rules.
+    """
+
+    terrain = np.asarray(terrain)
+    height = np.asarray(height)
+    if terrain.ndim != 2 or height.shape != terrain.shape:
+        return None
+    side = int(terrain.shape[0])
+    if terrain.shape[1] != side or side < 16:
+        return None
+    if marker is None:
+        marker = np.zeros_like(terrain, dtype=np.uint8)
+    if marker.shape != terrain.shape:
+        return None
+    allowed_mask = (
+        np.ones_like(terrain, dtype=bool)
+        if allowed is None
+        else np.asarray(allowed, dtype=bool)
+    )
+    if allowed_mask.shape != terrain.shape:
+        return None
+
+    grid = NativeTerrainGrid(
+        side,
+        height,
+        terrain,
+        marker,
+        np.zeros_like(terrain, dtype=np.uint8),
+        np.zeros_like(terrain, dtype=np.uint8),
+        np.zeros_like(terrain, dtype=np.uint8),
+        np.zeros_like(terrain, dtype=np.uint8),
+    )
+    col, row = int(start[0]), int(start[1])
+    if not _inside(grid, row, col):
+        return None
+    accepted, continuation = _river_candidate_filter(grid, row, col)
+    if not accepted or continuation:
+        return None
+
+    def route_free(row_: int, col_: int) -> bool:
+        return _route_free(grid, row_, col_) and bool(allowed_mask[row_, col_])
+
+    # The native helper checks the six marker neighbours in addition to the
+    # candidate itself.  Repeat that exact test while applying the caller's
+    # allowed Grass mask to the first step.
+    first_direction = 0
+    best_height = 256
+    for direction, (dr, dc) in enumerate(HEX6, start=1):
+        next_row, next_col = row + dr, col + dc
+        if (
+            _inside(grid, next_row, next_col)
+            and int(terrain[next_row, next_col]) == GRASS
+            and bool(allowed_mask[next_row, next_col])
+            and _route_free(grid, next_row, next_col)
+        ):
+            next_height = int(height[next_row, next_col])
+            if next_height < best_height:
+                best_height = next_height
+                first_direction = direction
+    if first_direction == 0 or _river_window_conflict(grid, row, col):
+        return None
+
+    start_row, start_col = row, col
+    current_row, current_col = row, col
+    path_limit = 16
+    path_count = 1
+    offset = 2
+    previous_direction = 0
+    same_direction_count = 0
+    scan_start = _wrap_direction(first_direction - 1)
+    marker[row, col] = 1
+    first_dr, first_dc = HEX6[first_direction - 1]
+    current_row += first_dr
+    current_col += first_dc
+
+    # This is intentionally the native forward walk and backtrack, with only
+    # the caller's ``allowed`` test added to candidate cells.
+    forward_steps = 0
+    while True:
+        forward_steps += 1
+        if forward_steps > side * side + 1:
+            return None
+        scores = [0, 0, 0]
+        direction = scan_start
+        for slot in range(3):
+            if not (same_direction_count >= 3 and direction == previous_direction):
+                dr, dc = HEX6[direction - 1]
+                candidate_row, candidate_col = current_row + dr, current_col + dc
+                candidate_inside = _inside(grid, candidate_row, candidate_col)
+                candidate_height = (
+                    int(height[candidate_row, candidate_col])
+                    if candidate_inside else 0
+                )
+                height_delta = int(height[current_row, current_col]) - candidate_height
+                if (
+                    candidate_inside
+                    and int(terrain[candidate_row, candidate_col]) == GRASS
+                    and bool(allowed_mask[candidate_row, candidate_col])
+                    and route_free(candidate_row, candidate_col)
+                    and height_delta <= 1
+                ):
+                    if 1 <= candidate_row < side - 1 and 1 <= candidate_col < side - 1:
+                        score = (
+                            int(height[candidate_row + 1, candidate_col])
+                            + int(height[candidate_row + 1, candidate_col + 1])
+                            + int(height[candidate_row, candidate_col + 1])
+                            + int(height[candidate_row - 1, candidate_col])
+                            + int(height[candidate_row - 1, candidate_col - 1])
+                            + int(height[candidate_row, candidate_col - 1])
+                            - (6 * candidate_height)
+                            + (6 * offset)
+                        )
+                    else:
+                        score = sum(
+                            _height_at(grid, candidate_row + ndr, candidate_col + ndc)
+                            - candidate_height + offset
+                            for ndr, ndc in HEX6
+                        )
+                    scores[slot] = score
+            direction = _wrap_direction(direction + 1)
+
+        best_score = 0
+        chosen_direction = 0
+        direction = scan_start
+        for slot in range(3):
+            if scores[slot] > best_score:
+                best_score = scores[slot]
+                chosen_direction = direction
+            direction = _wrap_direction(direction + 1)
+
+        path_count += 1
+        marker[current_row, current_col] = 1
+        if chosen_direction:
+            dr, dc = HEX6[chosen_direction - 1]
+            old_height = int(height[current_row, current_col])
+            next_row, next_col = current_row + dr, current_col + dc
+            new_height = int(height[next_row, next_col])
+            offset = min(new_height - old_height + 1, 2)
+            if chosen_direction == previous_direction:
+                same_direction_count += 1
+            else:
+                previous_direction = chosen_direction
+                same_direction_count = 1
+            current_row, current_col = next_row, next_col
+            scan_start = _wrap_direction(chosen_direction - 1)
+            continue
+
+        backtrack_direction = 0
+        current_row, current_col = start_row, start_col
+        backtrack_steps = 0
+        while path_count < path_limit:
+            backtrack_steps += 1
+            if backtrack_steps > side * side + 1:
+                return None
+            if backtrack_direction:
+                marker[current_row, current_col] = 0
+            next_direction = 0
+            for candidate_direction, (dr, dc) in enumerate(HEX6, start=1):
+                if _marker_at(grid, current_row + dr, current_col + dc) == 1:
+                    next_direction = candidate_direction
+            if not next_direction:
+                break
+            dr, dc = HEX6[next_direction - 1]
+            current_row += dr
+            current_col += dc
+            backtrack_direction = next_direction
+        if path_count < path_limit:
+            return None
+
+        # Re-encode the successful marker chain exactly as the native pass.
+        river_points: list[tuple[int, int]] = []
+        current_row, current_col = start_row, start_col
+        incoming_direction = 0
+        trace_steps = 0
+        while True:
+            trace_steps += 1
+            if trace_steps > side * side + 1:
+                return None
+            terrain[current_row, current_col] = RIVER_FIRST
+            river_points.append((int(current_col), int(current_row)))
+            if incoming_direction:
+                reverse = incoming_direction + 3
+                if reverse > 6:
+                    reverse -= 6
+                marker[current_row, current_col] = reverse + 1
+            else:
+                marker[current_row, current_col] = 0x0E
+            next_direction = 0
+            for candidate_direction, (dr, dc) in enumerate(HEX6, start=1):
+                if _marker_at(grid, current_row + dr, current_col + dc) == 1:
+                    next_direction = candidate_direction
+            if not next_direction:
+                return river_points
+            dr, dc = HEX6[next_direction - 1]
+            current_row += dr
+            current_col += dc
+            incoming_direction = next_direction
+
+
+def _generate_rivers(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    *,
+    rate_percent: float = 100.0,
+) -> dict[str, int | float]:
     side = grid.side
     area = side * side
     height = grid.height
     terrain = grid.terrain
     marker = grid.marker
+    river_rate = min(500.0, max(0.0, float(rate_percent)))
+    # Keep the native attempt loop and its PRNG consumption unchanged.  A
+    # Custom rate only scales the native acceptance threshold: at 100% the
+    # native behavior is byte-for-byte on the same path, while 0%
+    # and higher values remain variations of that same river algorithm.
+    acceptance_threshold = int(round(0x07D0 * river_rate / 100.0))
     index = 0x600
     systems = 0
     river_cells = 0
@@ -686,7 +918,7 @@ def _generate_rivers(grid: NativeTerrainGrid, rng: NativeRng16) -> dict[str, int
         index += 0x97
         if index >= area:
             index -= area
-        if rng.next() >= 0x07D0:
+        if rng.next() >= acceptance_threshold:
             continue
 
         accepted, continuation = _river_candidate_filter(grid, r, q)
@@ -895,7 +1127,13 @@ def _generate_rivers(grid: NativeTerrainGrid, rng: NativeRng16) -> dict[str, int
             if incompatible:
                 grid.terrain[row, col] = GRASS
 
-    return {"river_attempts": attempts, "river_systems": systems, "river_cells": river_cells}
+    return {
+        "river_attempts": attempts,
+        "river_systems": systems,
+        "river_cells": river_cells,
+        "river_rate_percent": river_rate,
+        "river_acceptance_threshold": acceptance_threshold,
+    }
 
 
 def _replace_global(grid: NativeTerrainGrid, source: int, target: int) -> None:
@@ -916,19 +1154,31 @@ def _replace_if_neighbour(
     grid.terrain[region] = _byte(target)
 
 
-def _expand(grid: NativeTerrainGrid, target: int, source: int) -> None:
+def _expand(
+    grid: NativeTerrainGrid,
+    target: int,
+    source: int,
+    protected_mask: np.ndarray | None = None,
+) -> None:
     touching = _neighbour_mask(grid.terrain, target)
     region = np.zeros(grid.terrain.shape, dtype=bool)
     region[1:-1, 1:-1] = (
         (grid.terrain[1:-1, 1:-1] == int(source))
         & touching[1:-1, 1:-1]
     )
+    if protected_mask is not None:
+        region &= ~protected_mask
     grid.terrain[region] = TEMP_F0
     _replace_global(grid, TEMP_F0, target)
 
 
 def _erode(
-    grid: NativeTerrainGrid, rng: NativeRng16, target: int, source: int, chance: int
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    target: int,
+    source: int,
+    chance: int,
+    protected_mask: np.ndarray | None = None,
 ) -> None:
     touching = _neighbour_mask(grid.terrain, source)
     candidate = np.zeros(grid.terrain.shape, dtype=bool)
@@ -936,6 +1186,8 @@ def _erode(
         (grid.terrain[1:-1, 1:-1] == int(target))
         & touching[1:-1, 1:-1]
     )
+    if protected_mask is not None:
+        candidate[1:-1, 1:-1] &= ~protected_mask[1:-1, 1:-1]
     for row, col in np.argwhere(candidate):
         if ((rng.next() * 100) >> 16) < int(chance):
             grid.terrain[int(row), int(col)] = TEMP_F0
@@ -967,6 +1219,7 @@ def _brush(
     source: int,
     target: int,
     coefficient: int,
+    protected_mask: np.ndarray | None = None,
 ) -> int:
     n64 = (grid.side + (grid.side & 0x3F)) // 64
     groups = (n64 * n64 * int(coefficient)) // 8
@@ -978,6 +1231,8 @@ def _brush(
             row = center_row + (rng.next() & 0x1F) - 0x10
             col = center_col + (rng.next() & 0x1F) - 0x10
             if not _interior(grid, row, col):
+                continue
+            if protected_mask is not None and protected_mask[row, col]:
                 continue
             if int(grid.variant[row, col]) != 0:
                 continue
@@ -1019,19 +1274,66 @@ class _FamilyPlan:
 _FAMILY_PLANS = (
     _FamilyPlan(DESERT, (2, 1), (5, 6), True),
     _FamilyPlan(SWAMP, (1, 1, 1), (2, 2, 1), True),
+    # The native Upgraded value for this slot is zero; the generation loop
+    # skips it unless a Custom profile gives it a positive parameter.
+    _FamilyPlan(MUD, (1, 1), (3, 3), True),
     _FamilyPlan(0x18, (3, 2, 1), (2, 2, 3), False),
 )
 
 
-def _apply_family_plan(grid: NativeTerrainGrid, rng: NativeRng16, plan: _FamilyPlan) -> None:
+_FAMILY_PLAN_KEYS = ("desert", "swamp", "mud", "dry_grass")
+
+
+def _scale_native_count(count: int, rate: float, *, expansion: bool = False) -> int:
+    """Scale one native operation count without changing its operation type."""
+
+    if rate <= 0.0:
+        return 0
+    if rate == 100.0:
+        return int(count)
+    factor = float(rate) / 100.0
+    if expansion:
+        # Brush probes control the number of zones.  Expansion changes more
+        # gently so a high rate produces larger varied zones, not one huge
+        # flood or a set of one-cell fragments.
+        factor = (
+            factor**0.75
+            if factor < 1.0
+            else 1.0 + min(0.8, (factor - 1.0) * 0.2)
+        )
+    return max(1, int(round(int(count) * factor)))
+
+
+def _apply_family_plan(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    plan: _FamilyPlan,
+    rate: float = 100.0,
+    protected_mask: np.ndarray | None = None,
+) -> None:
     _protect_grass_boundary(grid)
     for coefficient, expansion_count in zip(plan.brushes, plan.expansions):
-        _brush(grid, rng, GRASS, plan.target, coefficient)
-        for _ in range(expansion_count):
-            _expand(grid, plan.target, GRASS)
+        scaled_coefficient = _scale_native_count(coefficient, rate)
+        if scaled_coefficient <= 0:
+            continue
+        _brush(
+            grid,
+            rng,
+            GRASS,
+            plan.target,
+            scaled_coefficient,
+            protected_mask,
+        )
+        scaled_expansions = _scale_native_count(
+            expansion_count,
+            rate,
+            expansion=True,
+        )
+        for _ in range(scaled_expansions):
+            _expand(grid, plan.target, GRASS, protected_mask)
     _replace_global(grid, TEMP_F3, GRASS)
     for chance in (80, 60, 40, 20):
-        _erode(grid, rng, plan.target, GRASS, chance)
+        _erode(grid, rng, plan.target, GRASS, chance, protected_mask)
     if plan.transition_chain:
         if plan.target == DESERT:
             _replace_if_neighbour(grid, DESERT, GRASS, 0x14)
@@ -1039,6 +1341,64 @@ def _apply_family_plan(grid: NativeTerrainGrid, rng: NativeRng16, plan: _FamilyP
         elif plan.target == SWAMP:
             _replace_if_neighbour(grid, SWAMP, GRASS, 0x15)
             _replace_if_neighbour(grid, SWAMP, 0x15, 0x51)
+        elif plan.target == MUD:
+            _replace_if_neighbour(grid, MUD, GRASS, 0x17)
+            _replace_if_neighbour(grid, MUD, 0x17, 0x91)
+
+
+def _copy_native_grid(grid: NativeTerrainGrid) -> NativeTerrainGrid:
+    """Copy the fields needed for a diagnostic native reference pass."""
+
+    return NativeTerrainGrid(
+        grid.side,
+        grid.height.copy(),
+        grid.terrain.copy(),
+        grid.marker.copy(),
+        grid.variant.copy(),
+        grid.objects.copy(),
+        grid.resources.copy(),
+        grid.object_flags.copy(),
+    )
+
+
+def _copy_native_rng(rng: NativeRng16) -> NativeRng16:
+    clone = NativeRng16(0)
+    clone.a, clone.b, clone.c = rng.a, rng.b, rng.c
+    return clone
+
+
+@dataclass
+class DeferredTerrainPass:
+    """Continuation used only by the bonus-priority generation route."""
+
+    grid: NativeTerrainGrid
+    rng: NativeRng16
+    mode: int
+    seed: int
+    surface_rates: object
+    custom_rates: dict[str, float] | None
+    native_default_rates: dict[str, float]
+    custom_mud_rate: float
+    relief_relax_passes: int
+    river_meta: dict[str, object]
+    reference_grid: NativeTerrainGrid | None
+    reference_rng: NativeRng16 | None
+
+
+def _apply_micro_terrain_brushes(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    rate: float = 100.0,
+    protected_mask: np.ndarray | None = None,
+) -> tuple[int, int, int]:
+    if rate <= 0.0:
+        return 0, 0, 0
+    coefficient = _scale_native_count(2, rate)
+    return (
+        _brush(grid, rng, GRASS, 0x12, coefficient, protected_mask),
+        _brush(grid, rng, GRASS, 0x13, coefficient, protected_mask),
+        _brush(grid, rng, ROCK, 0x22, coefficient, protected_mask),
+    )
 
 
 def _apply_structural_transitions(grid: NativeTerrainGrid) -> None:
@@ -1117,18 +1477,33 @@ def _copy_main_diagonal(grid: NativeTerrainGrid) -> None:
             _copy_mode_fields(grid, source_row, source_col, source_col, source_row)
 
 
+def _mirror_terrain_only(grid: NativeTerrainGrid, mode: int) -> None:
+    """Finish the archetype orientation before bonus terrain is painted."""
+
+    if mode:
+        _set_mode_variant_sentinels(grid, mode)
+        _clear_mode_variant_sentinels(grid, mode)
+        if mode & 0x02:
+            _copy_anti_diagonal(grid)
+        if mode & 0x01:
+            _copy_main_diagonal(grid)
+    _normalize_outer_ocean_edge(grid)
+
+
 def generate_primary_terrain(
     side: int,
     seed: int,
     mode: int = 0,
     *,
     progress=None,
+    surface_rates=None,
+    defer_non_archetype: bool = False,
 ) -> NativeTerrainResult:
-    """Generate the recovered primary native terrain field.
+    """Generate the primary native terrain field.
 
-    ``mode`` is the executable's low-bit mask, not the application's
+    ``mode`` is the native low-bit mask, not the application's
     ``legacy``/``upgraded`` label.  In the UI the bits are exposed as
-    Axe long (1), Axe court (2), and Les deux (3).  The recovered executable
+    Axe long (1), Axe court (2), and Les deux (3).  The native pass
     applies the mirror after the global static-content/resource pass.  Player
     start records remain outside this result for the future SAV workflow.
     """
@@ -1176,19 +1551,135 @@ def generate_primary_terrain(
     _classify_relief(grid)
     _clear_pre_river_fields(grid)
     report("rivers")
-    river_meta = _generate_rivers(grid, rng)
+    river_rate = 100.0
+    if isinstance(surface_rates, dict):
+        river_section = surface_rates.get("rivers", {})
+        if isinstance(river_section, dict):
+            try:
+                river_rate = min(500.0, max(0.0, float(river_section.get("rate_percent", 100.0))))
+            except (TypeError, ValueError):
+                river_rate = 100.0
+    river_meta = _generate_rivers(grid, rng, rate_percent=river_rate)
     report("structural_transitions")
     _apply_structural_transitions(grid)
     report("terrain_families")
-    for plan in _FAMILY_PLANS:
-        _apply_family_plan(grid, rng, plan)
+    custom_rates = None
+    if isinstance(surface_rates, dict) and isinstance(surface_rates.get("terrains"), dict):
+        from ...custom.terrain import effective_terrain_rates
+
+        custom_rates = effective_terrain_rates(surface_rates)
+    native_default_rates = {
+        "desert": 100.0,
+        "swamp": 100.0,
+        "mud": 0.0,
+        "dry_grass": 100.0,
+        "details": 100.0,
+    }
+    custom_mud_rate = (
+        float(custom_rates["mud"])
+        if custom_rates is not None
+        else 0.0
+    )
+    if defer_non_archetype:
+        reference_grid = _copy_native_grid(grid)
+        reference_rng = _copy_native_rng(rng)
+        _mirror_terrain_only(grid, mode)
+        continuation = DeferredTerrainPass(
+            grid=grid,
+            rng=rng,
+            mode=mode,
+            seed=int(seed),
+            surface_rates=surface_rates,
+            custom_rates=custom_rates,
+            native_default_rates=native_default_rates,
+            custom_mud_rate=custom_mud_rate,
+            relief_relax_passes=relief_relax_passes,
+            river_meta=river_meta,
+            reference_grid=reference_grid,
+            reference_rng=reference_rng,
+        )
+        report("terrain_families_deferred")
+        metadata: dict[str, object] = {
+            "native_terrain_core": "native_calibrated",
+            "native_rng_input": int(seed) & 0xFFFFFFFF,
+            "native_mode_mask": mode,
+            "native_mirror_main_diagonal": bool(mode & 0x01),
+            "native_mirror_anti_diagonal": bool(mode & 0x02),
+            "native_mirror_north_south": bool(mode & 0x01),
+            "native_mirror_east_west": bool(mode & 0x02),
+            "native_mirror_scope": "terrain_height",
+            "custom_mud_parameter_percent": float(custom_mud_rate),
+            "native_relief_relax_passes": int(relief_relax_passes),
+            "native_micro_terrain_12_cells": 0,
+            "native_micro_terrain_13_cells": 0,
+            "native_micro_terrain_22_cells": 0,
+            "native_micro_brush_hits": {"0x12": 0, "0x13": 0, "0x22": 0},
+            "terrain_families_deferred": True,
+            **river_meta,
+        }
+        return NativeTerrainResult(
+            grid.height.copy(),
+            grid.terrain.copy(),
+            grid.variant.copy(),
+            grid.marker.copy(),
+            metadata,
+            grid.objects.copy(),
+            grid.resources.copy(),
+            grid.object_flags.copy(),
+            continuation,
+        )
+    native_reference_terrain = None
+    if custom_rates is not None:
+        reference_needed = any(
+            float(custom_rates[key]) != float(native_default_rates[key])
+            for key in custom_rates
+        )
+        if reference_needed:
+            reference_grid = _copy_native_grid(grid)
+            reference_rng = _copy_native_rng(rng)
+            for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
+                if native_default_rates[key] <= 0.0:
+                    continue
+                _apply_family_plan(reference_grid, reference_rng, plan, 100.0)
+            _apply_micro_terrain_brushes(reference_grid, reference_rng, 100.0)
+            native_reference_terrain = reference_grid.terrain.copy()
+
+    for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
+        rate = (
+            float(custom_rates[key])
+            if custom_rates is not None
+            else float(native_default_rates[key])
+        )
+        if rate <= 0.0:
+            continue
+        _apply_family_plan(grid, rng, plan, rate)
 
     if mode:
         _set_mode_variant_sentinels(grid, mode)
     report("micro_terrain_brushes")
-    micro_12 = _brush(grid, rng, GRASS, 0x12, 2)
-    micro_13 = _brush(grid, rng, GRASS, 0x13, 2)
-    micro_22 = _brush(grid, rng, ROCK, 0x22, 2)
+    details_rate = (
+        float(custom_rates["details"])
+        if custom_rates is not None
+        else float(native_default_rates["details"])
+    )
+    micro_12, micro_13, micro_22 = _apply_micro_terrain_brushes(
+        grid,
+        rng,
+        details_rate,
+    )
+
+    custom_terrain_meta = None
+    if custom_rates is not None:
+        from ...custom.terrain import apply_custom_terrain_rates
+
+        if native_reference_terrain is None:
+            native_reference_terrain = grid.terrain.copy()
+        custom_terrain_meta = apply_custom_terrain_rates(
+            grid.terrain,
+            surface_rates,
+            seed=int(seed) ^ 0x54455252,
+            reference_terrain=native_reference_terrain,
+        )
 
     if mode:
         _clear_mode_variant_sentinels(grid, mode)
@@ -1203,7 +1694,7 @@ def generate_primary_terrain(
     _normalize_outer_ocean_edge(grid)
 
     metadata: dict[str, object] = {
-        "native_terrain_core": "recovered_s3_exe",
+        "native_terrain_core": "native_calibrated",
         "native_rng_input": int(seed) & 0xFFFFFFFF,
         "native_mode_mask": mode,
         "native_mirror_main_diagonal": bool(mode & 0x01),
@@ -1211,6 +1702,7 @@ def generate_primary_terrain(
         "native_mirror_north_south": bool(mode & 0x01),
         "native_mirror_east_west": bool(mode & 0x02),
         "native_mirror_scope": "terrain_height",
+        "custom_mud_parameter_percent": float(custom_mud_rate),
         "native_relief_relax_passes": int(relief_relax_passes),
         "native_micro_terrain_12_cells": int(np.count_nonzero(grid.terrain == 0x12)),
         "native_micro_terrain_13_cells": int(np.count_nonzero(grid.terrain == 0x13)),
@@ -1222,6 +1714,133 @@ def generate_primary_terrain(
         },
         **river_meta,
     }
+    if custom_terrain_meta is not None:
+        metadata["custom_terrain"] = custom_terrain_meta
+    return NativeTerrainResult(
+        grid.height.copy(),
+        grid.terrain.copy(),
+        grid.variant.copy(),
+        grid.marker.copy(),
+        metadata,
+        grid.objects.copy(),
+        grid.resources.copy(),
+        grid.object_flags.copy(),
+    )
+
+
+def resume_deferred_terrain(
+    result: NativeTerrainResult,
+    *,
+    height: np.ndarray | None = None,
+    terrain: np.ndarray | None = None,
+    objects: np.ndarray | None = None,
+    resources: np.ndarray | None = None,
+    object_flags: np.ndarray | None = None,
+    protected_mask: np.ndarray | None = None,
+    progress=None,
+) -> NativeTerrainResult:
+    """Finish a deferred terrain pass after start terrain bonuses are painted."""
+
+    continuation = result.deferred
+    if continuation is None:
+        return result
+    grid = continuation.grid
+    if height is not None:
+        grid.height[:] = height
+    if terrain is not None:
+        grid.terrain[:] = terrain
+    if objects is not None:
+        grid.objects[:] = objects
+    if resources is not None:
+        grid.resources[:] = resources
+    if object_flags is not None:
+        grid.object_flags[:] = object_flags
+
+    if progress is not None:
+        progress("terrain_families")
+    custom_rates = continuation.custom_rates
+    native_default_rates = continuation.native_default_rates
+    native_reference_terrain = None
+    if custom_rates is not None:
+        reference_needed = any(
+            float(custom_rates[key]) != float(native_default_rates[key])
+            for key in custom_rates
+        )
+        if reference_needed and continuation.reference_grid is not None:
+            reference_grid = _copy_native_grid(continuation.reference_grid)
+            reference_rng = (
+                _copy_native_rng(continuation.reference_rng)
+                if continuation.reference_rng is not None
+                else NativeRng16(continuation.seed)
+            )
+            for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
+                if native_default_rates[key] <= 0.0:
+                    continue
+                _apply_family_plan(reference_grid, reference_rng, plan, 100.0)
+            _apply_micro_terrain_brushes(reference_grid, reference_rng, 100.0)
+            _mirror_terrain_only(reference_grid, continuation.mode)
+            native_reference_terrain = reference_grid.terrain.copy()
+
+    for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
+        rate = (
+            float(custom_rates[key])
+            if custom_rates is not None
+            else float(native_default_rates[key])
+        )
+        if rate <= 0.0:
+            continue
+        _apply_family_plan(
+            grid,
+            continuation.rng,
+            plan,
+            rate,
+            protected_mask,
+        )
+
+    if progress is not None:
+        progress("micro_terrain_brushes")
+    details_rate = (
+        float(custom_rates["details"])
+        if custom_rates is not None
+        else float(native_default_rates["details"])
+    )
+    micro_12, micro_13, micro_22 = _apply_micro_terrain_brushes(
+        grid,
+        continuation.rng,
+        details_rate,
+        protected_mask,
+    )
+
+    custom_terrain_meta = None
+    if custom_rates is not None:
+        from ...custom.terrain import apply_custom_terrain_rates
+
+        if native_reference_terrain is None:
+            native_reference_terrain = grid.terrain.copy()
+        custom_terrain_meta = apply_custom_terrain_rates(
+            grid.terrain,
+            continuation.surface_rates,
+            seed=int(continuation.seed) ^ 0x54455252,
+            protected_mask=protected_mask,
+            reference_terrain=native_reference_terrain,
+        )
+
+    metadata = dict(result.metadata)
+    metadata.update(
+        {
+            "native_micro_terrain_12_cells": int(np.count_nonzero(grid.terrain == 0x12)),
+            "native_micro_terrain_13_cells": int(np.count_nonzero(grid.terrain == 0x13)),
+            "native_micro_terrain_22_cells": int(np.count_nonzero(grid.terrain == 0x22)),
+            "native_micro_brush_hits": {
+                "0x12": int(micro_12),
+                "0x13": int(micro_13),
+                "0x22": int(micro_22),
+            },
+            "terrain_families_deferred": False,
+        }
+    )
+    if custom_terrain_meta is not None:
+        metadata["custom_terrain"] = custom_terrain_meta
     return NativeTerrainResult(
         grid.height.copy(),
         grid.terrain.copy(),
@@ -1239,5 +1858,8 @@ __all__ = (
     "NativeRng16",
     "NativeTerrainGrid",
     "NativeTerrainResult",
+    "DeferredTerrainPass",
+    "grow_native_bonus_river",
     "generate_primary_terrain",
+    "resume_deferred_terrain",
 )

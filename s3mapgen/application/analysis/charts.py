@@ -5,7 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-from ..rendering.preview import PALETTE, WATER_COLORS, PLAYER_COLORS, ROCKY_GRASS_PATCH_COLOR, REEF_COLOR
+from ..rendering.preview import (
+    PALETTE,
+    WATER_COLORS,
+    PLAYER_COLORS,
+    ROCKY_GRASS_PATCH_COLOR,
+    REEF_COLOR,
+    SAPLING_COLOR,
+)
 from ...map_data.constants import (
     BEE_NEST_IDS, GRASS, GRASS_DETAIL_IDS, ADULT_TREE_IDS, PALM_TREE_IDS,
     TREE_SAPLING_STAGE_2_IDS, PALM_SAPLING_STAGE_2_IDS,
@@ -90,7 +97,7 @@ DECORATIVE_FAMILY_COLORS = {
     'flowers_bushes': (190, 92, 150),
     'reeds': (88, 164, 92),
     'adult_trees': (45, 125, 60),
-    'small_trees': (150, 210, 112),
+    'small_trees': SAPLING_COLOR,
     'reefs': REEF_COLOR,
     'building_stones': (185, 185, 170),
 }
@@ -134,6 +141,36 @@ DECORATIVE_FAMILY_LABELS = {
     },
 }
 
+# The combined object chart keeps its established top-level families, but
+# shows the semantic decoration families inside them as stacked segments.  The
+# IDs are deliberately explicit so a changed Custom family can be verified in
+# the graph without relying on a species name that is not fully decoded yet.
+DECORATIVE_SUBFAMILIES = {
+    'decorative_stones': (
+        ('big_stones', (1, 2, 3, 4, 5, 6, 7, 8), ('Grosses pierres', 'Big stones', 'Große Steine', 'Piedras grandes')),
+        ('decorative_stones', (9, 10, 11, 12), ('Pierres décoratives', 'Decorative stones', 'Dekorative Steine', 'Piedras decorativas')),
+        ('border_stones', (13, 14, 15, 16, 17, 18, 19, 20), ('Pierres de bordure', 'Border stones', 'Randsteine', 'Piedras de borde')),
+        ('small_stones', (21, 22, 23, 24, 25, 26, 27, 28), ('Petites pierres', 'Small stones', 'Kleine Steine', 'Piedras pequeñas')),
+    ),
+    'plants_fungi': (
+        ('small_plants', (35, 36, 37), ('Petites plantes', 'Small plants', 'Kleine Pflanzen', 'Plantas pequeñas')),
+        ('toadstools', (38, 39, 40), ('Champignons', 'Toadstools', 'Pilze', 'Hongos')),
+    ),
+    'desert_props': (
+        ('cacti', (45, 46, 47, 48), ('Cactus', 'Cacti', 'Kakteen', 'Cactus')),
+        ('skeletons', (49,), ('Squelettes', 'Skeletons', 'Skelette', 'Esqueletos')),
+    ),
+    'flowers_bushes': (
+        ('small_flowers', (50, 51, 52), ('Petites fleurs', 'Small flowers', 'Kleine Blumen', 'Flores pequeñas')),
+        ('small_bushes', (53, 54, 55, 56), ('Petits buissons', 'Small bushes', 'Kleine Büsche', 'Arbustos pequeños')),
+        ('bushes', (57, 58, 59, 60, 61), ('Buissons', 'Bushes', 'Büsche', 'Arbustos')),
+    ),
+    'adult_trees': (
+        ('adult_wood_trees', tuple(range(68, 78)) + (80, 81), ('Arbres adultes', 'Adult trees', 'Ausgewachsene Bäume', 'Árboles adultos')),
+        ('adult_palms', (78, 79), ('Palmiers adultes', 'Adult palms', 'Ausgewachsene Palmen', 'Palmeras adultas')),
+    ),
+}
+
 # Forest graph order follows the validated lifecycle: adult trees are darkest,
 # then stage 2, stage 1, plantations, and adult palms retain their established
 # yellow-green colour.  Palm saplings are included in their corresponding stage
@@ -142,7 +179,7 @@ FORESTRY_COLORS = {
     'adult_trees': (45, 125, 60),
     'saplings_stage_2': (72, 155, 72),
     'saplings_stage_1': (105, 185, 88),
-    'plantations': (150, 210, 112),
+    'plantations': SAPLING_COLOR,
     'adult_palms': (155, 175, 65),
 }
 
@@ -508,6 +545,40 @@ def _decorative_segments(stats, lang='fr'):
     return segments
 
 
+def _decorative_groups(stats, lang='fr'):
+    """Build top-level object families with their semantic subfamilies."""
+    lang = lang if lang in DECORATIVE_FAMILY_LABELS else 'en'
+    id_counts = {
+        int(row['id']): int(row['count'])
+        for row in stats.get('objects', {}).get('ids', ())
+    }
+    groups = []
+    for key in OBJECT_FAMILY_CHART_ORDER:
+        parent_ids = tuple(OBJECT_FAMILY_IDS[key])
+        subfamilies = DECORATIVE_SUBFAMILIES.get(
+            key,
+            ((key, parent_ids, tuple(DECORATIVE_FAMILY_LABELS[lang][key] for _ in range(4))),),
+        )
+        base = DECORATIVE_FAMILY_COLORS[key]
+        segments = []
+        details_by_label = {}
+        count = len(subfamilies)
+        for index, (subkey, ids, names) in enumerate(subfamilies):
+            label = names[{'fr': 0, 'en': 1, 'de': 2, 'es': 3}.get(lang, 1)]
+            value = sum(id_counts.get(int(object_id), 0) for object_id in ids)
+            color = _lerp(base, (255, 255, 255), 0.10 + 0.35 * (index / max(1, count - 1)))
+            details = [_id_line('object', ids, lang == 'fr', lang)]
+            focus = {'kind': 'object_family', 'family': subkey, 'ids': tuple(ids), 'parent_family': key}
+            segments.append((value, color, label, details, focus))
+            details_by_label[label] = details
+        groups.append({
+            'label': DECORATIVE_FAMILY_LABELS[lang][key],
+            'segments': segments,
+            'tooltip_details': details_by_label,
+        })
+    return groups
+
+
 def _mountain_segments(stats, lang='fr'):
     """Return mountain-family segments, keeping terrain ID 34 visible."""
     lang = lang if lang in CHART_LABELS else 'en'
@@ -637,15 +708,7 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
         ]
         return _vertical_chart(groups,title,width,height,dark,tr('objets','objects','Objekte','objetos'),return_regions=return_regions)
     if chart_key=='decorative_objects':
-        segments = _decorative_segments(stats, lang)
-        groups = [
-            {
-                'label': label,
-                'segments': [(value, color, '', details, focus)],
-                'tooltip_details': {'': details},
-            }
-            for value, color, label, details, focus in segments
-        ]
+        groups = _decorative_groups(stats, lang)
         return _vertical_chart(
             groups,
             title,

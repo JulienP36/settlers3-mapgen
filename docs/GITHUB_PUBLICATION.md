@@ -60,7 +60,7 @@ The v1.8 README set now covers:
 3. Charts with a meaningful real dataset;
 4. Batch generation and its real previews.
 
-The four files are stored in `docs/screenshots/` and recorded in `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md`. They are recent Windows captures of the actual application. The Batch image deliberately includes one cache-reuse status; it does not pretend that the current generator already provides full morphological diversity. Do not reuse format-reference images, the v1.10 seed-diversity evidence or invented illustrations as generic product screenshots.
+The four files are stored in `docs/screenshots/` and recorded in `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md`. They are recent Windows captures of the actual application. The Batch image deliberately includes one cache-reuse status; it does not pretend that the current generator already provides full morphological diversity. Do not reuse format-reference images, the archived seed-diversity evidence or invented illustrations as generic product screenshots.
 
 ## Release hygiene
 

@@ -1,5 +1,11 @@
-from s3mapgen.application.analysis.charts import DECORATIVE_FAMILY_COLORS
-from s3mapgen.application.rendering.preview import PALETTE, REEF_COLOR, _global_rgb, render_square_base
+from s3mapgen.application.analysis.charts import DECORATIVE_FAMILY_COLORS, FORESTRY_COLORS
+from s3mapgen.application.rendering.preview import (
+    PALETTE,
+    REEF_COLOR,
+    SAPLING_COLOR,
+    _global_rgb,
+    render_square_base,
+)
 from s3mapgen.map_data.constants import (
     DRY_GRASS,
     GRASS,
@@ -40,3 +46,11 @@ def test_reefs_use_the_dark_rock_palette_on_map_and_chart():
     assert tuple(_global_rgb(state)[0, 0]) == REEF_COLOR
     assert tuple(render_square_base(state, view='resources', overlay_alpha=100).getpixel((0, 0))) == REEF_COLOR
     assert DECORATIVE_FAMILY_COLORS['reefs'] == REEF_COLOR
+
+
+def test_saplings_share_one_visible_map_and_chart_colour():
+    state = MapState.empty(8)
+    state.objects[0, 0] = 84
+    assert tuple(_global_rgb(state)[0, 0]) == SAPLING_COLOR
+    assert DECORATIVE_FAMILY_COLORS['small_trees'] == SAPLING_COLOR
+    assert FORESTRY_COLORS['plantations'] == SAPLING_COLOR

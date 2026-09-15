@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2, 0, 4, 0),
-    prodvers=(2, 0, 4, 0),
+    filevers=(2, 0, 6, 46),
+    prodvers=(2, 0, 6, 46),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -15,11 +15,11 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'Settlers III MapGen'),
          StringStruct('FileDescription', 'Settlers III MapGen'),
-         StringStruct('FileVersion', '2.0 DEV_5'),
+         StringStruct('FileVersion', '2.0 DEV_6_R46'),
          StringStruct('InternalName', 'Settlers3MapGen'),
          StringStruct('OriginalFilename', 'Settlers3MapGen.exe'),
          StringStruct('ProductName', 'Settlers III MapGen'),
-         StringStruct('ProductVersion', '2.0 DEV_5')])
+         StringStruct('ProductVersion', '2.0 DEV_6_R46')])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]

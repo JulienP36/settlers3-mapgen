@@ -14,6 +14,13 @@ from .preferences import DEFAULT_SHORTCUTS, save_settings
 from ..ui.i18n.shell import PREVIEW_START_MARKER_LABELS, PROJECTION_LABELS, THEME_LABELS
 
 
+SCROLLBAR_DRAG_FRAME_MS = 16
+SCROLLABLE_TAB_LAYOUT_SETTLE_MS = 24
+SCROLLABLE_INPUT_WIDGET_CLASSES = frozenset(
+    {"Spinbox", "TSpinbox", "Combobox", "TCombobox", "Listbox", "TListbox"}
+)
+
+
 class SettingsController:
     """Behavior shared by the settings tab, theme and viewer navigation."""
 
@@ -90,26 +97,206 @@ class SettingsController:
 
     def _pan_move(self,e):self.canvas.scan_dragto(e.x,e.y,gain=1)
 
+    def _ensure_scrollable_tab_wheel_bindings(self):
+        """Install one app-wide wheel route for the currently hovered tab."""
+
+        if getattr(self, "_scroll_tab_wheel_bound", False):
+            return
+        self._scroll_tab_wheel_bound = True
+        self._scroll_tab_active_surface = None
+        self.bind_all("<MouseWheel>", self._scrollable_tab_wheel, add="+")
+        # Linux exposes the wheel as buttons instead of a delta event.
+        self.bind_all("<Button-4>", self._scrollable_tab_wheel, add="+")
+        self.bind_all("<Button-5>", self._scrollable_tab_wheel, add="+")
+
+    def _activate_scrollable_tab(self, host, canvas, _event=None):
+        self._scroll_tab_active_surface = (host, canvas)
+
+    def _deactivate_scrollable_tab(self, host, canvas, _event=None):
+        if getattr(self, "_scroll_tab_active_surface", None) == (host, canvas):
+            self._scroll_tab_active_surface = None
+
+    def _scrollable_tab_surface_at(self, x_root, y_root):
+        for canvas in reversed(getattr(self, "_scroll_tab_surfaces", ())):
+            host = getattr(canvas, "_scroll_host", None)
+            if host is None:
+                continue
+            try:
+                if (
+                    host.winfo_ismapped()
+                    and host.winfo_rootx() <= x_root < host.winfo_rootx() + host.winfo_width()
+                    and host.winfo_rooty() <= y_root < host.winfo_rooty() + host.winfo_height()
+                ):
+                    return host, canvas
+            except tk.TclError:
+                continue
+        return None
+
+    def _scrollable_tab_wheel_is_over_input(self, event):
+        """Leave wheel events to controls that natively consume them."""
+
+        try:
+            widget = self.winfo_containing(int(event.x_root), int(event.y_root))
+            if widget is None:
+                widget = getattr(event, "widget", None)
+        except (AttributeError, TypeError, tk.TclError):
+            widget = getattr(event, "widget", None)
+        while widget is not None:
+            try:
+                if widget.winfo_class() in SCROLLABLE_INPUT_WIDGET_CLASSES:
+                    return True
+                parent_name = widget.winfo_parent()
+                if not parent_name or parent_name == str(widget):
+                    break
+                widget = self.nametowidget(parent_name)
+            except (AttributeError, KeyError, tk.TclError):
+                break
+        return False
+
+    def _scrollable_tab_wheel(self, event):
+        """Scroll a tab unless the pointer is over a wheel-aware input."""
+
+        try:
+            # Spinboxes, comboboxes and listboxes must keep their native wheel
+            # behavior.  Returning without consuming the event lets Tk's
+            # widget/class bindings handle the value or list selection.
+            if self._scrollable_tab_wheel_is_over_input(event):
+                return None
+            # A stale Leave event must not make a later wheel event affect a
+            # hidden tab or a different part of the application.
+            x_root, y_root = int(event.x_root), int(event.y_root)
+            surface = getattr(self, "_scroll_tab_active_surface", None)
+            if surface is None:
+                surface = self._scrollable_tab_surface_at(x_root, y_root)
+                self._scroll_tab_active_surface = surface
+            if surface is None:
+                return None
+            host, canvas = surface
+            inside = (
+                host.winfo_ismapped()
+                and host.winfo_rootx() <= x_root < host.winfo_rootx() + host.winfo_width()
+                and host.winfo_rooty() <= y_root < host.winfo_rooty() + host.winfo_height()
+            )
+            if not inside:
+                surface = self._scrollable_tab_surface_at(x_root, y_root)
+                if surface is None:
+                    self._scroll_tab_active_surface = None
+                    return None
+                self._scroll_tab_active_surface = surface
+                host, canvas = surface
+
+            event_num = getattr(event, "num", None)
+            delta = getattr(event, "delta", 0)
+            if event_num == 4:
+                amount = -1
+            elif event_num == 5:
+                amount = 1
+            elif delta:
+                amount = (-1 if delta > 0 else 1) * max(1, int(round(abs(delta) / 120.0)))
+            else:
+                return "break"
+
+            horizontal = bool(getattr(event, "state", 0) & 0x0001)
+            view = canvas.xview() if horizontal else canvas.yview()
+            if view[1] - view[0] < 0.999999:
+                if horizontal:
+                    canvas.xview_scroll(amount, "units")
+                else:
+                    canvas.yview_scroll(amount, "units")
+            # Keep the event consumed for ordinary tab content, including at
+            # the edge; wheel-aware inputs returned above before this point.
+            return "break"
+        except tk.TclError:
+            self._scroll_tab_active_surface = None
+            return None
+
     def _scroll_notebook_tab(self,title):
         """Create a tab whose content remains reachable at compact dimensions."""
+        self._ensure_scrollable_tab_wheel_bindings()
         host=ttk.Frame(self.nb);self.nb.add(host,text=title);host.rowconfigure(0,weight=1);host.columnconfigure(0,weight=1)
         canvas=tk.Canvas(host,highlightthickness=0,borderwidth=0)
-        hbar=ttk.Scrollbar(host,orient='horizontal',command=canvas.xview);vbar=ttk.Scrollbar(host,orient='vertical',command=canvas.yview);canvas.configure(xscrollcommand=hbar.set,yscrollcommand=vbar.set)
+        scroll_state={'after':None,'pending':None}
+
+        def apply_pending_view():
+            scroll_state['after']=None
+            pending=scroll_state['pending'];scroll_state['pending']=None
+            if pending is None:return
+            axis,args=pending
+            try:getattr(canvas,f'{axis}view')(*args)
+            except tk.TclError:pass
+
+        def schedule_view(axis,*args):
+            # A scrollbar drag can emit far more motion events than Tk can
+            # repaint when the canvas contains many child widgets.  Keep the
+            # latest position and cap the embedded-frame redraw to 60 Hz.
+            scroll_state['pending']=(axis,args)
+            if scroll_state['after'] is not None:return
+            try:scroll_state['after']=canvas.after(SCROLLBAR_DRAG_FRAME_MS,apply_pending_view)
+            except tk.TclError:scroll_state['after']=None
+
+        def flush_view(_event=None):
+            pending=scroll_state['pending']
+            if pending is None:return
+            after_id=scroll_state['after']
+            if after_id is not None:
+                try:canvas.after_cancel(after_id)
+                except tk.TclError:pass
+                scroll_state['after']=None
+            apply_pending_view()
+
+        hbar=ttk.Scrollbar(host,orient='horizontal',command=lambda *args:schedule_view('x',*args));vbar=ttk.Scrollbar(host,orient='vertical',command=lambda *args:schedule_view('y',*args));canvas.configure(xscrollcommand=hbar.set,yscrollcommand=vbar.set)
+        hbar.bind('<ButtonRelease-1>',flush_view,add='+');vbar.bind('<ButtonRelease-1>',flush_view,add='+')
         canvas.grid(row=0,column=0,sticky='nsew')
         inner=ttk.Frame(canvas,padding=14);item=canvas.create_window((0,0),window=inner,anchor='nw')
-        def refresh(_event=None):
+        # The editor can restore a generator scroll position without knowing
+        # about the notebook implementation details.
+        canvas._scroll_host = host
+        inner._scroll_canvas = canvas
+        inner._scroll_host = host
+
+        host.bind(
+            "<Enter>",
+            lambda event, h=host, c=canvas: self._activate_scrollable_tab(h, c, event),
+            add="+",
+        )
+        host.bind(
+            "<Leave>",
+            lambda event, h=host, c=canvas: self._deactivate_scrollable_tab(h, c, event),
+            add="+",
+        )
+
+        layout_state={'after':None,'item_width':None,'scrollregion':None}
+
+        def refresh():
+            layout_state['after']=None
             try:
                 required_w=max(1,inner.winfo_reqwidth());required_h=max(1,inner.winfo_reqheight());available_w=max(1,canvas.winfo_width());available_h=max(1,canvas.winfo_height())
-                canvas.itemconfigure(item,width=max(required_w,available_w));canvas.configure(scrollregion=canvas.bbox('all'))
-                if required_w>available_w+1:
-                    if not hbar.winfo_ismapped():hbar.grid(row=1,column=0,sticky='ew')
-                elif hbar.winfo_ismapped():hbar.grid_remove();canvas.xview_moveto(0)
-                if required_h>available_h+1:
-                    if not vbar.winfo_ismapped():vbar.grid(row=0,column=1,sticky='ns')
-                elif vbar.winfo_ismapped():vbar.grid_remove();canvas.yview_moveto(0)
+                target_width=max(required_w,available_w)
+                if layout_state['item_width']!=target_width:
+                    canvas.itemconfigure(item,width=target_width);layout_state['item_width']=target_width
+                scrollregion=canvas.bbox('all')
+                if scrollregion and tuple(scrollregion)!=layout_state['scrollregion']:
+                    canvas.configure(scrollregion=scrollregion);layout_state['scrollregion']=tuple(scrollregion)
+                show_hbar=required_w>available_w+1;show_vbar=required_h>available_h+1
+                hbar_visible=bool(hbar.winfo_ismapped());vbar_visible=bool(vbar.winfo_ismapped());changed=False
+                if show_hbar!=hbar_visible:
+                    changed=True
+                    if show_hbar:hbar.grid(row=1,column=0,sticky='ew')
+                    else:hbar.grid_remove();canvas.xview_moveto(0)
+                if show_vbar!=vbar_visible:
+                    changed=True
+                    if show_vbar:vbar.grid(row=0,column=1,sticky='ns')
+                    else:vbar.grid_remove();canvas.yview_moveto(0)
+                if changed:schedule_refresh()
             except tk.TclError:pass
-        inner.bind('<Configure>',refresh,add='+');canvas.bind('<Configure>',refresh,add='+')
-        self._scroll_tab_surfaces.append(canvas);return inner
+
+        def schedule_refresh(_event=None):
+            if layout_state['after'] is not None:return
+            try:layout_state['after']=canvas.after(SCROLLABLE_TAB_LAYOUT_SETTLE_MS,refresh)
+            except tk.TclError:layout_state['after']=None
+
+        inner.bind('<Configure>',schedule_refresh,add='+');canvas.bind('<Configure>',schedule_refresh,add='+')
+        self._scroll_tab_surfaces.append(canvas);schedule_refresh();return inner
 
     def _settings_tab(self):
         """Build display settings shared by the viewer and every preview."""

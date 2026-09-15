@@ -1,13 +1,13 @@
 # Settlers III MapGen — Architecture
 
-This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_5 continues from the validated DEV_2 reset: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the isolated Upgraded compatibility path. Before changing generation or binary-map behavior, follow the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_6_R47 continues from the validated DEV_5 checkpoint and the R46 candidate: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the independent Upgraded pipeline and the declarative Custom foundation. Public Legacy and Upgraded selections are specific presets of the same Custom contract; their internal native engines remain protected and separate. The Custom content sections expose semantic Minerals, Fish, Trees, Building Stones, Decorations and opt-in start-bonus controls. When a start bonus is active, the pipeline stages archetype-linked terrain, bonus terrain, global non-archetype terrain, bonus objects and global objects in that order; the no-bonus route stays on the native pass unchanged. Forest bonus adults are written before saplings. Active object passes maintain a live halo from actual writes across trees, saplings, stones and decorations, including the native Legacy pass, while the complete Building Stone footprint remains protected; no empty future zone is reserved. The mini-swamp bonus uses an extensible shape selector (`Native`/`Hexagon`), derives its extent from a bounded radius, and generates an independent Native component for each start with the same global swamp family plan. The scrollable UI surfaces coalesce scrollbar motion and resize work without changing generation behavior, and the decorated root window applies its native caption palette on first display. Before changing generation or binary-map behavior, follow `references/REFERENCE_INDEX.md` and the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
 ## Architectural boundary
 
 The application is deliberately split into a protected generation core and an evolving UI/tooling shell.
 
 - **Generation:** `s3mapgen/generation/`, with the native Legacy v1 and
-  Upgraded compatibility paths isolated from one another.
+  independent Upgraded paths isolated from one another.
 - **Shared map data:** `s3mapgen/map_data/` owns the byte constants, `MapState`,
   HEX6 geometry and EDM/MAP/SAV binary boundary. It depends on neither the
   application nor generation.
@@ -38,7 +38,8 @@ have both been removed. Composition is explicit and named by responsibility:
 
 1. `application.shell.ShellWindow` — sole Tk foundation and base report tabs;
 2. feature controllers — Viewer, Analysis, Exports, Imports, Shortcuts, Batch,
-   History, Settings, Theme, Language, Tasks and application workflows;
+  History, Settings, Theme, Language, Tasks, Custom parameters and application
+  workflows;
 3. `application.main_window.MainWindow` — controller composition and remaining
    responsive shell layout;
 4. `application.runtime.App` — sole public application root and the only place
@@ -58,6 +59,10 @@ Current follow-up hotspots after DEV_2:
 - `generation/generators/legacy/`: the native Legacy implementation, split into
   terrain, global content, starts/transition handling, profile and validators;
 - `generation/facade.py`: dispatches each mode to its own generator package;
+- `generation/custom/`: serializable Custom profiles, parameter discovery and
+  the extensible start-bonus catalogue;
+- `application/custom/`: Generator and Archetype parameter tabs; it only adapts
+  UI state into the generation configuration object;
 - `application/history/controller.py` and `application/batch/controller.py`:
   the two largest UI subsystem controllers; both are already isolated from the
   main window and can be subdivided by window/state responsibility later.
@@ -168,3 +173,7 @@ Self-tests must not write user settings or modify map resources.
 - Do not mutate protected engine/config/data files without an explicit engine task.
 - Do not use invented map imagery; previews and screenshots must come from actual generated or imported data.
 - Update the living snapshot after every explicitly validated DEV stage and every RC/STABLE release.
+
+Forced start bonuses share `generation/custom/bonus_placement.py`: centre bands
+are visited in order through D+34; object plans use temporary occupancy and
+are committed once. Existing OFF paths and random draws remain unchanged.

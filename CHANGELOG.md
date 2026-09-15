@@ -1,5 +1,798 @@
 # Changelog
 
+## v2.0 DEV_6_R61 — 2026-09-15 — alignement vertical du bonus lac/rivière
+
+- Le libellé du rayon devient « Rayon de contrôle eau native », avec une aide
+  qui précise la mesure depuis la bordure du territoire et le rôle de `0`.
+- Tous les contrôles du panneau lac/rivière sont maintenant sur une seule
+  colonne : forme, rayon min, rayon max, contrôle eau, rivières puis poissons.
+- La génération, le placement, les rivières et les limites de R60 restent
+  inchangés.
+
+## v2.0 DEV_6_R60 — 2026-09-15 — compactage de l’interface des bonus
+
+- Le panneau lac/rivière reprend la grille compacte du bonus minéral : quatre
+  colonnes, deux commandes par ligne, unités et maxima conservés, aide réduite
+  à une seule ligne logique.
+- Le libellé « Seuil d’eau native depuis la bordure » devient « Eau native à
+  éviter » (et ses traductions équivalentes), avec une aide courte rappelant
+  que `0` désactive l’évitement.
+- Les listes de forme du lac et du mini-marais sont explicitement regroupées
+  avec leur libellé ; aucune logique de génération n’est modifiée.
+
+## v2.0 DEV_6_R59 — 2026-09-14 — seuil et diagnostics du bonus lac/rivière
+
+- Le seuil d’eau native depuis la bordure de territoire est désormais
+  désactivé explicitement par `0` ; une valeur positive conserve le filtre de
+  proximité. Aucun autre comportement de placement n’est modifié.
+- Le bonus lac/rivière expose dans ses métadonnées des compteurs compacts par
+  joueur et globaux : candidats essayés/acceptés et causes de refus (eau
+  proche, centres, emprise, collisions, forme, embouchure, tracé ou
+  transition). Cela permet d’expliquer un shortfall sans ajouter de bruit à
+  l’interface.
+- R59 ne modifie ni les formes validées, ni les profondeurs, ni le traceur
+  natif local des rivières bonus.
+
+## v2.0 DEV_6_R58 — 2026-09-14 — bornes du bonus lac/rivière
+
+- Base exacte R57 ; les formes, profondeurs, deux anneaux de rive et le
+  traceur natif local des rivières bonus restent inchangés.
+- Le rayon maximal du lac bonus est maintenant `16 HEX6` (valeur par défaut
+  conservée à `9`).
+- La cible maximale de rivières par lac passe de `8` à `6`. Il s’agit toujours
+  d’un plafond souple : les sorties légales disponibles peuvent produire moins.
+- Les transitions d’épaisseur `River97–99` restent différées ; R58 ne modifie
+  pas la morphologie validée de R57.
+
+## v2.0 DEV_6_R57 — 2026-09-14 — construction native des rivières bonus
+
+- Base exacte R56 ; les formes, profondeurs, poissons et contrôles du lac
+  restent inchangés dans cette tranche.
+- Suppression du routage vers un champ global `Water/River` : une rivière
+  bonus démarre sur une embouchure locale et reprend le système natif
+  (filtre 9×9, premier pas, fan HEX6, relief, marqueurs, backtracking et
+  limite de longueur). Elle ne cherche plus la mer, un lac ou une rivière
+  comme destination.
+- Les contacts entre deux plans d’eau restent possibles lorsqu’ils résultent
+  accidentellement de la géométrie, comme dans Legacy, mais aucune connexion
+  n’est forcée.
+- Les systèmes normaux écrivent désormais `River96` sur toute leur longueur ;
+  l’alternance artificielle `96/97/98/99` case par case est supprimée.
+- Ajout d’une régression ciblée sur la longueur, la connexion HEX6, l’absence
+  de cible globale et l’ID natif unique. Validation Windows/éditeur/jeu reste
+  à effectuer.
+
+## v2.0 DEV_6_R56 — 2026-09-13 — rivières bonus natives et rives renforcées
+
+- Base exacte R55 ; le code et l’archive R55 restent inchangés.
+- Les lacs bonus conservent leurs formes et profondeurs actuelles, mais leur
+  emprise de rive suit désormais le standard natif à deux anneaux HEX6.
+- Les sorties de rivière sont entièrement retracées par une adaptation de la
+  boucle native : éventail de directions, score de relief, virages contrôlés,
+  retour arrière borné et arrêt au premier contact avec l’eau/une rivière
+  existante. Les routes restent connectées au cœur du lac et ne remplacent
+  jamais eau, rives, terrains incompatibles, objets ou ressources.
+- La distance vers l’eau guide la recherche sans redevenir un chemin direct ;
+  un repli local borné conserve un manque explicite si aucune route légale
+  n’existe. Les poissons restent limités aux cellules d’eau du cœur.
+- Ajout de régressions sur les deux anneaux de rive, la connexion HEX6, la
+  courbure des routes et l’arrêt avant l’eau. Validation Windows/éditeur/jeu
+  encore requise avant clôture de DEV6.
+
+## v2.0 DEV_6_R55 — 2026-09-13 — bonus lac/rivière natifs
+
+- Base exacte R54 ; les zones minérales, leur panneau persistant et les sprites
+  restent inchangés.
+- Le bonus lac propose désormais `Native` (forme arrondie et variable, bornée
+  par le rayon) et `Hexagone` (compatibilité explicite). La rive est dérivée de
+  l’emprise réelle et les niveaux Water0..Water7 progressent depuis son bord.
+- Les rivières bonus recherchent toujours une sortie légale vers l’eau native,
+  sans collision ni écrasement, avec une légère variation de direction inspirée
+  de la boucle native. Les poissons restent limités au cœur en eau.
+- La protection eau de la tour (`20 HEX6` par défaut) couvre désormais le lac,
+  sa rive et ses rivières même quand le forçage de distance est désactivé.
+- Ajout des tests de forme bornée/variable, de compatibilité hexagonale et de
+  profondeur hydrologique. Validation utilisateur Windows/éditeur/jeu encore
+  ouverte ; aucun push ni release.
+
+## v2.0 DEV_6_R54 — 2026-09-13 — ordre du panneau et surfaces persistantes
+
+- Base exacte R53 ; la compensation et la forme organique actuelles restent
+  inchangées.
+- Le panneau minéral suit maintenant l’ordre `Forme → Répartition → Rayon
+  commun → Total`, sans créer une séparation supplémentaire avec la matrice.
+- Un état partagé conserve les valeurs visibles lors d’un changement de
+  répartition : le rayon égal recalcule les cœurs et le total, le total prorata
+  recalcule les cœurs et affiche le rayon HEX6 équivalent le plus proche, et un
+  passage en mode égal reprend ces valeurs plutôt qu’un ancien profil.
+- Un total qui ne correspond pas exactement à trois disques HEX6 est conservé
+  en prorata/personnalisé ; le mode égal le canonise ensuite sur le rayon
+  équivalent le plus proche, de façon déterministe.
+
+## v2.0 DEV_6_R53 — 2026-09-13 — variation organique et conservation UI
+
+- La forme organique des zones minérales évalue désormais sa croissance dans
+  l’espace de projection parallélogramme, afin d’éviter l’étirement visuel.
+- Des variations douces supplémentaires différencient les contours sans bruit
+  cellule par cellule, sans trou et sans modifier la surface demandée.
+- Le contrôle « Répartition » passe sur la ligne suivante ; rayon, total et
+  cœurs dérivés sont mémorisés par mode pour ne pas être perdus lors d’un
+  changement de répartition.
+- Base R52 exacte ; le bonus lac avec poissons/rivière reste inchangé.
+
+## v2.0 DEV_6_R52 — 2026-09-13 — candidate de test
+
+- Reprise fonctionnelle exacte de R51 avec l’identifiant de candidate et
+  l’archive corrigés pour la validation Windows ; aucune règle de génération
+  supplémentaire n’est introduite.
+
+## v2.0 DEV_6_R51 — 2026-09-13 — géométrie organique et lisibilité
+
+- Base exacte R50 ; le bonus lac/poissons/rivière reste inchangé.
+- La forme `Organique` est maintenant construite par croissance HEX6 à priorité
+  elliptique douce, comme les gisements Upgraded : contour arrondi, ondulations
+  variables, surface exacte, connexion garantie et aucun trou.
+- Les listes de sélection restent en lecture seule, les contrôles contextuels
+  inutilisés restent désactivés et les unités `HEX6`/`cases` sont rapprochées
+  des saisies du panneau minéral.
+- Les sprites charbon/fer/or sont grisées dans les contrôles globaux ou bonus
+  lorsque leur famille est inactive.
+- Le rayon maximal des marais bonus passe à `16 HEX6`. Chaque cœur minéral est
+  borné à `1–820` cases (`820` est le plafond arrondi couvrant le disque HEX6
+  de rayon 16) ; le total prorata devient dynamique à `820/1 640/2 460` selon
+  le nombre de familles actives.
+- Validation utilisateur Windows/éditeur/jeu encore requise ; aucun push ni
+  release.
+
+## v2.0 DEV_6_R50 — 2026-09-12 — finitions des zones minérales
+
+- Base exacte R49 ; le bonus lac/poissons/rivière n’est pas modifié dans cette
+  tranche.
+- Les trois lignes charbon, fer et or affichent les sprites 16×16 fournis dans
+  `data/mineral_icons/`.
+- La forme `Organique` perturbe maintenant réellement le contour par échanges
+  de cellules de bord, tout en conservant une emprise connexe, sans trou et de
+  surface exacte.
+- Le mode égal expose un seul rayon commun (`1–16 HEX6`) ; les modes prorata et
+  personnalisé gardent leurs surfaces dédiées. Les cœurs sont bornés à `1–1 000`
+  cases par minerai et `1–3 000` au total.
+- Validation technique et validation Windows/éditeur/jeu à produire ; aucun
+  push ni release.
+
+## v2.0 DEV_6_R49 — 2026-09-12 — panneau des zones minérales compacté
+
+- Base exacte R48 ; aucune règle de génération ni valeur de sortie n’est
+  modifiée.
+- Le panneau des zones minérales regroupe forme et mode sur une ligne, puis
+  présente les familles dans une grille compacte `Minerai / Cœur / Moyenne`.
+- Les champs sont maintenant contextuels : rayons en mode égal, surface totale
+  en mode prorata, surfaces par minerai en mode personnalisé ; les champs de
+  quantité restent actifs uniquement pour les familles cochées.
+- Un rappel indique que les parts du mode prorata viennent de la section
+  globale des minerais. Validation Windows/éditeur/jeu encore à effectuer ;
+  aucun push ni release.
+
+## v2.0 DEV_6_R48 — 2026-09-12 — zones minérales configurables
+
+- Base R47 conservée ; le mode Hexagone et les rayons historiques restent
+  compatibles.
+- Ajout d’une forme `Organique compacte`, de cœurs toujours 100 % minerai et
+  de trois répartitions de surface : égale, prorata des parts globales actives
+  et personnalisée par minerai.
+- Chaque cœur peut hériter de la moyenne globale de son minerai ou recevoir une
+  moyenne dédiée ; une emprise impossible est omise avec un shortfall explicite.
+- TODO différé : nombre de zones indépendant et extension aux gemmes/soufre.
+- Validation technique et validation utilisateur R48 à terminer ; aucun push ni
+  release.
+
+## v2.0 DEV_6_R47 — 2026-09-12 — forçage progressif des bonus
+
+- Base exacte R46 ; validation utilisateur des forêts, pierres et marais enregistrée.
+- Mode forcé : bande locale puis couronnes D+3 à D+34, première bande avec
+  placement complet légal, hasard au sein d’une couronne uniquement.
+- Forêts et pierres : plan avant écriture, espacements et empreintes respectés ;
+  protection des tours sur toute l’emprise, y compris pour lac et rivière.
+- Replis légaux avec manques explicites. Mode OFF inchangé.
+- Validation : 414 tests vérifiés (411 suite complète + trois contrôles
+  documentaires/version corrigés et repassés), 16 sorties OFF identiques à
+  R46, self-test source/smoke PASS.
+- Zones minérales et lac restent à valider ; DEV6 ouverte, aucun push/release.
+
+
+## v2.0 DEV_6_R46 — 2026-09-11 — formes natives indépendantes des marais bonus
+
+- Repart exclusivement de R45 et conserve le même plan natif
+  brosse/extension/érosion pour la forme `Native`.
+- Chaque start génère désormais sa propre empreinte native avec le PRNG de la
+  génération ; les quatre marais bonus ne réutilisent donc plus la même forme.
+  Les collisions, transitions, replis légaux et le rayon `1–20` restent
+  inchangés ; la forme `Hexagone` n'est pas modifiée.
+- Le chemin sans bonus reste inchangé. Validation R46 : `401 passed`, self-test
+  source et smoke-test réussis ; les 16 comparaisons de sorties sans bonus
+  R45/R46 sont identiques sur Legacy/Upgraded, deux tailles, deux seeds et
+  deux miroirs. Les quatre configurations actives Legacy/Upgraded en
+  `256×256` et `768×768` passent les validateurs durs. R46 reste une candidate
+  locale ; aucun push, incrément DEV ou release n'est effectué.
+
+## v2.0 DEV_6_R45 — 2026-09-11 — hitboxes globales et forme native des marais
+
+- Repart exclusivement de R44. Le chemin sans bonus reste hors de la nouvelle
+  collision active ; les routes natives Legacy/Upgraded sans bonus conservent
+  donc leur sortie précédente.
+- Quand un bonus est actif, le halo est maintenant alimenté par les objets
+  effectivement écrits pour toutes les familles : arbres adultes, pousses,
+  pierres et décorations, y compris la passe native globale Legacy. Les
+  empreintes réelles des Building Stones restent protégées. Aucun emplacement
+  vide n'est réservé et aucun objet n'est généré puis supprimé.
+- La forme `Native` des marais bonus sélectionne désormais un composant issu
+  du même plan natif brosse/extension/érosion que les marais globaux, en
+  privilégiant un composant complet dans le rayon demandé ; le découpage par
+  rayon ne devient qu'un repli légal. La forme `Hexagone` et la limite de test
+  `1–20` sont conservées.
+- Validation R45 : `400 passed`, compilation, self-test source et smoke-test
+  réussis ; les 16 comparaisons de sorties sans bonus R44/R45 sont identiques
+  sur Legacy/Upgraded, deux tailles, deux seeds et deux miroirs. Les cartes
+  actives `256×256` et `768×768` passent les validateurs durs. R45 reste une
+  candidate locale ; aucun push, incrément DEV ou release n’est effectué.
+
+## v2.0 DEV_6_R44 — 2026-09-11 — placement des adultes et hitboxes des bonus
+
+- Repart exclusivement de R43 et conserve le chemin sans bonus inchangé ; les
+  marais bonus et leur algorithme ne sont pas modifiés dans cette tranche.
+- Les forêts bonus calculent d’abord le noyau minimal des arbres adultes, posent
+  les adultes en premier, puis limitent les pousses à la couronne extérieure.
+  Les deux populations gardent le même espacement `3 HEX6` et les zones de
+  recherche vides ne sont jamais réservées ni nettoyées après coup.
+- Le halo de collision est maintenant dérivé des écritures réelles des bonus :
+  ancres d’arbres, empreinte complète des Building Stones et objets déjà écrits.
+  Les passes globales Legacy et Upgraded (arbres, pierres, décorations et
+  familles natives) ne peuvent donc plus entrer dans les hitboxes bonus.
+- Validation R44 : `400 passed`, compilations, self-test et smoke-test réussis ;
+  16 sorties sans bonus R43/R44 restent identiques sur Legacy/Upgraded, deux
+  tailles, deux seeds et deux miroirs. Les cartes actives `256×256` et `768×768`
+  passent les validateurs durs.
+- R44 reste une candidate locale ; aucun push, incrément DEV ou release n’est
+  effectué.
+
+## v2.0 DEV_6_R43 — 2026-09-10 — ordre prioritaire des bonus actifs
+
+- Repart exclusivement de R42. Le chemin public Legacy/Upgraded sans bonus
+  conserve le passage natif existant ; il ne demande aucune phase différée et
+  ses couches de carte restent byte-identiques aux références R42.
+- Lorsqu’au moins un bonus de départ est actif, le pipeline est découpé autour
+  des écritures réelles : terrain de l’archétype → départs → bonus de terrain →
+  terrains globaux non liés à l’archétype → objets bonus → objets globaux.
+  Aucun objet bonus n’est posé puis supprimé ; les masques transmis aux passes
+  globales ne couvrent que les cellules déjà écrites ou les emprises réelles.
+- Le même ordre est raccordé aux routes Custom dérivées de Legacy et
+  d’Upgraded. Les ressources bonus restent hors des cibles globales et les
+  supports `18/19/24` restent compatibles lorsque le switch herbe est actif.
+- R43 reste une candidate locale ; aucun push, incrément DEV ou release n’est
+  effectué.
+- Validation R43 : `399 passed`, self-test source et smoke-test réussis ; les
+  sorties sans bonus restent byte-identiques à R42 sur les contrôles Legacy /
+  Upgraded.
+
+## v2.0 DEV_6_R42 — 2026-09-10 — correction des formes du bonus mini-marais
+
+- Repart exclusivement de R41. Le rayon du mini-marais est maintenant borné à
+  `1–20` pour les tests ; la forme `Hexagone` utilise réellement ce rayon.
+- La forme `Native` réutilise le plan natif global des marais
+  (brossage/expansion/érosion/transitions) dans une empreinte locale, au lieu
+  d’ajouter un anneau géométrique artificiel.
+- R42 reste une candidate locale ; aucun push, incrément DEV ou release n’est
+  effectué.
+
+## v2.0 DEV_6_R41 — 2026-09-10 — forme et rayon du bonus mini-marais
+
+- Repart exclusivement de R40. Le bonus mini-marais remplace le nombre libre
+  de cases par un rayon borné et dérive automatiquement son étendue.
+- Ajoute une liste de formes extensible avec `Native` et `Hexagone`, sans
+  modifier les bonus forêts, pierres, minerais ou lac.
+- Conserve les profils Legacy/Upgraded comme presets Custom, les bonus par
+  joueur hors quotas globaux et le repli légal en cas de terrain indisponible.
+- R41 reste une candidate locale ; aucun push, incrément DEV ou release n’est
+  effectué.
+
+## v2.0 DEV_6_R40 — 2026-09-10 — placement direct des bonus et quotas à zéro
+
+- Repart exclusivement de R39. Les familles d’objets globaux réellement
+  modifiées par Custom sont désactivées dans le passage natif avant tout
+  placement ; elles ne sont plus posées puis supprimées après les bonus.
+- Supprime le nettoyage postérieur des zones de bonus et le masque partagé qui
+  protégeait des cases vides. Chaque bonus vérifie désormais la couche d’objets
+  et les emprises déjà écrites au moment de choisir une case légale.
+- Corrige le cas Legacy « arbres globaux à `0 %` + bonus pierres seul » : aucun
+  arbre ne peut survivre dans la zone des pierres, tandis que les ancres de
+  départ restent additionnelles et hors quota global. Les mini-marais refusent
+  également toute case portant déjà un objet ou une ressource.
+- R40 est une candidate locale construite depuis R39 ; aucun push, incrément
+  DEV ou release n’est effectué.
+
+## v2.0 DEV_6_R39 — 2026-09-10 — correction des pierres à zéro et du stock bonus
+
+- Repart exclusivement de R38. Lorsque les bonus de départ sont désactivés et
+  que le taux global des pierres vaut `0 %`, Legacy comme Upgraded ne produisent
+  plus aucun objet pierre, y compris dans l’empreinte technique d’un départ.
+- Le stock moyen des rochers bonus utilise maintenant exactement la même loi
+  `full_range_mean_tilt` que le stock global (`1–12`, moyenne réglable), pour
+  Legacy comme pour Upgraded. Le rayon étendu n’est pas modifié dans R39.
+- Validation ciblée : `6 passed`. R39 reste une candidate locale ; aucun push,
+  incrément DEV ou release n’est effectué.
+
+## v2.0 DEV_6_R38 — 2026-09-10 — route Custom commune et bonus protégés
+
+- Repart de la candidate canonique R37 et corrige le switch « objets
+  compatibles avec l’herbe » : les bonus déjà réservés ne sont plus effacés
+  par le remplacement des objets globaux, et les cinq bonus peuvent utiliser
+  les terrains `16`, `18`, `19` et `24` lorsque le switch est actif.
+- Fait passer les sélections publiques Legacy et Upgraded par le même contrat
+  de configuration Custom, sous forme de presets spécifiques ; les moteurs
+  internes protégés restent séparés. Les bonus sont désactivés par défaut sur
+  ces presets et une configuration explicite peut les activer sans changer de
+  moteur de base. Le même principe est documenté pour les futurs archétypes.
+- Ajoute l’option globale « Forcer le placement à une distance étendue si
+  nécessaire » pour les cinq bonus. Sans cette option, chaque bonus reste dans
+  sa couronne locale ; avec elle, il essaie des couronnes plus éloignées et
+  signale l’extension réellement utilisée dans ses métadonnées.
+- Corrige le pont Legacy vers les routines de bonus et sécurise les transitions
+  lorsque un marais bonus utilise une variante d’herbe ou lorsqu’une rive de lac
+  serait voisine d’une transition rocheuse ; les repliements légaux sont alors
+  conservés sans invalider la carte.
+- Validation finale locale de la candidate : `393 passed`.
+- R38 reste une candidate locale : aucun push, incrément DEV ou release n’est
+  effectué.
+
+## v2.0 DEV_6_R37 — 2026-09-10 — forêt et pierres de départ
+
+- Repart exclusivement de la candidate canonique R36 et conserve toutes ses
+  fonctions, dont l’autorisation optionnelle des objets compatibles avec
+  l’herbe sur les terrains `18`, `19` et `24` uniquement.
+- Borne à `100` le nombre d’arbres par forêt globale ainsi que les quantités
+  d’arbres adultes et de pousses du bonus par joueur. Le défaut reste `30`
+  adultes puis `20` pousses, tous espacés d’au moins `3 HEX6` ; les plantations
+  utilisent désormais la même couleur claire sur la carte et les graphiques.
+- Porte les pierres de départ à `15` ancres par joueur par défaut, maximum `50`,
+  avec une moyenne de `10` unités par pierre (`1–12`, pas `0,5`). Le stock est
+  dérivé des deux valeurs visibles et le rayon est calculé depuis le nombre
+  d’ancres, l’espacement et l’emprise native de sept cases ; les anciens rayons
+  sérialisés sont ignorés.
+- Place la catégorie Bonus en premier et garde l’interrupteur de chaque bonus
+  au début de son propre panneau. Les cinq interrupteurs sont raccordés dans
+  les Custom basés sur Legacy comme sur Upgraded, sans changer le moteur choisi.
+- Le forçage à une distance plus grande reste volontairement reporté. R37 est
+  une candidate locale sans push, promotion DEV ni release.
+
+## v2.0 DEV_6_R36 — 2026-09-09 — correction du bonus forêt de départ
+
+- Rend le bonus forêt utilisable dans un Custom basé sur Legacy comme dans un
+  Custom basé sur Upgraded. Les presets Legacy/Upgraded exposés par l’éditeur
+  commencent désormais avec tous les bonus de départ désactivés ; chaque bonus
+  possède son interrupteur au début de son panneau.
+- Remplace le défaut de forêt par `30` arbres adultes et `20` pousses par joueur.
+  Les adultes sont placés en premier, puis les pousses, et tous respectent la
+  distance commune de `3 HEX6`. Le rayon minimal est dérivé de ces quantités et
+  de cet espacement ; les anciens champs `radius_min`/`radius_max` de forêt sont
+  ignorés et aucune limite maximale arbitraire n’est ajoutée.
+- Ajoute le switch d’objets compatibles avec l’herbe pour les terrains `18`,
+  `19` et `24` uniquement ; le terrain rocheux `34` reste exclu. Les objets de
+  départ restent additionnels et hors quotas globaux.
+- R36 est une candidate locale : aucun push, incrément DEV ou release n’est
+  effectué à cette étape.
+
+## v2.0 DEV_6_R35 — 2026-09-09 — intégration complète des bonus de départ
+
+- Branche réellement les cinq bonus Upgraded dans la section Custom : forêt,
+  pierres, mini-marais, zones rocheuses séparées charbon/fer/or et lac bonus
+  avec poissons/rivières. Les contrôles ne sont plus de simples cases : les
+  quantités, tailles, distance commune et paramètres hydrologiques sont
+  normalisés puis consommés par le moteur.
+- Expose les valeurs convenues : `41` arbres adultes et `21` pousses par joueur,
+  `5` pierres pour environ `53` unités, `19` cases de mini-marais, rayon
+  réglable des zones rocheuses/lacs, seuil d’eau native `150 HEX6`, taux de
+  poissons du lac et cible de rivières. Les pierres gardent le pas `0,5` et la
+  plage `1–12`; les zones rocheuses sont pleines sur leur cœur et reprennent
+  la moyenne globale des minerais.
+- Conserve la distance `0` au bord du territoire, les formes natives pour les
+  bonus compatibles et l’hexagone dessiné pour les zones rocheuses/lacustres.
+  Les réservations empêchent les chevauchements entre bonus et les quotas
+  globaux, les rivières/eaux natives ne sont jamais écrasées, et un lac sans
+  sortie légale est omis. Une cible de plusieurs rivières peut légalement
+  produire moins si le tracé disponible ne permet pas de faire mieux.
+- Remplace l’ancien contrôle de stock total implicite par un stock dérivé de
+  `ancres × moyenne par pierre`, arrondi à l’unité ; les paramètres de moyenne
+  des minerais et poissons restent ceux des sections globales.
+- R35 reste une candidate locale suffixée : aucun push ni promotion DEV6 n’est
+  effectué automatiquement.
+
+## v2.0 DEV_6_R34 — 2026-09-09 — bonus de départ Upgraded et section Rivières Custom
+
+- Supprime l'ancien `config/upgraded_768_v1.json`, qui appartenait à une
+  version obsolète et non fonctionnelle du moteur ; le profil Upgraded actif
+  est désormais défini par le code R34 et le fichier JSON n'est plus une
+  dépendance d'exécution.
+- Intègre les cinq bonus de départ Upgraded : forêt, pierres, mini-marais,
+  zones rocheuses indépendantes pour charbon/fer/or, et mini-lac avec poissons
+  et rivière. Les bonus utilisent une distance paramétrable depuis la bordure
+  du territoire (`150 HEX6` par défaut), des réservations séparées, des
+  replis légaux et des quotas distincts des quotas globaux.
+- Les zones rocheuses peignent uniquement le terrain et réutilisent les
+  transitions natives ; les lacs bonus évitent l'eau existante lorsque celle-ci
+  est suffisamment proche, protègent les rivières natives et ne sont conservés
+  que lorsqu'une rivière légale peut être tracée.
+- Ajoute la section Custom **Rivières** avec un taux global borné à `0–500 %`.
+- À `100 %`, la boucle native reste inchangée : `4 × taille²` tentatives,
+  seuil PRNG, marche HEX6, connexions à l’eau, longueurs et nettoyage.
+- Les autres valeurs modifient seulement le seuil d’acceptation des tentatives
+  natives ; `0 %` ne produit aucune rivière et ne désactive aucun validateur.
+- Validation : **374 tests réussis**, autotest source/extrait et smoke-test PASS ;
+  archive extraite et ré-emballée à l’identique.
+
+## v2.0 DEV_6_R33 — 2026-09-09 — mise à l’échelle native directe des terrains
+
+- Corrige R32 : les taux autres que `100 %` passent maintenant directement par
+  les mêmes brosses, expansions et érosions que la génération existante ; le
+  générateur ne construit plus de liste séparée de zones candidates.
+- `100 %` conserve exactement le chemin natif ; les autres valeurs modifient
+  seulement le nombre de sondes de brossage et d’expansions, ce qui conserve
+  les grandes formes natives, leur variation de taille et les fusions légales.
+- Le contrôle de l’épaisseur côtière depuis un Custom dérivé de Legacy reste
+  corrigé.
+- Validation : **369 tests réussis**, autotest source et smoke-test PASS ; archive
+  extraite, contrôlée et ré-emballée à l’identique.
+
+## v2.0 DEV_6_R32 — 2026-09-09 — mise à l’échelle des terrains par recettes natives
+
+- Remplace la création de formes ad hoc par la réutilisation des recettes natives
+  de brossage, d’expansion, d’érosion et de transitions pour la Boue, le Désert,
+  l’Herbe sèche, les Détails décoratifs et le Marais.
+- À `100 %`, le résultat natif est conservé ; sous `100 %`, seules des zones
+  natives complètes sont retenues ; au-dessus, des zones natives supplémentaires
+  sont réservées avant peinture pour que `500 %` ne puisse pas retirer une zone
+  obtenue à `200 %`. Les capacités légales insuffisantes sont signalées dans les
+  diagnostics au lieu de produire une transition illégale.
+- Corrige l’état de l’input d’épaisseur côtière après dérivation d’un Custom
+  depuis Legacy : l’option redevient utilisable dès que « Près des côtes » est
+  activé.
+- Validation : **369 tests réussis**, autotest source et smoke-test PASS ; archive
+  extraite, contrôlée et ré-emballée à l’identique.
+
+## v2.0 DEV_6_R31 — 2026-09-09 — zones de terrains légales et extensibles
+
+- Remplace l’agrandissement brut des familles de terrains par une génération
+  en zones HEX6 cohérentes : un taux supérieur à `100 %` ajoute prioritairement
+  des zones distinctes, puis agrandit modérément les zones existantes.
+- Autorise la fusion de zones d’une même famille, mais interdit tout nouveau
+  contact avec une autre famille, l’eau, une rivière, un relief ou un détail.
+- Recalcule les identifiants de transition depuis la profondeur HEX6 de chaque
+  masque et ajoute un contrôle strict des transitions illégales ; les halos de
+  départ et les mini-marais de secours restent protégés.
+- Validation : **366 tests réussis** ; l’EDM R30 équivalent passe de 6 074
+  contacts illégaux à zéro avec la même règle de contrôle.
+
+## v2.0 DEV_6_R30 — 2026-09-09 — correction du créneau Boue Custom
+
+- Réserve `0 %` aux terrains désactivés ; une famille activée commence à `1 %`.
+- Conserve le profil Upgraded natif sans boue avec son paramètre nul, tout en
+  permettant à Custom Upgraded d’activer le même plan de génération que Legacy.
+- Ajoute les validations de non-régression correspondantes sans modifier les
+  profils protégés ni la future refonte générale des taux de terrains.
+
+## v2.0 DEV_6_R29 — 2026-09-09 — section Terrains et sprites Minerais
+
+- Ajoute la section Custom **Terrains** : activation et taux `0–500 %` pour la
+  Boue, le Désert, l’Herbe sèche, les Détails décoratifs et le Marais.
+- Applique ces taux avant les objets, avec `100 %` comme comportement natif et
+  la neutralisation effective des décorations dépendantes lorsqu’un terrain est
+  désactivé. Les lacs, rivières, neige et relief rocheux restent hors de cette
+  section ; les formes de terrain restent natives.
+- Intègre les cinq sprites de minerais fournis en `16×16` dans les tableaux
+  Répartition et Ressource moyenne, sans changer la hauteur des lignes ; la
+  colonne vide de la ressource moyenne est supprimée.
+- Porte la calibration des récifs à `20` pour 768×768, y compris pour la
+  référence utilisée par un Custom basé sur Legacy.
+
+## v2.0 DEV_6_R28 — 2026-09-08 — récifs Custom Legacy
+
+- Corrige le taux de récifs dans un Custom basé sur Legacy : la valeur native
+  0 ne bloque plus les taux supérieurs à 0.
+- Utilise la calibration Upgraded de 11 récifs à 768×768 comme référence,
+  avec mise à l’échelle selon la taille de carte.
+- Le validateur autorise uniquement les récifs sur l’eau ; les autres objets
+  restent interdits sur l’eau.
+
+## v2.0 DEV_6_R27 — 2026-09-08 — sous-familles et mise en page Décorations
+
+- Réserve un emplacement d’icône pixel art de `16×16` dans chaque ligne de
+  Décorations, sans modifier la hauteur des champs.
+- Affiche les sous-familles dans le graphique **Familles d’objets**.
+- Aligne les récifs sur la sémantique des profils : `0 %` en Legacy et `100 %`
+  en Upgraded.
+
+## v2.0 DEV_6_R26 — 2026-09-08 — section Custom Décorations
+
+- Ajoute la section **Décorations** avec un taux d’apparition indépendant de
+  `0–500 %` pour chaque famille statique déjà reconnue par le générateur.
+- Conserve `100 %` comme comportement du profil sélectionné ; les familles,
+  terrains compatibles, identifiants et règles de collision restent internes.
+- Raccorde les taux aux passes Legacy et Upgraded, avec les récifs traités
+  séparément comme famille spécifique au profil Upgraded.
+- Ajoute les traductions et les tests de génération, sans modifier les profils
+  protégés ni les bonus de départ.
+
+## v2.0 DEV_6_R25 — 2026-09-08 — mise en page Custom et molette ciblée
+
+- Les sections de l’onglet Générateur utilisent leur largeur naturelle sans
+  colonnes artificiellement étirées.
+- La méthode de gisement est placée immédiatement à côté de son libellé.
+- Les tableaux `Répartition` et `Ressource moyenne` alignent leurs champs,
+  unités, noms de ressources et maxima dans le même ordre.
+- La molette continue de modifier les Spinbox/Combobox sous le curseur et ne
+  fait défiler l’onglet que sur les autres zones.
+
+## v2.0 DEV_6_R24 — 2026-09-08 — resserrement de la section Minerais
+
+- Les colonnes `Répartition` et `Ressource moyenne` utilisent désormais leur
+  largeur naturelle afin de supprimer l’espace central inutile.
+
+## v2.0 DEV_6_R23 — 2026-09-08 — hauteur du bouton de seed
+
+- Le sprite de dé raffiné remplace R22.
+- Le remplissage interne du bouton est supprimé afin de conserver la même
+  hauteur que les boutons voisins.
+
+## v2.0 DEV_6_R22 — 2026-09-08 — correction de démarrage du sprite
+
+- Le sprite de dé est chargé au début de la construction de l’interface,
+  avant la création des boutons qui l’utilisent.
+
+## v2.0 DEV_6_R21 — 2026-09-08 — sprite du dé de seed
+
+- Le sprite PNG 24×24 fourni remplace le caractère Unicode sur tous les boutons
+  de randomisation des seeds, y compris dans la fenêtre de génération par lot.
+
+## v2.0 DEV_6_R20 — 2026-09-08 — comportement des pierres épuisées
+
+- Le nombre de piles épuisées est maintenant tiré aléatoirement à `1,125 %`
+  des piles globales, avec les pierres bonus de départ exclues.
+
+## v2.0 DEV_6_R19 — 2026-09-07 — moyenne du stock des pierres
+
+- Le champ **Stock moyen par pierre** accepte maintenant les pas de `0,5`.
+- Les piles personnalisées utilisent toute la plage active `1–12` : `6,5` donne
+  une répartition uniforme, puis les valeurs intermédiaires déplacent
+  progressivement le poids vers les petites ou grandes piles. Chaque état garde
+  une probabilité non nulle, sans imposer une occurrence minimale ; `1` et `12`
+  restent les deux extrêmes déterministes.
+- Les piles épuisées restent hors moyenne ; les bonus de départ restent hors du
+  quota global et sont conservés comme population distincte dans les mesures.
+- Les valeurs natives restent inchangées lorsque le réglage Custom n'est pas
+  modifié ; validation complète à **353 tests**.
+
+## v2.0 DEV_6_R18 — 2026-09-07 — pierres de construction Custom
+
+- Remplace le « stock récoltable global » par un stock moyen par pierre,
+  borné à `1–12` comme les quantités natives.
+- Structure les groupes comme les forêts : activation, part du quota, nombre
+  moyen de pierres par groupe et variation du nombre par groupe.
+- Réduit l’aide de section à une ligne et conserve la migration des anciennes
+  configurations R17 vers la nouvelle structure.
+
+## v2.0 DEV_6_R17 — 2026-09-05 — pierres de construction Custom
+
+- Quota global et stock récoltable explicités, groupes activables sans perdre
+  leur pourcentage ; valeurs initiales dérivées du profil sélectionné.
+- Distance arbre↔pierre minimale 3 HEX6 dans les deux placeurs, emprise active
+  de sept cases ; les pierres épuisées ne laissent plus de blocage périphérique.
+- Saturation du placement Legacy Custom rapportée sans pose illégale ni arrêt.
+- Bonus de départ indépendants ; candidate locale à tester, aucun push.
+
+## v2.0 DEV_6_R16 — 2026-09-05 — bandeau sombre au démarrage
+
+- Réapplique la palette native du bandeau de titre lorsque la fenêtre
+  principale est effectivement affichée, afin que le thème sombre chargé au
+  démarrage ne laisse plus un bandeau blanc.
+- Conserve le rafraîchissement événementiel des fenêtres secondaires et le
+  comportement du changement de thème clair/sombre.
+- Ne modifie aucune règle de génération, aucun quota ni aucune donnée native
+  protégée.
+
+## v2.0 DEV_6_R15 — 2026-09-05 — défilement et redimensionnement
+
+- Corrige la voie de déplacement des barres de défilement des onglets : les
+  positions intermédiaires sont regroupées à 16 ms et la dernière position est
+  forcée à la libération, ce qui supprime les traînées dues aux reconstructions
+  trop rapprochées des contrôles intégrés.
+- Conserve le défilement à la molette immédiat et indépendant de cette cadence.
+- Réduit à 24 ms l’attente de stabilisation des redimensionnements de la carte,
+  des graphiques et de la mise en page des onglets.
+- Ne modifie aucune règle de génération, aucun quota ni aucune donnée native
+  protégée.
+
+## v2.0 DEV_6_R14 — 2026-09-05 — fluidité de l’interface
+
+- Diffère le redimensionnement coûteux de l’aperçu jusqu’à la stabilisation de
+  la fenêtre et repositionne immédiatement l’image déjà affichée.
+- Regroupe les recalculs des graphiques et des onglets défilants, en réutilisant
+  les éléments de dessin existants.
+- Évite de reconstruire l’éditeur Custom pour un changement de taille, de
+  joueurs ou de graine sans modification de ses paramètres.
+- Remplace `pool` par **quota** ou **réserve** dans les libellés français.
+
+## v2.0 DEV_6_R13 — 2026-09-04 — sections Custom arbres et rochers
+
+- Améliore l’ergonomie de l’éditeur Custom : la molette agit sur toute la
+  surface des onglets, sans délai perceptible, et le scroll de Générateur est
+  conservé lors d’un changement de mode. Les sections se répartissent mieux
+  en colonnes ; unités et plafonds restent près des champs.
+- Porte les quotas globaux des arbres de base et des palmiers à `500 %` dans
+  l’éditeur, la normalisation et les deux moteurs Custom ; les autres plafonds
+  restent inchangés.
+- Ajoute la section sémantique **Arbres** dans l’éditeur Custom : quota global
+  relatif des arbres de base, pousses acceptées avec réserve globale ou quota
+  séparé et placement, forêts avec part/moyenne/variation, et quota maximal
+  relatif des palmiers. Le preset Upgraded conserve exactement son défaut à
+  `30 %` en forêts ; Legacy reste sans forêts ni pousses par défaut.
+- Conserve la section **Pierres de construction** candidate déjà raccordée,
+  sans modifier ses invariants d’emprise et de stock.
+- Raccorde ces contrôles au contenu Upgraded sans modifier les profils protégés ;
+  les quotas de départ restent séparés et les invariants d’IDs, d’espacement,
+  d’emprise de sept cases et de quantités restent internes.
+- Raccorde les mêmes réglages au Custom basé sur Legacy. Une famille Legacy
+  inchangée conserve sa sortie native ; une famille modifiée est replacée par
+  le même placeur légal avec diagnostics et états épuisés.
+- Étend les tests, traductions, diagnostics et le contrôle d’intégrité de
+  l’archive source.
+
+## v2.0 DEV_6_R11 — 2026-09-04 — nettoyage des références et des tests
+
+- Ajoute `references/REFERENCE_INDEX.md` et la matrice courante afin de
+  distinguer sans ambiguïté l’état v2.0 actif des audits et essais historiques.
+- Archive les anciens snapshots, la matrice Upgraded v1.2, la validation v1.7
+  et les essais miniers remplacés ; les liens actifs pointent désormais vers
+  les documents courants.
+- Retire des tests actifs les trois sondes SAV dépendant de chemins locaux
+  absents et supprime l’étape fantôme `hydrology.micro_water_cleanup`.
+- Remplace les identifiants de cache par défaut hérités de v1.5 par des espaces
+  de noms neutres ; les fichiers de compatibilité protégés restent inchangés.
+- Ne modifie pas la génération Arbres/Rochers : les prochaines sections Custom
+  restent prévues dans cet ordre.
+
+## v2.0 DEV_6_R10 — 2026-09-04 — corrections Custom et liaison graphique
+
+- Corrige **Pixels aléatoires** : la couche ressources de `MapState` est une
+  vue entrelacée ; l’écriture passe désormais par son itérateur afin que les
+  pixels choisis atteignent bien la carte et l’export.
+- Empêche la reconstruction complète de l’onglet Custom à chaque changement
+  de paramètre. La première modification entre toujours en Custom, puis les
+  éditions suivantes conservent les contrôles et le focus.
+- Active **Lier à la vue** par défaut dans les graphiques.
+
+## v2.0 DEV_6_R9 — 2026-09-04 — pixels aléatoires et répartition Upgraded
+
+- Ajoute la troisième méthode de gisement **Pixels aléatoires** dans Custom :
+  les cases compatibles sont choisies uniformément en une seule passe, sans
+  forme, rayon, regroupement ni recouvrement artificiel ; les quotas globaux et
+  par minerai restent exacts.
+- Met à jour la répartition minérale par défaut du générateur Upgraded en
+  charbon 52,5 %, fer 22,5 %, or 15 %, gemmes 5 % et souffre 5 %. Le preset
+  Custom Upgraded dérive ces mêmes valeurs afin de préserver la parité exacte.
+- Sécurise l’allocation des pierres de construction : lorsque la distribution
+  le permet, les états de quantité 1 à 12 restent tous représentés même après
+  l’ajustement vers le stock total demandé.
+
+## v2.0 DEV_6_R8 — 2026-09-04 — restauration exacte de R17 et quota final
+
+- Confirme et récupère la dernière version procédurale Legacy avant le portage
+  natif du jeu : `v2.0 DEV_1_R17`, commit `90175ee`.
+- Remplace le placeur Custom Legacy intermédiaire par les zones HEX6 aléatoires
+  de rayons 3/4/5, le remplissage uniforme propre à chaque zone, la
+  compensation des recouvrements et l’ordre charbon → fer → or → gemmes →
+  souffre de R17.
+- Corrige le sens du taux d’occupation : le nombre final de cases minérales
+  correspond désormais exactement à la cible calculée sur les terrains
+  compatibles, y compris à 100 %, malgré les recouvrements historiques.
+- Le moteur Legacy natif décompilé, le moteur Upgraded et les profils intégrés
+  protégés restent inchangés.
+
+## v2.0 DEV_6_R7 — 2026-09-04 — retour du placement Legacy historique
+
+- Remplace l’approximation Custom Legacy par la mécanique historique
+  pré-décompilation : zones HEX6 indépendantes de rayons 3/4/5, remplissage
+  variable dépendant de la taille, sélection radiale bruitée et recouvrement
+  séquentiel charbon → fer → or → gemmes → souffre.
+- Réintroduit les multiplicateurs de peinture historiques pour compenser les
+  recouvrements des familles précoces, tout en conservant le quota global et
+  les quantités Legacy moyennes à 8.
+- Le Legacy natif décompilé reste inchangé ; cette mécanique ne concerne que
+  l’algorithme Legacy sélectionné dans Custom.
+
+## v2.0 DEV_6_R6 — 2026-09-04 — parité minérale Legacy/Custom
+
+- Préserve directement les octets minéraux produits par le cœur Legacy natif
+  lorsque la section Minerais Custom correspond exactement au preset Legacy.
+- Évite ainsi de rejouer une approximation postérieure avec un autre flux
+  aléatoire ; les réglages minéraux réellement modifiés continuent d'utiliser
+  le moteur Custom éditable.
+- Ajoute une régression qui compare case par case présence, famille et quantité
+  des minerais Legacy et Custom-Legacy à paramètres identiques.
+- Validation locale : **329 tests** passés et self-test source conforme.
+
+## v2.0 DEV_6_R5 — 2026-09-04 — parité exacte des ressources
+
+- Supprime réellement l’ancien lissage Upgraded des poissons : la génération
+  Upgraded et son équivalent Custom remplissent la même bande côtière uniforme
+  avec le même pourcentage, la même épaisseur et la même moyenne.
+- Préserve la précision interne des parts de minerais afin que les cibles par
+  famille et les sorties complètes restent identiques entre Upgraded et Custom
+  lorsque les paramètres sont identiques.
+- Corrige le quota Legacy : le taux d’occupation est atteint sur les terrains
+  compatibles, y compris aux bornes 0–100 %, et les replis sont répartis en
+  patches connectés bornés plutôt qu’en un dépôt artificiellement gigantesque.
+- Rend le validateur compatible avec le rayon côtier effectivement sélectionné
+  ou avec le remplissage global Custom.
+- Validation locale : **328 tests** passés ; égalité case par case vérifiée sur
+  les couches terrain, hauteur, ressources, objets, accessibilité et les starts.
+
+## v2.0 DEV_6_R4 — 2026-09-04 — calibration des ressources Custom
+
+- Répare le placement Legacy Custom des minerais : les gisements restent
+  irréguliers et connectés au lieu de produire une bouillie de pixels.
+- Calibre les valeurs par défaut sur les comportements de référence : moyenne
+  8 pour Legacy, moyenne 10 pour Upgraded, sans appliquer l'ancien
+  multiplicateur `×1,3`.
+- Remplace le modèle poissons près des côtes par un remplissage direct et
+  uniforme d'une bande d'épaisseur réglable ; une bande impossible revient au
+  remplissage global. Supprime l'ancienne extension progressive.
+- Conserve les bornes de quantités du format du jeu (1–15), les profils
+  intégrés protégés et la génération/export des tailles non testées.
+
+## v2.0 DEV_6_R3 — 2026-09-04 — premières sections Custom raccordées
+
+- Remplace l’exposition technique des paramètres Custom par deux sections
+  courtes et sémantiques : **Minerais** et **Poissons**, avec traductions
+  dynamiques et rechargement au changement de générateur.
+- Raccorde les deux vrais algorithmes de gisements : motifs/placement Legacy
+  et blobs connectés sans trous Upgraded ; ajoute occupation globale,
+  répartition par minerai, variation de taille et ressource moyenne.
+- Ajoute le remplissage global des poissons, la ressource moyenne, le mode près
+  des côtes, le rayon minimal dynamique et l’extension côtière progressive,
+  avec repli global lorsque la zone côtière ne peut pas contenir la demande.
+- Borne les quantités de ressources à 1–15, versionne le payload Custom en
+  schéma 2 et conserve les profils Legacy/Upgraded protégés inchangés.
+- Validation de la tranche : **323 tests** ; self-test source, archive avec
+  références et contrôle des hashes protégés à finaliser pour la candidate.
+
+## v2.0 DEV_6_R2 — 2026-09-03 — nettoyage de l’éditeur Custom
+
+- Recharge du catalogue et affichage automatique de l’onglet Générateur lors
+  du changement de moteur sélectionné.
+- Traductions dynamiques des groupes, paramètres, bonus de départ et contrats
+  d’archétype.
+- Suppression des interrupteurs Custom qui décrivent des invariants (`River
+  stop at first water`, `River fish forbidden`, `Cleanup micro water`, `Border
+  must have gradient`) ; les profils intégrés protégés restent inchangés.
+- Les champs `name` des familles restent des métadonnées internes et ne sont
+  plus proposés comme paramètres.
+
+## v2.0 DEV_6_R1 — 2026-09-03 — socle du générateur Custom
+
+- Ajoute une configuration Custom déclarative, sérialisable et immuable par
+  valeur : dérivation depuis Legacy/Upgraded, modification par chemin, JSON
+  complet et empreinte SHA-256 stable.
+- Ajoute les onglets **Générateur** et **Archétype**, un catalogue automatique
+  des paramètres scalaires, l’éditeur JSON complet et la sélection automatique
+  de Custom dès qu’un preset est modifié.
+- Ajoute le registre extensible des bonus de départ : forêt, pierres et
+  mini-marais actifs ; zone rocheuse minérale et mini-lac/poissons/rivière
+  réservés pour les futures implémentations.
+- Rend les profils Custom Upgraded exécutables et inclut leur empreinte dans le
+  cache et Batch. Le moteur Legacy Custom conserve sa sortie native validée et
+  expose les sections encore non raccordées dans ses diagnostics.
+- Les presets Legacy/Upgraded, les tailles, les miroirs et les exports ne sont
+  pas verrouillés par cette passe.
+- Candidate locale : validation complète et essai visuel Windows encore requis.
+
 ## v2.0 DEV_5 — 2026-09-03 — finitions Upgraded validées
 
 - Clôt les finitions Upgraded : objets statiques calqués sur Legacy hors
@@ -156,7 +949,7 @@ et documentés ; les ajouts statistiques sont reportés à Stats V2.
   bibliothèque native de morphologie et ses règles validées.
 - Compare les minerais avant suppression : volumes et mix proches des SAV,
   géométrie des amas trop fragmentée. Le relevé est conservé dans
-  `references/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
+  `references/history/minerals/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 - Ajoute la première passe de l'audit non-terrain de `S3.EXE` : ordre de
   matérialisation, séparation des couches Area/runtime, starts, bâtiments,
   colons, ressources de départ, métadonnées et transcription comportementale.
@@ -276,7 +1069,7 @@ et documentés ; les ajouts statistiques sont reportés à Stats V2.
 - Aucun changement dans le chemin Upgraded v7 no-gap ; les transitions terrain,
   les starts et les règles Legacy poissons restent séparés.
 - Ajoute la mesure de remplissage et de fragmentation dans
-  `references/SETTLERS3_LEGACY_MINERAL_FILL_RECHECK_v1.md`.
+  `references/history/minerals/SETTLERS3_LEGACY_MINERAL_FILL_RECHECK_v1.md`.
 
 ## v2.0 DEV_1_R12 — 2026-08-30 — géométrie minérale Legacy discrète
 
@@ -319,7 +1112,7 @@ et documentés ; les ajouts statistiques sont reportés à Stats V2.
   proches des médianes natives et les quantités conservent le multiplicateur
   Legacy R8.
 - Mesures et limites consignées dans
-  `references/SETTLERS3_LEGACY_MINERAL_HEX_REFERENCE_v1.md`.
+  `references/history/minerals/SETTLERS3_LEGACY_MINERAL_HEX_REFERENCE_v1.md`.
 - Réorganise le code en séparant le catalogue `generation/archetypes/` des
   moteurs `generation/generators/`. Le moteur actif est sous
   `generation/generators/legacy/`, sans copie des archétypes ni changement de

@@ -85,6 +85,8 @@ class GenerationWorkflowController:
         elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
         elif warning_key:self._feedback(warning_key,'warning',side=s,max_players=NATIVE_LIMITS[s])
         else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
+        if hasattr(self, '_custom_selection_changed'):
+            self._custom_selection_changed()
 
     def _progress_stage(self,stage,detail,index):
         # Detailed generator stages can change too quickly to be readable as status messages.
@@ -104,7 +106,8 @@ class GenerationWorkflowController:
     def _cache_key(self):
         mode = self._mode_key()
         archetype = self._arch_key()
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype),mirror_mode=self._mirror_key())
+        digest = self._custom_config_digest() if mode == 'custom' and hasattr(self, '_custom_config_digest') else ''
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest)
 
     def generate(self):
         try:
@@ -118,7 +121,8 @@ class GenerationWorkflowController:
                 else:self._feedback('cache_hit','success',seed=key.seed)
                 return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
-            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key())
+            custom_config = getattr(self, '_custom_config', None) if key.mode == 'custom' else None
+            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config)
             retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(False)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
             if warning_key:

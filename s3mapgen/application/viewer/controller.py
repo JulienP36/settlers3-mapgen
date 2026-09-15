@@ -25,6 +25,9 @@ from ..ui.viewer.options import VIEW_CHOICES
 from ..ui.widgets import ColorMenuSelect, _selector_icon
 
 
+PREVIEW_RESIZE_SETTLE_MS = 24
+
+
 class ViewerController:
     """Host contract: viewer widgets, current map and persisted preferences."""
     def _build_viewer_toolbar(self,top):
@@ -219,8 +222,39 @@ class ViewerController:
         self._remember_view_anchor()
         self._preview_base=None;self._preview_key=None;self._preview_projection_cache={}
 
+    def _cancel_preview_resize(self):
+        pending=getattr(self,'_preview_resize_after',None)
+        if pending is None:return
+        try:self.after_cancel(pending)
+        except tk.TclError:pass
+        self._preview_resize_after=None
+
+    def _reposition_preview_image(self):
+        """Move the existing image during resize without rebuilding it."""
+        item=getattr(self,'_preview_canvas_item',None);shown_size=getattr(self,'_display_shown_size',None)
+        if item is None or not shown_size or not getattr(self,'current',None):return
+        try:
+            cw=max(100,int(self.canvas.winfo_width()));ch=max(100,int(self.canvas.winfo_height()))
+            shown_w,shown_h=(max(1,int(shown_size[0])),max(1,int(shown_size[1])));anchor=self._capture_view_anchor()
+            x=max(0,(cw-shown_w)//2);y=max(0,(ch-shown_h)//2);sw=max(cw,shown_w);sh=max(ch,shown_h)
+            self.canvas.coords(item,x,y);self.canvas.configure(scrollregion=(0,0,sw,sh))
+            self._restore_view_anchor(anchor,self._display_base_size,(x,y),self._display_factor,cw,ch,sw,sh)
+            self._display_origin=(x,y)
+        except (tk.TclError,TypeError,ValueError):pass
+
+    def _preview_canvas_configured(self,_event=None):
+        self._reposition_preview_image()
+        if not getattr(self,'current',None):return
+        self._cancel_preview_resize()
+        try:self._preview_resize_after=self.after(PREVIEW_RESIZE_SETTLE_MS,self._finish_preview_resize)
+        except tk.TclError:self._preview_resize_after=None
+
+    def _finish_preview_resize(self):
+        self._preview_resize_after=None;self._refresh_preview(False)
+
     def _refresh_preview(self,reset_pan=False):
         self._zoom_after=None
+        self._cancel_preview_resize()
         if not self.current:return
         anchor=None if reset_pan else (getattr(self,'_pending_view_anchor',None) or self._capture_view_anchor())
         self._pending_view_anchor=None
@@ -247,8 +281,14 @@ class ViewerController:
                 self._preview_projection_cache[composite_key]=compose_rendered_map(focused_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),start_circles=opts.get('start_circles',False),focus=focus)
         self._preview_base=self._preview_projection_cache[composite_key];self._preview_key=(layer_key,composite_key)
         im=self._preview_base;cw=max(100,self.canvas.winfo_width());ch=max(100,self.canvas.winfo_height());factor=max(.05,min((cw-10)/im.width,(ch-10)/im.height)*self.zoom);new=(max(1,int(im.width*factor)),max(1,int(im.height*factor)))
-        shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);self.canvas.delete('all');sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2);self.canvas.create_image(x,y,image=self.photo,anchor='nw');self.canvas.configure(scrollregion=(0,0,sw,sh));self._restore_view_anchor(anchor,im.size,(x,y),new[0]/im.width,cw,ch,sw,sh)
-        self._display_origin=(x,y);self._display_factor=new[0]/im.width;self._display_base_size=im.size
+        shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2)
+        item=getattr(self,'_preview_canvas_item',None)
+        if item is None:item=self.canvas.create_image(x,y,image=self.photo,anchor='nw')
+        else:
+            try:self.canvas.coords(item,x,y);self.canvas.itemconfigure(item,image=self.photo)
+            except tk.TclError:item=self.canvas.create_image(x,y,image=self.photo,anchor='nw')
+        self._preview_canvas_item=item;self.canvas.configure(scrollregion=(0,0,sw,sh));self._restore_view_anchor(anchor,im.size,(x,y),new[0]/im.width,cw,ch,sw,sh)
+        self._display_shown_size=new;self._display_origin=(x,y);self._display_factor=new[0]/im.width;self._display_base_size=im.size
 
     def _source_cell_from_canvas(self,event):
         if not self.current or self._display_factor<=0:return None

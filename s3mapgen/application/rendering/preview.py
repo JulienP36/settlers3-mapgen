@@ -12,6 +12,7 @@ from ..paths import START_MARKER_SHEET
 
 WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
 REEF_COLOR=(66,60,57)
+SAPLING_COLOR=(150,210,112)
 # ID 34 is the native one-cell rocky-grass patch.  The muted yellow/olive
 # sample keeps it distinct from Rocky while staying close to the reference
 # texture shown in the native editor.
@@ -86,7 +87,7 @@ HEATMAP_RESOURCES={
 
 START_TERRITORY_RADIUS=35
 
-# Historical reconstruction reference only; this is not a native field.
+# Diagnostic-only field; this is not a native field.
 # 145 independent 3500-cell regions with a 71x71 extent yielded the same shape,
 # but the complete per-file mask is still intentionally not inferred here.
 # Each tuple is inclusive (min_dx,max_dx) for dy=-35..+35 around the original
@@ -143,7 +144,7 @@ def _global_rgb(state:MapState)->np.ndarray:
     rgb[np.isin(O,range(50,62))]=(66,137,58)      # flowers / bushes
     rgb[np.isin(O,range(62,68))]=(55,130,92)      # reeds
     adult=(O>=68)&(O<=81)&~np.isin(O,[78,79])
-    rgb[adult]=(25,88,34);rgb[np.isin(O,[78,79])]=(46,113,51);rgb[O==84]=(81,145,73)
+    rgb[adult]=(25,88,34);rgb[np.isin(O,[78,79])]=(46,113,51);rgb[O==84]=SAPLING_COLOR
     rgb[(O>=115)&(O<=126)]=(205,205,198);rgb[O==127]=(150,150,145)
     rgb[np.isin(O,REEF_IDS)]=REEF_COLOR
     return rgb

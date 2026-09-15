@@ -35,7 +35,7 @@ def test_native_mirror_copies_global_content_without_leaking_sentinels():
     assert np.array_equal(result.objects, np.rot90(result.objects, 2).T)
     assert np.array_equal(result.resources, np.rot90(result.resources, 2).T)
     assert not np.any(result.objects == 0xFF)
-    assert result.metadata["native_content_core"] == "recovered_s3_exe"
+    assert result.metadata["native_content_core"] == "native_calibrated"
     assert result.metadata["native_pattern_bank_records"] == 19999
 
 

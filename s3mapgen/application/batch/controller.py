@@ -56,7 +56,7 @@ class BatchController:
         self._batch_randomize_button.pack(side='left',padx=(0,12))
         self._batch_common_seed_var=tk.StringVar(value=str(self._default_batch_seed()))
         self._batch_common_seed_entry=ttk.Entry(header,textvariable=self._batch_common_seed_var,width=13);self._batch_common_seed_entry.pack(side='left')
-        self._batch_common_seed_random=ttk.Button(header,text='🎲',width=3,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0))
+        self._batch_common_seed_random=ttk.Button(header,image=self._seed_dice_icon,padding=0,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0))
         self._batch_apply_seed_button=ttk.Button(header,text=bt['apply_seed'],command=self._batch_apply_seed_all);self._batch_apply_seed_button.pack(side='left',padx=(4,0))
         self._batch_i18n['hint_label']=ttk.Label(header,text=BATCH_HINTS.get(lang,BATCH_HINTS['en']));self._batch_i18n['hint_label'].pack(side='right')
 
@@ -89,7 +89,7 @@ class BatchController:
             row['players']=ttk.Spinbox(box,from_=2,to=NATIVE_LIMITS.get(int(current_size),20),textvariable=row['players_var'],width=7);row['players'].pack();input_widgets.append((row['players'],'normal'))
             box=group('seed');row['seed_var']=tk.StringVar(value=str(first_seed))
             seed_line=ttk.Frame(box);seed_line.pack(fill='x');row['seed']=ttk.Entry(seed_line,textvariable=row['seed_var'],width=14);row['seed'].pack(side='left');input_widgets.append((row['seed'],'normal'))
-            row['random']=ttk.Button(seed_line,text='🎲',width=3,command=lambda r=row:self._batch_randomize_row(r));row['random'].pack(side='left',padx=(4,0));input_widgets.append((row['random'],'normal'))
+            row['random']=ttk.Button(seed_line,image=self._seed_dice_icon,padding=0,command=lambda r=row:self._batch_randomize_row(r));row['random'].pack(side='left',padx=(4,0));input_widgets.append((row['random'],'normal'))
             row['size'].bind('<<ComboboxSelected>>',lambda e,r=row:self._batch_row_size_changed(r))
 
             mini_bg=getattr(self,'_ui_theme_colors',{}).get('panel','#292a2d')
@@ -415,8 +415,9 @@ class BatchController:
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
                 errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
-            revision=cache_engine_revision(mode, archetype)
-            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror)
+            digest = self._custom_config_digest() if mode == 'custom' and hasattr(self, '_custom_config_digest') else ''
+            revision=cache_engine_revision(mode, archetype, digest)
+            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror,configuration_digest=digest)
             row['size_warning_kind']=native_size_warning_kind(side) if mode=='legacy' and archetype=='continental' else None
             row['viability_warning']=row['size_warning_kind'] is not None
             requests.append({'row':row,'key':key})
@@ -515,7 +516,11 @@ class BatchController:
         self._batch_update_progress(row,2,self._batch_text('generating'),'running')
         try:
             out=self.session_cache.get(key);cached=out is not None
-            if out is None:out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)
+            if out is None:
+                if key.mode == 'custom':
+                    out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=getattr(self,'_custom_config',None))
+                else:
+                    out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)
             self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'});row['history_key']=key;row['result']=out;row['cached']=cached;self._batch_last_success=out
             result_state='cached' if cached else 'success'
             result_text=self._batch_text(result_state)

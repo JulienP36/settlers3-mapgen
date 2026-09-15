@@ -14,7 +14,6 @@ class ValidationResult:
 PIPELINE_STAGES = (
     'archetype.macro_layout',
     'starts.provisional_bridge',
-    'hydrology.micro_water_cleanup',
     'hydrology.bathymetry',
     'hydrology.river_cleanup',
     'biomes.start_mini_swamps',

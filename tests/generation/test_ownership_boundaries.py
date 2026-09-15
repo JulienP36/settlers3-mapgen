@@ -64,7 +64,9 @@ def test_upgraded_pipeline_is_a_separate_complete_copy():
     assert not any("generators.legacy" in target for target in _imports(pipeline_path))
     assert "_FamilyPlan(DESERT" in terrain
     assert "_FamilyPlan(SWAMP" in terrain
-    assert "_FamilyPlan(MUD" not in terrain
+    assert "_FamilyPlan(MUD" in terrain
+    assert "native_default_rates" in terrain
+    assert "custom_mud_rate" in terrain
 
 
 def test_old_upgraded_monoliths_are_removed():

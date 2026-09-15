@@ -20,6 +20,7 @@ from .exports.controller import ExportController
 from .shortcuts.controller import ShortcutController
 from .viewer.controller import ViewerController
 from .imports import ImportController
+from .custom import CustomGeneratorController
 from .settings import SettingsController
 from .ui.i18n.controller import LanguageController
 from .ui.theme.controller import ThemeController
@@ -38,7 +39,10 @@ from .ui.widgets import (
     ColorMenuSelect,
     _history_heading_lock_icon,
     _selector_icon,
+    seed_dice_icon,
 )
+
+RESPONSIVE_LAYOUT_SETTLE_MS=24
 
 
 def _mirror_combo_width(language: str) -> int:
@@ -47,7 +51,7 @@ def _mirror_combo_width(language: str) -> int:
     return max(8, max((len(str(label)) for label in labels), default=0) + 2)
 
 
-class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
+class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, CustomGeneratorController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
     """Composed desktop shell running the validated generation facade."""
     def __init__(self):
         self.prefs=load_settings();self._preview_base=None;self._preview_key=None
@@ -74,6 +78,11 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         super().__init__()
         self._apply_theme();self._update_view_controls()
         self.session_cache.resize(self.prefs.get('history_capacity',8))
+        # The root Tk window is not guaranteed to use the Toplevel bind tag.
+        # Its first map event is therefore the reliable point at which DWM can
+        # accept the initial caption palette, including a dark theme loaded
+        # from settings at startup.
+        self.bind('<Map>',self._native_titlebar_mapped,add='+')
         self.bind_class('Toplevel','<Map>',self._native_titlebar_mapped,add='+')
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.bind('<Escape>',self._close_large_preview_escape,add='+');self.after_idle(self._apply_responsive_layout);self._schedule_native_titlebar_refresh()
 
@@ -105,7 +114,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
 
 
     def _build(self):
-        self._build_foundation();self._configure_settings_and_navigation();top=self.header_root
+        self._seed_dice_icon=seed_dice_icon(self)
+        self._build_foundation();self._configure_settings_and_navigation();self._build_custom_parameter_tabs();top=self.header_root
 
         self._header_shell=ttk.Frame(top)
         self._header_shell.grid(row=0,column=0,sticky='ew')
@@ -154,7 +164,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         seed_group=selector_group(secondary_row,'Seed');seed_group.pack(side='left',padx=(0,7))
         self.seed_entry=ttk.Entry(seed_group,textvariable=self.seed,width=14);self.seed_entry.pack()
         seed_actions=ttk.Frame(secondary_row);seed_actions.pack(side='left',fill='y',padx=(0,7))
-        self.random_seed_button=ttk.Button(seed_actions,text='🎲',width=3,command=self.random_seed)
+        self.random_seed_button=ttk.Button(seed_actions,image=self._seed_dice_icon,padding=0,command=self.random_seed)
         self.random_seed_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
         self.copy_seed_button=ttk.Button(seed_actions,text='Copier seed',command=self._copy_seed)
         self.copy_seed_button.pack(side='left',anchor='s',pady=(19,0))
@@ -266,7 +276,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         if self._layout_after:
             try:self.after_cancel(self._layout_after)
             except tk.TclError:pass
-        self._layout_after=self.after(80,self._apply_responsive_layout)
+        self._layout_after=self.after(RESPONSIVE_LAYOUT_SETTLE_MS,self._apply_responsive_layout)
 
     def _apply_responsive_layout(self):
         """Reflow whole functional regions without mixing their internal controls."""
@@ -310,8 +320,9 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
             shell.columnconfigure(1,weight=1);shell.columnconfigure(3,weight=1)
 
         self._layout_global_controls(compact)
-        shell.update_idletasks()
-        self._session_layout_mode=None;self._apply_session_layout()
+        self._session_layout_mode=None
+        try:self.after_idle(self._apply_session_layout)
+        except tk.TclError:self._apply_session_layout()
 
     def _layout_global_controls(self,compact):
         """Lay out the global region locally, never inside generation columns."""

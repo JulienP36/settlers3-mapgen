@@ -1,6 +1,9 @@
 from s3mapgen.application.session.cache import SessionGenerationCache,GenerationCacheKey
 
 def key(i):return GenerationCacheKey(i,768,4,'upgraded','continental')
+def test_generation_cache_uses_a_neutral_current_default_revision():
+    assert key(1).engine_revision == 'generation-v2'
+
 def test_lru_hit_and_eviction():
     c=SessionGenerationCache(2);c.put(key(1),'a');c.put(key(2),'b');assert c.get(key(1))=='a';c.put(key(3),'c');assert c.get(key(2)) is None;assert c.get(key(1))=='a';assert len(c)==2
 

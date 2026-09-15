@@ -44,7 +44,7 @@ class ShellWindow(tk.Tk):
 
         pan=ttk.Panedwindow(self,orient='horizontal');pan.pack(fill='both',expand=True,padx=8,pady=(0,8))
         left=ttk.Frame(pan);right=ttk.Frame(pan);pan.add(left,weight=3);pan.add(right,weight=2)
-        self.canvas=tk.Canvas(left,bg='#181818',highlightthickness=0);self.canvas.pack(fill='both',expand=True);self.canvas.bind('<Configure>',lambda e:self._refresh_preview());self.canvas.bind('<MouseWheel>',self._mouse_zoom)
+        self.canvas=tk.Canvas(left,bg='#181818',highlightthickness=0);self.canvas.pack(fill='both',expand=True);self.canvas.bind('<Configure>',self._preview_canvas_configured,add='+');self.canvas.bind('<MouseWheel>',self._mouse_zoom)
         self.nb=ttk.Notebook(right);self.nb.pack(fill='both',expand=True)
         self.validation=self._text_tab('Validations');self.pipeline=self._text_tab('Pipeline');self.meta=self._text_tab('Métadonnées');self.stats=self._text_tab('Statistiques')
 

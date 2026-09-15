@@ -4,6 +4,8 @@ from .icons import (
     _history_heading_lock_icon,
     _history_role_icon,
     _selector_icon,
+    mineral_icon,
+    seed_dice_icon,
     _thumbnail_with_magnifier,
     selector_icon_image,
 )
@@ -14,6 +16,8 @@ __all__ = [
     "_history_heading_lock_icon",
     "_history_role_icon",
     "_selector_icon",
+    "mineral_icon",
+    "seed_dice_icon",
     "_thumbnail_with_magnifier",
     "selector_icon_image",
 ]

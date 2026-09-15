@@ -18,7 +18,7 @@ class ArchetypeMorphologyLibrary:
     """Terrain+height templates grouped by map archetype.
 
     Existing native NPZ libraries are accepted directly. EDM input remains
-    supported only as a migration/extraction source for reverse-engineering.
+    supported only as a migration/extraction source for compatible assets.
     """
 
     def __init__(self, path: Path | str, archetype: str = 'continental'):

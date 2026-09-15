@@ -16,7 +16,6 @@ from s3mapgen.application.paths import (  # noqa: E402
     EDM_SCAFFOLD,
     LEGACY_PROFILE,
     LIBRARY,
-    UPGRADED_PROFILE,
     UPGRADED_REFERENCE,
 )
 from s3mapgen.map_data.binary import checksum, export_with_scaffold  # noqa: E402
@@ -26,7 +25,6 @@ from s3mapgen.generation import MapGenerator  # noqa: E402
 generator = MapGenerator(
     LEGACY_PROFILE,
     LIBRARY,
-    UPGRADED_PROFILE,
     UPGRADED_REFERENCE,
 )
 upgraded = generator.generate(

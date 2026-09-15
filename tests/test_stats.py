@@ -250,10 +250,10 @@ def test_decorative_object_families_are_counted_without_double_counting():
         stats, 'decorative_objects', lang='fr', dark=True,
         width=900, height=520, return_regions=True,
     )
-    stones = next(r for r in regions if r['label'] == 'Pierres décoratives')
-    assert any('1–28' in line for line in stones['details'])
+    stones = next(r for r in regions if r['label'] == 'Pierres décoratives · Grosses pierres')
+    assert any('1–8' in line for line in stones['details'])
     assert stones['focus']['kind'] == 'object_family'
-    assert 1 in stones['focus']['ids'] and 28 in stones['focus']['ids']
+    assert 1 in stones['focus']['ids'] and 8 in stones['focus']['ids']
 
 
 def test_object_family_chart_has_the_combined_title_and_user_order():

@@ -13,6 +13,9 @@ from ..rendering.focus import focus_signature
 from ..ui.i18n.common import _lang_text
 
 
+CHART_RESIZE_SETTLE_MS = 24
+
+
 class AnalysisController:
     """Host contract: current outputs, analysis widgets and export action."""
     def _reorder_analysis_tabs(self):
@@ -31,14 +34,14 @@ class AnalysisController:
         self.stats_chart_var=tk.StringVar(value=CHART_LABELS[self.prefs.get('language','fr')]['terrain_families'])
         self.stats_chart_combo=ttk.Combobox(controls,textvariable=self.stats_chart_var,state='readonly',width=40)
         self.stats_chart_combo.grid(row=0,column=1,sticky='ew',padx=(0,8));self.stats_chart_combo.bind('<<ComboboxSelected>>',lambda e:self._stats_chart_selection_changed())
-        self.stats_link_var=tk.BooleanVar(value=False)
+        self.stats_link_var=tk.BooleanVar(value=True)
         self.stats_link_button=ttk.Checkbutton(controls,text='Lier à la vue',variable=self.stats_link_var,command=self._toggle_chart_link)
         self.stats_link_button.grid(row=0,column=2,padx=(0,8))
         self.stats_export_button=ttk.Button(controls,text='Exporter…',command=self._open_stats_export_center);self.stats_export_button.grid(row=0,column=3,padx=3)
         self.stats_chart_canvas=tk.Canvas(frame,highlightthickness=0,bg='#212225');self.stats_chart_canvas.grid(row=1,column=0,sticky='nsew')
-        self.stats_chart_canvas.bind('<Configure>',lambda e:self._refresh_stats_chart(),add='+')
+        self.stats_chart_canvas.bind('<Configure>',self._schedule_stats_chart_refresh,add='+')
         self.stats_chart_canvas.bind('<Motion>',self._chart_tooltip_motion,add='+');self.stats_chart_canvas.bind('<Leave>',self._chart_leave,add='+')
-        self._stats_chart_photo=None;self._stats_chart_regions=[];self._chart_tooltip=None;self._chart_tooltip_label=None
+        self._stats_chart_photo=None;self._stats_chart_item=None;self._stats_chart_after=None;self._stats_chart_regions=[];self._chart_tooltip=None;self._chart_tooltip_label=None
         self._chart_hover_region=None;self._chart_link_focus=None
         self._refresh_stats_chart_labels()
 
@@ -105,16 +108,37 @@ class AnalysisController:
     def _compare_stats_pair(self):
         return (self._stats_for_output(self._compare_slots.get('A')), self._stats_for_output(self._compare_slots.get('B')))
 
+    def _schedule_stats_chart_refresh(self,_event=None):
+        pending=getattr(self,'_stats_chart_after',None)
+        if pending is not None:
+            try:self.after_cancel(pending)
+            except tk.TclError:pass
+        try:self._stats_chart_after=self.after(CHART_RESIZE_SETTLE_MS,self._finish_stats_chart_refresh)
+        except tk.TclError:self._stats_chart_after=None
+
+    def _finish_stats_chart_refresh(self):
+        self._stats_chart_after=None;self._refresh_stats_chart()
+
     def _refresh_stats_chart(self):
         if not hasattr(self,'stats_chart_canvas'):return
-        c=self.stats_chart_canvas;c.delete('all')
+        pending=getattr(self,'_stats_chart_after',None)
+        if pending is not None:
+            try:self.after_cancel(pending)
+            except tk.TclError:pass
+            self._stats_chart_after=None
+        c=self.stats_chart_canvas
         stats=self._ensure_stats_cache()
         if not stats:
             c.create_text(20,20,text='—',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'));return
         try:
             w=max(420,int(c.winfo_width()));h=max(280,int(c.winfo_height()));lang=self.prefs.get('language','fr');dark=self.prefs.get('theme','dark')=='dark'
             im,self._stats_chart_regions=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h,compare_stats=self._compare_stats_pair(),return_regions=True)
-            self._stats_chart_photo=ImageTk.PhotoImage(im);c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
+            self._stats_chart_photo=ImageTk.PhotoImage(im);item=getattr(self,'_stats_chart_item',None)
+            if item is None:c.delete('all');item=c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
+            else:
+                try:c.itemconfigure(item,image=self._stats_chart_photo)
+                except tk.TclError:item=c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
+            self._stats_chart_item=item
         except Exception as exc:
             c.create_text(20,20,text=f'Chart error: {exc}',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'))
 

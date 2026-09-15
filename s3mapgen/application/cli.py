@@ -2,7 +2,7 @@ from __future__ import annotations
 import argparse, json
 from pathlib import Path
 
-from .paths import LEGACY_PROFILE, UPGRADED_PROFILE, UPGRADED_REFERENCE, LIBRARY, EDM_SCAFFOLD, MAP_SCAFFOLD
+from .paths import LEGACY_PROFILE, UPGRADED_REFERENCE, LIBRARY, EDM_SCAFFOLD, MAP_SCAFFOLD
 from ..generation import MapGenerator
 from ..generation.core import NATIVE_PLAYER_LIMITS, native_size_warning_kind
 from ..map_data.binary import export_with_scaffold
@@ -22,7 +22,7 @@ def main():
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
-    g = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_PROFILE, UPGRADED_REFERENCE)
+    g = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE)
     res = g.generate(args.players, args.seed, mode=args.mode, archetype=args.archetype, side=args.side, mirror_mode=args.mirror_mode)
     hard = [v for v in res.validations if v.hard and not v.passed]
     print('\n'.join(v.label() for v in res.validations))

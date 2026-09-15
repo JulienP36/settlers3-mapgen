@@ -31,7 +31,9 @@ Their roles are distinct:
 - `tests/run_smoke.py` generates the independent Upgraded case and the native Legacy case, checks hard validators and verifies the exported binary checksum;
 - `--self-test` imports the real GUI runtime chain and reads every required packaged resource.
 
-After significant UI/tooling work, verify the Upgraded compatibility hashes listed in `PROJECT_WORKFLOW.md`. A local PASS never replaces Windows/UI or official editor/game validation where those layers are relevant.
+After significant UI/tooling work, verify the protected compatibility hashes
+listed in `PROJECT_WORKFLOW.md`. A local PASS never replaces Windows/UI or
+official editor/game validation where those layers are relevant.
 
 ## Deterministic source package
 

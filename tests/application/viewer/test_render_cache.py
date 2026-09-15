@@ -80,3 +80,26 @@ def test_fast_slider_preferences_are_debounced_and_flushed_on_close():
     opacity=VIEWER_SRC[VIEWER_SRC.index('def _opacity_changed'):VIEWER_SRC.index('def _wheel_changed')]
     assert '_schedule_prefs_save()' in wheel
     assert '_schedule_prefs_save()' in opacity
+
+
+def test_scrollbar_drag_is_coalesced_without_delaying_wheel_scrolling():
+    assert "command=lambda *args:schedule_view('x',*args)" in SETTINGS_SRC
+    assert "command=lambda *args:schedule_view('y',*args)" in SETTINGS_SRC
+    assert 'SCROLLBAR_DRAG_FRAME_MS = 16' in SETTINGS_SRC
+    assert 'canvas.after(SCROLLBAR_DRAG_FRAME_MS,apply_pending_view)' in SETTINGS_SRC
+    assert "hbar.bind('<ButtonRelease-1>',flush_view,add='+')" in SETTINGS_SRC
+    assert "vbar.bind('<ButtonRelease-1>',flush_view,add='+')" in SETTINGS_SRC
+    assert 'canvas.xview_scroll(amount, "units")' in SETTINGS_SRC
+    assert 'canvas.yview_scroll(amount, "units")' in SETTINGS_SRC
+    assert 'canvas.after(SCROLLABLE_TAB_LAYOUT_SETTLE_MS,refresh)' in SETTINGS_SRC
+    assert 'SCROLLABLE_INPUT_WIDGET_CLASSES' in SETTINGS_SRC
+    assert 'def _scrollable_tab_wheel_is_over_input(self, event):' in SETTINGS_SRC
+    assert 'if self._scrollable_tab_wheel_is_over_input(event):' in SETTINGS_SRC
+
+
+def test_resize_redraw_settles_at_one_frame_without_rebuilding_every_event():
+    assert 'PREVIEW_RESIZE_SETTLE_MS = 24' in VIEWER_SRC
+    assert 'self.after(PREVIEW_RESIZE_SETTLE_MS,self._finish_preview_resize)' in VIEWER_SRC
+    analysis=Path('s3mapgen/application/analysis/controller.py').read_text(encoding='utf-8')
+    assert 'CHART_RESIZE_SETTLE_MS = 24' in analysis
+    assert 'self.after(CHART_RESIZE_SETTLE_MS,self._finish_stats_chart_refresh)' in analysis

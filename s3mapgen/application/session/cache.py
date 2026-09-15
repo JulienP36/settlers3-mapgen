@@ -14,8 +14,9 @@ class GenerationCacheKey:
     mode: str
     archetype: str
     modifiers: tuple = ()
-    engine_revision: str = "v1.5"
+    engine_revision: str = "generation-v2"
     mirror_mode: int = 0
+    configuration_digest: str = ""
 
 
 @dataclass(frozen=True)

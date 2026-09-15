@@ -39,6 +39,7 @@ def test_non_windows_platform_is_a_safe_noop(monkeypatch):
 
 
 def test_titlebars_refresh_on_theme_changes_and_new_toplevel_maps():
+    assert "self.bind('<Map>',self._native_titlebar_mapped,add='+')" in GUI_SOURCE
     assert "bind_class('Toplevel','<Map>',self._native_titlebar_mapped,add='+')" in GUI_SOURCE
     assert 'self._schedule_native_titlebar_refresh()' in GUI_SOURCE
     assert 'apply_native_titlebar(target,palette)' in GUI_SOURCE

@@ -1,9 +1,8 @@
-"""Static content routines recovered from the Settlers III generator.
+"""Static content routines for the Settlers III native generator.
 
-The executable keeps the content pass in the same native PRNG stream as the
-terrain pass.  This module mirrors the small routines around ``0x51B010``
-(fixed objects), ``0x51B1A0`` (object ranges), ``0x51AD40`` (mountain
-resources) and the direct fish loop.  It intentionally does not implement
+The content pass uses the same native PRNG stream as the terrain pass.  This
+module implements the fixed-object, ranged-object, mountain-resource and fish
+subpasses.  It intentionally does not implement
 the player-start records: those belong to the future SAV writer and are not
 part of the global MAP/EDM content pass.
 
@@ -24,7 +23,7 @@ if TYPE_CHECKING:  # pragma: no cover - imports used only by type checkers
     from .native_terrain import NativeRng16, NativeTerrainGrid
 
 
-# This is the executable's memory-neighbour order.  It differs from the
+# This is the native memory-neighbour order.  It differs from the
 # renderer's clockwise order and is therefore kept local and explicit.
 NATIVE_HEX6 = ((1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1))
 
@@ -38,7 +37,7 @@ def _pattern_bank_records() -> tuple[tuple[int, int], ...]:
 
     The initializer first enumerates the triangular ``(u, v)`` domain, then
     repeatedly takes its smallest score.  Python's stable sort is equivalent
-    to the executable's strict ``<`` minimum scan when equal scores occur.
+    to the native strict ``<`` minimum scan when equal scores occur.
     """
 
     candidates: list[tuple[int, int]] = []
@@ -119,6 +118,8 @@ def _collision_free(
     objects: np.ndarray,
     object_flags: np.ndarray,
     barrier: np.ndarray,
+    protected_mask: np.ndarray | None,
+    object_collision_mask: np.ndarray | None,
     row: int,
     col: int,
     count: int,
@@ -129,16 +130,40 @@ def _collision_free(
         rr, cc = int(row) + dr, int(col) + dc
         # Reads outside the active map hit the zeroed native backing store.
         # There is consequently no collision there; range candidates are
-        # already bounds-checked at their origin by the executable.
+        # already bounds-checked at their origin by the native pass.
         if not _inside(side, rr, cc):
             continue
         if (
             int(objects[rr, cc]) != 0
             or (int(object_flags[rr, cc]) & 0x01) != 0
             or bool(barrier[rr, cc])
+            or (protected_mask is not None and bool(protected_mask[rr, cc]))
+            or (
+                object_collision_mask is not None
+                and bool(object_collision_mask[rr, cc])
+            )
         ):
             return False
     return True
+
+
+def _mark_object_collision(
+    mask: np.ndarray,
+    row: int,
+    col: int,
+    radius: int = 2,
+) -> None:
+    """Extend a live object halo around one just-written native anchor."""
+
+    radius = max(0, int(radius))
+    side = mask.shape[0]
+    for rr in range(max(0, int(row) - radius), min(side, int(row) + radius + 1)):
+        for cc in range(max(0, int(col) - radius), min(side, int(col) + radius + 1)):
+            dr = rr - int(row)
+            dc = cc - int(col)
+            distance = max(abs(dr), abs(dc)) if dr * dc >= 0 else abs(dr) + abs(dc)
+            if distance <= radius:
+                mask[rr, cc] = True
 
 
 def _write_flags(
@@ -173,8 +198,10 @@ def _place_fixed(
     flag_mode: int,
     pattern_arg: int,
     bank: tuple[tuple[int, int], ...],
+    protected_mask: np.ndarray | None = None,
+    object_collision_mask: np.ndarray | None = None,
 ) -> tuple[int, int]:
-    """Run one recovered fixed-object call and return attempts/accepts."""
+    """Run one native fixed-object call and return attempts/accepts."""
 
     blocks = grid.side // 64
     total = blocks * blocks * int(density)
@@ -190,10 +217,22 @@ def _place_fixed(
         col = 1 + _random_scaled(rng, grid.side - 2)
         if not _source_neighbourhood(terrain, row, col, source):
             continue
-        if not _collision_free(objects, object_flags, barrier, row, col, count, bank):
+        if not _collision_free(
+            objects,
+            object_flags,
+            barrier,
+            protected_mask,
+            object_collision_mask,
+            row,
+            col,
+            count,
+            bank,
+        ):
             continue
         objects[row, col] = int(object_id) & 0xFF
         _write_flags(object_flags, row, col, flag_mode)
+        if object_collision_mask is not None:
+            _mark_object_collision(object_collision_mask, row, col)
         accepted += 1
     return attempts, accepted
 
@@ -209,8 +248,10 @@ def _place_range(
     flag_mode: int,
     pattern_arg: int,
     bank: tuple[tuple[int, int], ...],
+    protected_mask: np.ndarray | None = None,
+    object_collision_mask: np.ndarray | None = None,
 ) -> tuple[int, int]:
-    """Run one recovered ranged-object call and return attempts/accepts."""
+    """Run one native ranged-object call and return attempts/accepts."""
 
     blocks = grid.side // 64
     total = blocks * blocks * int(density)
@@ -234,13 +275,25 @@ def _place_range(
                 continue
             if not _source_neighbourhood(terrain, row, col, source):
                 continue
-            if not _collision_free(objects, object_flags, barrier, row, col, count, bank):
+            if not _collision_free(
+                objects,
+                object_flags,
+                barrier,
+                protected_mask,
+                object_collision_mask,
+                row,
+                col,
+                count,
+                bank,
+            ):
                 continue
             object_id = int(low_id) + (
                 (rng.next() * (int(high_id) - int(low_id) + 1)) >> 16
             )
             objects[row, col] = object_id & 0xFF
             _write_flags(object_flags, row, col, flag_mode)
+            if object_collision_mask is not None:
+                _mark_object_collision(object_collision_mask, row, col)
             accepted += 1
     return attempts, accepted
 
@@ -251,8 +304,9 @@ def _place_mineral_family(
     family: int,
     coefficient: int,
     bank: tuple[tuple[int, int], ...],
+    protected_mask: np.ndarray | None = None,
 ) -> tuple[int, int]:
-    """Run one ``0x51AD40`` family call and return groups/writes."""
+    """Run one native resource-family call and return groups/writes."""
 
     blocks = grid.side // 64
     total = blocks * blocks * int(coefficient)
@@ -275,6 +329,8 @@ def _place_mineral_family(
                 continue
             if int(resources[row, col]) != 0:
                 continue
+            if protected_mask is not None and bool(protected_mask[row, col]):
+                continue
             if rng.next() >= threshold:
                 continue
             resources[row, col] = (int(family) + (rng.next() % 15) + 1) & 0xFF
@@ -282,7 +338,13 @@ def _place_mineral_family(
     return groups, writes
 
 
-def _place_fish(grid: NativeTerrainGrid, rng: NativeRng16) -> tuple[int, int]:
+def _place_fish(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    *,
+    preserve_existing_resources: bool = False,
+    protected_mask: np.ndarray | None = None,
+) -> tuple[int, int]:
     """Run the direct native fish loop: columns outside, rows inside."""
 
     if grid.side <= 1:
@@ -293,6 +355,10 @@ def _place_fish(grid: NativeTerrainGrid, rng: NativeRng16) -> tuple[int, int]:
     for outer_col in range(grid.side - 1):
         for inner_row in range(grid.side - 1):
             if (int(terrain[inner_row, outer_col]) & 0xF0) != 0:
+                continue
+            if preserve_existing_resources and int(resources[inner_row, outer_col]) != 0:
+                continue
+            if protected_mask is not None and bool(protected_mask[inner_row, outer_col]):
                 continue
             if rng.next() <= 0x9C40:
                 continue
@@ -374,24 +440,58 @@ MINERAL_CALLS = (
 )
 
 
+def _object_family(object_id: int) -> str:
+    """Return the semantic family owned by one native object id."""
+
+    object_id = int(object_id)
+    if object_id in set(range(68, 78)) | {80, 81} | {78, 79}:
+        return "trees"
+    if object_id in set(range(115, 128)):
+        return "stones"
+    return "decorations"
+
+
 def populate_native_content(
     grid: NativeTerrainGrid,
     rng: NativeRng16,
     mode: int = 0,
+    *,
+    disabled_object_families: set[str] | tuple[str, ...] | None = None,
+    protected_object_mask: np.ndarray | None = None,
+    protected_resource_mask: np.ndarray | None = None,
+    include_resources: bool = True,
+    preserve_existing_resources: bool = False,
+    object_hitbox_radius: int | None = None,
 ) -> dict[str, object]:
     """Populate global native objects, mountain minerals and fish.
 
-    No start reservation is consulted here.  The executable's pass runs
+    No start reservation is consulted here.  The native pass runs
     before the future SAV-only start placement, and the caller deliberately
     keeps those player resources/settlers deferred.
     """
 
+    disabled = {
+        str(value) for value in (disabled_object_families or ())
+        if str(value) in {"trees", "stones", "decorations"}
+    }
     bank = _pattern_bank_records()
     barrier = _mirror_barrier(grid.side, int(mode))
+    live_object_collision = None
+    if object_hitbox_radius is not None and int(object_hitbox_radius) > 0:
+        live_object_collision = np.zeros_like(grid.objects, dtype=bool)
+        for row, col in zip(*np.where(grid.objects != 0)):
+            _mark_object_collision(
+                live_object_collision,
+                int(row),
+                int(col),
+                int(object_hitbox_radius),
+            )
 
     fixed_attempts = 0
     fixed_accepts = 0
     for source, object_id, density, flag_mode, pattern_arg in FIXED_OBJECT_CALLS:
+        if _object_family(object_id) in disabled:
+            continue
         attempts, accepted = _place_fixed(
             grid,
             rng,
@@ -402,6 +502,8 @@ def populate_native_content(
             flag_mode,
             pattern_arg,
             bank,
+            protected_object_mask,
+            live_object_collision,
         )
         fixed_attempts += attempts
         fixed_accepts += accepted
@@ -409,6 +511,8 @@ def populate_native_content(
     range_attempts = 0
     range_accepts = 0
     for source, low_id, high_id, density, flag_mode, pattern_arg in RANGE_OBJECT_CALLS:
+        if _object_family(low_id) in disabled:
+            continue
         attempts, accepted = _place_range(
             grid,
             rng,
@@ -420,19 +524,36 @@ def populate_native_content(
             flag_mode,
             pattern_arg,
             bank,
+            protected_object_mask,
+            live_object_collision,
         )
         range_attempts += attempts
         range_accepts += accepted
 
     mineral_groups: dict[str, int] = {}
     mineral_writes: dict[str, int] = {}
-    for family, coefficient in MINERAL_CALLS:
-        groups, writes = _place_mineral_family(grid, rng, family, coefficient, bank)
-        key = f"{family:02x}"
-        mineral_groups[key] = groups
-        mineral_writes[key] = writes
+    if include_resources:
+        for family, coefficient in MINERAL_CALLS:
+            groups, writes = _place_mineral_family(
+                grid,
+                rng,
+                family,
+                coefficient,
+                bank,
+                protected_resource_mask,
+            )
+            key = f"{family:02x}"
+            mineral_groups[key] = groups
+            mineral_writes[key] = writes
 
-    fish_writes, fish_nonzero = _place_fish(grid, rng)
+    fish_writes, fish_nonzero = (0, 0)
+    if include_resources:
+        fish_writes, fish_nonzero = _place_fish(
+            grid,
+            rng,
+            preserve_existing_resources=preserve_existing_resources,
+            protected_mask=protected_resource_mask,
+        )
 
     objects = grid.objects
     resources = grid.resources
@@ -475,7 +596,7 @@ def populate_native_content(
     fish_mask = water_like & ((resources & 0xF0) == 0) & ((resources & 0x0F) > 0)
 
     minerals_meta = {
-        "mineral_model_status": "recovered_s3_exe",
+        "mineral_model_status": "native_calibrated",
         "mineral_support_rule": "terrain_high_nibble_0x20_or_0x80",
         "mineral_support_cells": support_count,
         "mineral_mountain_final_cells": mineral_count,
@@ -487,7 +608,7 @@ def populate_native_content(
         "native_mineral_group_writes": mineral_writes,
     }
     fish_meta = {
-        "fish_model_status": "recovered_s3_exe",
+        "fish_model_status": "native_calibrated",
         "fish_cells": int(np.count_nonzero(fish_mask)),
         "fish_written_cells": fish_writes,
         "fish_nonzero_writes": fish_nonzero,
@@ -508,8 +629,9 @@ def populate_native_content(
         "native_static_objects": int(np.count_nonzero(objects)),
     }
     return {
-        "native_content_core": "recovered_s3_exe",
+        "native_content_core": "native_calibrated",
         "native_content_excludes": ("player_start_objects", "settlers", "sav_writer"),
+        "native_resources_included": bool(include_resources),
         "native_pattern_bank_records": len(bank),
         "native_fixed_object_calls": len(FIXED_OBJECT_CALLS),
         "native_range_object_calls": len(RANGE_OBJECT_CALLS),
@@ -517,6 +639,12 @@ def populate_native_content(
         "native_fixed_object_accepts": fixed_accepts,
         "native_range_object_attempts": range_attempts,
         "native_range_object_accepts": range_accepts,
+        "native_object_disabled_families": tuple(sorted(disabled)),
+        "native_object_hitbox_radius": (
+            int(object_hitbox_radius)
+            if object_hitbox_radius is not None and int(object_hitbox_radius) > 0
+            else 0
+        ),
         "native_object_attempts": fixed_attempts + range_attempts,
         "native_object_accepts": fixed_accepts + range_accepts,
         "native_object_counts": object_count_map,

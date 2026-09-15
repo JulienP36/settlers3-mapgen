@@ -6,8 +6,10 @@ This file defines how the project is resumed, developed, validated, checkpointed
 
 ## Session start
 1. Read `PROJECT_WORKFLOW.md`.
-2. Read `references/SETTLERS3_CURRENT_SNAPSHOT.md` when the local source ZIP
-   contains it; GitHub checkouts intentionally omit the research/recovery tree.
+2. Read `references/REFERENCE_INDEX.md` and
+   `references/SETTLERS3_CURRENT_SNAPSHOT.md` when the local source ZIP
+   contains them; GitHub checkouts intentionally omit the research/recovery
+   tree.
 3. Read `TODO_MAPGEN.md`.
 4. Work on the correct permanent branch.
 5. If generation/export rules are touched and the local recovery references are
@@ -60,6 +62,11 @@ Normal promotion flow: `dev` → `rc` → `main`.
 
 ## Checkpoint policy
 Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohérente est testable ou qu’une longue session a matériellement changé le projet. Une candidate suffixée (`DEV_X_R1`, `R2`, etc.) reste locale et peut être remplacée autant de fois que nécessaire.
+
+La règle de version suivie par le projet est stricte : chaque modification de
+la candidate incrémente `R`; le compteur `DEV` n’avance qu’après un push d’un
+checkpoint; une release n’est créée qu’une fois le périmètre terminé et validé.
+Ainsi, le travail courant est `DEV_6_R61`, sans push ni release.
 
 Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
 
@@ -117,11 +124,14 @@ Do not alter these retained baselines without an explicit generation-engine
 reason. The obsolete procedural Legacy generator is absent after the DEV_2
 reset; the replacement native Legacy v1 lives in the separate
 `generation/generators/legacy/` package, and the independent Upgraded copy now
-lives in `generation/generators/upgraded/`. The former 768 Legacy profile
+lives in `generation/generators/upgraded/`. Public Legacy and Upgraded
+selections are preset-backed routes through the same Custom configuration
+contract; their protected underlying engines remain separate. The former 768 Legacy profile
 remains only as a protected compatibility resource for packaging diagnostics,
 while the active native profile is `config/generation_profiles/continental_legacy_v2.json`.
+There is no active Upgraded v1.5 engine.  The active Upgraded defaults are
+owned by `generation/generators/upgraded/profile_defaults.py`.
 - `config/legacy_768_v1.json` — `bdd091afeafcce88aa558d656e6d2728d101440368642e0c50568821d3f25c85`
-- `config/upgraded_768_v1.json` — `bbd4be69dd27fa98ebd873a8a4ae1261e7b44539617072bd3c28bab837282ff3`
 - `data/SETTLERS3_NATIVE_768_STATIC_LIBRARY_v1.npz` — `fbc43b2bba99f995c659753ef423656dfd3b61df8308cc186a7cae72b5db3d4d`
 
 Check these hashes after significant tooling/UI/Stats work. These values are
@@ -135,6 +145,8 @@ the computed DEV_2 baseline.
 
 ## Documentation roles
 - `PROJECT_WORKFLOW.md`: how to work and recover.
+- `references/REFERENCE_INDEX.md`: active-versus-history reference routing and
+  recovery order.
 - `references/SETTLERS3_CURRENT_SNAPSHOT.md`: current resumable state, updated in place.
 - `TODO_MAPGEN.md`: roadmap / remaining work.
 - `VERSIONING.md`: detailed version/tag/release rules.
@@ -155,7 +167,7 @@ the computed DEV_2 baseline.
 ## Recovery after context loss
 1. Open branch `dev`.
 2. Read this workflow.
-3. Read `SETTLERS3_CURRENT_SNAPSHOT.md`.
+3. Read `REFERENCE_INDEX.md` and `SETTLERS3_CURRENT_SNAPSHOT.md`.
 4. Read TODO, the consolidated development log and `DEV_CANDIDATE_NOTES.md` when a candidate is active.
 5. Verify current `dev` tip and protected hashes before making generation-sensitive changes.
 6. Continue from the "Next work" section of the living snapshot unless the user gives a newer explicit direction.

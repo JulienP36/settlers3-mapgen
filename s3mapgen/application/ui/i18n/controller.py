@@ -68,6 +68,8 @@ class LanguageController:
         if getattr(self,'current',None) and getattr(self,'stats',None):
             st=self._ensure_stats_cache();self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(st,lang=lang))
         self._refresh_stats_chart();self._refresh_compare_buttons()
+        if hasattr(self, '_custom_refresh_after_language'):
+            self._custom_refresh_after_language()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
         shortcut_text=SHORTCUT_UI_TEXT[lang]
         for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text=shortcut_text['reset'])
