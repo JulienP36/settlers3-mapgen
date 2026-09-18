@@ -1272,7 +1272,7 @@ class UpgradedContent:
             "placed_zones": 0,
             "placed_core_cells": 0,
             "reserved_cells": 0,
-            "quantity_mean_source": str(cfg.get("quantity_mean_source", "upgraded_global")),
+            "quantity_mean_source": str(cfg.get("quantity_mean_source", "start_bonus_input")),
             "quantity_mean_target": int(UPGRADED_RESOURCE_MEAN),
             "quantity_mean_targets": {
                 name: quantity_targets[name]

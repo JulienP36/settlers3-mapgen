@@ -108,7 +108,7 @@ def test_proportional_surface_renormalizes_global_deposit_shares_to_active_famil
     assert sum(zone["core_cells"] for zone in by_resource.values()) == 47
 
 
-def test_zone_quantity_defaults_follow_global_mineral_mean_and_can_be_overridden():
+def test_zone_quantity_inputs_are_independent_from_global_mineral_mean():
     config = build_custom_config("upgraded")
     sections = config.semantic_sections()
     sections["minerals"]["average_quantity"].update(coal=5, iron=8, gold=10)
@@ -122,7 +122,7 @@ def test_zone_quantity_defaults_follow_global_mineral_mean_and_can_be_overridden
     content._place_start_rocky_resources(state, np.random.default_rng(105))
     zone = state.metadata["upgraded_start_rocky_minerals"]["zones"][0]
 
-    assert zone["quantity_mean_target"] == 5
+    assert zone["quantity_mean_target"] == 10
     sections["start_bonus"]["rocky_minerals"]["coal"]["average_quantity"] = 12
     state, content = _state_and_content(sections)
     content._place_start_rocky_minerals(state, random.Random(106))

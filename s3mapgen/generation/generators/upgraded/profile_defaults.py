@@ -171,7 +171,7 @@ ACTIVE_UPGRADED_PROFILE: dict[str, object] = {
             "radius_max": 4,
             "shape": "hexagon",
             "transition_rings": 2,
-            "quantity_mean_source": "upgraded_global",
+            "quantity_mean_source": "start_bonus_input",
             "zones": {
                 "coal": {"enabled": True, "family": 16},
                 "iron": {"enabled": True, "family": 32},

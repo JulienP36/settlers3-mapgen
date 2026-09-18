@@ -7,6 +7,7 @@ from ...paths import BASE
 
 
 _SEED_DICE_PATH = Path(__file__).with_name("assets") / "seed_dice.png"
+_INFO_ICON_PATH = Path(__file__).with_name("assets") / "info.png"
 _MINERAL_ICON_PATHS = {
     "coal": BASE / "data" / "mineral_icons" / "coal.png",
     "iron": BASE / "data" / "mineral_icons" / "iron.png",
@@ -21,6 +22,18 @@ def seed_dice_icon(master):
     with Image.open(_SEED_DICE_PATH) as source:
         image = source.convert("RGBA")
     return ImageTk.PhotoImage(image, master=master)
+
+
+def info_icons(master):
+    """Load the three 16×16 help-marker frames: off, normal and hover."""
+    with Image.open(_INFO_ICON_PATH) as source:
+        image = source.convert("RGBA")
+    if image.size != (48, 16):
+        raise ValueError("L’icône d’aide doit être une bande de trois frames 16×16")
+    return tuple(
+        ImageTk.PhotoImage(image.crop((index * 16, 0, (index + 1) * 16, 16)), master=master)
+        for index in range(3)
+    )
 
 
 def mineral_icon(master, key: str, *, disabled: bool = False):

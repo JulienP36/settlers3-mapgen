@@ -2,40 +2,39 @@
 > Roadmap orientée **travail restant**. Pour reprendre sans ambiguïté, lire
 > `references/REFERENCE_INDEX.md`, puis le snapshot vivant et la matrice
 > courante. Les étapes validées et les essais remplacés sont historiques.
-## Historique clôturé — non prescriptif
+## Historique clôturé — v1.9 (non prescriptif)
 - Les jalons v1.5 à v1.9 sont terminés et conservés dans le `CHANGELOG.md`,
   les journaux `references/dev_notes/` et `references/history/`.
-- La calibration 768 de l'Upgraded est portée par le profil actif du générateur
-  indépendant et la bibliothèque native reste une ressource de compatibilité.
+- La calibration 768 de l’Upgraded est portée par le profil actif du générateur
+  indépendant ; la bibliothèque native reste une ressource de compatibilité.
   Il n'existe pas de moteur Upgraded v1.5 actif.
-- Le générateur Legacy procédural de DEV_1 et ses heuristiques minières ont
-  été retirés ; les essais associés restent archivés à titre explicatif.
-Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute modification de génération ou de format. La ligne active est v2.0 DEV6 : Legacy natif et Upgraded indépendant sont séparés, et le Custom avance par sections sémantiques testées.
+- Le générateur Legacy procédural de DEV_1 et ses heuristiques minières ont été
+  retirés ; les essais associés restent archivés à titre explicatif.
+- L’essai R18 de staging a été abandonné après validation visuelle ; R19 en
+  conserve le rollback et R26 est la candidate UI active. Ne pas réintroduire
+  l’essai R18 tel quel.
+Lire `references/SETTLERS3_PREGEN_READ_FIRST.md` avant toute modification de génération ou de format. Le checkpoint publié le plus récent est v2.0 DEV7 : Legacy natif et Upgraded indépendant restent séparés, la finition UI du Générateur est close, et la prochaine tranche porte sur les archétypes Custom.
 ## Future release — après DEV6–DEV8
-Les prochaines versions RC/STABLE restent distinctes du travail courant. Une release ne sera préparée qu'après validation des générations, des exports et de la diversité réellement obtenue.
-- [ ] Geler les nouvelles fonctionnalités ; garder les corrections, le polish,
-  l'optimisation et la documentation autorisés.
-- [ ] Produire un ZIP sources/Python et un ZIP Windows x64 portable `onedir`,
-  sans installateur.
-- [ ] Revalider ressources, exports, settings `%APPDATA%/Settlers3MapGen`,
-  installation propre, mise à jour, absence réseau, checksum et rollback.
+Les prochaines versions RC/STABLE restent distinctes du travail courant ; une release ne sera préparée qu'après validation des générations, des exports et de la diversité réellement obtenue.
+- [ ] Geler les nouvelles fonctionnalités ; garder corrections, polish,
+  optimisation et documentation autorisés.
+- [ ] Produire un ZIP sources/Python et un ZIP Windows x64 portable `onedir`, sans
+  installateur.
+- [ ] Revalider ressources, exports, settings `%APPDATA%/Settlers3MapGen`, installation
+  propre, mise à jour, absence réseau, checksum et rollback.
 - [ ] Finaliser l'icône uniquement à partir du pixel art fourni manuellement ;
   aucune image IA.
 - [ ] Finaliser l'updater v2 : version, téléchargement, SHA-256, settings,
   remplacement propre et rollback.
-- [ ] Mettre à jour README, notes, manifests, validations et snapshot avant
-  promotion.
-## Historique clôturé — v1.9, restructuration et Data Mapping
+- [ ] Mettre à jour README, notes, manifests, validations et snapshot avant promotion.
+## v2.1 — ouverture
 
-Les fondations UI, imports, séparation des couches, validations et premiers
-résultats de Data Mapping sont terminés. Le détail des décisions et des pistes
-non retenues reste dans `references/dev_notes/` et le `CHANGELOG.md`; aucun
-ancien sous-TODO ne doit être repris comme tâche active.
-Les bornes encore inconnues, les objets `82/83`, les champs SAV non décodés et
-les résidus de format sont suivis dans la section v2.0 « Résidus d’audit » ou
-dans les références spécialisées, jamais dans une ancienne liste v1.x.
+- [ ] Au tout début de `v2.1 DEV1`, lire le todo personnel de Julien comme
+  entrée obligatoire de priorisation avant toute planification ou
+  implémentation ; s’il n’est pas accessible dans le contexte du projet, le
+  demander avant de poursuivre.
 
-## v2.1 — ouverture\n\n- [ ] Au tout début de `v2.1 DEV1`, lire le todo personnel de Julien comme entrée obligatoire de priorisation avant toute planification ou implémentation ; s’il n’est pas accessible dans le contexte du projet, le demander avant de poursuivre.\n\n## v2.0 — reconstruction native Legacy, puis Custom
+## v2.0 — reconstruction native Legacy, puis Custom
 
 La **reconstruction complète des pipelines** est le périmètre v2.0. Le
 générateur procédural Continental DEV_1 a été retiré ; le Legacy natif est
@@ -47,21 +46,12 @@ validé dans DEV_2 et l’Upgraded indépendant dans DEV_3/DEV_5.
   dépendance d’exécution vers `generators/legacy/`.
 - [x] Réintégrer la génération calibrée des minerais de montagnes.
 - [x] Réintégrer poissons, arbres, décorations et pierres de construction.
-- [x] Dev 5 validé : calquer les objets statiques sur les familles Legacy, conserver
-  les récifs Upgraded, restaurer les bonus arbres/pierres/mini-marais, placer
-  30 % des adultes en mini-forêts, réserver les pousses aux forêts et créer
-  les clusters de pierres.
+- [x] Dev 5 validé : calquer les objets statiques sur les familles Legacy, conserver les récifs Upgraded, restaurer les bonus arbres/pierres/mini-marais, placer 30 % des adultes en mini-forêts, réserver les pousses aux forêts et créer les clusters de pierres.
 - [x] Désactiver toute génération de boue dans Upgraded.
-- [x] Garder le positionnement des joueurs isolé pour une passe dédiée ; le
-  pont actuel reste provisoire et ne crée ni ressources ni colons de départ.
-- [x] Calibrer les blobs miniers avec compensation de la projection
-  parallélogramme, sans changer la topologie HEX6, les quotas, les quantités ou
-  la règle no-gap.
-- [x] Documenter le terrain `34` comme **Patch d’herbe rocheuse**, l’ajouter au
-  graphique Montagne avec une couleur dédiée et harmoniser sa couleur de carte.
-- [x] Ajouter les tests de parité terrain et les validations spécifiques
-  Upgraded du checkpoint DEV_3 ; la parité externe complète reste à rejouer
-  dans l’éditeur/jeu lors de la prochaine validation dédiée.
+- [x] Garder le positionnement des joueurs isolé pour une passe dédiée ; le pont actuel reste provisoire et ne crée ni ressources ni colons de départ.
+- [x] Calibrer les blobs miniers avec compensation de la projection parallélogramme, sans changer la topologie HEX6, les quotas, les quantités ou la règle no-gap.
+- [x] Documenter le terrain `34` comme **Patch d’herbe rocheuse**, l’ajouter au graphique Montagne avec une couleur dédiée et harmoniser sa couleur de carte.
+- [x] Ajouter les tests de parité terrain et les validations spécifiques Upgraded du checkpoint DEV_3 ; la parité externe complète reste à rejouer dans l’éditeur/jeu lors de la prochaine validation dédiée.
 
 - [x] Ancien pipeline Legacy DEV_1 retiré ; chemin Upgraded isolé avec ses
   règles, profils et validations. La comparaison minière DEV_1/natif est
@@ -70,54 +60,41 @@ validé dans DEV_2 et l’Upgraded indépendant dans DEV_3/DEV_5.
   cellules runtime, registre type 9, catalogue `0x51B010/0x51B1A0`, chemin
   `GameDataSave::Save`, offsets hexagonaux, filtre des départs et stock initial
   (`0x506CF0 -> 0x5046B0 -> 0x504420`).
-- [ ] Poursuivre séparément les résidus de format : couverture complète des
-  tokens d'empreinte, nomenclature des IDs/champs, source externe type 9 et
-  writer EDM/MAP ; voir `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`.
-- [x] Documenter l'ordre natif complet observable : noyau terrain, objets et
-  ressources de sol, re-seed, départs, ville/stock et finalisation.
+- [ ] Poursuivre séparément les résidus de format : couverture complète des tokens
+  d’empreinte, nomenclature des IDs/champs, source externe type 9 et writer EDM/MAP ;
+  voir `references/S3_EXE_STATIC_NON_TERRAIN_AUDIT_20260901.md`.
+- [x] Documenter l'ordre natif complet observable : noyau terrain, objets et ressources
+  de sol, re-seed, départs, ville/stock et finalisation.
 - [x] Implémenter le noyau Legacy natif séparé : seed, relief, familles de
   terrains, transitions, hydrologie et ordre d’écriture démontrés.
 - [x] Définir l’archétype Continental v1 au-dessus de ce noyau sans lui
   appliquer une seconde macro-forme.
-- [x] Reproduire le terrain, les ressources globales (minerais/poissons), les
-  objets/décorations et les validations Legacy avec les mesures natives ; les
-  objets/ressources de départ, colons et writer SAV restent hors périmètre.
-- [x] Exposer les tailles natives 256–1024, les miroirs Axe long/Axe court/Les
-  deux pour Legacy et Upgraded, les avertissements de viabilité et l'export
-  MAP/EDM multi-tailles via scaffold de test.
+- [x] Reproduire le terrain, les ressources globales (minerais/poissons), les objets/décorations et les validations Legacy avec les mesures natives ; les objets/ressources de départ, colons et writer SAV restent hors périmètre.
+- [x] Exposer les tailles natives 256–1024, les miroirs Axe long/Axe court/Les deux pour Legacy et Upgraded, les avertissements de viabilité et l'export MAP/EDM multi-tailles via scaffold de test.
 - [x] Laisser toutes les tailles du contrat générables et exportables pour
   test, sans refus lié au statut « non testé » ; conserver les avertissements
   uniquement comme information.
 - [ ] **Dev 6 — générateur Custom** : socle déclaratif décrit dans
-  `references/SETTLERS3_CUSTOM_GENERATOR_ARCHITECTURE_DEV6.md` ; tranche
-  DEV_6_R61 : Minerais/Poissons/Rivières, Arbres, Pierres, Décorations et bonus raccordés, trois algorithmes de gisements, moyennes natives Legacy 8 / Upgraded 10, bande côtière directe, quotas relatifs, invariants d’emprise et diagnostics de placement du lac/rivière ; rivières bonus reconstruites sur le système natif local ; interface des bonus compacte et verticale.
-  La forêt demande `30` adultes + `20` pousses par joueur, adultes avant
-  pousses, espacement `3 HEX6` et rayon minimal dérivé. Legacy/Upgraded sont
-  des presets de la route Custom, bonus désactivés par défaut ; le switch herbe
-  accepte `18`, `19`, `24`, jamais `34`, pour objets et bonus. Le forçage global
-  étendu est disponible pour les cinq bonus, désactivé par défaut, avec
-  indicateur de repli effectif. R45 étend le halo à toutes les écritures d’objets,
-  passe native Legacy comprise, et corrige la forme `Native` des
-  marais avec le plan global. Forêts, pierres et marais sont validés ;
-  R48 ajoute les formes et surfaces des bonus minéraux ; R50 ajoute leurs sprites et le rayon commun ; R51 varie la forme organique, verrouille les listes, rapproche les unités, grise les sprites inactifs, porte le marais à 16 et rend les bornes minérales dynamiques `820/1 640/2 460` ; R55 ajoute la forme Native/Hexagone et la profondeur des lacs ; R56 renforce les deux anneaux de rive ; R57 refait les rivières par le système natif local sans cible globale ; R58 borne le lac à `16 HEX6` et les rivières cibles par lac à `6` ; validation utilisateur des zones minérales et du lac/rivière encore à effectuer.
-- [x] R34–R36 — moteur des cinq bonus et réglages Custom raccordés ;
-  forêt Legacy/Upgraded `30 + 20`, maximum `100` chacun, espacement `3 HEX6`.
-- [x] R37 — forêts et pierres validées par l’utilisateur : maximum `100`, pierres
-  `15` par défaut (maximum `50`, moyenne `10`), rayon dérivé, couleur des pousses harmonisée ; base intégrée dans R38 avec switch herbe protégé et preset Custom commun.
-- [x] R38 — corriger le switch herbe/réservations, les presets Custom publics et le forçage étendu des cinq bonus.
-- [x] R39 — supprimer les pierres résiduelles à taux global `0 %` quand le bonus local est désactivé ; aligner le stock bonus sur `full_range_mean_tilt`. Forçage étendu inchangé.
-- [x] R40 — désactiver les familles globales remplacées avant le passage natif, supprimer les réservations de cases vides et empêcher les arbres natifs de survivre dans un bonus pierres à `0 %`.
-- [x] R41 — première liste de formes du mini-marais ; [x] R42 — corriger le scaling de l’hexagone, remplacer la fausse forme Native par le plan natif global des marais et porter temporairement le rayon maximal à `20` pour les tests ; [x] R43 — différer les seules familles nécessaires lorsqu’un bonus est actif : terrains bonus avant les terrains non liés à l’archétype, objets bonus avant les objets globaux ; conserver le chemin sans bonus strictement inchangé ; [x] R44 — placer les adultes des forêts bonus avant les pousses et appliquer le halo des hitboxes réellement écrites aux bonus ; [x] R45 — étendre ce halo à toutes les écritures d’objets, y compris la passe native Legacy, et rendre la forme `Native` des marais réellement non hexagonale tout en conservant son plan global ; [x] R46 — générer une empreinte `Native` indépendante pour chaque start tout en conservant le plan natif global, les replis légaux et le chemin sans bonus inchangé ; validation utilisateur reçue pour les marais R46.
-- [x] R47 — recherche forcée par couronnes D+3 à D+34 après la bande locale,
-  plans objets avant écriture, emprise entière protégée autour des tours ; forçage
-  OFF inchangé. Validation visuelle R47 attendue.
-- [x] R48 — forme organique compacte, surfaces égale/prorata/personnalisée,
-  cœurs 100 % minerai, moyenne globale/par minerai et shortfall légal.
-- [x] R49/R50 — panneau minéral compacté puis finition des zones : contrôles contextuels, sprites charbon/fer/or et rayon unique `1–16 HEX6`.
-- [x] R51–R54 — forme organique arrondie/variable type Upgraded, compensation de
-  projection, listes non éditables, unités accolées, sprites grisées, marais
-  `1–16 HEX6`, bornes `820/1 640/2 460`, ordre compact du panneau
-  et conservation partagée des valeurs dérivées lors d’un changement de répartition ; validation utilisateur à effectuer.
+  `references/SETTLERS3_CUSTOM_GENERATOR_ARCHITECTURE_DEV6.md`. Les sections
+  Custom et les cinq bonus sont raccordés aux deux moteurs ; les validations de
+  génération restantes sont suivies par R61 et les tests spécialisés.
+- [x] R17–R19 — transition Custom sans reconstruction au premier changement,
+  rollback de l’essai R18 et clôture des points 1 à 6 de la mini-roadmap UI par
+  validation utilisateur.
+- [x] R34–R58 — moteur des cinq bonus, forçage par couronnes, hitboxes,
+  formes minérales et lac/rivière documentés dans les notes de candidate.
+- [x] R20–R26 — refonte ergonomique du panneau Bonus : règles communes, groupes
+  lisibles, panneaux verticaux, microcopy/tooltips ; R21 conserve uniquement
+  l’aperçu calculé des Pierres de construction et R22 isole la matrice rocheuse
+  et resserre tous les cadres internes ; R23 ajoute une grille responsive des
+  sections, R24 l’applique aussi aux panneaux internes du Bonus et rapproche
+  « Réinitialiser » de « modifié » ; R25 corrige le reflow par largeur de
+  fenêtre, équilibre les couples Terrains/Décorations et aligne les sections
+  en haut de leurs lignes ; R26 retire l’aide redondante de Terrains, place le
+  bloc dense à gauche, ajoute la troisième colonne du Bonus et avance le seuil
+  de séparation, sans reconstruction lors des edits. Aucun changement de
+  génération.
+  Validation utilisateur reçue ; le checkpoint DEV7 est publié.
 - [ ] R61 — bonus lac/rivière et fignolages visuels : tester Native/Hexagone,
   les deux anneaux de rive, les sorties natives locales, l’absence de recherche
   de cible globale, le seuil d’eau `0`, les diagnostics, les poissons, la
@@ -142,6 +119,21 @@ validé dans DEV_2 et l’Upgraded indépendant dans DEV_3/DEV_5.
   **soufre**, avec validation de leurs transitions et de leurs quotas.
 - [ ] Dev 8/9 : ajouter des tooltips courts aux contrôles minéraux et bonus.
 
+### Idées futures — sans version assignée
+
+- [ ] Repenser à terme le rendu des onglets avec des widgets persistants et des
+  mises à jour en place (mode, langue, redimensionnement), afin de supprimer
+  durablement les reconstructions et les artefacts visuels ; chantier
+  compatible avec la consolidation, l’amélioration et le débogage poussés de
+  la v2.1, sans lui assigner une version cible. L’essai R18 de staging n’est
+  pas la solution de référence.
+- [ ] Étudier un réglage indépendant du rayon et de l’espacement des forêts
+  globales, seulement si les quotas actuels ne suffisent pas.
+- [ ] Étudier des variantes de forme et de répartition des groupes de pierres
+  de construction.
+- [ ] Étudier une granularité supplémentaire pour le remplissage des poissons
+  et les paramètres des lacs bonus, sans modifier les règles natives validées.
+
 ### Garde-fous
 
 - [ ] Préserver la chaîne eau → plage/rive → terrain, la topologie HEX6 et les
@@ -158,6 +150,10 @@ validé dans DEV_2 et l’Upgraded indépendant dans DEV_3/DEV_5.
 
 ## Analyse et UI futures
 
+- [ ] Auditer et réduire les clignotements visuels lors des changements
+  d’options (notamment la langue), ainsi que les artefacts provoqués par les
+  redimensionnements d’onglets ou de fenêtres ; privilégier les mises à jour
+  en place et les rafraîchissements regroupés.
 - [ ] Rafraîchir le rapport Statistiques après changement de langue ; améliorer inventaires, IDs absents, familles runtime et distributions.
 - [ ] Étudier histogrammes, profils radiaux/cumulatifs et références corpus sans
   produire de visualisation trompeuse.

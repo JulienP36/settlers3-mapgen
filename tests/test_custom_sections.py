@@ -144,9 +144,9 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
             "shape": "hexagon",
             "surface_mode": "equal",
             "total_core_cells": 183,
-            "coal": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "global"},
-            "iron": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "global"},
-            "gold": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "global"},
+            "coal": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
+            "iron": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
+            "gold": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
         },
             "lake_fish_river": {
                 "enabled": True,

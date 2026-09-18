@@ -66,7 +66,12 @@ Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohére
 La règle de version suivie par le projet est stricte : chaque modification de
 la candidate incrémente `R`; le compteur `DEV` n’avance qu’après un push d’un
 checkpoint; une release n’est créée qu’une fois le périmètre terminé et validé.
-Ainsi, le travail courant est `DEV_6_R61`, sans push ni release.
+Le checkpoint courant est désormais `v2.0 DEV_7`, publié sur `dev` après la
+validation utilisateur de R26. R26 retire l’aide redondante de Terrains, place
+les blocs denses à gauche, ajoute la grille à trois colonnes du Bonus et avance
+le seuil de reflow, sans modifier le moteur, les données ou les règles de
+génération. La prochaine tranche prévue est l’implémentation des archétypes
+Custom ; les détails restent suivis dans `TODO_MAPGEN.md`.
 
 Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
 

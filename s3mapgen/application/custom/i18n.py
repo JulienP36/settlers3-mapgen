@@ -148,7 +148,16 @@ def archetype_description(key: str, language: str) -> str:
 
 _CUSTOM_SECTION_TEXT = {
     "start_bonus": {
-        "fr": "Réglages détaillés des bonus de départ", "en": "Detailed start-bonus settings", "de": "Detaillierte Startbonus-Einstellungen", "es": "Ajustes detallados de las bonificaciones iniciales",
+        "fr": "Bonus de départ", "en": "Start bonuses", "de": "Startboni", "es": "Bonificaciones iniciales",
+    },
+    "start_bonus_common": {
+        "fr": "Règles communes", "en": "Common rules", "de": "Gemeinsame Regeln", "es": "Reglas comunes",
+    },
+    "start_bonus_objects": {
+        "fr": "Bonus d’objets", "en": "Object bonuses", "de": "Objektboni", "es": "Bonificaciones de objetos",
+    },
+    "start_bonus_terrain_resources": {
+        "fr": "Bonus de terrains et ressources", "en": "Terrain and resource bonuses", "de": "Terrain- und Ressourcenboni", "es": "Bonificaciones de terrenos y recursos",
     },
     "trees": {
         "fr": "Arbres", "en": "Trees", "de": "Bäume", "es": "Árboles",
@@ -159,14 +168,20 @@ _CUSTOM_SECTION_TEXT = {
     "decorations": {
         "fr": "Décorations", "en": "Decorations", "de": "Dekorationen", "es": "Decoraciones",
     },
+    "section_modified": {
+        "fr": "· modifié", "en": "· modified", "de": "· geändert", "es": "· modificado",
+    },
     "decoration_hint": {
-        "fr": "100 % = profil sélectionné.", "en": "100% = selected profile.", "de": "100 % = gewähltes Profil.", "es": "100 % = perfil seleccionado.",
+        "fr": "0 % = absente · 100 % = profil sélectionné · 500 % = maximum.",
+        "en": "0% = absent · 100% = selected profile · 500% = maximum.",
+        "de": "0 % = aus · 100 % = gewähltes Profil · 500 % = Maximum.",
+        "es": "0 % = ausente · 100 % = perfil seleccionado · 500 % = máximo.",
     },
     "objects_grass_compatible": {
-        "fr": "Autoriser les objets compatibles avec l’herbe sur Herbe sèche et Détails herbe 1 & 2",
-        "en": "Allow grass-compatible objects on Dry grass and Grass details 1 & 2",
-        "de": "Graskompatible Objekte auf trockenem Gras und Grasdetails 1 & 2 erlauben",
-        "es": "Permitir objetos compatibles con hierba sobre Hierba seca y Detalles de hierba 1 y 2",
+        "fr": "Placement sur variantes d’herbe",
+        "en": "Place on grass variants",
+        "de": "Auf Grasvarianten platzieren",
+        "es": "Colocar en variantes de hierba",
     },
     "decoration_big_stones": {
         "fr": "Gros rochers", "en": "Large rocks", "de": "Große Felsen", "es": "Rocas grandes",
@@ -232,10 +247,10 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "Taux global de rivières", "en": "Global river rate", "de": "Globale Flussrate", "es": "Tasa global de ríos",
     },
     "river_hint": {
-        "fr": "0 % = aucune rivière ; 100 % = profil sélectionné. Tracé et connexions natifs.",
-        "en": "0% = no rivers; 100% = selected profile. Native paths and connections.",
-        "de": "0 % = keine Flüsse; 100 % = gewähltes Profil. Native Wege und Verbindungen.",
-        "es": "0 % = ningún río; 100 % = perfil seleccionado. Trazado y conexiones nativos.",
+        "fr": "0 % = aucune rivière.\n100 % = profil sélectionné ; 500 % = maximum.",
+        "en": "0% = no rivers.\n100% = selected profile; 500% = maximum.",
+        "de": "0 % = keine Flüsse.\n100 % = gewähltes Profil; 500 % = Maximum.",
+        "es": "0 % = ningún río.\n100 % = perfil seleccionado; 500 % = máximo.",
     },
     "terrains": {
         "fr": "Terrains", "en": "Terrain", "de": "Terrain", "es": "Terrenos",
@@ -255,17 +270,11 @@ _CUSTOM_SECTION_TEXT = {
     "terrain_swamp": {
         "fr": "Marais", "en": "Swamp", "de": "Sumpf", "es": "Pantano",
     },
-    "terrain_hint": {
-        "fr": "Les lacs, la neige et le relief rocheux restent liés au moteur sélectionné.",
-        "en": "Lakes, snow and rocky relief remain tied to the selected engine.",
-        "de": "Seen, Schnee und felsiges Relief bleiben an die gewählte Engine gebunden.",
-        "es": "Los lagos, la nieve y el relieve rocoso siguen ligados al motor seleccionado.",
-    },
     "mineral_algorithm": {
         "fr": "Méthode de gisement", "en": "Deposit method", "de": "Lagerstättenmethode", "es": "Método de yacimiento",
     },
     "occupancy_percent": {
-        "fr": "Occupation", "en": "Occupancy", "de": "Belegung", "es": "Ocupación",
+        "fr": "Occupation minérale", "en": "Mineral occupancy", "de": "Mineralbelegung", "es": "Ocupación mineral",
     },
     "mineral_shares": {
         "fr": "Répartition", "en": "Distribution", "de": "Verteilung", "es": "Reparto",
@@ -274,7 +283,7 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "Variation de taille", "en": "Size variation", "de": "Größenvariation", "es": "Variación de tamaño",
     },
     "average_quantity": {
-        "fr": "Ressource moyenne", "en": "Average resource", "de": "Durchschnittliche Ressource", "es": "Recurso medio",
+        "fr": "Quantité moyenne", "en": "Average quantity", "de": "Durchschnittliche Menge", "es": "Cantidad media",
     },
     "fill_percent": {
         "fr": "Remplissage", "en": "Fill", "de": "Füllung", "es": "Relleno",
@@ -283,7 +292,7 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "Près des côtes", "en": "Near shore", "de": "Küstennah", "es": "Cerca de la costa",
     },
     "band_thickness": {
-        "fr": "Épaisseur", "en": "Thickness", "de": "Dicke", "es": "Grosor",
+        "fr": "Épaisseur de la bande", "en": "Band thickness", "de": "Bandbreite", "es": "Grosor de la franja",
     },
     "tree_base_quota": {
         "fr": "Quota global d’arbres de base", "en": "Global base-tree quota", "de": "Globales Grundbaumkontingent", "es": "Cupo global de árboles base",
@@ -331,13 +340,61 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "Variation du nombre d’arbres", "en": "Tree-count variation", "de": "Variation der Baumanzahl", "es": "Variación del número de árboles",
     },
     "tree_palm_quota": {
-        "fr": "Quota maximal de palmiers", "en": "Maximum palm quota", "de": "Maximales Palmenkontingent", "es": "Cupo máximo de palmeras",
+        "fr": "Quota de palmiers", "en": "Palm quota", "de": "Palmenkontingent", "es": "Cupo de palmeras",
     },
     "tree_hint": {
-        "fr": "Les quotas sont relatifs au profil sélectionné. Les bonus de départ seront traités séparément.",
-        "en": "Quotas are relative to the selected profile. Start bonuses will be handled separately.",
-        "de": "Kontingente beziehen sich auf das gewählte Profil. Startboni werden getrennt behandelt.",
-        "es": "Los cupos son relativos al perfil seleccionado. Las bonificaciones iniciales se tratarán aparte.",
+        "fr": "0 % = aucun arbre de base · 100 % = profil sélectionné · 500 % = maximum. Les bonus de départ sont séparés.",
+        "en": "0% = no base trees · 100% = selected profile · 500% = maximum. Start bonuses are separate.",
+        "de": "0 % = keine Grundbäume · 100 % = gewähltes Profil · 500 % = Maximum. Startboni bleiben getrennt.",
+        "es": "0 % = ningún árbol base · 100 % = perfil seleccionado · 500 % = máximo. Las bonificaciones iniciales son independientes.",
+    },
+    "estimated_preview": {
+        "fr": "Aperçu estimé",
+        "en": "Estimated preview",
+        "de": "Geschätzte Vorschau",
+        "es": "Vista previa estimada",
+    },
+    "preview_map_size": {
+        "fr": "Carte : {value}",
+        "en": "Map: {value}",
+        "de": "Karte: {value}",
+        "es": "Mapa: {value}",
+    },
+    "preview_global_stones": {
+        "fr": "Gisements totaux : ≈ {value}",
+        "en": "Total deposits: ≈ {value}",
+        "de": "Gesamte Vorkommen: ≈ {value}",
+        "es": "Yacimientos totales: ≈ {value}",
+    },
+    "preview_active_stones": {
+        "fr": "Gisements exploitables : ≈ {value}",
+        "en": "Usable deposits: ≈ {value}",
+        "de": "Nutzbare Vorkommen: ≈ {value}",
+        "es": "Yacimientos utilizables: ≈ {value}",
+    },
+    "preview_stock_units": {
+        "fr": "Stock estimé : ≈ {value} unités",
+        "en": "Estimated stock: ≈ {value} units",
+        "de": "Geschätzter Vorrat: ≈ {value} Einheiten",
+        "es": "Reserva estimada: ≈ {value} unidades",
+    },
+    "preview_groups": {
+        "fr": "Groupes : ≈ {value}",
+        "en": "Groups: ≈ {value}",
+        "de": "Gruppen: ≈ {value}",
+        "es": "Grupos: ≈ {value}",
+    },
+    "preview_groups_disabled": {
+        "fr": "Groupes : désactivés",
+        "en": "Groups: disabled",
+        "de": "Gruppen: deaktiviert",
+        "es": "Grupos: desactivados",
+    },
+    "preview_placement_note": {
+        "fr": "Valeurs indicatives selon le profil, la taille de carte et les réglages.\nLe placement réel peut être inférieur si le terrain manque.",
+        "en": "Indicative values based on the profile, map size and settings.\nActual placement may be lower when terrain is scarce.",
+        "de": "Richtwerte nach Profil, Kartengröße und Einstellungen.\nDie tatsächliche Platzierung kann bei knappem Gelände geringer ausfallen.",
+        "es": "Valores indicativos según el perfil, el tamaño del mapa y los ajustes.\nLa colocación real puede ser menor si escasea el terreno.",
     },
     "building_stone_anchor_density": {
         "fr": "Quota global de pierres", "en": "Global stone quota", "de": "Globales Steinkontingent", "es": "Cupo global de piedras",
@@ -367,10 +424,16 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "pierres", "en": "stones", "de": "Steine", "es": "piedras",
     },
     "building_stone_hint": {
-        "fr": "100 % = profil sélectionné ; bonus de départ séparés.",
-        "en": "100% = selected profile; start bonuses are separate.",
-        "de": "100 % = gewähltes Profil; Startboni bleiben getrennt.",
-        "es": "100 % = perfil seleccionado; las bonificaciones iniciales son independientes.",
+        "fr": "0 % = aucune pierre · 100 % = profil sélectionné · maximum 200 %. Les bonus de départ sont séparés.",
+        "en": "0% = no stones · 100% = selected profile · maximum 200%. Start bonuses are separate.",
+        "de": "0 % = keine Steine · 100 % = gewähltes Profil · Maximum 200 %. Startboni bleiben getrennt.",
+        "es": "0 % = ninguna piedra · 100 % = perfil seleccionado · máximo 200 %. Las bonificaciones iniciales son independientes.",
+    },
+    "building_stone_average_hint": {
+        "fr": "1–12 unités par pierre. Cette moyenne est indépendante des groupes.",
+        "en": "1–12 units per stone. This average is independent of groups.",
+        "de": "1–12 Einheiten je Stein. Dieser Mittelwert ist unabhängig von Gruppen.",
+        "es": "1–12 unidades por piedra. Esta media es independiente de los grupos.",
     },
     "low": {"fr": "Faible", "en": "Low", "de": "Gering", "es": "Baja"},
     "normal": {"fr": "Normale", "en": "Normal", "de": "Normal", "es": "Normal"},
@@ -395,16 +458,16 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Total: {value} % (normalizado durante la generación)",
     },
     "resource_hint": {
-        "fr": "Les valeurs restent dans les limites du jeu.",
-        "en": "Values stay within the game limits.",
-        "de": "Werte bleiben innerhalb der Spiellimits.",
-        "es": "Los valores se mantienen dentro de los límites del juego.",
+        "fr": "1–15 unités par case minéralisée. Indépendant des zones minérales de départ.",
+        "en": "1–15 units per mineral-bearing cell. Independent from start mineral zones.",
+        "de": "1–15 Einheiten je mineralhaltiger Zelle. Unabhängig von Startmineralzonen.",
+        "es": "1–15 unidades por casilla mineralizada. Independiente de las zonas minerales iniciales.",
     },
     "coast_hint": {
-        "fr": "Si l’option est active, le remplissage s’applique uniformément dans cette bande côtière.",
-        "en": "When enabled, the fill percentage is applied uniformly inside this coastal band.",
-        "de": "Wenn aktiviert, wird der Füllanteil gleichmäßig innerhalb dieses Küstenbands angewendet.",
-        "es": "Si está activado, el porcentaje de relleno se aplica uniformemente dentro de esta banda costera.",
+        "fr": "Limite le placement des ressources en poissons à une zone proche des côtes.\nLe remplissage y est uniforme ; « Épaisseur » règle la largeur de cette bande.",
+        "en": "Restricts fish-resource placement to an area near the coast.\nFill is uniform inside it; “Thickness” sets the band width.",
+        "de": "Begrenzt die Platzierung von Fischressourcen auf einen küstennahen Bereich.\nDie Füllung ist darin gleichmäßig; „Dicke“ legt die Bandbreite fest.",
+        "es": "Limita la colocación de recursos de peces a una zona cercana a la costa.\nEl relleno es uniforme; «Grosor» define el ancho de la franja.",
     },
     "start_bonus_hint": {
         "fr": "Chaque bonus est par joueur et hors quota global. La distance mesure le centre du bonus depuis la bordure du territoire ; 0 conserve le placement natif.",
@@ -425,16 +488,16 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Distancia del centro desde el borde",
     },
     "start_bonus_force_extended": {
-        "fr": "Forcer le placement à une distance étendue si nécessaire",
-        "en": "Force placement at an extended distance if necessary",
-        "de": "Platzierung bei Bedarf in erweiterter Entfernung erzwingen",
-        "es": "Forzar la colocación a una distancia ampliada si es necesario",
+        "fr": "Étendre la recherche si nécessaire",
+        "en": "Extend the search if needed",
+        "de": "Suche bei Bedarf erweitern",
+        "es": "Ampliar la búsqueda si es necesario",
     },
     "start_bonus_forest": {
-        "fr": "Forêt de départ — forme native du profil",
-        "en": "Start forest — profile-native shape",
-        "de": "Startwald — native Profilform",
-        "es": "Bosque inicial — forma nativa del perfil",
+        "fr": "Forêts de départ",
+        "en": "Start forests",
+        "de": "Startwälder",
+        "es": "Bosques iniciales",
     },
     "start_bonus_adult_trees": {
         "fr": "Arbres adultes par joueur",
@@ -449,10 +512,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Retoños por jugador",
     },
     "start_bonus_forest_radius_derived": {
-        "fr": "Le rayon est calculé automatiquement selon les 30/20 arbres et leur espacement ; il s’élargit seulement si le terrain l’exige.",
-        "en": "Radius is derived automatically from the 30/20 trees and their spacing; it expands only when terrain requires it.",
-        "de": "Der Radius wird automatisch aus den 30/20 Bäumen und ihrem Abstand abgeleitet und nur bei Bedarf erweitert.",
-        "es": "El radio se calcula automáticamente según los 30/20 árboles y su separación; solo se amplía si el terreno lo exige.",
+        "fr": "Le rayon est calculé selon les nombres d’arbres et leur espacement ; il s’élargit seulement si le terrain l’exige.",
+        "en": "The radius is derived from the tree counts and spacing; it expands only when terrain requires it.",
+        "de": "Der Radius wird aus Baumanzahl und Abstand abgeleitet und nur bei Bedarf erweitert.",
+        "es": "El radio se calcula según la cantidad de árboles y su separación; solo se amplía si el terreno lo exige.",
     },
     "start_bonus_radius_min": {
         "fr": "Rayon minimal",
@@ -479,13 +542,13 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Forma: nativa del perfil",
     },
     "start_bonus_stones": {
-        "fr": "Pierres de départ",
+        "fr": "Pierres de construction de départ",
         "en": "Start building stones",
-        "de": "Startbausteine",
+        "de": "Start-Bausteine",
         "es": "Piedras de construcción iniciales",
     },
     "start_bonus_anchors": {
-        "fr": "Nombre de pierres par joueur",
+        "fr": "Pierres par joueur",
         "en": "Stones per player",
         "de": "Steine je Spieler",
         "es": "Piedras por jugador",
@@ -495,12 +558,6 @@ _CUSTOM_SECTION_TEXT = {
         "en": "Average stock per stone",
         "de": "Durchschnittlicher Vorrat je Stein",
         "es": "Reserva media por piedra",
-    },
-    "start_bonus_stock_preview": {
-        "fr": "Stock demandé par joueur : environ {value} unités (arrondi à l’unité)",
-        "en": "Requested stock per player: about {value} units (rounded to whole units)",
-        "de": "Angeforderter Vorrat je Spieler: etwa {value} Einheiten (auf ganze Einheiten gerundet)",
-        "es": "Reserva solicitada por jugador: aproximadamente {value} unidades (redondeada a unidades enteras)",
     },
     "start_bonus_swamp": {
         "fr": "Mini-marais de départ",
@@ -563,13 +620,13 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Orgánica",
     },
     "start_bonus_rocky_surface": {
-        "fr": "Répartition",
-        "en": "Allocation",
-        "de": "Verteilung",
-        "es": "Reparto",
+        "fr": "Répartition de la surface",
+        "en": "Surface allocation",
+        "de": "Flächenverteilung",
+        "es": "Reparto de superficie",
     },
     "start_bonus_rocky_surface_equal": {
-        "fr": "Égal",
+        "fr": "Égale",
         "en": "Equal",
         "de": "Gleich",
         "es": "Igual",
@@ -587,10 +644,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Por mineral",
     },
     "start_bonus_rocky_total_surface": {
-        "fr": "Total",
-        "en": "Total",
-        "de": "Gesamt",
-        "es": "Total",
+        "fr": "Surface totale des cœurs",
+        "en": "Total core surface",
+        "de": "Gesamte Kernfläche",
+        "es": "Superficie total de núcleos",
     },
     "start_bonus_rocky_family_header": {
         "fr": "Minerai",
@@ -599,28 +656,28 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Mineral",
     },
     "start_bonus_rocky_core_header": {
-        "fr": "Cœur",
-        "en": "Core",
-        "de": "Kern",
-        "es": "Núcleo",
+        "fr": "Surface du cœur",
+        "en": "Core surface",
+        "de": "Kernfläche",
+        "es": "Superficie del núcleo",
     },
     "start_bonus_rocky_quantity_header": {
-        "fr": "Moyenne / case",
-        "en": "Average / cell",
-        "de": "Mittel / Zelle",
-        "es": "Media / casilla",
+        "fr": "Quantité / case",
+        "en": "Quantity / cell",
+        "de": "Menge / Zelle",
+        "es": "Cantidad / casilla",
     },
     "start_bonus_rocky_mode_hint_equal": {
-        "fr": "Mode égal : le rayon commun détermine la surface ; les champs de surface sont inactifs.",
-        "en": "Equal mode: the common radius determines the surface; surface fields are disabled.",
-        "de": "Gleich: Der gemeinsame Radius bestimmt die Fläche; die Flächenfelder sind deaktiviert.",
-        "es": "Modo igual: el radio común determina la superficie; los campos de superficie están desactivados.",
+        "fr": "Mode égal : le rayon commun détermine la surface ; la répartition globale n’est pas utilisée.",
+        "en": "Equal mode: the common radius determines the surface; global shares are not used.",
+        "de": "Gleich: Der gemeinsame Radius bestimmt die Fläche; globale Anteile werden nicht verwendet.",
+        "es": "Modo igual: el radio común determina la superficie; el reparto global no se usa.",
     },
     "start_bonus_rocky_mode_hint_proportional": {
-        "fr": "Mode prorata : la surface totale est active ; les parts viennent de Minerais › Répartition.",
-        "en": "Prorata mode: total surface is active; shares come from Minerals › Shares.",
-        "de": "Nach Anteilen: Die Gesamtfläche ist aktiv; die Anteile kommen aus Mineralien › Anteile.",
-        "es": "Modo prorrata: la superficie total está activa; las partes vienen de Minerales › Reparto.",
+        "fr": "Mode prorata : la surface totale est répartie selon Minerais › Répartition. Les quantités moyennes restent propres au bonus.",
+        "en": "Prorata mode: total surface follows Minerals › Shares. Average quantities remain specific to the bonus.",
+        "de": "Nach Anteilen: Die Gesamtfläche folgt Mineralien › Anteile. Durchschnittsmengen bleiben bonusbezogen.",
+        "es": "Modo prorrata: la superficie total sigue Minerales › Reparto. Las cantidades medias son propias del bono.",
     },
     "start_bonus_rocky_mode_hint_custom": {
         "fr": "Mode personnalisé : la surface de chaque minerai est active ; surface totale et rayons sont inactifs.",
@@ -653,10 +710,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "El núcleo de cada zona está ocupado al 100 % por el mineral elegido; no hay tasa de ocupación separada.",
     },
     "start_bonus_global_mean": {
-        "fr": "Chaque quantité moyenne est initialisée depuis le réglage global des minerais ; elle peut être surchargée ici.",
-        "en": "Each average quantity starts from the global mineral setting and can be overridden here.",
-        "de": "Jede Durchschnittsmenge übernimmt zunächst die globale Mineraleinstellung und kann hier überschrieben werden.",
-        "es": "Cada cantidad media parte del ajuste global de minerales y puede sobrescribirse aquí.",
+        "fr": "Chaque zone possède sa propre quantité moyenne par case ; elle est indépendante de Minerais › Quantité moyenne.",
+        "en": "Each zone has its own average quantity per cell; it is independent from Minerals › Average quantity.",
+        "de": "Jede Zone hat ihre eigene Durchschnittsmenge je Zelle; sie ist unabhängig von Mineralien › Durchschnittliche Menge.",
+        "es": "Cada zona tiene su propia cantidad media por casilla; es independiente de Minerales › Cantidad media.",
     },
     "start_bonus_hexagon_shape": {
         "fr": "Les deux formes produisent un cœur intégralement minéralisé et deux transitions légales ; une zone impossible est omise.",
@@ -683,10 +740,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Oro",
     },
     "start_bonus_lake": {
-        "fr": "Lac bonus",
-        "en": "Bonus lake",
-        "de": "Bonussee",
-        "es": "Lago adicional",
+        "fr": "Lac, poissons et rivières",
+        "en": "Lake, fish and rivers",
+        "de": "See, Fische und Flüsse",
+        "es": "Lago, peces y ríos",
     },
     "start_bonus_lake_shape": {
         "fr": "Forme",
@@ -707,10 +764,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Hexágono",
     },
     "start_bonus_lake_proximity": {
-        "fr": "Rayon de contrôle eau native",
-        "en": "Native-water check radius",
-        "de": "Radius für natives Wasser",
-        "es": "Radio de control de agua nativa",
+        "fr": "Rayon de contrôle de l’eau",
+        "en": "Water check radius",
+        "de": "Radius der Wasserprüfung",
+        "es": "Radio de control del agua",
     },
     "start_bonus_river_target": {
         "fr": "Rivières cibles par lac",
@@ -719,10 +776,25 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Ríos objetivo por lago",
     },
     "start_bonus_fish_fill": {
-        "fr": "Cases du lac contenant des poissons",
-        "en": "Lake cells containing fish",
-        "de": "Seezellen mit Fischen",
-        "es": "Casillas del lago con peces",
+        "fr": "Remplissage en poissons",
+        "en": "Fish fill",
+        "de": "Fischfüllung",
+        "es": "Relleno de peces",
+    },
+    "start_bonus_lake_settings": {
+        "fr": "Lac", "en": "Lake", "de": "See", "es": "Lago",
+    },
+    "start_bonus_river_settings": {
+        "fr": "Rivières", "en": "Rivers", "de": "Flüsse", "es": "Ríos",
+    },
+    "start_bonus_fish_settings": {
+        "fr": "Poissons", "en": "Fish", "de": "Fische", "es": "Peces",
+    },
+    "start_bonus_fish_fill_hint": {
+        "fr": "Pourcentage des cases d’eau du lac qui reçoivent des ressources en poissons.",
+        "en": "Percentage of the lake’s water cells that receive fish resources.",
+        "de": "Prozentsatz der Wasserzellen des Sees mit Fischressourcen.",
+        "es": "Porcentaje de las casillas de agua del lago que reciben recursos de peces.",
     },
     "start_bonus_lake_hint": {
         "fr": "Rayon mesuré depuis la bordure du territoire pour contrôler l’eau native ; 0 désactive ce contrôle. Deux rives et une rivière légale sont requises ; l’eau existante reste protégée.",

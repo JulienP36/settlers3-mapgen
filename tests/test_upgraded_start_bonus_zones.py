@@ -72,7 +72,7 @@ def test_custom_start_bonus_controls_reach_each_upgraded_start_pass():
     sections["start_bonus"]["rocky_minerals"].update(
         radius_min=2,
         radius_max=2,
-        coal={"enabled": True},
+        coal={"enabled": True, "average_quantity": 6},
         iron={"enabled": False},
         gold={"enabled": False},
     )
@@ -96,7 +96,7 @@ def test_custom_start_bonus_controls_reach_each_upgraded_start_pass():
     assert rocky["zones_requested_per_player"] == 1
     assert rocky["placed_zones"] == 1
     assert rocky["zones"][0]["resource"] == "coal"
-    assert np.mean(state.resources[state.resources != 0] & 0x0F) == pytest.approx(5.0)
+    assert np.mean(state.resources[state.resources != 0] & 0x0F) == pytest.approx(6.0)
 
 
 @pytest.mark.parametrize(

@@ -56,9 +56,12 @@ class SettingsController:
         self.configure(bg=bg)
         s.configure('.',background=bg,foreground=fg,fieldbackground=field,selectforeground=fg)
         s.configure('TFrame',background=bg);s.configure('TLabel',background=bg,foreground=fg)
-        s.configure('Section.TLabel',background=bg,foreground=accent,font=('TkDefaultFont',10,'bold'));s.configure('Hint.TLabel',background=bg,foreground=muted)
+        modified='#f9ab00' if dark else '#b26a00'
+        s.configure('Section.TLabel',background=bg,foreground=accent,font=('TkDefaultFont',10,'bold'));s.configure('Hint.TLabel',background=bg,foreground=muted);s.configure('Modified.TLabel',background=bg,foreground=modified,font=('TkDefaultFont',9,'bold'))
         s.configure('TNotebook',background=bg,borderwidth=0);s.configure('TNotebook.Tab',background=panel,foreground=fg,padding=(10,6));s.map('TNotebook.Tab',background=[('selected',field)])
         s.configure('TButton',background=field,foreground=fg);s.map('TButton',background=[('active',panel)])
+        s.configure('SectionToggle.TButton',background=bg,foreground=accent,anchor='w',padding=(6,4),relief='flat',borderwidth=0,font=('TkDefaultFont',10,'bold'))
+        s.map('SectionToggle.TButton',background=[('active',field),('pressed',field)],foreground=[('disabled',muted),('active',accent),('pressed',accent)])
         s.configure('TCheckbutton',background=bg,foreground=fg)
         s.map('TCheckbutton',background=[('disabled',bg),('active',bg),('pressed',bg)],foreground=[('disabled',muted),('active',fg),('pressed',fg)])
         unavailable='#747980' if dark else '#8a8d91'
@@ -271,7 +274,8 @@ class SettingsController:
             layout_state['after']=None
             try:
                 required_w=max(1,inner.winfo_reqwidth());required_h=max(1,inner.winfo_reqheight());available_w=max(1,canvas.winfo_width());available_h=max(1,canvas.winfo_height())
-                target_width=max(required_w,available_w)
+                fit_width=bool(getattr(inner,'_scroll_fit_width',False))
+                target_width=available_w if fit_width else max(required_w,available_w)
                 if layout_state['item_width']!=target_width:
                     canvas.itemconfigure(item,width=target_width);layout_state['item_width']=target_width
                 scrollregion=canvas.bbox('all')
@@ -355,7 +359,7 @@ class SettingsController:
         return self.prefs.get('theme','dark')
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'custom_sections_expanded':self.prefs.get('custom_sections_expanded',{}),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _schedule_prefs_save(self):
         if self._prefs_save_after is not None:

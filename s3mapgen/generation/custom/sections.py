@@ -509,11 +509,6 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
         start_rocky_radius_max = equal_radius
     default_radius = int(round((start_rocky_radius_min + start_rocky_radius_max) / 2.0))
     default_core_cells = 1 + 3 * default_radius * (default_radius + 1)
-    profile_quantity_defaults = (
-        minerals.get("average_quantity", {})
-        if isinstance(minerals, Mapping) and isinstance(minerals.get("average_quantity", {}), Mapping)
-        else {}
-    )
     rocky_core_defaults = start_rocky_cfg.get("core_cells", {})
     rocky_core_defaults = rocky_core_defaults if isinstance(rocky_core_defaults, Mapping) else {}
     start_lake_radius_min = _integer(
@@ -656,13 +651,8 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
                         START_ROCKY_CORE_CELLS_MAX,
                         default_core_cells,
                     ),
-                    "average_quantity": _integer(
-                        profile_quantity_defaults.get("coal", resource_mean),
-                        RESOURCE_MINIMUM,
-                        RESOURCE_MAXIMUM,
-                        resource_mean,
-                    ),
-                    "quantity_mode": "global",
+                    "average_quantity": resource_mean,
+                    "quantity_mode": "custom",
                 },
                 "iron": {
                     "enabled": rocky_families["iron"],
@@ -672,13 +662,8 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
                         START_ROCKY_CORE_CELLS_MAX,
                         default_core_cells,
                     ),
-                    "average_quantity": _integer(
-                        profile_quantity_defaults.get("iron", resource_mean),
-                        RESOURCE_MINIMUM,
-                        RESOURCE_MAXIMUM,
-                        resource_mean,
-                    ),
-                    "quantity_mode": "global",
+                    "average_quantity": resource_mean,
+                    "quantity_mode": "custom",
                 },
                 "gold": {
                     "enabled": rocky_families["gold"],
@@ -688,13 +673,8 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
                         START_ROCKY_CORE_CELLS_MAX,
                         default_core_cells,
                     ),
-                    "average_quantity": _integer(
-                        profile_quantity_defaults.get("gold", resource_mean),
-                        RESOURCE_MINIMUM,
-                        RESOURCE_MAXIMUM,
-                        resource_mean,
-                    ),
-                    "quantity_mode": "global",
+                    "average_quantity": resource_mean,
+                    "quantity_mode": "custom",
                 },
             },
             "lake_fish_river": {
@@ -703,7 +683,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
                 "radius_max": start_lake_radius_max,
                 "shape": "native",
                 "water_proximity_from_territory_border": _integer(
-                    start_lake_cfg.get("water_proximity_from_territory_border", 150),
+                    start_lake_cfg.get("water_proximity_from_territory_border", 100),
                     START_BONUS_WATER_PROXIMITY_MIN,
                     START_BONUS_WATER_PROXIMITY_MAX,
                     150,
@@ -1154,28 +1134,22 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
             START_ROCKY_CORE_CELLS_MAX,
             int(default_family.get("core_cells", 61)),
         )
-        global_mean = minerals.get("average_quantity", {}).get(family, UPGRADED_RESOURCE_MEAN)
-        default_mean = int(default_family.get("average_quantity", global_mean))
+        # Start-bonus mineral quantities are independent controls.  Older
+        # candidates stored ``quantity_mode=global`` and silently replaced
+        # the visible bonus value whenever the global mineral mean changed;
+        # keep the stored value during migration, but never recreate that
+        # inheritance when normalizing the semantic sections.
+        default_mean = int(default_family.get("average_quantity", UPGRADED_RESOURCE_MEAN))
         raw_mean = raw_family.get("average_quantity", default_mean)
-        raw_mode = str(raw_family.get("quantity_mode", default_family.get("quantity_mode", "global"))).lower()
-        # The semantic default is linked to the global mineral control.  A
-        # manually supplied value that differs from the materialized default
-        # is treated as an explicit per-zone override, which keeps old JSON
-        # payloads ergonomic while still allowing the global field to update
-        # all zones at once.
-        if raw_mode not in {"global", "custom", "override"}:
-            raw_mode = "global"
-        if raw_mode == "global" and raw_mean != default_mean:
-            raw_mode = "custom"
-        if raw_mode == "global" or raw_mean is None:
-            raw_mean = global_mean
+        if raw_mean is None:
+            raw_mean = default_mean
         default_family["average_quantity"] = _integer(
             raw_mean,
             RESOURCE_MINIMUM,
             RESOURCE_MAXIMUM,
-            int(global_mean),
+            default_mean,
         )
-        default_family["quantity_mode"] = "custom" if raw_mode == "custom" else "global"
+        default_family["quantity_mode"] = "custom"
 
     active_rocky_count = sum(
         bool(rocky[family].get("enabled", True))
@@ -1208,7 +1182,7 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
     lake["water_proximity_from_territory_border"] = _integer(
         raw_lake.get(
             "water_proximity_from_territory_border",
-            lake.get("water_proximity_from_territory_border", 150),
+            lake.get("water_proximity_from_territory_border", 100),
         ),
         START_BONUS_WATER_PROXIMITY_MIN,
         START_BONUS_WATER_PROXIMITY_MAX,

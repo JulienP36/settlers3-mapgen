@@ -4,8 +4,8 @@ def test_preferences_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setenv('APPDATA', str(tmp_path))
     import s3mapgen.application.settings.preferences as p;importlib.reload(p)
     custom=dict(p.DEFAULT_SHORTCUTS);custom['generate']='Ctrl+Shift+G'
-    p.save_settings({'theme':'light','overlay_alpha':42,'projection':'parallelogram','preview_start_markers':'normal','wheel_zoom':1.12,'language':'en','shortcuts':custom})
-    got=p.load_settings();assert got['theme']=='light';assert got['overlay_alpha']==42;assert got['projection']=='parallelogram';assert got['preview_start_markers']=='normal';assert abs(got['wheel_zoom']-1.12)<1e-9;assert got['language']=='en';assert got['shortcuts']['generate']=='Ctrl+Shift+G'
+    p.save_settings({'theme':'light','overlay_alpha':42,'projection':'parallelogram','preview_start_markers':'normal','wheel_zoom':1.12,'language':'en','custom_sections_expanded':{'minerals':True,'start_bonus':False},'shortcuts':custom})
+    got=p.load_settings();assert got['theme']=='light';assert got['overlay_alpha']==42;assert got['projection']=='parallelogram';assert got['preview_start_markers']=='normal';assert abs(got['wheel_zoom']-1.12)<1e-9;assert got['language']=='en';assert got['custom_sections_expanded']=={'minerals':True,'start_bonus':False};assert got['shortcuts']['generate']=='Ctrl+Shift+G'
 
 def test_defaults_include_dark_mode_and_shortcuts():
     import s3mapgen.application.settings.preferences as p

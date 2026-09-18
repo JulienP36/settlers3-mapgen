@@ -48,7 +48,7 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_6_R61 / interface des bonus lac/rivière
+## État actuel — v2.0 DEV_7 / finition du Générateur Custom
 
 La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` a été
 le checkpoint validé du reset natif, et `DEV_3` est maintenant le checkpoint
@@ -67,7 +67,7 @@ Grands, en plus de Masqués, dans toutes les vues, Batch et Historique ; une
 option indépendante permet aussi d’afficher les cercles de départ partout.
 DEV_5 ajoute le contenu Upgraded autour des départs : objets statiques calqués
 sur Legacy, mini-forêts, bonus arbres/pierres et mini-marais, tout en
-conservant les récifs spécifiques Upgraded. La candidate locale DEV_6_R61
+conservant les récifs spécifiques Upgraded. Le socle applicatif DEV_6_R61
 reprend R57, conserve les formes et la profondeur des lacs, renforce la rive
 à deux anneaux et reconstruit les rivières bonus avec le système natif local
 (filtre 9×9, relief, éventail HEX6, marqueurs et retour arrière), sans
@@ -87,8 +87,9 @@ d’eau native et rapproche explicitement les listes de formes de leur libellé.
 R61 remplace ce libellé par « Rayon de contrôle eau native », puis aligne tous
 les contrôles du panneau lac/rivière sur une seule colonne verticale. La logique
 de génération reste celle de R59 ;
-elle conserve
-les sections sémantiques utilisables du générateur Custom : Minerais, Poissons,
+elle conserve. La finition ergonomique de l’onglet Générateur est publiée dans
+DEV_7 ; la prochaine tranche porte sur les archétypes Custom. Les sections
+sémantiques utilisables du générateur restent : Minerais, Poissons,
 Arbres, Pierres de construction, Décorations et réglages détaillés des bonus de départ,
 traductions dynamiques, profils dérivés des presets,
 empreinte de configuration intégrée au cache, onglets Générateur/Archétype et

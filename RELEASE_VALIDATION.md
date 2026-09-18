@@ -1,10 +1,115 @@
 # Settlers III MapGen — validation de l’état courant
 
-Date : 2026-09-15
+Date : 2026-09-18
 
 > Ce document concerne la candidate locale actuelle. La validation historique
 > de la v1.7 est conservée dans
 > `references/history/RELEASE_VALIDATION_V1_7.md`.
+
+## v2.0 DEV_7 — checkpoint validé et publié
+
+- Base exacte : candidate `DEV_7_R26`, issue du socle applicatif `DEV_6_R61`.
+- La validation utilisateur est reçue ; la finition ergonomique du Générateur
+  est clôturée. Le moteur, les données, les exports et les règles de génération
+  restent inchangés.
+- R26 retire l’aide redondante de Terrains, place Décorations avant Terrains,
+  applique le reflow anticipé des sections et ajoute le troisième panneau du
+  Bonus quand la largeur le permet.
+- Validation finale : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  contrôle après extraction et archive fraîche PASS.
+- Le checkpoint est publié sur `dev` sans le suffixe R ; `references/` reste
+  réservé à l’archive de reprise et n’entre pas dans le dépôt GitHub.
+- Prochaine tranche : archétypes Custom.
+
+## v2.0 DEV_7_R19 — candidate locale historique
+
+- Base exacte : candidate DEV7 R17 ; rollback de l’essai de staging R18 après
+  validation visuelle, le gain étant insuffisant et potentiellement moins
+  fluide.
+- Le rendu de l’onglet Générateur revient à R17 ; la solution robuste à
+  widgets persistants reste au TODO sans version cible, avec la v2.1 comme
+  horizon possible.
+- 10 tests ciblés Custom/controller, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), checksum binaire,
+  intégrité/extraction ZIP et ré-emballage PASS ; l’archive contient 338
+  fichiers. La suite complète R17 reste à `433 passed` ; le rerun complet R19
+  attend un interpréteur disposant de `pytest`. Aucun push ni release.
+
+## v2.0 DEV_7_R18 — candidate locale historique abandonnée
+
+- Essai de staging temporaire lors des changements explicites de mode ou
+  d’archétype ; gain jugé insuffisant après validation visuelle.
+- La candidate R19 revient au code R17 éprouvé. La solution robuste reste
+  suivie dans le TODO sans version cible.
+
+## v2.0 DEV_7_R17 — candidate locale historique
+
+- Base exacte : candidate DEV7 R16 ; correction limitée à la transition
+  automatique preset → Custom lors de la première édition d’un contrôle.
+- Le mode, la provenance, le statut et les indicateurs sont synchronisés sans
+  reconstruire l’onglet Générateur ; le focus et les widgets sont conservés.
+- Un chantier UI sans version cible est ajouté au TODO pour les clignotements
+  lors des changements d’options et les artefacts de redimensionnement.
+- 10 tests ciblés Custom/controller, compilation, self-test source,
+  smoke-test, checksum binaire, extraction et ré-emballage ZIP PASS. Le paquet
+  contient 338 fichiers. La suite complète R16 reste à `433 passed` ; le
+  rerun complet R17 attend un interpréteur disposant de `pytest`.
+
+## v2.0 DEV_7_R16 — candidate locale
+
+- Base exacte : candidate DEV7 R15 ; finition limitée à la section Poissons.
+- Le tooltip de « Près des côtes » explique la limitation du placement des
+  ressources en poissons. Les contrôles sont ordonnés Quantité moyenne → Près
+  des côtes → Épaisseur de la bande, sans texte d’état redondant visible.
+- 10 tests ciblés Custom/controller, compilation, self-test, smoke-test et
+  extraction ZIP passent. La suite complète R15 reste à `433 passed` ; le
+  rerun complet R16 attend un interpréteur disposant de `pytest`. Aucun push ni
+  release.
+
+## v2.0 DEV_7_R15 — candidate locale historique
+
+- Base exacte : candidate DEV7 R14 ; finition limitée aux aperçus estimés.
+- L’avertissement de placement est dans le tooltip du titre « Aperçu estimé ».
+  Forêts et Groupes de pierres signalent de façon identique leur état
+  désactivé ; les pierres utilisent les libellés « Gisements totaux » et
+  « Gisements exploitables ».
+- Le point 2 de la mini-roadmap de finition de l’onglet Générateur est clos.
+  Le Bonus de départ reste reporté. Les 9 tests ciblés Custom/controller,
+  compilation, self-test source, smoke-test et extraction ZIP passent. La
+  suite complète R14 reste à `433 passed` ; le rerun complet R15 attend un
+  interpréteur disposant de `pytest`. Aucun push ni release.
+
+## v2.0 DEV_7_R14 — candidate locale historique
+
+- Base exacte : candidate DEV7 R13 ; correction ciblée de la lecture des
+  valeurs de référence des aperçus Custom, sans modification des moteurs
+  Legacy/Upgraded ni des sections validées.
+- Les aperçus Arbres et Pierres affichent désormais les valeurs profilées au
+  lieu de zéros et restent réactifs à la taille de carte.
+- Test de régression ajouté ; les 8 tests ciblés Custom/controller, le
+  self-test source, le smoke-test et l’intégrité de l’archive fraîche passent.
+  La suite complète R13 reste à `433 passed` ; le rerun complet R14 attend un
+  interpréteur disposant de `pytest`. Aucun push ni release.
+
+## v2.0 DEV_7_R13 — candidate locale historique
+
+## v2.0 DEV_7_R12 — candidate locale historique
+
+## v2.0 DEV_7_R11 — candidate locale historique
+
+## v2.0 DEV_7_R10 — candidate locale
+
+- Base exacte : candidate DEV7 R9 ; aucune logique de génération, donnée,
+  bonus ou export n’est modifiée.
+- Repères `?` rapprochés de leur texte ; Poissons, Arbres et Pierres passent
+  sur une colonne par défaut ; la matrice dense des Minerais/Décorations est
+  conservée. Le stock moyen des pierres et les champs de Groupes sont alignés.
+- Rivières, Terrains et Minerais validés visuellement restent inchangés ; la
+  refonte du Bonus de départ est reportée.
+- Suite complète : `430 passed`, compilation réussie.
+- Self-test source, smoke-test, checksum binaire et hashes protégés PASS ; la
+  validation visuelle Windows reste ouverte.
 
 ## v2.0 DEV_6_R61 — candidate locale active
 

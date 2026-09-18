@@ -46,7 +46,7 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_6_R61 / bonus-lake interface
+## Current state — v2.0 DEV_7 / Custom generator finish
 
 The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` was
 the validated native reset checkpoint, and `DEV_3` is now the validated and
@@ -63,7 +63,7 @@ Large, plus Hidden, in every view, Batch and History; a separate option shows
 the start circles everywhere as well.
 DEV_5 restores the Upgraded content around starts: Legacy-shaped static
 objects, mini-forests, tree/stone bonuses and mini-swamps, while keeping
-Upgraded reefs. The local DEV_6_R61 candidate reprises R57's lake shapes and
+Upgraded reefs. The DEV_6_R61 application foundation reprises R57's lake shapes and
 depths, strengthens the shoreline to two native-style rings, and rebuilds each
 bonus river with the local native system (9x9 filter, relief fan, HEX6 markers
 and backtracking) without searching for existing water as a destination.
@@ -82,8 +82,10 @@ functionally. R60 now compacts the lake/river panel into four columns,
 shortens the native-water avoidance label, and keeps each shape list directly
 beside its label. R61 replaces that label with “Native-water check radius” and
 aligns every lake/river control in one vertical column. Generation logic
-remains the R59 behavior:
-semantic Minerals, Fish, Trees, Building Stones, Decorations and detailed start-bonus controls, dynamic translations, profiles
+remains the R59 behavior. DEV_7 publishes the Custom-generator UX finish; the
+next tranche is Custom archetypes. The semantic sections remain Minerals, Fish,
+Trees, Building Stones, Decorations and detailed start-bonus controls, dynamic
+translations, profiles
 derived from presets, a configuration fingerprint in the cache,
 Generator/Archetype tabs, and an extensible start-bonus registry. Minerals
 expose the three Legacy/Upgraded/Random-pixels algorithms, occupancy, distribution, size

@@ -78,13 +78,18 @@ class GenerationWorkflowController:
     def _copy_seed(self):
         value=str(self.seed.get());self.clipboard_clear();self.clipboard_append(value);self._feedback('seed_copied','success',seed=value)
 
-    def _selection_changed(self):
+    def _refresh_selection_feedback(self):
+        """Refresh the status strip without invoking any UI rebuild hook."""
+
         s=int(self.size.get());mkey=self._mode_key();akey=self._arch_key();m=MODES[mkey];a=ARCHETYPES[akey];lang=self.prefs.get('language','fr');warning_key=self._legacy_size_warning_key(mkey,akey,s)
         mode=MODE_LABELS[lang][mkey];arch=ARCHETYPE_LABELS[lang][akey];modifiers=self._modifier_summary()
         if not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
         elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
         elif warning_key:self._feedback(warning_key,'warning',side=s,max_players=NATIVE_LIMITS[s])
         else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
+
+    def _selection_changed(self):
+        self._refresh_selection_feedback()
         if hasattr(self, '_custom_selection_changed'):
             self._custom_selection_changed()
 

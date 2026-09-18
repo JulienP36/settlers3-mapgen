@@ -17,6 +17,7 @@ DEFAULTS = {
     'history_capacity': 8,
     'wheel_zoom': 1.10,
     'language': 'fr',
+    'custom_sections_expanded': {},
     'shortcuts': DEFAULT_SHORTCUTS,
 }
 
@@ -56,6 +57,11 @@ def load_settings() -> dict:
     cfg['overlay_alpha'] = max(0, min(100, int(cfg.get('overlay_alpha', 75))))
     cfg['wheel_zoom'] = max(1.02, min(1.30, float(cfg.get('wheel_zoom', 1.10))))
     cfg['language'] = cfg.get('language') if cfg.get('language') in ('fr', 'en', 'de', 'es') else 'fr'
+    cfg['custom_sections_expanded'] = (
+        {str(key): bool(value) for key, value in cfg.get('custom_sections_expanded', {}).items()}
+        if isinstance(cfg.get('custom_sections_expanded'), dict)
+        else {}
+    )
     cfg['shortcuts'] = _clean_shortcuts(cfg.get('shortcuts'))
     cfg['settings_version'] = SETTINGS_SCHEMA_VERSION
     return cfg
@@ -67,6 +73,11 @@ def save_settings(settings: dict) -> None:
         if key in settings:
             clean[key] = settings[key]
     clean['shortcuts'] = _clean_shortcuts(clean.get('shortcuts'))
+    clean['custom_sections_expanded'] = (
+        {str(key): bool(value) for key, value in clean.get('custom_sections_expanded', {}).items()}
+        if isinstance(clean.get('custom_sections_expanded'), dict)
+        else {}
+    )
     clean['settings_version'] = SETTINGS_SCHEMA_VERSION
     tmp = path.with_suffix('.tmp')
     tmp.write_text(json.dumps(clean, indent=2, ensure_ascii=False), encoding='utf-8')

@@ -49,14 +49,15 @@ Ces fichiers doivent être consultés avant une nouvelle session de développeme
 ## Current development
 
 - Latest published STABLE: `v1.7`.
-- Latest published development checkpoint: `v2.0 DEV_5`.
-- Active development line: `v2.0 DEV_6` (générateur Custom).
-- Current local candidate: `v2.0 DEV_6_R61`, reprise de R60. Le panneau
-  lac/rivière reste compact, son champ est désormais libellé « Rayon de
-  contrôle eau native » et tous ses contrôles sont alignés verticalement ; la
-  logique de génération, le traceur et les bornes `16 HEX6`/`6` restent
-  inchangés. Sans push ni release.
-- No suffixed DEV_5 candidate remains active after validation of the checkpoint.
+- Latest published development checkpoint: `v2.0 DEV_7`.
+- Active development line: `v2.0 DEV_7` (prochaine tranche : archétypes
+  Custom).
+- Current local candidate: none. The former `v2.0 DEV_7_R26` candidate was
+  validated and promoted as `v2.0 DEV_7`. It contains only the validated
+  Générateur UI finish: terrain microcopy removal, dense-block ordering, the
+  three-column Bonus layout and the earlier responsive split threshold; the
+  engine, data, exports and generation rules are unchanged.
+- No suffixed DEV_7 candidate remains active after validation of the checkpoint.
 - Suffixed candidates (`DEV_X_R1`, `R2`, etc.) are local Windows-test/recovery artifacts. Publish only the completed `DEV_X` checkpoint without a revision suffix on `dev`.
 - Every validated DEV candidate, RC or STABLE stage must refresh `references/SETTLERS3_CURRENT_SNAPSHOT.md` before its final archive, commit or push. Validating a local `DEV_X_Rn` updates recovery state but never authorizes publishing that suffix.
 - v2.0 DEV_2 was the validated native-generator reset/reconstruction line;

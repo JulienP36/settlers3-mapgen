@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import math
 import tkinter as tk
 from tkinter import ttk
+from copy import deepcopy
 
 from ...generation.archetypes import ARCHETYPES
 from ...generation.custom import (
@@ -76,7 +78,7 @@ from ...generation.custom import (
 )
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.shell import ARCHETYPE_LABELS, MODE_LABELS
-from ..ui.widgets.icons import mineral_icon
+from ..ui.widgets.icons import info_icons, mineral_icon
 from .i18n import (
     archetype_description,
     custom_section_text,
@@ -84,6 +86,16 @@ from .i18n import (
     parameter_group,
     parameter_label,
 )
+
+
+def _read_preview_number(value, default=0.0):
+    """Read either a Tk variable or a raw profile scalar for a preview."""
+
+    try:
+        raw_value = value.get() if hasattr(value, "get") else value
+        return float(raw_value)
+    except (AttributeError, TypeError, ValueError):
+        return float(default)
 
 
 class CustomGeneratorController:
@@ -103,10 +115,33 @@ class CustomGeneratorController:
         self._custom_last_render_digest: str | None = None
         self._custom_section_vars: dict[str, tk.Variable] = {}
         self._custom_package_vars: dict[str, tk.BooleanVar] = {}
+        self._custom_section_keys = (
+            "start_bonus",
+            "minerals",
+            "fish",
+            "rivers",
+            "terrains",
+            "trees",
+            "building_stones",
+            "decorations",
+        )
+        saved_sections = self.prefs.get("custom_sections_expanded", {})
+        self._custom_section_expanded = {
+            key: bool(saved_sections.get(key, False))
+            for key in self._custom_section_keys
+        } if isinstance(saved_sections, dict) else {
+            key: False for key in self._custom_section_keys
+        }
         self._custom_start_bonus_control_widgets: dict[str, list[tk.Widget]] = {}
+        self._custom_section_baseline: dict[str, object] = {}
         self._custom_status_var = tk.StringVar(value="")
         self._custom_provenance_var = tk.StringVar(value="")
         self._custom_generator_tab = self._scroll_notebook_tab("Générateur")
+        # The generator owns a responsive grid.  Let its scroll surface fit
+        # the viewport instead of preserving the widest one-column request;
+        # otherwise the canvas keeps a horizontal natural width and the grid
+        # never receives the narrow width that should trigger its reflow.
+        self._custom_generator_tab._scroll_fit_width = True
         self._custom_archetype_tab = self._scroll_notebook_tab("Archétype")
         self._custom_selection_changed()
 
@@ -229,11 +264,24 @@ class CustomGeneratorController:
             return
         try:
             fish = self._custom_config.semantic_sections().get("fish", {})
-            widget.configure(state="normal" if bool(fish.get("near_shore", False)) else "disabled")
+            enabled = bool(fish.get("near_shore", False))
+            widget.configure(state="normal" if enabled else "disabled")
         except tk.TclError:
             # The complete parameter tab may be between two renders.  The new
             # widget will receive its initial state when that render completes.
             pass
+
+    def _custom_clear_preview_size_trace(self) -> None:
+        """Remove the previous live preview listener before rebuilding the tab."""
+
+        trace_id = getattr(self, "_custom_preview_size_trace", None)
+        if trace_id is None or not hasattr(self, "size"):
+            return
+        try:
+            self.size.trace_remove("write", trace_id)
+        except (AttributeError, tk.TclError):
+            pass
+        self._custom_preview_size_trace = None
 
     def _custom_refresh_start_bonus_controls(self) -> None:
         """Enable detailed bonus controls only when their package is active."""
@@ -261,9 +309,58 @@ class CustomGeneratorController:
         if rocky_refresh is not None:
             rocky_refresh()
 
+    def _custom_section_is_modified(self, key: str) -> bool:
+        """Return whether one visible section differs from its base profile."""
+
+        config = getattr(self, "_custom_config", None)
+        if config is None:
+            return False
+        baseline = getattr(self, "_custom_section_baseline", None)
+        if not isinstance(baseline, dict) or not baseline:
+            baseline = default_sections(config.profile, config.base_mode)
+        current = config.semantic_sections()
+        if key == "start_bonus":
+            return bool(config.start_packages) or current.get(key, {}) != baseline.get(key, {})
+        if key == "decorations":
+            return (
+                current.get("decorations", {}) != baseline.get("decorations", {})
+                or current.get("objects", {}) != baseline.get("objects", {})
+            )
+        return current.get(key, {}) != baseline.get(key, {})
+
+    def _custom_refresh_section_headers(self) -> None:
+        """Refresh arrows, modified markers and per-section reset actions."""
+
+        for entry in getattr(self, "_custom_section_frames", {}).values():
+            try:
+                entry[3]()
+            except (IndexError, tk.TclError):
+                pass
+
+    def _custom_reset_section(self, key: str) -> None:
+        """Restore one editor section while preserving all other changes."""
+
+        config = getattr(self, "_custom_config", None)
+        if config is None or not self._custom_section_is_modified(key):
+            return
+        baseline = default_sections(config.profile, config.base_mode)
+        sections = config.semantic_sections()
+        if key == "decorations":
+            sections["decorations"] = deepcopy(baseline.get("decorations", {}))
+            sections["objects"] = deepcopy(baseline.get("objects", {}))
+        elif key in sections:
+            sections[key] = deepcopy(baseline.get(key, {}))
+        packages = () if key == "start_bonus" else config.start_packages
+        self._custom_config = config.with_sections(sections).with_start_packages(packages)
+        language = self._custom_language()
+        if self._custom_current_mode() != "custom":
+            self.mode.set(MODE_LABELS[language]["custom"])
+        self._selection_changed()
+
     def _render_custom_parameter_tabs(self):
         if not hasattr(self, "_custom_generator_tab"):
             return
+        self._custom_clear_preview_size_trace()
         config = self._custom_profile_for_display()
         generator_scroll_position = self._custom_generator_scroll_position()
         root = self._custom_generator_tab
@@ -274,29 +371,17 @@ class CustomGeneratorController:
         language = self._custom_language()
         mode = self._custom_current_mode()
         archetype = self._custom_current_archetype()
+        self._custom_section_baseline = default_sections(config.profile, config.base_mode)
 
         ttk.Label(root, text=_lang_text(language, "Générateur", "Generator", "Generator", "Generador"), style="Section.TLabel").grid(
             row=0, column=0, sticky="w", pady=(0, 3)
         )
-        ttk.Label(
-            root,
-            text=_lang_text(
-                language,
-                "Les presets intégrés sont modifiables par dérivation : la première modification sélectionne Custom. Les paramètres non encore raccordés sont signalés par le moteur.",
-                "Built-in presets are edited by derivation: the first change selects Custom. Parameters not wired yet are reported by the engine.",
-                "Integrierte Presets werden durch Ableitung bearbeitet: Die erste Änderung wählt Custom. Noch nicht verbundene Parameter werden von der Engine gemeldet.",
-                "Los presets integrados se editan por derivación: la primera modificación selecciona Custom. El motor informa de los parámetros aún no conectados.",
-            ),
-            style="Hint.TLabel",
-            wraplength=620,
-            justify="left",
-        ).grid(row=1, column=0, sticky="w", pady=(0, 8))
         ttk.Label(root, textvariable=self._custom_provenance_var, style="Hint.TLabel", wraplength=720).grid(
-            row=2, column=0, sticky="w", pady=(0, 8)
+            row=1, column=0, sticky="w", pady=(0, 8)
         )
 
         actions = ttk.Frame(root)
-        actions.grid(row=3, column=0, sticky="ew", pady=(0, 9))
+        actions.grid(row=2, column=0, sticky="ew", pady=(0, 9))
         ttk.Button(
             actions,
             text=_lang_text(language, "Réinitialiser le Custom", "Reset Custom", "Custom zurücksetzen", "Restablecer Custom"),
@@ -316,8 +401,132 @@ class CustomGeneratorController:
             self._custom_package_vars[spec.key] = var
 
         sections_frame = ttk.Frame(root)
-        sections_frame.grid(row=4, column=0, sticky="ew", pady=(0, 10))
-        sections_frame.columnconfigure(0, weight=1)
+        sections_frame.grid(row=3, column=0, sticky="ew", pady=(0, 10))
+        for column in range(3):
+            sections_frame.columnconfigure(column, weight=0)
+        self._custom_section_frames = {}
+        section_order = (
+            "start_bonus",
+            "minerals",
+            "fish",
+            "rivers",
+            "trees",
+            "building_stones",
+            "decorations",
+            "terrains",
+        )
+        section_preferred_rows = (
+            ("fish", "rivers"),
+            ("trees", "building_stones"),
+            # Terrains is a dense block; pair it with Decorations when the
+            # viewport can carry both.  The denser block stays on the left.
+            ("decorations", "terrains"),
+        )
+        section_layout_frames = {}
+        section_layout_job = None
+        section_layout_gap = 16
+        section_layout_safety_margin = 32
+
+        def section_full_width_keys(column_count):
+            """Keep the two densest sections alone at every width."""
+
+            return {"start_bonus", "minerals"}
+
+        def section_natural_width(key):
+            shell, body = section_layout_frames[key]
+            # The body keeps its requested size even when the section is
+            # collapsed.  Using it prevents a collapse/expand action from
+            # changing the column count and moving every following section.
+            return max(shell.winfo_reqwidth(), body.winfo_reqwidth())
+
+        def section_pair_required_width(keys):
+            return sum(section_natural_width(key) for key in keys) + section_layout_gap * max(
+                0, len(keys) - 1
+            )
+
+        def section_pair_fits(keys, available_width):
+            return (
+                section_pair_required_width(keys) + section_layout_safety_margin
+                <= available_width
+            )
+
+        def section_rows(column_count, available_width):
+            full_width = section_full_width_keys(column_count)
+            rows = [["start_bonus"], ["minerals"]]
+            for pair in section_preferred_rows:
+                pair_fits = (
+                    column_count > 1
+                    and section_pair_fits(pair, available_width)
+                )
+                if pair_fits:
+                    rows.append(list(pair))
+                else:
+                    rows.extend([[key] for key in pair])
+            return rows, full_width
+
+        def section_layout_fits(column_count, available_width):
+            if column_count <= 1:
+                return True
+            return any(
+                section_pair_fits(pair, available_width)
+                for pair in section_preferred_rows
+            )
+
+        def relayout_sections():
+            nonlocal section_layout_job
+            section_layout_job = None
+            try:
+                # The scroll helper may keep the content's natural request
+                # wider than the viewport.  The inner tab width is the real
+                # responsive constraint; use it so a narrow window can force
+                # pairs back to one column.
+                available_width = max(0, root.winfo_width() - 28)
+            except tk.TclError:
+                return
+            if available_width <= 1 or len(section_layout_frames) != len(section_order):
+                return
+
+            column_count = 1
+            for candidate in (2,):
+                if section_layout_fits(candidate, available_width):
+                    column_count = candidate
+                    break
+
+            for column in range(3):
+                sections_frame.columnconfigure(column, weight=0)
+            rows, full_width = section_rows(column_count, available_width)
+            for row_index, row in enumerate(rows):
+                if len(row) == 1 and row[0] in full_width:
+                    shell = section_layout_frames[row[0]][0]
+                    shell.grid_configure(
+                        row=row_index,
+                        column=0,
+                        columnspan=column_count,
+                        sticky="nw",
+                        padx=0,
+                    )
+                    continue
+                for column, key in enumerate(row):
+                    section_layout_frames[key][0].grid_configure(
+                        row=row_index,
+                        column=column,
+                        columnspan=1,
+                        sticky="nw",
+                        padx=(
+                            0,
+                            section_layout_gap if column < len(row) - 1 else 0,
+                        ),
+                    )
+
+        def schedule_section_relayout(_event=None):
+            nonlocal section_layout_job
+            if section_layout_job is not None:
+                return
+            try:
+                section_layout_job = sections_frame.after_idle(relayout_sections)
+            except tk.TclError:
+                section_layout_job = None
+
         sections = config.semantic_sections()
         self._custom_section_vars = {}
         self._custom_mineral_icon_widgets: dict[str, list[tk.Widget]] = {
@@ -326,6 +535,7 @@ class CustomGeneratorController:
         self._custom_mineral_icon_buttons: dict[str, list[tk.Widget]] = {
             key: [] for key, _family in MINERAL_SPECS
         }
+        self._custom_info_icons = info_icons(self)
         self._custom_start_bonus_control_widgets = {
             key: []
             for key in (
@@ -350,9 +560,119 @@ class CustomGeneratorController:
                 lambda event, p=path, v=variable: self._custom_section_changed(p, v.get()),
             )
 
+        def add_tooltip(widget, text, key=None):
+            """Attach a contextual tooltip to a control or its temporary marker."""
+
+            if not text:
+                return
+            widget.bind(
+                "<Enter>",
+                lambda event, w=widget, value=text, marker=key: self._show_ui_tooltip(
+                    w, value, key=marker
+                ),
+                add="+",
+            )
+            widget.bind(
+                "<Leave>",
+                lambda event: self._hide_ui_tooltip(),
+                add="+",
+            )
+
+        def add_info(parent, row, text, *, column=2, columnspan=1, key=None, pady=2):
+            """Place a 16×16 ``?`` marker with no extra horizontal gap."""
+
+            marker = ttk.Label(parent, image=self._custom_info_icons[1], cursor="question_arrow")
+            marker.grid(
+                row=row,
+                column=column,
+                columnspan=columnspan,
+                sticky="w",
+                padx=0,
+                pady=pady,
+            )
+            add_tooltip(marker, text, key=key)
+            marker.bind("<Enter>", lambda event, w=marker: w.configure(image=self._custom_info_icons[2]), add="+")
+            marker.bind("<Leave>", lambda event, w=marker: w.configure(image=self._custom_info_icons[1]), add="+")
+            return marker
+
+        def add_collapsible_section(key, row, title, *, pady=(0, 8)):
+            """Create a compact section header and its persisted body."""
+
+            shell = ttk.Frame(sections_frame)
+            shell.grid(row=row, column=0, sticky="nw", pady=pady)
+            shell.columnconfigure(0, weight=0)
+            shell.columnconfigure(1, weight=0)
+            body = ttk.Frame(shell, padding=8)
+            body.columnconfigure(0, weight=0)
+            body.columnconfigure(1, weight=0)
+            header_line = ttk.Frame(shell)
+            header_line.grid(row=0, column=0, columnspan=2, sticky="w")
+
+            def refresh():
+                expanded = bool(self._custom_section_expanded.get(key, False))
+                arrow = "▼" if expanded else "▶"
+                modified = self._custom_section_is_modified(key)
+                header.configure(text=f"{arrow}  {title}")
+                if modified:
+                    modified_label.configure(
+                        text=custom_section_text("section_modified", language)
+                    )
+                    modified_label.grid(row=0, column=1, sticky="w", padx=(6, 0))
+                    reset_button.grid(row=0, column=2, sticky="w", padx=(6, 0))
+                else:
+                    modified_label.grid_remove()
+                    reset_button.grid_remove()
+                if expanded:
+                    body.grid(
+                        row=1,
+                        column=0,
+                        columnspan=2,
+                        sticky="nw",
+                        pady=(1, 0),
+                    )
+                else:
+                    body.grid_remove()
+                schedule_section_relayout()
+
+            def toggle():
+                self._custom_section_expanded[key] = not bool(
+                    self._custom_section_expanded.get(key, False)
+                )
+                self.prefs["custom_sections_expanded"] = dict(self._custom_section_expanded)
+                schedule = getattr(self, "_schedule_prefs_save", None)
+                if callable(schedule):
+                    schedule()
+                refresh()
+
+            header = ttk.Button(
+                header_line,
+                style="SectionToggle.TButton",
+                command=toggle,
+                cursor="hand2",
+            )
+            header.grid(row=0, column=0, sticky="w")
+            modified_label = ttk.Label(header_line, style="Modified.TLabel")
+            reset_button = ttk.Button(
+                header_line,
+                text=_lang_text(language, "Réinitialiser", "Reset", "Zurücksetzen", "Restablecer"),
+                command=lambda section=key: self._custom_reset_section(section),
+                cursor="hand2",
+                padding=(4, 1),
+            )
+            section_layout_frames[key] = (shell, body)
+            self._custom_section_frames[key] = (shell, header, body, refresh)
+            refresh()
+            return body
+
         def _display_number(value):
             number = float(value)
             return str(int(number)) if number.is_integer() else f"{number:g}"
+
+        def _read_number(value, default=0.0):
+            return _read_preview_number(value, default)
+
+        def tip(fr, en, de, es):
+            return _lang_text(language, fr, en, de, es)
 
         def add_spin(
             parent,
@@ -368,10 +688,18 @@ class CustomGeneratorController:
             column=0,
             columnspan=1,
             variable=None,
+            tooltip=None,
+            tooltip_after_label=True,
+            maximum_var=None,
         ):
             line = ttk.Frame(parent)
             line.grid(row=row, column=column, columnspan=columnspan, sticky="w", pady=2)
-            ttk.Label(line, text=label).grid(row=0, column=0, sticky="w", padx=(0, 8))
+            label_padx = (0, 0) if tooltip and tooltip_after_label else (0, 8)
+            ttk.Label(line, text=label).grid(row=0, column=0, sticky="w", padx=label_padx)
+            next_column = 1
+            if tooltip and tooltip_after_label:
+                add_info(line, 0, tooltip, column=next_column, pady=0)
+                next_column += 1
             if variable is None:
                 variable = tk.StringVar(value=_display_number(value))
             widget = ttk.Spinbox(
@@ -383,15 +711,29 @@ class CustomGeneratorController:
                 width=9,
                 command=lambda p=path, v=variable: self._custom_section_changed(p, v.get()),
             )
-            widget.grid(row=0, column=1, sticky="w")
+            widget.grid(
+                row=0,
+                column=next_column,
+                sticky="w",
+                padx=(4, 0) if tooltip and tooltip_after_label else 0,
+            )
             maximum = _display_number(high)
             if unit:
                 maximum = f"{maximum} {unit}"
                 unit_text = f"{unit} · {custom_section_text('max_value', language, value=maximum)}"
             else:
                 unit_text = custom_section_text("max_value", language, value=maximum)
-            ttk.Label(line, text=unit_text, style="Hint.TLabel").grid(
-                row=0, column=2, sticky="w", padx=(4, 0)
+            next_column += 1
+            if tooltip and not tooltip_after_label:
+                add_info(line, 0, tooltip, column=next_column, pady=0)
+                next_column += 1
+            maximum_label = ttk.Label(line, style="Hint.TLabel")
+            if maximum_var is None:
+                maximum_label.configure(text=unit_text)
+            else:
+                maximum_label.configure(textvariable=maximum_var)
+            maximum_label.grid(
+                row=0, column=next_column, sticky="w", padx=(4, 0)
             )
             bind_text(widget, path, variable)
             self._custom_section_vars[".".join(path)] = variable
@@ -411,6 +753,7 @@ class CustomGeneratorController:
             variable=None,
             icon=None,
             icon_key=None,
+            tooltip=None,
         ):
             """Add a resource control in the shared icon/input/name/max grid."""
 
@@ -445,6 +788,9 @@ class CustomGeneratorController:
                 row=row, column=column, sticky="w", padx=(0, 8), pady=2
             )
             column += 1
+            if tooltip:
+                add_info(parent, row, tooltip, column=column, pady=2)
+                column += 1
             maximum = _display_number(high)
             if unit:
                 maximum = f"{maximum} {unit}"
@@ -470,6 +816,7 @@ class CustomGeneratorController:
             *,
             column=0,
             variable=None,
+            tooltip=None,
         ):
             """Add a decoration rate with a reserved 16×16 icon slot.
 
@@ -500,12 +847,21 @@ class CustomGeneratorController:
                 command=lambda p=path, v=variable: self._custom_section_changed(p, v.get()),
             )
             widget.grid(row=0, column=1, sticky="w")
+            next_column = 2
             ttk.Label(line, text=unit, style="Hint.TLabel").grid(
-                row=0, column=2, sticky="w", padx=(5, 10)
+                row=0, column=next_column, sticky="w", padx=(5, 10)
             )
+            next_column += 1
             ttk.Label(line, text=label).grid(
-                row=0, column=3, sticky="w", padx=(0, 8)
+                row=0,
+                column=next_column,
+                sticky="w",
+                padx=(0, 0) if tooltip else (0, 8),
             )
+            next_column += 1
+            if tooltip:
+                add_info(line, 0, tooltip, column=next_column, pady=0)
+                next_column += 1
             maximum = _display_number(high)
             if unit:
                 maximum = f"{maximum} {unit}"
@@ -513,19 +869,16 @@ class CustomGeneratorController:
                 line,
                 text=custom_section_text("max_value", language, value=maximum),
                 style="Hint.TLabel",
-            ).grid(row=0, column=4, sticky="w")
+            ).grid(row=0, column=next_column, sticky="w")
             bind_text(widget, path, variable)
             self._custom_section_vars[".".join(path)] = variable
             self._custom_decoration_rate_vars[path[-1]] = variable
             self._custom_decoration_rate_widgets[path[-1]] = widget
             return widget
 
-        minerals = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("minerals", language),
-            padding=8,
+        minerals = add_collapsible_section(
+            "minerals", 1, custom_section_text("minerals", language), pady=(0, 8)
         )
-        minerals.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         minerals.columnconfigure(0, weight=0)
         minerals.columnconfigure(1, weight=0)
         mineral_values = sections["minerals"]
@@ -540,8 +893,15 @@ class CustomGeneratorController:
         algorithm_line = ttk.Frame(minerals)
         algorithm_line.grid(row=0, column=0, columnspan=2, sticky="w", pady=2)
         ttk.Label(algorithm_line, text=custom_section_text("mineral_algorithm", language)).grid(
-            row=0, column=0, sticky="w", padx=(0, 8)
+            row=0, column=0, sticky="w", padx=(0, 0)
         )
+        algorithm_tooltip = tip(
+            "Legacy : motifs historiques.\nUpgraded : gisements compacts.\nPixels aléatoires : cases dispersées.",
+            "Legacy: historical patterns.\nUpgraded: compact deposits.\nRandom pixels: scattered cells.",
+            "Legacy: historische Muster.\nUpgraded: kompakte Lagerstätten.\nZufällige Pixel: verstreute Zellen.",
+            "Legacy: patrones históricos.\nUpgraded: yacimientos compactos.\nPíxeles aleatorios: celdas dispersas.",
+        )
+        add_info(algorithm_line, 0, algorithm_tooltip, column=1, pady=2)
         algorithm_labels = {
             "legacy": custom_section_text("legacy_algorithm", language),
             "upgraded": custom_section_text("upgraded_algorithm", language),
@@ -555,7 +915,7 @@ class CustomGeneratorController:
             state="readonly",
             width=18,
         )
-        algorithm_combo.grid(row=0, column=1, sticky="w")
+        algorithm_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
         algorithm_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -563,17 +923,6 @@ class CustomGeneratorController:
                 next(key for key, label in algorithm_labels.items() if label == algorithm_var.get()),
             ),
         )
-        algorithm_hint = _lang_text(
-            language,
-            "Legacy : motifs historiques. Upgraded : gisements compacts sans trous. Pixels aléatoires : cases dispersées.",
-            "Legacy: historical patterns. Upgraded: compact deposits without gaps. Random pixels: scattered cells.",
-            "Legacy: historische Muster. Upgraded: kompakte Lagerstätten ohne Lücken. Zufällige Pixel: verstreute Zellen.",
-            "Legacy: patrones históricos. Upgraded: yacimientos compactos sin huecos. Píxeles aleatorios: celdas dispersas.",
-        )
-        ttk.Label(minerals, text=algorithm_hint, style="Hint.TLabel", wraplength=560).grid(
-            row=1, column=0, columnspan=2, sticky="w", pady=(0, 5)
-        )
-
         mineral_grid = ttk.Frame(minerals)
         mineral_grid.grid(row=2, column=0, columnspan=2, sticky="nw", pady=(0, 1))
         # Keep the paired controls adjacent instead of stretching each half
@@ -594,13 +943,26 @@ class CustomGeneratorController:
             100,
             0.1,
             custom_section_text("percent_unit", language),
+            tooltip=tip(
+                "Part de la carte occupée par les cases minéralisées.",
+                "Share of the map occupied by mineral-bearing cells.",
+                "Anteil der Karte mit mineralhaltigen Zellen.",
+                "Parte del mapa ocupada por casillas mineralizadas.",
+            ),
         )
 
         variation_frame = ttk.Frame(mineral_grid)
         variation_frame.grid(row=0, column=1, sticky="nw", padx=(6, 0))
         ttk.Label(variation_frame, text=custom_section_text("size_variation", language)).grid(
-            row=0, column=0, sticky="w", padx=(0, 8), pady=2
+            row=0, column=0, sticky="w", padx=(0, 0), pady=2
         )
+        variation_tooltip = tip(
+            "Variation appliquée à la taille des gisements.",
+            "Variation applied to deposit size.",
+            "Variation der Lagerstättengröße.",
+            "Variación aplicada al tamaño de los yacimientos.",
+        )
+        add_info(variation_frame, 0, variation_tooltip, column=1, pady=2)
         variation_labels = {key: custom_section_text(key, language) for key in SIZE_VARIATIONS}
         variation_var = tk.StringVar(value=variation_labels[mineral_values["size_variation"]])
         variation_combo = ttk.Combobox(
@@ -610,7 +972,7 @@ class CustomGeneratorController:
             state="readonly",
             width=12,
         )
-        variation_combo.grid(row=0, column=1, sticky="w", pady=2)
+        variation_combo.grid(row=0, column=2, sticky="w", padx=(4, 0), pady=2)
         variation_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -683,26 +1045,29 @@ class CustomGeneratorController:
                 RESOURCE_MINIMUM,
                 RESOURCE_MAXIMUM,
                 1,
+                custom_section_text("resource_unit", language),
+                tooltip=custom_section_text("resource_hint", language),
                 icon=self._custom_mineral_icons[key],
                 icon_key=key,
             )
-        ttk.Label(quantity_frame, text=custom_section_text("resource_hint", language), style="Hint.TLabel").grid(
-            row=len(MINERAL_SPECS), column=0, columnspan=5, sticky="w", pady=(4, 0)
+        ttk.Label(
+            quantity_frame,
+            text=tip(
+                "Quantité moyenne par case minéralisée.",
+                "Average quantity per mineral-bearing cell.",
+                "Durchschnitt je mineralhaltiger Zelle.",
+                "Cantidad media por casilla mineralizada.",
+            ),
+            style="Hint.TLabel",
+        ).grid(row=len(MINERAL_SPECS), column=0, columnspan=5, sticky="w", pady=(4, 0))
+        fish = add_collapsible_section(
+            "fish", 2, custom_section_text("fish", language), pady=(0, 8)
         )
-
-        fish = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("fish", language),
-            padding=8,
-        )
-        fish.grid(row=2, column=0, sticky="ew")
         fish.columnconfigure(0, weight=0)
-        fish.columnconfigure(1, weight=0)
         fish_values = sections["fish"]
         fish_grid = ttk.Frame(fish)
-        fish_grid.grid(row=0, column=0, columnspan=2, sticky="nw")
+        fish_grid.grid(row=0, column=0, sticky="nw")
         fish_grid.columnconfigure(0, weight=0)
-        fish_grid.columnconfigure(1, weight=0)
         add_spin(
             fish_grid,
             0,
@@ -717,26 +1082,36 @@ class CustomGeneratorController:
         )
         add_spin(
             fish_grid,
-            0,
+            1,
             custom_section_text("average_quantity", language),
             ("fish", "average_quantity"),
             fish_values["average_quantity"],
             RESOURCE_MINIMUM,
             RESOURCE_MAXIMUM,
             1,
-            column=1,
+            custom_section_text("resource_unit", language),
+            column=0,
         )
         near_shore_var = tk.BooleanVar(value=bool(fish_values["near_shore"]))
+        near_shore_line = ttk.Frame(fish_grid)
+        near_shore_line.grid(row=2, column=0, sticky="w", pady=(5, 2))
         near_shore = ttk.Checkbutton(
-            fish,
+            near_shore_line,
             text=custom_section_text("near_shore", language),
             variable=near_shore_var,
             command=lambda: self._custom_section_changed(("fish", "near_shore"), near_shore_var.get()),
         )
-        near_shore.grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 2))
+        near_shore.grid(row=0, column=0, sticky="w")
+        add_info(
+            near_shore_line,
+            0,
+            custom_section_text("coast_hint", language),
+            column=1,
+            pady=0,
+        )
         band_thickness = add_spin(
             fish_grid,
-            2,
+            3,
             custom_section_text("band_thickness", language),
             ("fish", "band_thickness"),
             fish_values["band_thickness"],
@@ -745,19 +1120,20 @@ class CustomGeneratorController:
             1,
             custom_section_text("cells_unit", language),
             column=0,
+            tooltip_after_label=True,
+            tooltip=tip(
+                "Largeur de la bande côtière, en cases HEX6.\nDisponible seulement si « Près des côtes » est actif.",
+                "Width of the coastal band, in HEX6 cells.\nAvailable only when “Near shore” is enabled.",
+                "Breite des Küstenbands in HEX6-Zellen.\nNur verfügbar, wenn „Küstennah“ aktiv ist.",
+                "Anchura de la franja costera, en casillas HEX6.\nDisponible solo si «Cerca de la costa» está activo.",
+            ),
         )
         self._custom_fish_band_thickness_widget = band_thickness
         band_thickness.configure(state="normal" if fish_values["near_shore"] else "disabled")
-        ttk.Label(fish, text=custom_section_text("coast_hint", language), style="Hint.TLabel", wraplength=620).grid(
-            row=3, column=0, columnspan=2, sticky="w", pady=(5, 0)
-        )
 
-        rivers = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("rivers", language),
-            padding=8,
+        rivers = add_collapsible_section(
+            "rivers", 3, custom_section_text("rivers", language), pady=(0, 8)
         )
-        rivers.grid(row=3, column=0, sticky="ew", pady=(8, 8))
         rivers.columnconfigure(0, weight=0)
         river_values = sections["rivers"]
         add_spin(
@@ -771,20 +1147,12 @@ class CustomGeneratorController:
             RIVER_RATE_STEP,
             custom_section_text("percent_unit", language),
             column=0,
+            tooltip=custom_section_text("river_hint", language),
         )
-        ttk.Label(
-            rivers,
-            text=custom_section_text("river_hint", language),
-            style="Hint.TLabel",
-            wraplength=620,
-        ).grid(row=1, column=0, sticky="w", pady=(5, 0))
 
-        terrains = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("terrains", language),
-            padding=8,
+        terrains = add_collapsible_section(
+            "terrains", 4, custom_section_text("terrains", language), pady=(0, 8)
         )
-        terrains.grid(row=4, column=0, sticky="ew", pady=(8, 8))
         terrain_values = sections["terrains"]
         terrain_rate_vars: dict[str, tk.StringVar] = {}
         terrain_rate_widgets = {}
@@ -830,28 +1198,16 @@ class CustomGeneratorController:
             terrain_rate_vars[terrain_key] = rate_var
             terrain_rate_widgets[terrain_key] = widget
 
-        ttk.Label(
-            terrains,
-            text=custom_section_text("terrain_hint", language),
-            style="Hint.TLabel",
-            wraplength=620,
-        ).grid(row=len(TERRAIN_FAMILY_KEYS), column=0, sticky="w", pady=(5, 0))
-
-        trees = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("trees", language),
-            padding=8,
+        trees = add_collapsible_section(
+            "trees", 5, custom_section_text("trees", language), pady=(0, 8)
         )
-        trees.grid(row=5, column=0, sticky="ew", pady=(0, 8))
         trees.columnconfigure(0, weight=0)
-        trees.columnconfigure(1, weight=0)
         tree_values = sections["trees"]
         sapling_values = tree_values["saplings"]
         forest_values = tree_values["forests"]
         tree_quota_grid = ttk.Frame(trees)
-        tree_quota_grid.grid(row=0, column=0, columnspan=2, sticky="nw")
+        tree_quota_grid.grid(row=0, column=0, sticky="nw")
         tree_quota_grid.columnconfigure(0, weight=0)
-        tree_quota_grid.columnconfigure(1, weight=0)
         add_spin(
             tree_quota_grid,
             0,
@@ -863,10 +1219,11 @@ class CustomGeneratorController:
             1,
             custom_section_text("percent_unit", language),
             column=0,
+            tooltip=custom_section_text("tree_hint", language),
         )
         palm_widget = add_spin(
             tree_quota_grid,
-            0,
+            1,
             custom_section_text("tree_palm_quota", language),
             ("trees", "palm_quota_percent"),
             tree_values["palm_quota_percent"],
@@ -874,13 +1231,12 @@ class CustomGeneratorController:
             TREE_QUOTA_MAX,
             1,
             custom_section_text("percent_unit", language),
-            column=1,
+            column=0,
         )
 
         saplings = ttk.LabelFrame(trees, text=custom_section_text("tree_saplings", language), padding=6)
-        saplings.grid(row=1, column=0, columnspan=2, sticky="nw", pady=(6, 6))
+        saplings.grid(row=1, column=0, sticky="nw", pady=(6, 6))
         saplings.columnconfigure(0, weight=0)
-        saplings.columnconfigure(1, weight=0)
         saplings_enabled_var = tk.BooleanVar(value=bool(sapling_values["enabled"]))
         saplings_enabled = ttk.Checkbutton(
             saplings,
@@ -888,7 +1244,7 @@ class CustomGeneratorController:
             variable=saplings_enabled_var,
             command=lambda: self._custom_section_changed(("trees", "saplings", "enabled"), saplings_enabled_var.get()),
         )
-        saplings_enabled.grid(row=0, column=0, columnspan=2, sticky="w", pady=1)
+        saplings_enabled.grid(row=0, column=0, sticky="w", pady=1)
         in_global_var = tk.BooleanVar(value=bool(sapling_values["in_global_pool"]))
         in_global = ttk.Checkbutton(
             saplings,
@@ -896,7 +1252,7 @@ class CustomGeneratorController:
             variable=in_global_var,
             command=lambda: self._custom_section_changed(("trees", "saplings", "in_global_pool"), in_global_var.get()),
         )
-        in_global.grid(row=1, column=0, columnspan=2, sticky="w", pady=1)
+        in_global.grid(row=1, column=0, sticky="w", pady=1)
         global_share_widget = add_spin(
             saplings,
             2,
@@ -911,7 +1267,7 @@ class CustomGeneratorController:
         )
         sapling_quota_widget = add_spin(
             saplings,
-            2,
+            3,
             custom_section_text("tree_saplings_separate_quota", language),
             ("trees", "saplings", "quota_percent"),
             sapling_values["quota_percent"],
@@ -919,21 +1275,23 @@ class CustomGeneratorController:
             SEMANTIC_DENSITY_MAX,
             1,
             custom_section_text("percent_unit", language),
-            column=1,
+            column=0,
         )
         placement_labels = {key: custom_section_text(f"tree_placement_{key}", language) for key in TREE_PLACEMENTS}
         placement_var = tk.StringVar(value=placement_labels.get(sapling_values["placement"], placement_labels["everywhere"]))
+        placement_line = ttk.Frame(saplings)
+        placement_line.grid(row=4, column=0, sticky="w", pady=1)
         placement_combo = ttk.Combobox(
-            saplings,
+            placement_line,
             textvariable=placement_var,
             values=[placement_labels[key] for key in TREE_PLACEMENTS],
             state="readonly",
             width=20,
         )
-        ttk.Label(saplings, text=custom_section_text("tree_saplings_placement", language)).grid(
-            row=3, column=0, sticky="w", padx=(0, 8), pady=1
+        ttk.Label(placement_line, text=custom_section_text("tree_saplings_placement", language)).grid(
+            row=0, column=0, sticky="w", padx=(0, 8)
         )
-        placement_combo.grid(row=3, column=1, sticky="w", pady=1)
+        placement_combo.grid(row=0, column=1, sticky="w")
         placement_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -942,6 +1300,8 @@ class CustomGeneratorController:
             ),
         )
 
+        sapling_reason_var = tk.StringVar(value="")
+
         def refresh_sapling_controls(*_args):
             enabled = bool(saplings_enabled_var.get())
             in_global_pool = bool(in_global_var.get())
@@ -949,15 +1309,40 @@ class CustomGeneratorController:
             global_share_widget.configure(state="normal" if enabled and in_global_pool else "disabled")
             sapling_quota_widget.configure(state="normal" if enabled and not in_global_pool else "disabled")
             placement_combo.configure(state="readonly" if enabled else "disabled")
+            if not enabled:
+                message = ""
+            elif in_global_pool:
+                message = _lang_text(
+                    language,
+                    "Quota global : le quota séparé des pousses est désactivé.",
+                    "Global pool: the separate sapling quota is disabled.",
+                    "Globaler Pool: Das separate Setzlingskontingent ist deaktiviert.",
+                    "Cupo global: el cupo separado de retoños está desactivado.",
+                )
+            else:
+                message = _lang_text(
+                    language,
+                    "Quota séparé : la part du quota global est désactivée.",
+                    "Separate quota: the global-pool share is disabled.",
+                    "Separates Kontingent: Der Anteil am globalen Pool ist deaktiviert.",
+                    "Cupo separado: la parte del cupo global está desactivada.",
+                )
+            sapling_reason_var.set(message)
 
         saplings_enabled_var.trace_add("write", refresh_sapling_controls)
         in_global_var.trace_add("write", refresh_sapling_controls)
+        ttk.Label(
+            saplings,
+            textvariable=sapling_reason_var,
+            style="Hint.TLabel",
+            wraplength=560,
+            justify="left",
+        ).grid(row=5, column=0, sticky="w", pady=(2, 0))
         refresh_sapling_controls()
 
         forests = ttk.LabelFrame(trees, text=custom_section_text("tree_forests", language), padding=6)
-        forests.grid(row=2, column=0, columnspan=2, sticky="nw", pady=(0, 6))
+        forests.grid(row=2, column=0, sticky="nw", pady=(0, 6))
         forests.columnconfigure(0, weight=0)
-        forests.columnconfigure(1, weight=0)
         forests_enabled_var = tk.BooleanVar(value=bool(forest_values["enabled"]))
         forests_enabled = ttk.Checkbutton(
             forests,
@@ -965,7 +1350,7 @@ class CustomGeneratorController:
             variable=forests_enabled_var,
             command=lambda: self._custom_section_changed(("trees", "forests", "enabled"), forests_enabled_var.get()),
         )
-        forests_enabled.grid(row=0, column=0, columnspan=2, sticky="w", pady=1)
+        forests_enabled.grid(row=0, column=0, sticky="w", pady=1)
         forest_share_widget = add_spin(
             forests,
             1,
@@ -980,7 +1365,7 @@ class CustomGeneratorController:
         )
         forest_average_widget = add_spin(
             forests,
-            1,
+            2,
             custom_section_text("tree_forest_average", language),
             ("trees", "forests", "trees_per_forest"),
             forest_values["trees_per_forest"],
@@ -988,11 +1373,11 @@ class CustomGeneratorController:
             FOREST_TREE_COUNT_MAX,
             0.1,
             custom_section_text("trees_unit", language),
-            column=1,
+            column=0,
         )
         forest_variation_widget = add_spin(
             forests,
-            2,
+            3,
             custom_section_text("tree_forest_variation", language),
             ("trees", "forests", "tree_count_variation_percent"),
             forest_values["tree_count_variation_percent"],
@@ -1002,10 +1387,6 @@ class CustomGeneratorController:
             custom_section_text("percent_unit", language),
             column=0,
         )
-        ttk.Label(trees, text=custom_section_text("tree_hint", language), style="Hint.TLabel", wraplength=620).grid(
-            row=3, column=0, columnspan=2, sticky="w", pady=(5, 0)
-        )
-
         def refresh_forest_controls(*_args):
             enabled = bool(forests_enabled_var.get())
             state = "normal" if enabled else "disabled"
@@ -1014,22 +1395,18 @@ class CustomGeneratorController:
             forest_variation_widget.configure(state=state)
 
         forests_enabled_var.trace_add("write", refresh_forest_controls)
+
         refresh_forest_controls()
 
-        building_stones = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("building_stones", language),
-            padding=8,
+        building_stones = add_collapsible_section(
+            "building_stones", 6, custom_section_text("building_stones", language), pady=(0, 8)
         )
-        building_stones.grid(row=6, column=0, sticky="ew")
         building_stones.columnconfigure(0, weight=0)
-        building_stones.columnconfigure(1, weight=0)
         stone_values = sections["building_stones"]
         stone_group_values = stone_values["groups"]
         stone_grid = ttk.Frame(building_stones)
-        stone_grid.grid(row=0, column=0, columnspan=2, sticky="nw")
+        stone_grid.grid(row=0, column=0, sticky="nw")
         stone_grid.columnconfigure(0, weight=0)
-        stone_grid.columnconfigure(1, weight=0)
         add_spin(
             stone_grid,
             0,
@@ -1041,10 +1418,11 @@ class CustomGeneratorController:
             1,
             custom_section_text("percent_unit", language),
             column=0,
+            tooltip=custom_section_text("building_stone_hint", language),
         )
         add_spin(
             stone_grid,
-            0,
+            1,
             custom_section_text("building_stone_average", language),
             ("building_stones", "average_quantity"),
             stone_values["average_quantity"],
@@ -1052,12 +1430,12 @@ class CustomGeneratorController:
             STONE_QUANTITY_MAXIMUM,
             STONE_QUANTITY_STEP,
             custom_section_text("stone_unit", language),
-            column=1,
+            column=0,
+            tooltip=custom_section_text("building_stone_average_hint", language),
         )
         groups = ttk.LabelFrame(building_stones, text=custom_section_text("building_stone_groups", language), padding=6)
-        groups.grid(row=1, column=0, columnspan=2, sticky="nw", pady=(6, 0))
+        groups.grid(row=1, column=0, sticky="nw", pady=(6, 0))
         groups.columnconfigure(0, weight=0)
-        groups.columnconfigure(1, weight=0)
         stone_groups_var = tk.BooleanVar(value=bool(stone_group_values["enabled"]))
         ttk.Checkbutton(
             groups,
@@ -1066,7 +1444,7 @@ class CustomGeneratorController:
             command=lambda: self._custom_section_changed(
                 ("building_stones", "groups", "enabled"), stone_groups_var.get()
             ),
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=1)
+        ).grid(row=0, column=0, sticky="w", pady=1)
         stone_share_widget = add_spin(
             groups,
             1,
@@ -1081,7 +1459,7 @@ class CustomGeneratorController:
         )
         stone_group_average_widget = add_spin(
             groups,
-            1,
+            2,
             custom_section_text("building_stone_group_average", language),
             ("building_stones", "groups", "stones_per_group"),
             stone_group_values["stones_per_group"],
@@ -1089,11 +1467,11 @@ class CustomGeneratorController:
             STONE_GROUP_COUNT_MAX,
             0.1,
             custom_section_text("stones_unit", language),
-            column=1,
+            column=0,
         )
         stone_group_variation_widget = add_spin(
             groups,
-            2,
+            3,
             custom_section_text("building_stone_group_variation", language),
             ("building_stones", "groups", "stone_count_variation_percent"),
             stone_group_values["stone_count_variation_percent"],
@@ -1104,30 +1482,165 @@ class CustomGeneratorController:
             column=0,
         )
         def refresh_stone_controls(*_args):
-            state = "normal" if stone_groups_var.get() else "disabled"
+            enabled = bool(stone_groups_var.get())
+            state = "normal" if enabled else "disabled"
             stone_share_widget.configure(state=state)
             stone_group_average_widget.configure(state=state)
             stone_group_variation_widget.configure(state=state)
 
         stone_groups_var.trace_add("write", refresh_stone_controls)
         refresh_stone_controls()
-        ttk.Label(
-            building_stones,
-            text=custom_section_text("building_stone_hint", language),
-            style="Hint.TLabel",
-            wraplength=620,
-        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
 
-        decorations = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("decorations", language),
-            padding=8,
+        stone_preview_vars = {
+            key: tk.StringVar(value="")
+            for key in ("size", "global", "active", "stock", "groups")
+        }
+        # Keep the historical singular name as an alias for the first line;
+        # the preview is rendered as a compact, reusable panel like Trees.
+        stone_preview_var = stone_preview_vars["size"]
+        stone_preview_frame = ttk.LabelFrame(building_stones, padding=6)
+        stone_preview_title = ttk.Frame(stone_preview_frame)
+        ttk.Label(
+            stone_preview_title,
+            text=custom_section_text("estimated_preview", language),
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            stone_preview_title,
+            0,
+            custom_section_text("preview_placement_note", language),
+            column=1,
+            pady=0,
         )
-        decorations.grid(row=7, column=0, sticky="ew", pady=(8, 0))
+        stone_preview_frame.configure(labelwidget=stone_preview_title)
+        stone_preview_frame.grid(row=2, column=0, sticky="w", pady=(6, 0))
+        for row, key in enumerate(("size", "global", "active", "stock", "groups")):
+            ttk.Label(
+                stone_preview_frame,
+                textvariable=stone_preview_vars[key],
+                style="Hint.TLabel",
+            ).grid(row=row, column=0, sticky="w")
+        def refresh_stone_preview(*_args):
+            profile = (
+                self._custom_config.profile
+                if self._custom_config is not None
+                else config.profile
+            )
+            profile_stones = profile.get("building_stones", {})
+            profile_stones = profile_stones if isinstance(profile_stones, dict) else {}
+            legacy_content = profile.get("legacy_content", {})
+            legacy_stones = (
+                legacy_content.get("building_stones", {})
+                if isinstance(legacy_content, dict)
+                else {}
+            )
+            if not isinstance(legacy_stones, dict):
+                legacy_stones = {}
+            anchor_profile = _read_number(
+                profile_stones.get(
+                    "global_anchor_target_768",
+                    profile_stones.get(
+                        "global_anchor_target",
+                        legacy_stones.get("global_anchor_target_768", 0),
+                    ),
+                )
+            )
+            exhausted_profile = _read_number(
+                profile_stones.get(
+                    "global_exhausted_anchor_target",
+                    legacy_stones.get("global_exhausted_anchor_target", 0),
+                )
+            )
+            try:
+                side = max(1, int(self.size.get()))
+            except (AttributeError, TypeError, ValueError):
+                side = 768
+            scale = (side / 768.0) ** 2
+            requested = round(
+                anchor_profile
+                * scale
+                * _read_number(
+                    self._custom_section_vars.get("building_stones.anchor_density_percent"),
+                    100.0,
+                )
+                / 100.0
+            )
+            exhausted = round(exhausted_profile * scale)
+            active = max(0, requested - exhausted)
+            average = _read_number(
+                self._custom_section_vars.get("building_stones.average_quantity"),
+                1.0,
+            )
+            stock = round(active * average)
+            groups_enabled = bool(stone_groups_var.get())
+            group_share = (
+                _read_number(
+                    self._custom_section_vars.get("building_stones.groups.share_percent"),
+                    0.0,
+                )
+                if groups_enabled
+                else 0.0
+            )
+            stones_per_group = max(
+                1.0,
+                _read_number(
+                    self._custom_section_vars.get("building_stones.groups.stones_per_group"),
+                    1.0,
+                ),
+            )
+            group_count = (
+                int(math.ceil(requested * group_share / 100.0 / stones_per_group))
+                if requested and group_share > 0
+                else 0
+            )
+            stone_preview_vars["size"].set(
+                custom_section_text("preview_map_size", language, value=f"{side}×{side}")
+            )
+            stone_preview_vars["global"].set(
+                custom_section_text("preview_global_stones", language, value=requested)
+            )
+            stone_preview_vars["active"].set(
+                custom_section_text("preview_active_stones", language, value=active)
+            )
+            stone_preview_vars["stock"].set(
+                custom_section_text("preview_stock_units", language, value=stock)
+            )
+            stone_preview_vars["groups"].set(
+                custom_section_text(
+                    "preview_groups" if groups_enabled else "preview_groups_disabled",
+                    language,
+                    value=(
+                        group_count
+                        if groups_enabled
+                        else 0
+                    ),
+                )
+            )
+        for preview_path in (
+            "building_stones.anchor_density_percent",
+            "building_stones.average_quantity",
+            "building_stones.groups.share_percent",
+            "building_stones.groups.stones_per_group",
+        ):
+            variable = self._custom_section_vars.get(preview_path)
+            if variable is not None:
+                variable.trace_add("write", refresh_stone_preview)
+        stone_groups_var.trace_add("write", refresh_stone_preview)
+        refresh_stone_preview()
+
+        def refresh_custom_previews_for_size(*_args):
+            refresh_stone_preview()
+
+        if hasattr(self, "size"):
+            self._custom_preview_size_trace = self.size.trace_add(
+                "write", refresh_custom_previews_for_size
+            )
+
+        decorations = add_collapsible_section(
+            "decorations", 7, custom_section_text("decorations", language), pady=(0, 8)
+        )
         decorations.columnconfigure(0, weight=0)
-        decorations.columnconfigure(1, weight=0)
         decoration_grid = ttk.Frame(decorations)
-        decoration_grid.grid(row=1, column=0, columnspan=2, sticky="nw")
+        decoration_grid.grid(row=1, column=0, sticky="nw")
         decoration_grid.columnconfigure(0, weight=0)
         decoration_grid.columnconfigure(1, weight=0)
         self._custom_decoration_icon_slots = {}
@@ -1135,19 +1648,34 @@ class CustomGeneratorController:
         self._custom_decoration_rate_widgets = {}
         decoration_values = sections["decorations"]
         object_values = sections.get("objects", {})
+        decoration_dependency_var = tk.StringVar(value="")
         grass_object_var = tk.BooleanVar(value=bool(
             object_values.get("grass_compatible_on_dry_and_details", False)
             if isinstance(object_values, dict) else False
         ))
+        objects_line = ttk.Frame(decorations)
+        objects_line.grid(row=0, column=0, sticky="w", pady=(0, 4))
         ttk.Checkbutton(
-            decorations,
+            objects_line,
             text=custom_section_text("objects_grass_compatible", language),
             variable=grass_object_var,
             command=lambda: self._custom_section_changed(
                 ("objects", "grass_compatible_on_dry_and_details"),
                 grass_object_var.get(),
             ),
-        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 4))
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            objects_line,
+            0,
+            tip(
+                "Étend les supports des arbres, pierres et décorations compatibles avec l’herbe à Herbe sèche et Détails d’herbe 1 & 2. Le terrain rocheux reste exclu.",
+                "Extends grass-compatible support for trees, stones and decorations to Dry grass and Grass details 1 & 2. Rocky terrain remains excluded.",
+                "Erweitert die Gras-Unterstützung für Bäume, Steine und Dekorationen auf Trockengras und Grasdetails 1 & 2. Felsiges Gelände bleibt ausgeschlossen.",
+                "Amplía el soporte de hierba para árboles, piedras y decoraciones a Hierba seca y Detalles de hierba 1 y 2. El terreno rocoso sigue excluido.",
+            ),
+            column=1,
+            pady=0,
+        )
         for index, family_key in enumerate(DECORATION_FAMILY_KEYS):
             add_decoration_spin(
                 decoration_grid,
@@ -1161,6 +1689,19 @@ class CustomGeneratorController:
                 custom_section_text("percent_unit", language),
                 column=index % 2,
             )
+
+        ttk.Label(
+            decorations,
+            textvariable=decoration_dependency_var,
+            style="Hint.TLabel",
+            wraplength=680,
+            justify="left",
+        ).grid(
+            row=(len(DECORATION_FAMILY_KEYS) + 1) // 2 + 1,
+            column=0,
+            sticky="w",
+            pady=(4, 0),
+        )
 
         def refresh_terrain_dependencies(*_args):
             current = self._custom_config.semantic_sections() if self._custom_config is not None else sections
@@ -1187,8 +1728,27 @@ class CustomGeneratorController:
                 "swamp": ("reeds",),
             }
             current_decorations = current.get("decorations", {})
+            dependency_messages = [custom_section_text("decoration_hint", language)]
             for terrain_key, decoration_keys in dependency_keys.items():
                 active = effective_rates.get(terrain_key, 0.0) > 0.0
+                if not active:
+                    dependency_messages.append(
+                        _lang_text(
+                            language,
+                            "Cactus, arbres morts et squelettes nécessitent un désert actif."
+                            if terrain_key == "desert"
+                            else "Les roseaux nécessitent un marais actif.",
+                            "Cacti, dead trees and skeletons require an active desert."
+                            if terrain_key == "desert"
+                            else "Reeds require an active swamp.",
+                            "Kakteen, tote Bäume und Skelette benötigen eine aktive Wüste."
+                            if terrain_key == "desert"
+                            else "Schilf benötigt einen aktiven Sumpf.",
+                            "Cactus, árboles muertos y esqueletos requieren un desierto activo."
+                            if terrain_key == "desert"
+                            else "Los juncos requieren un pantano activo.",
+                        )
+                    )
                 for decoration_key in decoration_keys:
                     widget = self._custom_decoration_rate_widgets.get(decoration_key)
                     variable = self._custom_decoration_rate_vars.get(decoration_key)
@@ -1199,28 +1759,78 @@ class CustomGeneratorController:
                         _display_number(current_decorations.get(decoration_key, 100.0))
                         if active else "0"
                     )
+            decoration_dependency_var.set("\n".join(dependency_messages))
 
         self._custom_refresh_terrain_dependencies = refresh_terrain_dependencies
         refresh_terrain_dependencies()
-        ttk.Label(
-            decorations,
-            text=custom_section_text("decoration_hint", language),
-            style="Hint.TLabel",
-            wraplength=620,
-        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(5, 0))
-
         # Start-bonus values are deliberately kept in a dedicated semantic
         # section.  Each panel starts with its own on/off switch; quantities
         # therefore never need a zero sentinel to disable a package.
-        start_bonus = ttk.LabelFrame(
-            sections_frame,
-            text=custom_section_text("start_bonus", language),
-            padding=8,
+        start_bonus = add_collapsible_section(
+            "start_bonus", 0, custom_section_text("start_bonus", language), pady=(0, 8)
         )
-        start_bonus.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         start_bonus.columnconfigure(0, weight=0)
         start_bonus.columnconfigure(1, weight=0)
         start_values = sections["start_bonus"]
+        bonus_panel_layout_gap = 16
+        bonus_panel_layout_job = None
+        bonus_panel_frames = {}
+
+        def bonus_panel_natural_width(key):
+            return bonus_panel_frames[key].winfo_reqwidth()
+
+        def bonus_group_fits(keys, available_width):
+            required = sum(bonus_panel_natural_width(key) for key in keys)
+            required += bonus_panel_layout_gap * max(0, len(keys) - 1)
+            return required <= available_width
+
+        def layout_bonus_group(keys, column_count, start_row=0):
+            for index, key in enumerate(keys):
+                row = start_row + index // column_count
+                column = index % column_count
+                bonus_panel_frames[key].grid_configure(
+                    row=row,
+                    column=column,
+                    columnspan=1,
+                    sticky="nw",
+                    padx=(
+                        0,
+                        bonus_panel_layout_gap
+                        if column < min(column_count, len(keys)) - 1
+                        else 0,
+                    ),
+                )
+
+        def relayout_bonus_panels():
+            nonlocal bonus_panel_layout_job
+            bonus_panel_layout_job = None
+            if len(bonus_panel_frames) != 5:
+                return
+            try:
+                available_width = max(0, root.winfo_width() - 28)
+            except tk.TclError:
+                return
+            if available_width <= 1:
+                return
+
+            object_columns = 2 if bonus_group_fits(("forest", "stones"), available_width) else 1
+            layout_bonus_group(("forest", "stones"), object_columns)
+            if bonus_group_fits(("lake", "rocky", "swamp"), available_width):
+                layout_bonus_group(("lake", "rocky", "swamp"), 3)
+            elif bonus_group_fits(("lake", "rocky"), available_width):
+                layout_bonus_group(("lake", "rocky"), 2)
+                layout_bonus_group(("swamp",), 1, start_row=1)
+            else:
+                layout_bonus_group(("lake", "rocky", "swamp"), 1)
+
+        def schedule_bonus_panel_relayout(_event=None):
+            nonlocal bonus_panel_layout_job
+            if bonus_panel_layout_job is not None:
+                return
+            try:
+                bonus_panel_layout_job = sections_frame.after_idle(relayout_bonus_panels)
+            except tk.TclError:
+                bonus_panel_layout_job = None
 
         def register_start_control(package_key, widget):
             self._custom_start_bonus_control_widgets.setdefault(package_key, []).append(widget)
@@ -1243,8 +1853,29 @@ class CustomGeneratorController:
             check.grid(row=row, column=column, columnspan=columnspan, sticky="w", pady=(0, 4))
             return check
 
-        add_spin(
+        def add_start_panel(parent, title, *, padding=6, tooltip=None):
+            """Create one natural-width bonus panel with optional title help."""
+
+            panel = ttk.LabelFrame(parent, padding=padding)
+            panel.columnconfigure(0, weight=0)
+            if tooltip:
+                title_line = ttk.Frame(panel)
+                ttk.Label(title_line, text=title).grid(row=0, column=0, sticky="w")
+                add_info(title_line, 0, tooltip, column=1, pady=0)
+                panel.configure(labelwidget=title_line)
+            else:
+                panel.configure(text=title)
+            return panel
+
+        common_bonus = add_start_panel(
             start_bonus,
+            custom_section_text("start_bonus_common", language),
+            tooltip=custom_section_text("start_bonus_hint", language),
+        )
+        common_bonus.grid(row=0, column=0, sticky="w", pady=(0, 7))
+
+        add_spin(
+            common_bonus,
             0,
             custom_section_text("start_bonus_distance", language),
             ("start_bonus", "distance_from_border"),
@@ -1253,38 +1884,70 @@ class CustomGeneratorController:
             START_BONUS_DISTANCE_MAX,
             1,
             "HEX6",
+            tooltip=tip(
+                "Distance cible du centre du bonus depuis la bordure du territoire.",
+                "Target distance from the territory border to the bonus centre.",
+                "Zielabstand der Bonusmitte von der Gebietsgrenze.",
+                "Distancia objetivo desde el borde del territorio al centro del bono.",
+            ),
         )
         force_extended_var = tk.BooleanVar(
             value=bool(start_values.get("force_extended_radius", False))
         )
+        force_extended_line = ttk.Frame(common_bonus)
+        force_extended_line.grid(row=1, column=0, sticky="w", pady=(0, 3))
         ttk.Checkbutton(
-            start_bonus,
+            force_extended_line,
             text=custom_section_text("start_bonus_force_extended", language),
             variable=force_extended_var,
             command=lambda: self._custom_section_changed(
                 ("start_bonus", "force_extended_radius"),
                 force_extended_var.get(),
             ),
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            force_extended_line,
+            0,
+            tip(
+                "Cherche les couronnes suivantes si la distance normale est impossible.",
+                "Searches successive distance rings when the normal distance is impossible.",
+                "Prüft weitere Entfernungsringe, wenn die normale Distanz unmöglich ist.",
+                "Busca anillos sucesivos si la distancia normal es imposible.",
+            ),
+            column=1,
+            pady=0,
+        )
         # Distance is common to all five packages, so it stays editable even
         # when a particular package is disabled.
+
+        ttk.Separator(start_bonus, orient="horizontal").grid(
+            row=1, column=0, sticky="ew", pady=(1, 4)
+        )
         ttk.Label(
             start_bonus,
-            text=custom_section_text("start_bonus_hint", language),
-            style="Hint.TLabel",
-            wraplength=720,
-            justify="left",
-        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(3, 7))
+            text=custom_section_text("start_bonus_objects", language),
+            style="Section.TLabel",
+        ).grid(row=2, column=0, sticky="w", pady=(0, 4))
+        bonus_objects_grid = ttk.Frame(start_bonus)
+        bonus_objects_grid.grid(row=3, column=0, sticky="w")
+        for column in range(2):
+            bonus_objects_grid.columnconfigure(column, weight=0)
 
-        forest_bonus = ttk.LabelFrame(
-            start_bonus,
-            text=custom_section_text("start_bonus_forest", language),
-            padding=6,
+        forest_bonus = add_start_panel(
+            bonus_objects_grid,
+            custom_section_text("start_bonus_forest", language),
+            tooltip=custom_section_text("start_bonus_forest_radius_derived", language),
         )
-        forest_bonus.grid(row=3, column=0, sticky="nw", padx=(0, 6), pady=(0, 7))
-        forest_bonus.columnconfigure(0, weight=0)
+        forest_bonus.grid(row=0, column=0, sticky="nw", pady=(0, 7))
+        bonus_panel_frames["forest"] = forest_bonus
         forest_values = start_values["forest"]
         add_start_switch(forest_bonus, "start_forest")
+        forest_adult_var = tk.StringVar(
+            value=_display_number(forest_values["adult_trees_per_player"])
+        )
+        forest_sapling_var = tk.StringVar(
+            value=_display_number(forest_values["saplings_per_player"])
+        )
         add_start_spin(
             forest_bonus,
             1,
@@ -1296,6 +1959,7 @@ class CustomGeneratorController:
             1,
             custom_section_text("trees_unit", language),
             package_key="start_forest",
+            variable=forest_adult_var,
         )
         add_start_spin(
             forest_bonus,
@@ -1308,21 +1972,15 @@ class CustomGeneratorController:
             1,
             custom_section_text("trees_unit", language),
             package_key="start_forest",
+            variable=forest_sapling_var,
         )
-        ttk.Label(
-            forest_bonus,
-            text=custom_section_text("start_bonus_forest_radius_derived", language),
-            style="Hint.TLabel",
-            wraplength=360,
-            justify="left",
-        ).grid(row=3, column=0, sticky="w", pady=(3, 0))
-
-        stone_bonus = ttk.LabelFrame(
-            start_bonus,
-            text=custom_section_text("start_bonus_stones", language),
-            padding=6,
+        stone_bonus = add_start_panel(
+            bonus_objects_grid,
+            custom_section_text("start_bonus_stones", language),
+            tooltip=custom_section_text("start_bonus_native_shape", language),
         )
-        stone_bonus.grid(row=3, column=1, sticky="nw", padx=(6, 0), pady=(0, 7))
+        stone_bonus.grid(row=0, column=1, sticky="nw", pady=(0, 7))
+        bonus_panel_frames["stones"] = stone_bonus
         stone_values = start_values["building_stones"]
         add_start_switch(stone_bonus, "start_building_stones")
         stone_anchor_var = tk.StringVar(value=_display_number(stone_values["anchors_per_player"]))
@@ -1353,35 +2011,26 @@ class CustomGeneratorController:
             package_key="start_building_stones",
             variable=stone_average_var,
         )
-        stock_preview_var = tk.StringVar(value="")
-
-        def refresh_start_stock_preview(*_args):
-            try:
-                anchors = float(stone_anchor_var.get())
-                average = float(stone_average_var.get())
-                stock = int(anchors * average + 0.5)
-            except (TypeError, ValueError):
-                stock = int(stone_values.get("stock_units_per_player", 150))
-            stock_preview_var.set(custom_section_text("start_bonus_stock_preview", language, value=stock))
-
-        stone_anchor_var.trace_add("write", refresh_start_stock_preview)
-        stone_average_var.trace_add("write", refresh_start_stock_preview)
-        ttk.Label(stone_bonus, textvariable=stock_preview_var, style="Hint.TLabel").grid(
-            row=3, column=0, sticky="w", pady=(3, 0)
+        ttk.Separator(start_bonus, orient="horizontal").grid(
+            row=4, column=0, sticky="ew", pady=(1, 4)
         )
         ttk.Label(
-            stone_bonus,
-            text=custom_section_text("start_bonus_native_shape", language),
-            style="Hint.TLabel",
-        ).grid(row=4, column=0, sticky="w", pady=(2, 0))
-        refresh_start_stock_preview()
-
-        swamp_bonus = ttk.LabelFrame(
             start_bonus,
-            text=custom_section_text("start_bonus_swamp", language),
-            padding=6,
+            text=custom_section_text("start_bonus_terrain_resources", language),
+            style="Section.TLabel",
+        ).grid(row=5, column=0, sticky="w", pady=(0, 4))
+        bonus_resources_grid = ttk.Frame(start_bonus)
+        bonus_resources_grid.grid(row=6, column=0, sticky="w")
+        for column in range(3):
+            bonus_resources_grid.columnconfigure(column, weight=0)
+
+        swamp_bonus = add_start_panel(
+            bonus_resources_grid,
+            custom_section_text("start_bonus_swamp", language),
+            tooltip=custom_section_text("start_bonus_swamp_derived", language),
         )
-        swamp_bonus.grid(row=4, column=0, sticky="nw", padx=(0, 6), pady=(0, 7))
+        swamp_bonus.grid(row=0, column=2, sticky="nw", pady=(0, 7))
+        bonus_panel_frames["swamp"] = swamp_bonus
         swamp_values = start_values["mini_swamp"]
         add_start_switch(swamp_bonus, "start_mini_swamp")
         swamp_shape_labels = {
@@ -1395,7 +2044,7 @@ class CustomGeneratorController:
             )
         )
         swamp_shape_line = ttk.Frame(swamp_bonus)
-        swamp_shape_line.grid(row=1, column=0, columnspan=2, sticky="w", pady=1)
+        swamp_shape_line.grid(row=1, column=0, columnspan=3, sticky="w", pady=1)
         swamp_shape_combo = ttk.Combobox(
             swamp_shape_line,
             textvariable=swamp_shape_var,
@@ -1407,7 +2056,19 @@ class CustomGeneratorController:
             swamp_shape_line,
             text=custom_section_text("start_bonus_swamp_shape", language),
         ).grid(row=0, column=0, sticky="w")
-        swamp_shape_combo.grid(row=0, column=1, sticky="w", padx=(4, 0))
+        add_info(
+            swamp_shape_line,
+            0,
+            tip(
+                "Forme native du générateur ou hexagone régulier.",
+                "Generator-native shape or regular hexagon.",
+                "Generatornative Form oder regelmäßiges Sechseck.",
+                "Forma nativa del generador o hexágono regular.",
+            ),
+            column=1,
+            pady=0,
+        )
+        swamp_shape_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
         swamp_shape_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -1419,6 +2080,9 @@ class CustomGeneratorController:
             ),
         )
         register_start_control("start_mini_swamp", swamp_shape_combo)
+        swamp_radius_var = tk.StringVar(
+            value=_display_number(swamp_values["radius"])
+        )
         add_start_spin(
             swamp_bonus,
             2,
@@ -1430,23 +2094,15 @@ class CustomGeneratorController:
             1,
             "HEX6",
             package_key="start_mini_swamp",
+            variable=swamp_radius_var,
         )
-        ttk.Label(
-            swamp_bonus,
-            text=custom_section_text("start_bonus_swamp_derived", language),
-            style="Hint.TLabel",
-            wraplength=360,
-            justify="left",
-        ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(3, 0))
-
-        rocky_bonus = ttk.LabelFrame(
-            start_bonus,
-            text=custom_section_text("start_bonus_rocky", language),
-            padding=5,
+        rocky_bonus = add_start_panel(
+            bonus_resources_grid,
+            custom_section_text("start_bonus_rocky", language),
+            tooltip=custom_section_text("start_bonus_rocky_limits", language),
         )
-        rocky_bonus.grid(row=4, column=1, sticky="nw", padx=(6, 0), pady=(0, 7))
-        for column in range(4):
-            rocky_bonus.columnconfigure(column, weight=0)
+        rocky_bonus.grid(row=0, column=1, sticky="nw", pady=(0, 7))
+        bonus_panel_frames["rocky"] = rocky_bonus
         rocky_values = start_values["rocky_minerals"]
         add_start_switch(rocky_bonus, "start_rocky_minerals", columnspan=4)
         shape_labels = {
@@ -1456,18 +2112,32 @@ class CustomGeneratorController:
         shape_var = tk.StringVar(
             value=shape_labels.get(rocky_values.get("shape", "hexagon"), shape_labels["hexagon"])
         )
+        shape_line = ttk.Frame(rocky_bonus)
+        shape_line.grid(row=1, column=0, sticky="w", pady=1)
         ttk.Label(
-            rocky_bonus,
+            shape_line,
             text=custom_section_text("start_bonus_rocky_shape", language),
-        ).grid(row=1, column=0, sticky="w", pady=1)
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            shape_line,
+            0,
+            tip(
+                "Hexagone régulier ou forme organique du cœur minéralisé.",
+                "Regular hexagon or organic shape for the mineralized core.",
+                "Regelmäßiges Sechseck oder organische Form des mineralisierten Kerns.",
+                "Hexágono regular o forma orgánica del núcleo mineralizado.",
+            ),
+            column=1,
+            pady=0,
+        )
         shape_combo = ttk.Combobox(
-            rocky_bonus,
+            shape_line,
             textvariable=shape_var,
             values=[shape_labels[key] for key in START_ROCKY_SHAPES],
             state="readonly",
             width=13,
         )
-        shape_combo.grid(row=1, column=1, sticky="w", padx=(4, 9), pady=1)
+        shape_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
         shape_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -1483,18 +2153,32 @@ class CustomGeneratorController:
         mode_var = tk.StringVar(
             value=mode_labels.get(rocky_values.get("surface_mode", "equal"), mode_labels["equal"])
         )
+        mode_line = ttk.Frame(rocky_bonus)
+        mode_line.grid(row=2, column=0, sticky="w", pady=1)
         ttk.Label(
-            rocky_bonus,
+            mode_line,
             text=custom_section_text("start_bonus_rocky_surface", language),
-        ).grid(row=2, column=0, sticky="w", pady=1)
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            mode_line,
+            0,
+            tip(
+                "Égal : un rayon commun. Prorata : surface selon la répartition globale. Par minerai : valeurs libres.",
+                "Equal: one common radius. Prorata: surface follows global shares. Per mineral: free values.",
+                "Gleich: ein gemeinsamer Radius. Anteile: Fläche folgt den globalen Anteilen. Je Mineral: freie Werte.",
+                "Igual: un radio común. Prorrata: superficie según el reparto global. Por mineral: valores libres.",
+            ),
+            column=1,
+            pady=0,
+        )
         mode_combo = ttk.Combobox(
-            rocky_bonus,
+            mode_line,
             textvariable=mode_var,
             values=[mode_labels[key] for key in START_ROCKY_SURFACE_MODES],
             state="readonly",
             width=13,
         )
-        mode_combo.grid(row=2, column=1, sticky="w", padx=(4, 9), pady=1)
+        mode_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
         mode_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -1523,11 +2207,12 @@ class CustomGeneratorController:
             *,
             unit="",
             maximum_var=None,
+            tooltip=None,
         ):
             """Add a compact input with its unit and maximum beside it."""
 
             variable = tk.StringVar(value=_display_number(value))
-            line = ttk.Frame(rocky_bonus)
+            line = ttk.Frame(rocky_matrix)
             line.grid(row=row, column=column, sticky="w", padx=(3, 4), pady=1)
             widget = ttk.Spinbox(
                 line,
@@ -1538,8 +2223,12 @@ class CustomGeneratorController:
                 width=7,
                 command=lambda p=path, v=variable: self._custom_section_changed(p, v.get()),
             )
-            widget.grid(row=0, column=0, sticky="w")
-            next_column = 1
+            next_column = 0
+            if tooltip:
+                add_info(line, 0, tooltip, column=next_column, pady=0)
+                next_column += 1
+            widget.grid(row=0, column=next_column, sticky="w")
+            next_column += 1
             if unit:
                 ttk.Label(line, text=unit, style="Hint.TLabel").grid(
                     row=0, column=next_column, sticky="w", padx=(3, 5)
@@ -1556,52 +2245,75 @@ class CustomGeneratorController:
             register_start_control("start_rocky_minerals", widget)
             return widget
 
-        ttk.Label(
+        rocky_radius_var = tk.StringVar(
+            value=_display_number(rocky_values["radius_min"])
+        )
+        radius_widget = add_start_spin(
             rocky_bonus,
-            text=custom_section_text("start_bonus_rocky_radius", language),
-        ).grid(row=3, column=0, sticky="w", pady=1)
-        radius_var = None
-        radius_widget = add_rocky_spin(
             3,
-            1,
+            custom_section_text("start_bonus_rocky_radius", language),
             ("start_bonus", "rocky_minerals", "radius_min"),
             rocky_values["radius_min"],
             START_BONUS_RADIUS_MIN,
             START_ROCKY_RADIUS_MAX,
             unit="HEX6",
+            package_key="start_rocky_minerals",
+            variable=rocky_radius_var,
         )
 
-        ttk.Label(
-            rocky_bonus,
-            text=custom_section_text("start_bonus_rocky_total_surface", language),
-        ).grid(row=4, column=0, sticky="w", pady=1)
         total_max_var = tk.StringVar(value=rocky_max_text(rocky_total_cells_max(3), rocky_cells_unit))
-        total_widget = add_rocky_spin(
+        rocky_total_var = tk.StringVar(
+            value=_display_number(rocky_values.get("total_core_cells", 183))
+        )
+        total_widget = add_start_spin(
+            rocky_bonus,
             4,
-            1,
+            custom_section_text("start_bonus_rocky_total_surface", language),
             ("start_bonus", "rocky_minerals", "total_core_cells"),
             rocky_values.get("total_core_cells", 183),
             START_ROCKY_CORE_CELLS_MIN,
             rocky_total_cells_max(3),
             unit=rocky_cells_unit,
+            package_key="start_rocky_minerals",
+            variable=rocky_total_var,
             maximum_var=total_max_var,
+            tooltip=tip(
+                "Surface totale des cœurs ; elle devient la cible en mode prorata.",
+                "Total core surface; it is the target in prorata mode.",
+                "Gesamtfläche der Kerne; sie ist das Ziel im Anteilsmodus.",
+                "Superficie total de los núcleos; es el objetivo en modo prorrata.",
+            ),
         )
 
+        rocky_matrix = ttk.Frame(rocky_bonus, padding=(0, 2, 0, 0))
+        rocky_matrix.grid(row=5, column=0, sticky="w")
+        for matrix_column in range(4):
+            rocky_matrix.columnconfigure(matrix_column, weight=0)
+
         ttk.Label(
-            rocky_bonus,
+            rocky_matrix,
             text=custom_section_text("start_bonus_rocky_family_header", language),
             style="Hint.TLabel",
         ).grid(row=5, column=0, sticky="w", pady=(1, 0))
         ttk.Label(
-            rocky_bonus,
+            rocky_matrix,
             text=custom_section_text("start_bonus_rocky_core_header", language),
             style="Hint.TLabel",
         ).grid(row=5, column=1, sticky="w", padx=(4, 0), pady=(1, 0))
+        quantity_header = ttk.Frame(rocky_matrix)
+        quantity_header.grid(row=5, column=2, columnspan=2, sticky="w", padx=(4, 0), pady=(1, 0))
         ttk.Label(
-            rocky_bonus,
+            quantity_header,
             text=custom_section_text("start_bonus_rocky_quantity_header", language),
             style="Hint.TLabel",
-        ).grid(row=5, column=2, columnspan=2, sticky="w", padx=(4, 0), pady=(1, 0))
+        ).grid(row=0, column=0, sticky="w")
+        add_info(
+            quantity_header,
+            0,
+            custom_section_text("start_bonus_global_mean", language),
+            column=1,
+            pady=0,
+        )
 
         family_vars = {}
         rocky_core_widgets = {}
@@ -1614,7 +2326,7 @@ class CustomGeneratorController:
             family_var = tk.BooleanVar(value=bool(family_values["enabled"]))
             family_vars[family] = family_var
             family_check = ttk.Checkbutton(
-                rocky_bonus,
+                rocky_matrix,
                 text=custom_section_text(f"start_bonus_{family}", language),
                 image=self._custom_mineral_icons[family],
                 compound="left",
@@ -1646,6 +2358,7 @@ class CustomGeneratorController:
                 family_values.get("average_quantity", 10),
                 RESOURCE_MINIMUM,
                 RESOURCE_MAXIMUM,
+                unit=custom_section_text("resource_unit", language),
                 maximum_var=None,
             )
 
@@ -1655,12 +2368,6 @@ class CustomGeneratorController:
                 "equal",
             )
 
-        rocky_total_var = self._custom_section_vars[
-            "start_bonus.rocky_minerals.total_core_cells"
-        ]
-        rocky_radius_var = self._custom_section_vars[
-            "start_bonus.rocky_minerals.radius_min"
-        ]
         refreshing_rocky = False
         last_rocky_mode = rocky_mode_key()
 
@@ -1867,16 +2574,20 @@ class CustomGeneratorController:
         self._custom_refresh_rocky_controls = refresh_rocky_controls
         refresh_rocky_controls()
 
-        lake_bonus = ttk.LabelFrame(
-            start_bonus,
-            text=custom_section_text("start_bonus_lake", language),
-            padding=5,
+        lake_bonus = add_start_panel(
+            bonus_resources_grid,
+            custom_section_text("start_bonus_lake", language),
+            tooltip=custom_section_text("start_bonus_lake_hint", language),
         )
-        lake_bonus.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(0, 0))
-        for column in range(2):
-            lake_bonus.columnconfigure(column, weight=0)
+        lake_bonus.grid(row=0, column=0, sticky="nw", pady=(0, 0))
+        bonus_panel_frames["lake"] = lake_bonus
         lake_values = start_values["lake_fish_river"]
-        add_start_switch(lake_bonus, "start_lake_fish_river", columnspan=2)
+        add_start_switch(lake_bonus, "start_lake_fish_river")
+        ttk.Label(
+            lake_bonus,
+            text=custom_section_text("start_bonus_lake_settings", language),
+            style="Section.TLabel",
+        ).grid(row=1, column=0, sticky="w", pady=(2, 3))
         lake_shape_labels = {
             key: custom_section_text(f"start_bonus_lake_shape_{key}", language)
             for key in START_LAKE_SHAPES
@@ -1888,7 +2599,7 @@ class CustomGeneratorController:
             )
         )
         lake_shape_line = ttk.Frame(lake_bonus)
-        lake_shape_line.grid(row=1, column=0, columnspan=2, sticky="w", pady=1)
+        lake_shape_line.grid(row=2, column=0, columnspan=3, sticky="w", pady=1)
         lake_shape_combo = ttk.Combobox(
             lake_shape_line,
             textvariable=lake_shape_var,
@@ -1900,7 +2611,19 @@ class CustomGeneratorController:
             lake_shape_line,
             text=custom_section_text("start_bonus_lake_shape", language),
         ).grid(row=0, column=0, sticky="w")
-        lake_shape_combo.grid(row=0, column=1, sticky="w", padx=(4, 0))
+        add_info(
+            lake_shape_line,
+            0,
+            tip(
+                "Forme native arrondie ou hexagone régulier pour le lac.",
+                "Rounded generator-native shape or regular hexagon for the lake.",
+                "Abgerundete generatornative Form oder regelmäßiges Sechseck für den See.",
+                "Forma nativa redondeada o hexágono regular para el lago.",
+            ),
+            column=1,
+            pady=0,
+        )
+        lake_shape_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
         lake_shape_combo.bind(
             "<<ComboboxSelected>>",
             lambda event: self._custom_section_changed(
@@ -1912,9 +2635,12 @@ class CustomGeneratorController:
             ),
         )
         register_start_control("start_lake_fish_river", lake_shape_combo)
+        lake_radius_min_var = tk.StringVar(
+            value=_display_number(lake_values["radius_min"])
+        )
         add_start_spin(
             lake_bonus,
-            2,
+            3,
             custom_section_text("start_bonus_radius_min", language),
             ("start_bonus", "lake_fish_river", "radius_min"),
             lake_values["radius_min"],
@@ -1924,10 +2650,14 @@ class CustomGeneratorController:
             "HEX6",
             package_key="start_lake_fish_river",
             column=0,
+            variable=lake_radius_min_var,
+        )
+        lake_radius_max_var = tk.StringVar(
+            value=_display_number(lake_values["radius_max"])
         )
         add_start_spin(
             lake_bonus,
-            3,
+            4,
             custom_section_text("start_bonus_radius_max", language),
             ("start_bonus", "lake_fish_river", "radius_max"),
             lake_values["radius_max"],
@@ -1937,10 +2667,11 @@ class CustomGeneratorController:
             "HEX6",
             package_key="start_lake_fish_river",
             column=0,
+            variable=lake_radius_max_var,
         )
         add_start_spin(
             lake_bonus,
-            4,
+            5,
             custom_section_text("start_bonus_lake_proximity", language),
             ("start_bonus", "lake_fish_river", "water_proximity_from_territory_border"),
             lake_values["water_proximity_from_territory_border"],
@@ -1950,10 +2681,27 @@ class CustomGeneratorController:
             "HEX6",
             package_key="start_lake_fish_river",
             column=0,
+            tooltip=tip(
+                "Rayon autour de la bordure du territoire où l’on cherche de l’eau native. Si de l’eau est trouvée dans ce rayon, aucun lac bonus n’est généré. 0 = aucun contrôle.",
+                "Radius around the territory border where existing native water is searched. If water is found in this radius, no bonus lake is generated. 0 = no check.",
+                "Radius um die Gebietsgrenze zur Prüfung auf vorhandenes natives Wasser. 0 = keine Prüfung: Der See darf auch nahe am Wasser entstehen.",
+                "Radio alrededor del borde del territorio para comprobar agua nativa existente. 0 = sin control: el lago puede generarse aunque el inicio esté cerca del agua.",
+            ),
+        )
+        ttk.Separator(lake_bonus, orient="horizontal").grid(
+            row=6, column=0, sticky="ew", pady=(5, 3)
+        )
+        ttk.Label(
+            lake_bonus,
+            text=custom_section_text("start_bonus_river_settings", language),
+            style="Section.TLabel",
+        ).grid(row=7, column=0, sticky="w", pady=(0, 3))
+        lake_river_target_var = tk.StringVar(
+            value=_display_number(lake_values["river_target_per_lake"])
         )
         add_start_spin(
             lake_bonus,
-            5,
+            8,
             custom_section_text("start_bonus_river_target", language),
             ("start_bonus", "lake_fish_river", "river_target_per_lake"),
             lake_values["river_target_per_lake"],
@@ -1963,10 +2711,28 @@ class CustomGeneratorController:
             custom_section_text("rivers", language),
             package_key="start_lake_fish_river",
             column=0,
+            variable=lake_river_target_var,
+            tooltip=tip(
+                "Nombre visé de petites rivières attachées au lac ; le moteur peut en placer moins si le terrain bloque.",
+                "Target number of small rivers attached to the lake; terrain may legally yield fewer.",
+                "Zielzahl kleiner Flüsse am See; das Gelände kann legal weniger zulassen.",
+                "Número objetivo de ríos pequeños conectados al lago; el terreno puede permitir menos.",
+            ),
+        )
+        ttk.Separator(lake_bonus, orient="horizontal").grid(
+            row=9, column=0, sticky="ew", pady=(5, 3)
+        )
+        ttk.Label(
+            lake_bonus,
+            text=custom_section_text("start_bonus_fish_settings", language),
+            style="Section.TLabel",
+        ).grid(row=10, column=0, sticky="w", pady=(0, 3))
+        lake_fish_fill_var = tk.StringVar(
+            value=_display_number(lake_values["fish_fill_percent"])
         )
         add_start_spin(
             lake_bonus,
-            6,
+            11,
             custom_section_text("start_bonus_fish_fill", language),
             ("start_bonus", "lake_fish_river", "fish_fill_percent"),
             lake_values["fish_fill_percent"],
@@ -1976,16 +2742,16 @@ class CustomGeneratorController:
             custom_section_text("percent_unit", language),
             package_key="start_lake_fish_river",
             column=0,
+            variable=lake_fish_fill_var,
+            tooltip=custom_section_text("start_bonus_fish_fill_hint", language),
         )
-        ttk.Label(
-            lake_bonus,
-            text=custom_section_text("start_bonus_lake_hint", language),
-            style="Hint.TLabel",
-            wraplength=720,
-            justify="left",
-        ).grid(row=7, column=0, columnspan=2, sticky="w", pady=(3, 0))
-
         self._custom_refresh_start_bonus_controls()
+        sections_frame.bind("<Configure>", schedule_section_relayout, add="+")
+        sections_frame.bind("<Configure>", schedule_bonus_panel_relayout, add="+")
+        root.bind("<Configure>", schedule_section_relayout, add="+")
+        root.bind("<Configure>", schedule_bonus_panel_relayout, add="+")
+        schedule_section_relayout()
+        schedule_bonus_panel_relayout()
 
         self._custom_render_custom_mode(config) if mode == "custom" else self._custom_provenance_var.set(
             _lang_text(
@@ -2004,16 +2770,17 @@ class CustomGeneratorController:
         # A parameter edit already happens while the Custom tab exists.  Do
         # not re-run the global selection workflow in that case: it destroys
         # every editor widget, steals focus and makes the tab visibly flash.
-        # The first edit from a built-in preset still needs one selection pass
-        # so the mode selector and the surrounding UI enter Custom mode.
+        # The first edit from a built-in preset only needs the mode selector,
+        # status and bookkeeping to enter Custom mode.  The editor is already
+        # showing the edited configuration, so rebuilding it here would steal
+        # focus and recreate the very widget that received the edit.
         already_custom = self._custom_current_mode() == "custom"
         self._custom_config = config
         self._custom_last_concrete_mode = config.base_mode
         self._custom_last_concrete_archetype = config.base_archetype
         language = self._custom_language()
         if not already_custom:
-            self.mode.set(MODE_LABELS[language]["custom"])
-            self._selection_changed()
+            self._custom_enter_custom_mode_without_render(config)
         elif hasattr(self, "_custom_provenance_var"):
             # Refresh only the small provenance text in place.  The controls
             # themselves keep their identity, focus and pending edit.
@@ -2023,6 +2790,26 @@ class CustomGeneratorController:
         self._custom_status_var.set(
             _lang_text(language, "Custom actif · cache invalidé par l’empreinte.", "Custom active · cache is keyed by the fingerprint.", "Custom aktiv · Cache wird über den Fingerabdruck getrennt.", "Custom activo · la caché usa la huella.")
         )
+        self._custom_refresh_section_headers()
+
+    def _custom_enter_custom_mode_without_render(
+        self, config: CustomGenerationConfig
+    ) -> None:
+        """Switch a preset-backed editor to Custom without rebuilding it."""
+
+        language = self._custom_language()
+        self.mode.set(MODE_LABELS[language]["custom"])
+        self._custom_last_ui_mode = "custom"
+        self._custom_last_ui_archetype = self._custom_current_archetype()
+        # The existing widgets already represent ``config`` because the edit
+        # was applied to one of them.  Mark that render state as current so a
+        # later unrelated selection does not rebuild the tab just to catch up.
+        self._custom_last_render_digest = config.digest
+        if hasattr(self, "_custom_provenance_var"):
+            self._custom_render_custom_mode(config)
+        refresh_feedback = getattr(self, "_refresh_selection_feedback", None)
+        if callable(refresh_feedback):
+            refresh_feedback()
 
     def _custom_package_changed(self, key: str, variable: tk.BooleanVar):
         mode = self._custom_current_mode()

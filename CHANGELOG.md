@@ -1,5 +1,284 @@
 # Changelog
 
+## v2.0 DEV_7 — 2026-09-18 — validation de la finition ergonomique du Générateur
+
+- Publie la candidate R26 validée par l’utilisateur comme checkpoint `DEV_7`.
+- Clôt la passe UI du Générateur : retrait de l’aide redondante de Terrains,
+  ordre des blocs denses, reflow responsive anticipé et grille Bonus à trois
+  colonnes avec repli cohérent.
+- Conserve uniquement les changements d’interface, de tests et de
+  documentation ; aucun moteur, format, donnée ou règle de génération n’est
+  modifié.
+- Validation finale locale : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  contrôle après extraction et archive fraîche PASS.
+- Prochaine tranche : archétypes Custom.
+
+## v2.0 DEV_7_R26 — 2026-09-18 — densité des rangées et grille Bonus à trois colonnes
+
+- Supprime l’aide redondante sur les pourcentages de la section Terrains et
+  retire sa traduction devenue inutilisée, afin de ne plus élargir ni décaler
+  inutilement le panneau.
+- Place les blocs les plus denses à gauche : Décorations précède désormais
+  Terrains dans la rangée qui les associe.
+- Étend la grille des bonus de terrains à trois colonnes lorsque possible :
+  Lac, Zones minérales rocheuses, puis Mini marais. Si trois colonnes ne
+  tiennent pas, Lac/Zones minérales restent ensemble et Mini marais passe seul
+  en dessous ; à défaut, les trois repassent en colonne unique.
+- Ajoute une marge de sécurité de 32 px au reflow des sections pour qu’un
+  couple se sépare avant que son bord ne touche la limite disponible.
+- Aucun moteur, format, donnée ou règle de génération n’est modifié.
+- Vérifications locales R26 : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  archive fraîche validée et contrôle après extraction ; le paquet contient
+  339 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R25 — 2026-09-18 — reflow responsive et hiérarchie des sections
+
+- Corrige le reflow du Générateur : l’onglet suit désormais la largeur réelle
+  de la fenêtre, puis revient en colonne lorsque les panneaux ne tiennent plus.
+  Les couples équilibrés sont Poissons/Rivières, Arbres/Pierres et surtout
+  Terrains/Décorations ; Terrains n’est plus placé à côté de Rivières.
+- Réordonne les bonus de terrains en taille décroissante : Lac, Zones
+  minérales rocheuses, puis Marais.
+- Ancre les sections et les panneaux internes en haut de leur ligne afin qu’un
+  panneau plus court ne soit plus décalé verticalement lorsqu’un voisin est
+  déplié.
+- Donne au statut « modifié » une couleur dédiée, proche de l’accent des
+  titres mais distincte, tout en conservant Réinitialiser à ses côtés.
+- Aucun moteur, format, donnée ou règle de génération n’est modifié.
+- Vérifications locales R25 : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  archive fraîche validée et contrôle après extraction ; le paquet contient
+  339 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R24 — 2026-09-18 — responsive interne du Bonus et en-têtes compacts
+
+- Étend la grille responsive aux panneaux internes du Bonus de départ :
+  Forêts/Pierres de départ et Marais/Zones rocheuses se placent côte à côte
+  lorsque leur largeur naturelle le permet ; le Lac reste sur une ligne dédiée.
+- Sépare le titre, le marqueur « modifié » et l’action « Réinitialiser » dans
+  une ligne compacte ; le bouton reste directement adjacent au statut, sans
+  espace dépendant de la largeur du contenu.
+- Aucun moteur, format, donnée ou règle de génération n’est modifié.
+- Vérifications locales R24 : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  archive fraîche validée et contrôle après extraction ; le paquet contient
+  339 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R23 — 2026-09-18 — grille responsive du Générateur
+
+- Introduit une disposition adaptative des sections du Générateur : une colonne
+  lorsque la largeur disponible est insuffisante, deux colonnes dès que les
+  cadres naturels tiennent côte à côte, et trois uniquement pour les rangées
+  compactes réellement compatibles.
+- Conserve les sections denses Bonus de départ, Minerais et Décorations sur une
+  rangée dédiée ; à deux colonnes, Terrains reste également seul pour éviter
+  une rangée déséquilibrée. Les couples Poissons/Rivières et Arbres/Pierres de
+  construction peuvent ainsi rester côte à côte.
+- Les cadres conservent leur largeur naturelle et la grille repositionne les
+  widgets existants lors d’un redimensionnement ou d’un repli, sans
+  reconstruction lors d’une modification d’input. Aucun moteur, format,
+  donnée ou règle de génération n’est modifié.
+- Vérifications locales R23 : `437 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  archive fraîche validée et contrôle après extraction ; le paquet contient
+  339 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R22 — 2026-09-18 — matrice rocheuse isolée et cadres compacts
+
+- Isole la matrice dense `Minerai / Surface / Quantité` des zones minérales
+  rocheuses dans son propre conteneur, afin que les quatre réglages précédents
+  ne créent plus un grand espace entre les colonnes.
+- Réduit les six panneaux internes du Bonus à leur largeur naturelle au lieu de
+  les étirer jusqu’au bord droit ; les séparateurs suivent également cette
+  géométrie compacte.
+- Aucun moteur, format, donnée ou règle de génération n’est modifié.
+- Vérifications locales R22 : `436 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), hashes protégés,
+  archive fraîche validée et contrôle après extraction ; le paquet contient
+  339 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R21 — 2026-09-18 — resserrement des aperçus et des contrôles Bonus
+
+- Supprime les aperçus estimés peu informatifs des Arbres et du Bonus de
+  départ ; conserve uniquement celui des Pierres de construction, qui calcule
+  réellement gisements, stock et groupes.
+- Rend le cadre restant compact au lieu de l’étendre jusqu’au bord droit.
+- Colle les aides au libellé pour « Étendre la recherche si nécessaire » et
+  remet les quatre réglages d’en-tête des zones minérales sur le gabarit
+  `libellé → ? → contrôle`, tout en conservant la matrice dense des familles.
+- Nettoie les traductions devenues inutilisées. Aucun moteur, format, donnée ou
+  règle de génération n’est modifié.
+- Vérifications locales R21 : `436 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), checksum, archive
+  fraîche validée et contrôle après extraction ; le paquet contient 339
+  fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R20 — 2026-09-18 — refonte ergonomique du Bonus de départ
+
+- Réorganise le panneau Bonus en une colonne pleine largeur : règles communes,
+  bonus d’objets, puis bonus de terrains et de ressources.
+- Regroupe les contrôles des cinq bonus dans des panneaux cohérents, conserve la
+  matrice dense des minerais et clarifie le bloc lac, poissons et rivières.
+- Harmonise les aperçus estimés, leurs états désactivés et leurs tooltips ;
+  déplace les explications détaillées hors des lignes permanentes.
+- Raccourcit les libellés, ajoute les sous-titres et complète les traductions
+  FR/EN/DE/ES nécessaires à la nouvelle hiérarchie.
+- Aucun moteur, format, donnée ou règle de génération n’est modifié. La
+  validation visuelle Windows de la candidate reste à effectuer avant tout
+  checkpoint DEV ou publication.
+- Vérifications locales R20 : `436 passed`, compilation, self-test source,
+  smoke-test (`33` validations Upgraded + `17` Legacy), checksum, archive
+  fraîche validée et self-test/smoke-test après extraction ; le paquet contient
+  338 fichiers. Hashes protégés inchangés.
+
+## v2.0 DEV_7_R19 — 2026-09-18 — rollback du staging R18
+
+- Retire l’essai de frame de staging introduit en R18 après validation
+  visuelle : le gain sur le clignotement était trop faible et la fluidité
+  pouvait être moins bonne.
+- Restaure le comportement R17 pour l’onglet Générateur ; aucune logique de
+  génération, donnée, export ou section validée n’est modifiée.
+- Conserve au TODO, sans version cible, la solution robuste à widgets
+  persistants et mises à jour en place, avec la consolidation/amélioration/
+  débogage poussés de la v2.1 comme horizon possible.
+- Vérifications R19 : 10 tests ciblés Custom/controller, compilation,
+  self-test source, smoke-test (`33` validations Upgraded + `17` Legacy),
+  checksum binaire, intégrité/extraction ZIP et ré-emballage PASS ; le paquet
+  contient 338 fichiers. La suite complète R17 reste à `433 passed` ; le
+  rerun complet R19 attend un interpréteur disposant de `pytest`.
+
+## v2.0 DEV_7_R18 — essai staging abandonné
+
+- Essai local de construction du nouveau contenu dans un frame temporaire lors
+  des changements explicites de mode ou d’archétype.
+- Le gain visuel étant jugé insuffisant, voire potentiellement négatif, la
+  candidate suivante revient au comportement R17. La solution robuste reste
+  une tâche future sans version cible.
+
+## v2.0 DEV_7_R17 — 2026-09-17 — transition Custom sans reconstruction
+
+- Corrige le clignotement de la première modification dans l’onglet Générateur :
+  le passage automatique d’un preset Legacy/Upgraded vers Custom met à jour le
+  mode, le statut et la provenance sans détruire ni recréer les contrôles.
+- Le champ modifié conserve son focus et l’état de rendu reste synchronisé ;
+  les reconstructions complètes restent réservées aux changements explicites
+  de mode, d’archétype ou de langue.
+- Ajoute au TODO un audit transversal des clignotements liés aux changements
+  d’options et des artefacts de redimensionnement.
+- Aucun moteur, export, format ou réglage de génération n’est modifié.
+- Vérifications R17 : 10 tests ciblés Custom/controller, compilation,
+  self-test source, smoke-test, checksum binaire, extraction et ré-emballage
+  de l’archive PASS ; le paquet contient 338 fichiers. La suite complète R16
+  reste à `433 passed` ; le rerun complet R17 attend un interpréteur
+  disposant de `pytest`.
+
+## v2.0 DEV_7_R16 — 2026-09-17 — finition de la section Poissons
+
+- Clarifie le tooltip de « Près des côtes » : seules les ressources en
+  poissons sont limitées à la zone proche des côtes.
+- Réordonne les contrôles : « Quantité moyenne », « Près des côtes », puis
+  « Épaisseur de la bande ».
+- Supprime la ligne visible redondante expliquant la dépendance de l’épaisseur
+  de bande ; l’information reste dans son tooltip.
+- Tranche limitée à l’ergonomie et à la microcopy de Poissons.
+- Vérifications R16 : 10 tests ciblés Custom/controller, compilation,
+  self-test source, smoke-test et extraction ZIP PASS ; la suite complète R15
+  reste à `433 passed`, le rerun complet R16 attend un interpréteur disposant
+  de `pytest`.
+
+## v2.0 DEV_7_R15 — 2026-09-17 — cohérence des aperçus Custom
+
+- Déplace l’avertissement de placement inférieur dans le tooltip du titre
+  « Aperçu estimé », avec une aide sur deux lignes.
+- Normalise les états désactivés des sous-options Forêts et Groupes de
+  pierres ; une option désactivée est explicitement indiquée au lieu d’être
+  confondue avec un calcul à zéro.
+- Renomme les lignes de pierres en « Gisements totaux » et « Gisements
+  exploitables » pour distinguer les gisements du stock d’unités.
+- Considère le point 2 de la mini-roadmap de finition de l’onglet Générateur
+  terminé ; le Bonus de départ reste hors de cette tranche.
+- Vérifications R15 : 9 tests ciblés Custom/controller, compilation,
+  self-test source, smoke-test et extraction ZIP PASS ; la suite complète R14
+  reste à `433 passed`, le rerun complet R15 attend un interpréteur disposant
+  de `pytest`.
+
+## v2.0 DEV_7_R14 — 2026-09-17 — correction des aperçus estimés
+
+- Corrige la lecture des nombres bruts des profils Legacy/Upgraded par les
+  aperçus Arbres/Pierres : ils n’étaient pas des variables Tk et retombaient
+  donc tous à `0`.
+- Conserve la réactivité à la taille de carte, les calculs dérivés et les
+  changements ergonomiques R13.
+- Candidate locale R14 : test de régression ajouté ; 8 tests ciblés
+  Custom/controller, self-test source, smoke-test et archive validés. La suite
+  complète R13 reste à `433 passed` ; le rerun complet R14 attend un
+  interpréteur disposant de `pytest`.
+
+## v2.0 DEV_7_R13 — 2026-09-17 — aperçus Custom et microcopy ergonomique
+
+- Supprime les aides visibles redondantes du type « activez X pour régler X ».
+- Harmonise les aperçus Arbres/Pierres dans deux panneaux à lignes courtes,
+  avec mise à jour immédiate selon les réglages et la taille de carte.
+- Raccourcit le label du placement sur les variantes d’herbe et déplace les
+  détails utiles dans son tooltip ; l’audit des autres liaisons label/tooltip
+  ne demande pas de changement.
+- Candidate locale R13 : `433 passed` ; aucun moteur, export ou réglage de
+  génération validé n’est modifié ; self-test, smoke-test et archive à valider
+  avant remise Windows.
+
+## v2.0 DEV_7_R12 — 2026-09-17 — découplage Bonus et microcopy Custom
+
+- Découple les moyennes propres aux zones minérales du Bonus de départ de
+  « Minerais → Quantité moyenne » ; seule « Répartition » reste consommée par
+  les surfaces en mode « Prorata ».
+- Corrige l’indicateur « modifié » : une moyenne globale ne marque plus Bonus
+  comme modifié et une moyenne saisie dans Bonus reste indépendante.
+- Effectue la passe microcopy de l’onglet Générateur : unités explicites,
+  libellés raccourcis, bornes `0/100/500 %` ou `0/100/200 %`, aides courtes et
+  clarification des réglages du Bonus rocheux.
+- Candidate locale : `431 passed` ; self-test, smoke-test (`33` Upgraded + `17`
+  Legacy), checksum binaire et archive ZIP PASS ; aucun push ni release.
+
+## v2.0 DEV_7_R11 — 2026-09-17 — norme d’aide et finition ergonomique Custom
+
+- Normalise tous les repères `?` selon la règle « libellé → `?` → contrôle » ;
+  le tooltip de la méthode des minerais distingue Legacy, Upgraded et Pixels
+  aléatoires sur des lignes séparées.
+- Réutilise les aides utiles des traductions pour Rivières, côtes, Arbres et
+  Pierres, et explique visiblement les dépendances des contrôles désactivés.
+- Ajoute un indicateur « modifié » et une réinitialisation par section, sans
+  réinitialiser les autres réglages.
+- Ajoute des aperçus estimés non éditables pour les quotas Arbres et Pierres,
+  dépendants de la taille de carte et signalant les shortfalls possibles.
+- Ne supprime aucune chaîne d’aide ; la passe Bonus reste reportée et les
+  sections Rivières/Terrains/Minerais validées sont préservées.
+- Candidate locale : `430 passed`, self-test/smoke/checksum/hashes PASS, aucun
+  push ni release.
+
+## v2.0 DEV_7_R10 — 2026-09-17 — nettoyage visuel ciblé de l’éditeur Custom
+
+- Rapproche les repères `?` de leur texte dans les lignes concernées et
+  regroupe le repère Décorations avec son libellé.
+- Remet Poissons, Arbres et Pierres de construction sur une colonne par défaut,
+  avec « Répartition des pousses » sur une ligne label/sélecteur unique.
+- Aligne le stock moyen des pierres et place le nombre moyen de pierres par
+  groupe sur sa propre ligne avec la variation.
+- Préserve la matrice dense des Minerais/Décorations, les sections Rivières et
+  Terrains validées, le moteur, les données et la passe Bonus reportée.
+- Candidate locale : `430 passed`, self-test/smoke/checksum PASS, aucun push ni
+  release.
+
+## v2.0 DEV_7_R9 — 2026-09-16 — restauration visuelle depuis R4
+
+- R9 reprend la base visuelle cohérente de R4 après abandon des régressions R5.
+- Les zones d’information, sections développables, marqueurs et sprites
+  d’origine sont conservés.
+- Le moteur, les bonus, les traductions, le thème, les préférences et les
+  assets fonctionnels restent inchangés.
+- Candidate locale : aucune modification du dépôt `dev`, aucun push ni release.
+
 ## v2.0 DEV_6_R61 — 2026-09-15 — alignement vertical du bonus lac/rivière
 
 - Le libellé du rayon devient « Rayon de contrôle eau native », avec une aide
