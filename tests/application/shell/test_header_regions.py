@@ -31,3 +31,18 @@ def test_file_action_buttons_keep_natural_text_width():
         if any(name in line for name in ("self.import_button=", "self.export_btn=", "self.preview_button=")):
             assert "width=" not in line
     assert "for w in file_actions" not in SRC
+
+
+def test_main_content_has_a_second_vertical_sash():
+    foundation = (Path(__file__).resolve().parents[3] / "s3mapgen" / "application" / "shell" / "foundation.py").read_text(encoding="utf-8")
+    assert "vertical=ttk.Panedwindow(self,orient='vertical')" in foundation
+    assert "vertical.add(header_host,weight=1)" in foundation
+    assert "vertical.add(body_host,weight=1)" in foundation
+    assert "self._vertical_paned.sashpos(0" in foundation
+    assert "vertical_split_ratio" in foundation
+
+
+def test_vertical_sash_keeps_header_controls_at_the_top():
+    foundation = (Path(__file__).resolve().parents[3] / "s3mapgen" / "application" / "shell" / "foundation.py").read_text(encoding="utf-8")
+    assert "self.header_root.rowconfigure(0,weight=0)" in foundation
+    assert "self._header_shell.grid(row=0,column=0,sticky='new')" in SRC

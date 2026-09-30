@@ -6,6 +6,17 @@
 
 > **Note de développement / transparence :** ce projet est conçu, dirigé, testé et validé humainement, avec un usage important de **ChatGPT / OpenAI comme assistance d’implémentation**, notamment pour le backend, l’analyse technique et les outils de reverse-engineering. Cette assistance fait partie explicitement du processus de développement du projet.
 
+## État actuel — v2.0 DEV_8
+
+DEV8 est publiée sur la branche `dev`, sur la base de la candidate R86. Elle clôt
+l’onglet Archétype : le sélecteur principal affiche « Personnalisé » après une
+modification effective puis revient au profil nommé lorsqu’il est resélectionné.
+Les références complètes restent dans l’archive locale ; elles ne sont pas
+poussées dans GitHub. La suite de non-régression compte 641 tests réussis.
+
+La prochaine étape est DEV9, consacrée notamment à Grandes îles et aux autres
+travaux restants listés dans `TODO_MAPGEN.md`.
+
 ## Présentation du projet
 
 **Settlers III MapGen** a pour objectif de créer, analyser et à terme éditer des cartes Settlers III avec une génération procédurale reproductible et contrôlable.
@@ -48,7 +59,186 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
 
-## État actuel — v2.0 DEV_7 / finition du Générateur Custom
+## Résultats de R63 avant les candidates R64/R65 — marge de domaine à zéro
+
+R63 met à **0 % par défaut** la marge du domaine pour tous les archétypes,
+comme sur le comportement natif Legacy. Le preset Custom R53 couvre maintenant
+tout le carré de carte ; sa transition de bord reste à 8 %. La source Legacy
+native ignore ce réglage, donc son relief ne change pas. Le 5 % historique reste
+disponible et correspond à 18 cases sur le preset R53.
+
+Sur la preview 256², seed `20260920`, le passage de 5 % à 0 % rapproche la
+distance médiane du premier terrain au bord de 30 à 11 cases et réduit l’eau de
+45,6 % à 23,9 %. La qualification montre que les départs passent (6/6), mais que les deux cas
+768 dépassent légèrement la cible terre (86,2–86,8 %, maximum 85 %). Il faudra
+juger ce compromis sous Windows puis recalibrer d’autres paramètres si besoin,
+sans remettre de marge. L’effet du cadre carré sur les littoraux reste à
+examiner. Les rivières Custom sont reportées, y compris le cas illégal d’une
+rivière créée dans un lac. R63 reste une candidate locale.
+
+### R55 — previews et providers pour Continental Custom
+
+R55 corrige le cadrage des miniatures de fusion et de masque : l’enveloppe
+absolue du Continental natif-calibré est maintenant réduite depuis le côté
+réel de la carte vers les miniatures 128². Les fusions ne paraissent plus
+dézoomées et les masques ne peuvent plus réintroduire d’influence dans le
+cadre océanique. Les profils historiques en mode pourcentage restent
+inchangés.
+
+R54 avait ouvert `hybrid_fbm`, `turbulence`, `worley_f1`, `worley_f2` et
+`worley_f2_minus_f1`. R55 ajoute `heterogeneous_fbm` et
+`ridged_multifractal`, disponibles comme source principale, fusion ou source
+de masque dans l’onglet **Archétype**. Ce sont des briques d’exploration ; la
+composition du preset nommé R53 reste exactement la même et aucune forme n’est
+dessinée à la main.
+
+## Preset Continental Custom R53 — composition de noises
+
+R53 reprend le preset Continental Custom réellement indépendant :
+`Continental Custom R53 — fBm + warp + crêtes`. Il part d’un champ fBm
+autonome, lui applique une fusion `domain warp` légère (`blend 15 %`), puis
+une fusion `ridged` additive faible (`12 %`). Ce sont exactement les sources,
+opérations et réglages visibles dans l’onglet **Archétype** ; aucun dessin,
+gabarit de forme ou code de géométrie n’est caché dans le preset.
+
+Le domaine extérieur est désormais calé sur l’enveloppe native mesurée : le
+cadre et sa transition sont exprimés en cellules absolues, afin que l’océan ne
+grandisse plus proportionnellement avec la taille de la carte. La masse
+continentale retrouve ainsi une emprise proche du Continental natif.
+
+Dans l’application : choisir le mode **Custom**, l’archétype **Continental**,
+puis le preset dans le sélecteur **Profil de base** de l’onglet **Archétype**.
+La source principale et les deux fusions restent ensuite modifiables dans le
+même onglet. Le Continental natif demeure disponible comme profil de référence
+et le code Legacy/Upgraded n’est pas modifié.
+
+La commande `python tools/qualify_continental_custom.py` rejoue le preset sur
+`384/512/768`, trois seeds et les miroirs `0/3`, puis exécute le chemin Custom
+basé sur Legacy avec les cas de joueurs `2/4/max`. Les gates durs couvrent les
+validations, le nombre exact de départs, leur unicité et leurs bornes.
+`startable_mass` reste un diagnostic souple ; la validation visuelle Windows et
+en jeu reste la prochaine étape.
+
+## Historique récent — v2.0 DEV_8_R50 / qualification des masques
+
+R50 ajoute une qualification déterministe du provider de masque manuel. La
+commande `python tools/qualify_manual_masks.py` couvre par défaut les tailles
+`384/512/768`, trois seeds (`20260920/21/22`) et les quatre miroirs natifs ;
+elle vérifie la reproductibilité du signal, son effet sur la preview complète,
+la stabilité de couverture, la variation conservée hors masque et la bordure
+d’eau. `--mask chemin/image.png` permet de qualifier une image importée avec
+le même resampling grayscale 64×64 que l’éditeur. Cette tranche reste
+diagnostique et ne modifie aucune génération.
+
+## Historique récent — v2.0 DEV_8_R49 / masques dessinables
+
+R49 conserve la pile de masques indépendante et son contrat spatial générique,
+et ajoute le provider « Dessin libre ». Chaque slot peut ouvrir une grille 64×64
+pour peindre ou effacer une influence en niveaux de gris, importer une image et
+exporter le masque en PNG. La grille est resamplée avec la taille, la position,
+la rotation et la douceur communes ; l’opération module le champ complet après
+les fusions et conserve la variation hors masque. La fenêtre d’édition suit
+désormais correctement le thème sombre. Les nouveaux archétypes commencent
+toujours avec zéro fusion active.
+
+## Historique récent — v2.0 DEV_8_R42 / espace de travail redimensionnable
+
+R42 conserve les quatre familles de réglages de R40 et rend aussi le groupe
+« Fondamentaux » repliable, ouvert par défaut. Les mini-previews restent
+volontairement fixes à 128², comme en R40, jusqu’à une future tranche dédiée.
+L’en-tête reste ancré en haut lorsque le séparateur est déplacé, et la zone
+Session / Comparaison conserve son reflow historique entre ses deux positions.
+Un second séparateur vertical permet de régler la place de l’en-tête par
+rapport à la zone carte/onglets ; sa position est mémorisée.
+
+## Historique récent — v2.0 DEV_8_R41 / premier espace adaptatif
+
+R41 avait rendu les mini-previews adaptatives ; ce comportement a été retiré
+en R42 à la demande de l’utilisateur, sans modifier leur calcul ni leur
+emplacement.
+
+## Historique récent — v2.0 DEV_8_R40 / groupes de réglages repliables
+
+R40 regroupait les réglages de chaque source de l’éditeur de noisemaps en
+quatre familles : fondamentaux, transformations de sortie, remappage et
+coordonnées. Les fondamentaux restaient visibles et les trois groupes avancés
+étaient repliables séparément pour chaque source.
+
+## Historique récent — v2.0 DEV_8_R39 / ergonomie ciblée de l’archétype
+
+R39 conserve le reset global de l’archétype et ajoute seulement deux resets
+locaux, désactivés tant que leur bloc n’est pas modifié : morphologie/source du
+relief/seuils, puis éditeur de fusions. Les resets mettent à jour les contrôles
+et les previews en place, sans effacer la vue ni ajouter un bouton à chaque
+fusion. Les cartes de fusion séparent aussi leurs grilles d’en-tête, de
+paramètres et d’actions afin que les champs longs ne provoquent plus de
+décalages entre lignes.
+
+## Historique récent — v2.0 DEV_8_R38 / remappage avancé des noises
+
+R38 ajoute un remappage avancé indépendant à chaque source autonome : points
+noir/blanc pour étendre ou resserrer la plage, seuils bas/haut durs ou adoucis,
+plancher/plafond de sortie et courbe asymétrique. Ces réglages sont appliqués
+avant le cadre fini, restent neutres par défaut et sont disponibles séparément
+pour la source principale et chaque fusion. Ils servent à créer des reliefs
+plus plats, plus étagés, plus concentrés ou volontairement dissymétriques sans
+introduire encore de masque implicite.
+
+R37 ajoute à chaque source autonome des transformations de coordonnées
+indépendantes : décalage X/Y, échelle X/Y, répétition X/Y et symétrie X/Y.
+Elles agissent avant les remappages de R36, restent bornées par le rectangle
+intérieur fini et sont disponibles séparément pour la source principale et
+chaque fusion. Les valeurs identitaires conservent les profils R36.
+
+R36 conserve la preview exacte de R35 et ajoute des transformations communes à
+chaque source autonome : inversion, valeur absolue, gamma et terrasses avec
+mélange réglable. L’aide de l’éditeur de noisemaps est attachée à son titre ;
+les valeurs identitaires préservent les profils existants.
+
+R34 corrige le comportement de Solo : il isole uniquement une fusion déjà
+active dans la preview, conserve la source principale et ne modifie jamais le
+profil de génération. Une fusion décochée ou à force nulle ne peut plus être
+réactivée par ce bouton.
+
+Quand le lissage de la carte macro est désactivé, la preview passe directement
+au calcul exact sans afficher ni calculer une passe indicative intermédiaire.
+Le raffinement natif reste actif ; seul `_relax_relief` est retiré de cette
+preview rapide. Le basculement invalide aussi immédiatement tout calcul
+précédent afin que l’état choisi ne soit jamais recouvert par un résultat
+obsolète. Chaque miniature de fusion fait maintenant 128² ; les boutons sont
+placés après toutes les lignes de réglages, et la miniature « Source
+principale » montre la source du relief avant les fusions, tandis que « Bruit /
+hauteur » reste la vue composée.
+
+R33 rend la pile de fusions directement manipulable depuis chaque carte :
+réordonner les slots, dupliquer une fusion, la supprimer ou isoler son effet
+dans un aperçu Solo. Solo ne modifie pas le profil utilisé par la génération
+réelle ; il ne désactive les autres fusions que dans la copie de preview.
+
+R32 place les trois vues principales en tête de l’onglet sur une rangée adaptée
+au 1080p. Le nombre de fusions est réglable de zéro à six, sans perdre les
+réglages des slots temporairement masqués. La source principale et chaque
+fusion possèdent une miniature brute 128² calculée directement depuis leur
+provider, sans pipeline macro. R31 conserve en complément la cohérence entre
+les passes indicative et exacte et grise les réglages non consommés.
+
+R30 poursuit R29, qui remplace la piste des presets de formes par un véritable éditeur de
+noisemaps. La source principale peut utiliser Legacy natif, bruit blanc,
+Value, Perlin, Simplex, fBm, Billow, Ridged, Worley ou Domain Warp. Jusqu’à six
+sources autonomes supplémentaires peuvent être fusionnées par remplacement,
+mélange, addition, soustraction, multiplication, minimum ou maximum. Chaque
+source expose fréquence, octaves, lacunarité, gain, rotation, étirement,
+décalage, contraste, warp et décalage de seed. Le domaine reste un rectangle
+intérieur fini avec marge et transition de bord réglables.
+
+Modifier l’onglet Archétype personnalise désormais l’archétype sans faire
+passer le mode Générateur sur Custom. La noisemap et sa contribution sont
+rendues directement sur une grille live 192², sans attendre la relaxation
+native ; la macro exacte continue en arrière-plan. Chaque panneau remplace son
+image en place, indépendamment, sans passage par une vue vide. Les métriques de
+laboratoire détaillées ont été retirées de l’interface au profit des contrôles.
+Le lissage de la carte macro peut maintenant être désactivé pour accélérer la
+recherche de bruits ; ce réglage ne modifie pas la génération réelle.
 
 La génération `v2.0 DEV_1` a été validée puis publiée sur GitHub. `DEV_2` a été
 le checkpoint validé du reset natif, et `DEV_3` est maintenant le checkpoint
@@ -88,7 +278,121 @@ R61 remplace ce libellé par « Rayon de contrôle eau native », puis aligne to
 les contrôles du panneau lac/rivière sur une seule colonne verticale. La logique
 de génération reste celle de R59 ;
 elle conserve. La finition ergonomique de l’onglet Générateur est publiée dans
-DEV_7 ; la prochaine tranche porte sur les archétypes Custom. Les sections
+DEV_7. `DEV_8_R1` a été validée et ouvre l’onglet Archétype avec un profil macro
+déclaratif Continental : une copie Custom inchangée reprend les mêmes seuils
+de relief et les seuils modifiés sont appliqués à sa génération. Les fenêtres
+de prévisualisation live noise et carte macro à cinq classes, avec projection
+carrée/parallélogramme, taille réglable, réutilisation du bruit, progression et
+taille adaptative, avec affichage final atomique, noise signée `-30 … 225`,
+génération native complète sans approximation de résolution et adaptation aux
+redimensionnements, font partie du socle `DEV_8_R11`. Le calcul des
+previews est suspendu quand l’onglet Archétype n’est pas actif, puis reprend
+avec la dernière demande utile au retour ; la dernière image complète reste
+visible et la carte affiche la répartition des cinq classes macro avec un
+avertissement si une classe est absente. Le contrat Continental affiche aussi
+son moteur de relief, sa famille de bruit, sa plage signée, ses plages dérivées,
+son modèle de masse terrestre et l’absence de micro-îles ; ces champs restent
+verrouillés tant qu’aucun moteur réel ne les consomme. Les seuils de relief sont
+vérifiés en parité avec les valeurs natives implicites sur plusieurs tailles et
+miroirs. Les hexagones et la génération live détaillée du Générateur restent
+reportés à la v2.1. R9 fiabilise en plus les callbacks de reflow après
+reconstruction de l’onglet Générateur et la détection de molette sur les menus
+déroulants temporaires Tk. R10 ajoute un diagnostic des masses terrestres
+connectées dans l’aperçu et de la masse d’herbe réellement porteuse des
+départs, sans changer les cartes. R11 ajoute les premiers paramètres de
+morphologie réellement consommés : échelle spatiale des formes et contraste
+du relief. À `100 %`, la sortie native reste inchangée ; les mêmes champs sont
+utilisés par les previews et les moteurs Legacy/Upgraded. R17 réorganise les
+deux couches de bruit introduites en R16 comme des composants sémantiques du
+relief : le rôle actuellement disponible est `land_relief`, et chaque couche
+choisit une fusion `add` ou `subtract`. Elles sont appliquées avant la
+normalisation, la sculpture et la relaxation natives, uniquement sur les
+cellules terrestres ; les cellules natives d’eau, y compris la couronne
+extérieure, restent protégées. Le bruit multi-échelles reste déterministe et
+partagé par les previews et les deux moteurs. R17 ne crée pas encore de lacs ni
+de nouveau masque eau/terre. R46 ajoute depuis une pile de masques
+paramétriques indépendante, avec modulation douce hors de la silhouette ; les
+masques dessinables/importables et les rôles spécialisés restent les prochaines
+extensions.
+R12 sépare le chemin d’affichage de la noise map : le champ natif signé est
+affiché dès la fin du relief brut, avant la sculpture et la relaxation finale,
+pendant que la carte macro exacte continue en arrière-plan. Le champ brut est
+mis en cache indépendamment de la morphologie, et les copies miroir ainsi que
+la bordure d’eau sont réappliquées dans le même ordre que la preview native.
+L’échelle est plafonnée à `100 %` pour conserver de l’eau autour de la carte.
+La passe native `_relax_relief` reste inchangée dans les générations réelles ;
+elle corrige les écarts locaux de hauteur jusqu’à stabilisation avant la
+classification du terrain, et n’est contournée que par l’affichage rapide de
+la noise map.
+R13 ajoute une macro indicative calculée immédiatement depuis ce même champ
+rapide : elle est clairement signalée comme provisoire, puis remplacée par la
+macro exacte lorsque la sculpture et `_relax_relief` ont terminé. Les
+statistiques exactes sont masquées pendant cette phase. La génération réelle
+Legacy/Upgraded reste inchangée dans son résultat. R14 accélère la relaxation
+exacte en conservant son parcours ordonné, ses corrections et sa sortie
+`uint8`, ce qui réduit fortement l’attente sur les tailles `704+` sans
+approximation de la preview finale. R15 unifie la progression visible :
+`0–15 %` pour l’indicatif, `15–95 %` pour le calcul exact et `100 %` seulement
+après le rendu final ; les redimensionnements ne peuvent plus la réinitialiser
+ou l’achever prématurément. R17 conserve les couches de bruit optionnelles,
+mais les rend lisibles dans l’éditeur d’archétype : rôle `land_relief`, fusion
+`add`/`subtract`, et bruit multi-échelles déterministe. Désactivées par défaut,
+elles ne changent pas la sortie native ; activées, elles modifient le relief
+terrestre avant les étapes natives qui normalisent et relaxent le terrain. Les
+cellules d’eau natives ne sont pas transformées et le cache du champ natif
+inchangé n’est pas réutilisé pour une preview active.
+R24 corrige la régression de R23 dans le troisième aperçu du laboratoire :
+l’image 1 montre la source de relief sélectionnée, tandis que l’image 3 montre
+uniquement la contribution brute des couches, en rouge/bleu. Le delta de la
+source par rapport à Legacy et le champ composé restent séparés dans le
+rapport de diagnostic.
+R25 supprime le flash lors des re-previews en remplaçant les images dans leurs
+panneaux existants et ajoute au laboratoire la part de terre brute ainsi que
+les hauteurs P10/P50/P90 pour comparer les providers.
+R26 conserve désormais le dernier triptyque complet pendant tout recalcul : la
+phase indicative n’est plus peinte, et bruit/hauteur, macro et contribution
+brute sont préparés puis remplacés ensemble seulement lorsque la preview exacte
+est complète. Une erreur ou une valeur invalide conserve l’ancienne vue. Aucun
+provider, réglage de bruit ou chemin Legacy/Upgraded n’est modifié ; la suite
+porte d’abord sur la matrice de cibles et la qualification comparative des
+providers existants.
+R27 ajoute cette matrice pour Continental, Grandes îles et Petites îles, avec
+les tailles natives `384–768`, les cas joueurs `2 / 4 / maximum` et les miroirs
+`0 / 3`. Le nouvel outil `python tools/qualify_archetypes.py` compare les
+providers existants sur la macro réellement produite : part terre/eau, bordure,
+masse dominante, contact de côte et relief montagne/neige. La première passe
+reste volontairement limitée à la macro-preview ; starts, constructibilité,
+ressources, hydrologie détaillée et validation éditeur/jeu sont des gates
+ultérieurs. Le run par défaut passe `12/12` ; le miroir 3 révèle un cas natif
+existant à `384²` et `0,23 %` de montagne/neige (`11/12`), tandis que les
+providers indépendants passent `9/9`. Ce diagnostic reste ouvert pour la suite.
+
+R22 remplace l’essai R21 d’enveloppe post-génération : chaque provider est
+généré directement dans un rectangle intérieur fini, avec une condition de
+bord faible portée par le bruit lui-même ; l’extérieur du cadre est de l’eau.
+Il n’y a donc pas de correction empilée après coup, les formes ne sont pas
+coupées au bord du domaine et les previews calculent moins de cellules.
+
+R20 corrigeait la limite de R19 : changer de bruit remplace maintenant toute la
+matrice brute d’élévation, y compris ses zones d’eau, au lieu de conserver la
+côte et le masque terrestre Legacy. Trois providers indépendants sont
+disponibles : `fractal_fbm`, `warped_fbm` et `ridged_fbm`. Le moteur natif
+consomme ensuite ce champ et applique lui-même normalisation, formes macro,
+relaxation et classification. `native_legacy` reste le choix par défaut et
+sa sortie est protégée par parité binaire. Les couches optionnelles ciblent le
+domaine `source_land` de la source choisie ; elles ne réintroduisent donc pas
+la côte Legacy. Le laboratoire sépare le champ de référence, la source active,
+son delta et les contributions de couches. R20 ne prétend pas encore fournir
+des rôles spécialisés pour les lacs ou l’eau.
+
+R18 rendait le contrat de chaque composant inspectable : source, rôle, masque,
+étape, fusion et ordre. La preview complète expose le champ natif avant
+composition, le champ composé et une carte de contribution où le rouge
+rehausse le relief et le bleu l’abaisse ; les statistiques listent les cellules
+touchées et les bornes du delta. Les anciennes clés de profil R17 sont migrées
+sans changement de sens. R18 ne remplace pas encore la source Legacy et ne
+crée pas encore de lacs.
+Les sections
 sémantiques utilisables du générateur restent : Minerais, Poissons,
 Arbres, Pierres de construction, Décorations et réglages détaillés des bonus de départ,
 traductions dynamiques, profils dérivés des presets,
@@ -161,8 +465,8 @@ raccorde la section Arbres aux deux moteurs Custom : quota de
 base relatif, pousses (quota global ou quota séparé et placement), forêts (part,
 moyenne et variation) et quota maximal relatif des palmiers. Le défaut Upgraded
 est celui du profil actif, notamment `30 %` du quota adulte en forêts ; le défaut
-Legacy n’active ni forêts ni pousses. Le socle DEV6 attend encore la validation
-utilisateur, avant Dev 7 (archétypes Custom) et Dev 8 (premiers modificateurs).
+Legacy n’active ni forêts ni pousses. Le socle DEV6 et la finition DEV7 sont
+publiés ; DEV8 poursuit maintenant l’éditeur d’archétypes Custom.
 
 La comparaison des minerais a été faite avant la suppression : l'ancien
 générateur avait un mix global proche des SAV natifs, mais des composants et
@@ -317,6 +621,12 @@ Les validators du programme sont des **garde-fous de non-régression**. Un PASS 
 
 La hiérarchie de validation du projet reste : parser/checksum → éditeur → View Map/smoke test → SAV runtime → long-play.
 
+La qualification reproductible des providers d’archétype se lance avec :
+
+```text
+python tools/qualify_archetypes.py --output qualification.json
+```
+
 ## Documentation technique
 
 Les références principales sont dans `references/`. En particulier :
@@ -358,8 +668,7 @@ le rayon maximal des marais à `16 HEX6`, borne chaque cœur à `1–820` cases 
 adapte le total prorata à `820/1 640/2 460` selon les minerais actifs. Les plans objets sont
 préparés avant écriture et les abords des tours restent protégés. Le mode OFF
 conserve R46 pour les bonus existants. Forêts, pierres et marais validés ;
-zones minérales et lac/rivière restent à valider séparément. DEV6 reste une
-candidate locale.
+zones minérales et lac/rivière restent à valider séparément. À cette date, DEV7 était publié et DEV8_R1 restait une candidate locale.
 R57 conserve les formes et profondeurs de R55, renforce les lacs à deux
 anneaux de rive et construit chaque rivière bonus par un système natif local,
 sans cible globale ni pont lac→mer recherché. Les jonctions accidentelles

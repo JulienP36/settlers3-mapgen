@@ -8,6 +8,7 @@ from s3mapgen.application.ui.i18n.history import (
     _HISTORY_CAPACITY_DIALOG_TEXT,
 )
 from s3mapgen.application.ui.i18n.shell import (
+    ARCHETYPE_INPUT_LABELS,
     ARCHETYPE_LABELS,
     COMMAND_LABELS,
     FEEDBACK_TEXT,
@@ -33,6 +34,7 @@ CATALOGUES = (
     VIEW_LABELS,
     HEATMAP_LABELS,
     MODE_LABELS,
+    ARCHETYPE_INPUT_LABELS,
     ARCHETYPE_LABELS,
     COMMAND_LABELS,
     THEME_LABELS,

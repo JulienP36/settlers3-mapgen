@@ -39,6 +39,12 @@ def test_request_rejects_unsupported_size_and_player_count():
         GenerationRequest(side=384, players=9, seed=1)
 
 
+def test_modifier_field_remains_reserved_and_rejects_nonempty_values():
+    assert GenerationRequest(side=384, players=2, seed=1).modifiers == ()
+    with pytest.raises(ValueError, match="modificateurs ne sont pas encore disponibles"):
+        GenerationRequest(side=384, players=2, seed=1, modifiers=("reserved",))
+
+
 def test_native_size_warning_categories_are_generation_contract_data():
     assert EDITOR_EXTENDED_SIDES == (832, 896, 960, 1024)
     assert NATIVE_GAME_MIN_SIDE == 384

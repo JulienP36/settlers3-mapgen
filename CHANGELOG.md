@@ -1,5 +1,1122 @@
 # Changelog
 
+## v2.0 DEV_8 — 2026-09-30 — clôture DEV8 (candidate R86)
+
+- Le sélecteur principal Archétype affiche désormais « Personnalisé » quand
+  le profil actif ne correspond plus à Classique ou Continental. Il disparaît
+  automatiquement quand un profil nommé est resélectionné.
+- Le libellé d’état détaillé « Profil personnalisé » reste dans l’onglet
+  Archétype et le feedback. Les traductions FR/EN/DE/ES sont complètes ; le
+  mode, la géographie et les valeurs du profil ne changent pas.
+- Validation : `python -m pytest -q` — **641 tests PASS** ; compilation,
+  smoke-test (34 Upgraded + 18 Legacy, checksum PASS) et self-test du ZIP
+  extrait PASS. Trois anciens tests d’aperçus mis à l’échelle ont été retirés ;
+  les tests de génération complète par noisemaps restent conservés.
+- L’utilisateur confirme la validation visuelle Windows R85. Avec le retour
+  précédent sur les rivières Custom et les tests multi-tailles, DEV8 est
+  terminée. Grandes îles et tout autre travail ouvert passent à DEV9.
+- Le corpus R85 compacté comptait 92 références ; le journal consolidé ajouté
+  en R86 porte le total courant à 93. Les tables exhaustives supprimées
+  représentaient 84 355 086 octets, avec les données détaillées conservées dans
+  l’archive R26.
+
+## Audit documentaire — 2026-09-30
+
+- Réduit le corpus local de références en supprimant cinq exports exhaustifs
+  de cellules/composantes (84 355 086 octets décompressés) ; agrégats,
+  manifestes, checksums, descriptions et mesures par carte/famille conservés.
+- Déplacé le plan de reconstruction pré-implémentation et l’ancien comparatif
+  minier R17 dans `references/history/`.
+- Snapshot, index, TODO et références spécialisées actualisés après les
+  retours sur hydrologie, tests multi-tailles et validation Windows. R86 ajoute
+  ensuite l’état « Personnalisé » ; DEV8 est clôturée et la suite passe en DEV9.
+
+
+## v2.0 DEV_8_R85 — 2026-09-29 — sélecteurs Mode et Archétype
+
+- Renomme les choix du Mode en « Classique », « Amélioré » et « Personnalisé »
+  sans changer les clés internes des générateurs.
+- Le sélecteur principal Archétype permet maintenant de choisir le profil
+  « Classique » natif ou le profil « Continental » dérivé de R82. Ils gardent
+  tous deux la clé géographique interne `continental` ; choisir un profil ne
+  change pas le Mode. Les emplacements Grandes/Petites îles restent présents
+  mais non implémentés.
+- Le choix du profil est synchronisé entre l’en-tête et l’onglet Archétype ;
+  modifier un paramètre fait apparaître « Profil personnalisé » dans les deux
+  et dans le retour d’état.
+- Complète aussi les libellés allemands et espagnols des emplacements réservés
+  Modificateurs du générateur par lot.
+- Compilation, 10 contrôles ciblés, smoke-test (34 validations Upgraded,
+  18 Legacy, checksum PASS) et auto-test d’application (7 ressources, hashes
+  protégés inchangés) réussis. `pytest` n’est pas installé dans l’environnement.
+- Références restaurées depuis l’archive utilisateur DEV7_R26, pages courantes
+  mises à jour, historique du snapshot DEV7 conservé et corpus inclus dans le
+  ZIP source R85. Validation visuelle Windows toujours requise.
+
+## v2.0 DEV_8_R84 — 2026-09-29 — profils Archétype et réservations Modificateurs
+
+- Remplace le sélecteur de profils d’essai par « Classique » (Legacy natif) et
+  « Continental » (relief Legacy par blocs R82). Un profil modifié s’affiche
+  comme « Profil personnalisé ».
+- Le seed initial dépend de la date et de l’heure courantes. Dans l’onglet
+  Archétype, les flèches font un pas de 1 et la molette un pas de 5.
+- Retire les providers Cœur et Serpent, renomme Volcan en Dôme, et ajoute les
+  providers Ellipse et Anneau. Le chargement d’anciens profils convertit les
+  anciens noms vers les nouvelles formes.
+- Conserve les emplacements « Modificateurs » dans l’en-tête et les lots,
+  désactivés et sans effet sur la génération. Le champ vide reste réservé dans
+  les contrats de requête et de cache.
+- Le packaging source écarte les fichiers temporaires incomplets laissés à côté
+  des scaffolds lors d’une écriture interrompue.
+- Compilation et contrôles ciblés R84 PASS ; smoke du projet PASS avec 34
+  validations Upgraded, 18 Legacy et checksum binaire valide. L’auto-test source
+  passe avec ses 7 ressources. Les tests pytest restent indisponibles ici.
+- Validation Windows encore nécessaire. L’archive source R84 a été reconstruite
+  et vérifiée depuis la copie candidate disponible ; celle-ci ne contient pas
+  l’arbre local `references/`.
+
+## v2.0 DEV_8_R83 — 2026-09-29 — previews de composants Archétype
+
+- Une fusion ou un masque inactif peut être ajouté ou réglé sans relancer la
+  preview générale. Les miniatures brutes sont calculées en premier ; la
+  preview complète n’est recalculée que si la composition active change.
+- La génération de miniatures à 128×128 a été mesurée pour les 16 fournisseurs
+  de bruit : 43 ms maximum par fournisseur, 35 ms pour six fournisseurs
+  distincts ; six masques prennent 6 ms dans l’environnement de test.
+- Le groupe des blocs natifs Legacy est replié par défaut. Les deux dernières
+  lignes sont retirées de l’interface, sans supprimer leurs valeurs de profil
+  ni leur prise en charge à l’exécution.
+- La taille sélectionnée au lancement est désormais 512. Aucun résultat de
+  génération ou moteur natif n’est modifié par cette candidate.
+- Validation utilisateur reçue ; R83 reste le point de départ de la candidate
+  R84.
+
+## v2.0 DEV_8_R82 — 2026-09-29 — recalibration des hauteurs Custom
+
+- Supprime l’intervalle vide 45–125 des ancres de « Legacy par blocs » :
+  leur tirage couvre désormais 0–45, 45–125 et 125–255 sans saut de valeur.
+- Réduit à 65 % les altitudes positives du seul champ Custom avant la
+  normalisation native. La terre et les lacs restent issus des mêmes seuils
+  d’eau ; les écarts de hauteur réellement consommés par les rivières baissent.
+- Recale les seuils Custom visibles montagne/neige à 98/125 quand cette source
+  est choisie avec les anciens seuils natifs inchangés. Les profils enregistrés
+  en schéma antérieur migrent une fois leurs seuils ; les valeurs explicitement
+  modifiées lors d’un changement de source restent respectées.
+- Aucun changement du moteur Legacy natif, des providers de noisemaps complets
+  ni du routage des rivières. Candidate locale à valider visuellement et en jeu.
+
+## v2.0 DEV_8_R81 — 2026-09-29 — contours et pentes Custom
+
+- Déforme doucement le champ Legacy par blocs avec un flot local sans direction
+  privilégiée, fondu aux bords natifs. Les ancres, le raffinement natif et le
+  placement spontané des lacs restent la base du relief.
+- Rabote seulement les sommets au-dessus du voisinage et ralentit la montée
+  des premières altitudes positives, avec une courbe continue. Le masque
+  eau/terre n’est pas recalibré par quotas ni par position de joueurs.
+- Le même traitement alimente les previews exactes et les moteurs Legacy et
+  Upgraded, pour la source Custom uniquement. Legacy natif, providers complets
+  et règles de rivières conservent leur code. Candidate locale à valider en jeu.
+
+## v2.0 DEV_8_R80 — 2026-09-29 — formes moins alignées sur la grille
+
+- Le centre de chaque carré du raffinement Custom combine désormais 25 % de
+  la diagonale native et 75 % de la moyenne des quatre coins. Cette correction vise les
+  traînées diagonales et les bassins rectangulaires observés en R79.
+- Les essais de déformation spatiale ont été écartés : ils allongeaient certains
+  lacs malgré des contours plus courbes. Aucun masque ni déplacement global du
+  champ n’est ajouté.
+- Seule la source `Legacy par blocs` change ; le Legacy natif et les autres
+  sources restent inchangés. Previews et moteurs Legacy/Upgraded partagent ce
+  relief. Candidate locale à valider visuellement sous Windows.
+
+## v2.0 DEV_8_R79 — 2026-09-28 — nouveau champ continental Custom
+
+- Repart de R76 et écarte les essais R77/R78 de transition en bandes et de
+  compression du contraste, rejetés après essai utilisateur.
+- Les ancres intérieures à pas fixe de 32 tirent toutes dans la même
+  distribution aléatoire asymétrique : quelques creux profonds et davantage
+  de relief moyen/élevé. Une seule couronne d’ancres plus basses relie ce
+  champ au bord marin natif. Le raffinement midpoint et les
+  seuils produisent côtes, montagnes et lacs ; aucune forme n’est estampée.
+- Conserve les réglages Custom, les noisemaps complètes et la règle de masse
+  terrestre unique. Le chemin Legacy natif et les règles des rivières ne
+  changent pas. Candidate locale en attente d’essai Windows.
+
+## v2.0 DEV_8_R76 — 2026-09-28 — cuvettes intérieures plus centrales
+
+- R76 conserve la grille aléatoire 32 et le raffinement natif de R75, mais
+  réduit la présence de basses ancres dans la bande proche des bords et élargit
+  légèrement leur plage basse dans le cœur de la carte. L’eau n’est jamais
+  placée directement : les cuvettes apparaissent par le raffinement.
+- La variation des détails fins (échelles 4/2/1) part à 75 % pour la source
+  Custom uniquement, ce qui réduit les petites poches d’eau sans lisser les
+  grandes formes. Le réglage existant multiplie cette base ; Legacy natif
+  conserve sa variation inchangée.
+- Sur les mêmes cinq seeds, les previews rapides montrent moins de composantes
+  lacustres que R75 et des lacs d’au moins 32 cases dans le carré central sur
+  les trois tailles. La couverture montagneuse reste proche de R75.
+- Les moteurs Legacy natif, Upgraded et leurs règles de rivières ne changent
+  pas ; les sources noise-map complètes restent disponibles.
+
+## v2.0 DEV_8_R75 — 2026-09-28 — relief Custom dérivé des ancres Legacy
+
+- Remplace les ancres et formes spécifiques de R74 par la grille native de 32
+  cases. Chaque ancre reprend les mêmes trois distributions d’altitude que le
+  Legacy, puis le même raffinement midpoint natif s’exécute à partir de 16.
+- Les montagnes, les cuvettes d’eau et la côte émergent du champ aléatoire ;
+  aucun masque de silhouette, chaîne de montagnes ou lac n’est dessiné.
+- Le chemin Custom ne conserve que la plus grande composante terrestre
+  hexagonale pour supprimer les îles détachées. Legacy natif et ses empreintes
+  restent inchangés ; les sources noise-map complètes restent disponibles.
+- Les previews et les deux moteurs utilisent le même relief Custom. La
+  correction des rivières reste reportée.
+
+## v2.0 DEV_8_R74 — 2026-09-28 — génération Legacy Custom par blocs
+
+- Remplace le prototype R73 de redistribution des hauteurs par `Legacy par blocs` : nouveau semis d’ancres, raffinement midpoint natif, puis blocs Custom de continent, chaînes montagneuses et bassins intérieurs avant sculpture/relaxation natives.
+- Le nouveau chemin produit une seule masse continentale sans mise à l’échelle spatiale. Les seuils eau/montagne/neige et les réglages natifs de variation, raffinement, sculpture et relaxation continuent d’agir ; l’échelle générique est désactivée pour cette source.
+- La preview exacte et la preview indicative utilisent le même champ que la génération. Les sources noisemaps complètes restent disponibles séparément. Le chemin Legacy natif et les règles de rivières ne changent pas.
+- Les profils sauvegardés avec le choix R73 `legacy_derived` sont migrés vers `Legacy par blocs`.
+
+## v2.0 DEV_8_R73 — 2026-09-27 — source de relief Legacy dérivée
+
+- Ajoute la source `Legacy dérivé` : elle combine à 55/45 les valeurs du champ natif courant et d’un second champ Legacy calculé à la même taille, puis réassigne les hauteurs d’origine sur les cellules terrestres selon le score obtenu.
+- Préserve exactement le masque eau/terre et l’histogramme du champ brut ; les reliefs sont déplacés sans scaling spatial. Les sources noise-map complètes restent disponibles séparément.
+- Fait apparaître cette source dans les miniatures et la preview noise ; les blocs natifs sont actifs pour Native/Legacy dérivé et désactivés pour les providers complets.
+- Vérification manuelle, seed `20260918` : champ brut modifié sur 49,0 % / 58,3 % / 69,6 % / 78,0 % des cellules à 256 / 384 / 512 / 768, masque et histogramme identiques. À 256, Legacy et Upgraded produisent le même relief dérivé ; le pipeline natif aval change 9 cellules du masque hauteur-eau après normalisation/relaxation.
+- La sortie Legacy native reste conforme aux références dorées 256/384/768 ; `compileall`, le smoke test, la qualification des 17 sources non natives à 384, l’empaquetage et le self-test GUI après extraction passent. La suite pytest est indisponible dans l’environnement (`pytest` non installé). Les empreintes des ressources protégées restent inchangées.
+
+## v2.0 DEV_8_R72 — 2026-09-27 — intensité de relaxation native
+
+- Ajoute l’intensité de correction des pentes (0–100 %) après relaxation native : 100 % conserve le résultat Legacy, 0 % garde les hauteurs avant relaxation.
+- Applique le réglage dans Legacy et Upgraded, dans les previews de hauteur/macro et dans la clé de cache ; les sources complètes noisemaps restent indépendantes.
+- Documente que le réglage R71 des tentatives de sculpture contrôle un budget d’échantillonnage aléatoire, à effet local et dépendant du seed.
+
+
+## v2.0 DEV_8_R71 — 2026-09-27 — sculpture native et tooltips au survol
+
+- Ajoute le réglage du nombre de tentatives de sculpture native (0–200 %, 100 % natif) dans « Blocs natifs Legacy », dans les moteurs Legacy et Upgraded.
+- Les contrôles propres aux blocs natifs restent sans effet sur une source complète noisemap ; previews et cache suivent les valeurs actives.
+- Corrige aussi le branchement des bandes de raffinement dans le moteur Upgraded.
+- Rétablit le visuel d’icône « au survol » pour les tooltips de tous les paramètres de l’éditeur d’archétype.
+
+
+## v2.0 DEV_8_R70 — 2026-09-27 — raffinement Legacy par bandes d’échelle
+
+- Sépare le réglage du raffinement midpoint en grandes échelles (32, 16, 8) et détails fins (4, 2, 1), en conservant le réglage général.
+- Les trois valeurs à 100 % reproduisent exactement le Legacy ; les nouveaux réglages s’affichent dans les previews et le cache.
+- Les deux moteurs Legacy/Upgraded exposent les mêmes contrôles ; les sources complètes noisemaps restent indépendantes.
+
+
+## v2.0 DEV_8_R69 — 2026-09-27 — paramètres des blocs natifs
+
+- Regroupe les paramètres des blocs Legacy dans une section dédiée « Blocs natifs Legacy ».
+- Ajoute la variation des points d’ancrage de la grille native de 64 cases, avant la subdivision.
+- À 100 %, les points d’ancrage, le raffinement, les terrains et les appels PRNG restent identiques au Legacy.
+- Les deux paramètres Legacy se reflètent dans les previews et leurs clés de cache.
+- Les sources complètes noisemaps restent indépendantes de ces paramètres.
+
+
+## v2.0 DEV_8_R68 — 2026-09-27 — preview du raffinement natif
+
+- La preview bruit/macro reçoit maintenant le paramètre de subdivision midpoint Legacy.
+- Ajoute ce paramètre à la clé de cache et évite le cache générique quand la variante native est active.
+- Actualise également l’aperçu indicatif et la miniature de source Legacy.
+- Vérifie le changement de preview entre 100 % et 50 %, puis la restauration exacte du résultat en cache à 100 %.
+
+
+## v2.0 DEV_8_R67 — 2026-09-27 — premier bloc Legacy éditable
+
+- Extrait la sculpture native et la relaxation en étapes dédiées sans changer l’ordre du PRNG.
+- Ajoute au profil Custom le réglage de variation du bloc de subdivision midpoint ; 100 % conserve la sortie Legacy, les valeurs différentes modifient ce bloc.
+- Rebase la marge calibrée : 0 % reprend l’enveloppe océanique effective testée à 1 % en R66.
+- Conserve les noisemaps comme sources complètes expérimentales indépendantes du chemin Legacy.
+- Ajoute des empreintes de référence Legacy aux tailles 256, 384 et 768.
+
+
+## v2.0 DEV_8_R66 — 2026-09-26 — marge et hydrologie Custom
+
+- Ajoute le preset Continental Custom R66 avec une marge de 1 % et un seuil d’eau inchangé.
+- Restreint les départs de rivières Custom aux zones côtières ; les départs en pleine mer sont exclus.
+- Supprime les composantes de rivières Custom qui ne touchent pas directement une case d’eau après transitions.
+- Étend le validateur Upgraded pour vérifier le contact direct à l’eau. Legacy natif reste inchangé.
+- Le balayage de fréquence et seuil confirme qu’une hausse de fréquence fragmente les petites masses terrestres et qu’un seuil d’eau de -1 supprime presque tous les lacs ; ces réglages sont donc conservés.
+
+
+## v2.0 DEV_8_R65 — 2026-09-26 — continuité du Continental Custom
+
+- R65 remplace la candidate R64, dont certaines seeds détachaient trop d’îles.
+- Reprend la composition bruit R53, marge 0 %, falloff 8 % ; ajuste le biais
+  principal à −40 et les seuils eau/montagne/neige à 0/130/180.
+- Sur trois seeds à 384 et 768, la plus grande masse de terre représente au
+  moins 99,6 % de la terre de chaque carte testée. Validation visuelle à faire.
+- Aucune modification de Legacy, Upgraded ou des rivières.
+
+
+## v2.0 DEV_8_R64 — 2026-09-26 — candidate Continental Custom à tester
+
+- Ajoute un second preset Continental Custom de test, fBm + warp additif léger
+  + couche ridged très légère ; R53 reste disponible pour comparaison.
+- Valeurs explicites dans l’onglet Archétype : marge 0 %, falloff 6 %, seuils
+  eau/montagne/neige 10/145/205. Legacy et ses moteurs ne changent pas.
+- Balayage exploratoire : 168 compositions, puis validation comparative sur
+  trois tailles et trois seeds. R64 approche les taux terre/relief du natif ;
+  la validation visuelle utilisateur reste nécessaire.
+- Aucune modification des rivières.
+
+
+## v2.0 DEV_8_R63 — 2026-09-25 — marge de domaine par défaut à zéro
+
+- Le défaut global de marge passe à 0 % pour que Legacy et Custom affichent le
+  même réglage initial. La source native Legacy n’utilise pas ce cadre ; sa
+  génération reste inchangée.
+- Le preset R53 hérite de 0 % et couvre maintenant tout le carré de carte. La
+  transition de bord demeure à 8 %. Le réglage explicite de 5 % conserve
+  l’ancien cadre de 18 cellules sur la référence native.
+- Le contrôle précise son unité et son aide distingue 0 % du réglage historique.
+- Mesure preview à 256² / seed `20260920` : 0 % rapproche le premier terrain
+  du bord (médiane 11 cases contre 30 à 5 %). L’eau passe de 45,6 % à 23,9 %.
+- Qualification Custom : départs 6/6, déterminisme PASS, macro 4/6 ; les deux
+  cas 768 dépassent la cible terre (86,2–86,8 %, limite 85 %). Recalibrer le
+  profil si nécessaire, en conservant la marge demandée à 0 %.
+- Les contrôles ciblés et `compileall` passent ; `pytest` est absent. Les
+  rivières ne sont pas modifiées.
+
+
+## v2.0 DEV_8_R62 — 2026-09-25 — correction du curseur natif des rivières
+
+- Relecture du désassemblage brut de l’EXE joint : l’index de départ est le
+  `0x600` laissé par la dernière passe de raffinement. Le scan avance de
+  `0x97`, reboucle sur la surface, et exécute `4 × surface` tentatives.
+- Le test de marge `<8` / `>taille−8` précède l’appel PRNG ; le seuil natif est
+  `0x07D0`. R62 restaure cette phase de parcours dans Legacy et Upgraded.
+- R61 employait `0xC000` à tort. Son test ciblé validait cette constante
+  interne, pas sa parité avec le binaire ; il est remplacé par une régression
+  qui attend le premier point valide `(92,8)` à 256².
+- Le taux Custom `0,4`, son nettoyage des composantes orphelines et les entrées
+  de relief personnalisées restent hors du contrat natif strict. La parité
+  visuelle en jeu reste à vérifier.
+- Les 16 fonctions ciblées, `compileall`, l’empaquetage et le self-test du ZIP
+  extrait (7 contrôles) passent. Le ZIP source contient 258 fichiers. La suite
+  complète n’a pas été lancée, car `pytest` est absent de l’interpréteur.
+
+## v2.0 DEV_8_R61 — 2026-09-24 — balayage natif des rivières
+
+- Candidate supersédée : son curseur `0xC000` ne correspond pas au `0x600` lu
+  dans la passe native. Le test R61 avait encodé la mauvaise valeur ; ses tests
+  verts ne démontraient pas la parité avec l’EXE. Le sélecteur de premier pas
+  partagé par les rivières bonus est conservé en R62.
+
+## v2.0 DEV_8_R60 — 2026-09-24 — rivières Custom dans les deux moteurs
+
+- Étend au moteur Legacy le recalage R59 des rivières pour tout profil
+  d’archétype qui utilise une source de relief non native ou une couche de
+  noise active. Le taux effectif est `0,4 × taux demandé` dans Legacy et
+  Upgraded ; le réglage affiché et sa valeur restent ceux choisis par
+  l’utilisateur.
+- Après les transitions et la copie miroir finale, les deux moteurs retirent
+  les composantes HEX6 de rivière qui n’ont aucun voisin Eau 0–7 ou Rive. Le
+  nettoyage est répété après la reprise des générations différées. Le gate dur
+  `CUSTOM_RIVER_WATER_CONNECTION` s’applique à ces profils dans les deux
+  pipelines.
+- Le profil Legacy natif garde son comportement : génération explicite avec
+  le profil continental natif bit à bit identique au chemin natif implicite
+  pour le relief, le terrain, les variantes et les marqueurs.
+- Sur R53 adaptatif, trois seeds par taille (256², 384², 512²), Legacy et
+  Upgraded donnent les mêmes nombres de cases rivière : médianes `918`,
+  `1325` et `2238`. Aucune sortie ne contient de composante orpheline. Une
+  copie miroir Legacy (seed `20260921`, mode 1) produisait encore un fragment
+  isolé de 15 cases ; le nettoyage final le retire en préservant la symétrie.
+- Les 24 combinaisons des deux moteurs, trois seeds et quatre modes miroir
+  passent les validations dures à 384² ; les deux chemins différés passent
+  également. Les neuf tests ciblés du fichier rivière passent par exécution directe,
+  `compileall` passe et le self-test de l’archive source extraite passe. La
+  suite pytest est indisponible (`pytest` absent). R60 reste une candidate
+  locale : test visuel Windows demandé, particulièrement sur les cartes 256².
+
+## v2.0 DEV_8_R59 — 2026-09-24 — densité et connexions des rivières Custom
+
+- Calibre à `0,4` le taux de base des rivières dans le chemin Upgraded utilisant
+  un relief de bruit. Le taux demandé reste celui du réglage utilisateur ; le
+  taux effectif est exposé séparément dans les métadonnées. Le chemin Legacy et
+  les profils natifs sans relief bruité gardent leur comportement.
+- Après les transitions de terrain, retire uniquement les composantes HEX6 de
+  rivière du Custom bruité qui ne touchent ni Eau 0–7 ni Rive. Une validation
+  stricte `CUSTOM_RIVER_WATER_CONNECTION` verrouille cette règle.
+- Diagnostic de la cause : le balayage de compatibilité en place pouvait
+  effacer un maillon aval après avoir déjà vérifié l’amont, laissant quelques
+  cases de rivière orphelines. À 384², seed `20260920`, il effaçait 38 cases
+  et laissait deux fragments de 1 et 3 cases.
+- Sur R53 adaptatif et trois seeds, médianes de cases de rivière Legacy →
+  Custom R59 : `737 → 918` à 256², `1461 → 1325` à 384² et `2201 → 2238` à
+  512². À 768², seed `20260920`, `4234 → 4251`. Les sorties mesurées n’ont
+  aucune composante orpheline ; la variabilité reste plus élevée à 256².
+- Les tests ciblés directs, le pipeline MapGenerator, le packaging source et
+  son auto-test GUI après extraction passent ; `compileall` passe. La suite
+  pytest n’a pas pu être lancée (`pytest` absent). Validation visuelle sous
+  Windows encore requise.
+
+## v2.0 DEV_8_R58 — 2026-09-23 — atténuation progressive des octaves fines
+
+- Complète l’option R57 d’adaptation à la taille réelle du domaine : les
+  octaves fines des sources, fusions, déformations `domain_warp` et masques de
+  bruit associés perdent progressivement leur contraste quand la carte est
+  plus petite que 768 cellules. La transition entre une et deux fois la
+  période minimale utilise un smoothstep ; l’amplitude totale n’est pas
+  renormalisée.
+- La résolution des previews n’influence pas le domaine cible. Option
+  désactivée, les calculs R57 ne changent pas ; à 768, la génération est
+  bit-à-bit identique.
+- Mesures HEX6 sur 3 seeds : à 256, les petites composantes d’eau et de
+  montagne baissent nettement, avec une hausse de montagne médiane de 1,18 % à
+  3,98 %. À 384, l’effet est modéré (22→10 composantes d’eau, 18→15
+  montagneuses ; couverture de montagne 6,79 %→8,39 %). L’équilibre visuel
+  reste à valider sous Windows.
+- Compilation, contrôles directs déterminisme/référence 768, self-test de
+  l’archive source et hashes protégés vérifiés. La suite `pytest` n’a pas pu
+  être lancée, car `pytest` n’est pas installé dans l’interpréteur disponible.
+
+## v2.0 DEV_8_R57 — 2026-09-23 — fréquences adaptatives par taille de carte
+
+- Ajoute dans l’onglet Archétype une option désactivée par défaut qui adapte
+  progressivement les fréquences de bruit au domaine réel de la carte. Les
+  réglages du profil restent la référence à 768 cases ; sur un petit domaine,
+  les fréquences baissent de façon modérée et les octaves trop fines sont
+  retirées pour éviter le repliement du signal.
+- L’option s’applique aux providers utilisés comme source principale et aux
+  sources de fusion. Elle est enregistrée avec le profil ; les anciens profils
+  migrent avec l’option désactivée. Les aperçus de composants emploient la
+  taille effective de la carte, pas leur taille réduite d’affichage.
+- Mesures exploratoires : deux workers accélèrent certains empilements de six
+  sources, mais le preset R53 à trois sources ne gagne pas régulièrement ; la
+  parallélisation globale n’est donc pas ajoutée.
+- Les moteurs natifs Legacy/Upgraded restent inchangés lorsque l’option est
+  désactivée. La validation visuelle Windows des petites et grandes cartes
+  reste à faire.
+
+## v2.0 DEV_8_R56 — 2026-09-23 — mini-previews mises en cache
+
+- Réduit les calculs redondants des miniatures de fusion et de masque : un
+  profil est normalisé une fois par pile, l’enveloppe est résolue une fois, et
+  chaque miniature inchangée est réutilisée entre deux demandes de preview.
+- Le cache est limité à 48 miniatures et indexé par seed, source, paramètres,
+  domaine effectif et signal de masque. Une modification de force/opération
+  seule conserve la miniature brute, une modification de source/paramètres/
+  taille l’invalide. Les tableaux retournés sont des copies indépendantes.
+- Aucun changement aux algorithmes des providers, à la source R53, aux cartes
+  générées ni aux moteurs Legacy et Upgraded.
+
+## v2.0 DEV_8_R55 — 2026-09-22 — cadrage des previews et providers multifractals
+
+- Corrige le cadrage des miniatures de fusion : les marges absolues du profil
+  Continental natif-calibré sont maintenant résolues par rapport au côté réel
+  de la carte, puis réduites avec la miniature 128². Les fusions ne paraissent
+  plus dézoomées par rapport à la source principale.
+- Applique la même enveloppe extérieure aux previews et à l’application des
+  masques en mode `native_calibrated`, sans changer le comportement des profils
+  historiques en mode pourcentage.
+- Ajoute `heterogeneous_fbm`, qui module le détail par le relief large, et
+  `ridged_multifractal`, qui pondère les crêtes octave par octave. Ils sont
+  disponibles comme source, fusion ou source de masque avec labels et réglages
+  applicables cohérents.
+- Conserve exactement la composition et les valeurs du preset Continental
+  Custom R53 ; R55 ne retient aucun nouveau réglage de fusion.
+
+## v2.0 DEV_8_R54 — 2026-09-22 — première tranche de providers supplémentaires
+
+- Ajoute les providers génériques `hybrid_fbm` et `turbulence` pour explorer
+  respectivement un relief multifractal dépendant de la structure large et un
+  détail multi-échelle plus irrégulier.
+- Décompose le provider cellulaire en métriques autonomes `worley_f1`,
+  `worley_f2` et `worley_f2_minus_f1`, sans modifier la sortie historique de
+  `worley`.
+- Rend ces providers disponibles dans la source principale, les fusions et les
+  masques de l’onglet Archétype, avec labels FR/EN/DE/ES et applicabilité des
+  réglages cohérente.
+- Conserve exactement le preset nommé Continental Custom R53 : R54 ajoute des
+  briques d’exploration, mais ne choisit aucune nouvelle composition à sa place.
+
+## v2.0 DEV_8_R53 — 2026-09-22 — enveloppe océanique Continental native
+
+- Conserve la composition R52 (`fbm`, `domain_warp blend 15 %`, `ridged add
+  12 %`) et corrige uniquement son domaine extérieur.
+- Calibre le cadre et la transition sur la bibliothèque native 768 : environ
+  18 cellules de cadre et 31 cellules de transition, en valeurs absolues.
+- La marge océanique du Custom ne croît donc plus avec le côté de la carte ;
+  les moteurs Legacy/Upgraded et le Continental natif restent inchangés.
+- Ajoute les assertions de profil et de résolution de domaine à la
+  qualification R53.
+
+## v2.0 DEV_8_R52 — 2026-09-22 — preset Continental par composition de noises
+
+- Ajoute le preset nommé `Continental Custom R52 — fBm + domain warp + crêtes`.
+  Il compose une source fBm autonome avec une fusion `domain_warp` en
+  `blend 15 %`, puis une fusion `ridged` en `add 12 %`.
+- Ajoute un sélecteur de profil dans l’onglet Archétype : la composition
+  remplit les mêmes champs inspectables et éditables que l’utilisation
+  manuelle de l’onglet ; aucun dessin ou gabarit de forme n’est injecté.
+- Ajoute `tools/qualify_continental_custom.py`, qui rejoue la matrice macro et
+  le gate dur des départs sur le chemin Custom basé sur Legacy.
+- Conserve le Continental natif comme référence et laisse le diagnostic R51
+  disponible sans l’installer comme preset actif.
+
+## v2.0 DEV_8_R51 — 2026-09-22 — calibration Continental provisoire
+
+- Ajoute le profil dérivé Continental Custom R51 — relief compact, sans
+  remplacer le Continental natif ni modifier le chemin Legacy. La calibration
+  agit seulement sur l’échelle de forme (96 %) et le contraste du relief
+  (105 %) réellement consommés par la source native.
+- Ajoute tools/qualify_continental.py, qui compare macro-forme et baseline
+  native puis exécute un gate de départs sur le chemin Custom basé sur Legacy :
+  validations dures, nombre exact, unicité et bornes des départs.
+- Conserve startable_mass comme diagnostic souple et garde le mode Upgraded
+  comme comparaison optionnelle ; aucun nouveau preset actif n’est installé.
+
+## v2.0 DEV_8_R50 — 2026-09-22 — qualification des masques manuels
+
+- Ajoute une qualification déterministe des masques dessinables/importés sur
+  plusieurs tailles, seeds et miroirs (`tools/qualify_manual_masks.py`).
+- Le rapport mesure le signal importé, l’effet sur la preview complète, la
+  variation conservée hors masque, la stabilité de couverture et la bordure
+  d’eau native, avec un fixture asymétrique reproductible et un chargement
+  d’image grayscale identique à l’éditeur.
+- Aucun changement de génération, de format, de Legacy, d’Upgraded ou de
+  comportement des rivières.
+
+## v2.0 DEV_8_R49 — 2026-09-22 — thème sombre de l’éditeur de masques
+
+- Corrige le fond de la nouvelle fenêtre d’édition des masques afin qu’il
+  reprenne réellement la palette active, notamment le thème sombre.
+- Aligne aussi le fond et la bordure du canevas sur les couleurs sémantiques
+  du thème, sans modifier le dessin, le stockage ou l’application du masque.
+- Documente le comportement des rivières hors Legacy comme chantier séparé,
+  explicitement reporté après DEV8.
+
+## v2.0 DEV_8_R48 — 2026-09-22 — masques dessinables et importables
+
+- Ajoute le provider générique « Dessin libre » dans la pile indépendante des
+  masques. Chaque slot peut maintenant ouvrir un éditeur 64×64, peindre en
+  niveaux de gris, effacer, importer une image et exporter la grille courante.
+- La grille manuelle est resamplée dans le même cadre spatial que les autres
+  masques ; taille, position, rotation et douceur restent les seuls paramètres
+  communs visibles. L’opération conserve la variation hors masque au lieu de
+  transformer l’extérieur en zone plate.
+- Les previews de slot utilisent le signal réellement appliqué par le pipeline.
+  Les profils paramétriques précédents restent compatibles et le schéma passe
+  à la version 16.
+
+## v2.0 DEV_8_R47 — 2026-09-22 — contrat de masques générique
+
+- Retire des cartes de masque les réglages propres à une forme. Chaque masque
+  expose désormais seulement la géométrie spatiale commune ; les paramètres
+  internes d’un provider restent conservés séparément pour ne pas dégrader les
+  profils R46 et préparer les providers dessinés ou importés.
+- Passe le nombre de fusions du profil neuf à `0`. Les profils qui enregistrent
+  explicitement un nombre de fusions conservent ce nombre ; aucune fusion ne
+  participe donc par défaut à un nouvel archétype.
+- Le schéma d’archétype passe à la version 15 et normalise les anciennes
+  données de masque vers ce contrat sans modifier les formes paramétriques
+  déjà enregistrées.
+
+## v2.0 DEV_8_R46 — 2026-09-22 — pile de masques autonome
+
+- Remplace le gabarit global R44 par une section indépendante de masques,
+  séparée des lignes de fusion et manipulable comme une pile : nombre,
+  activation, ordre, duplication, suppression, type, opération et influence.
+- Les formes étoile, cœur, serpent et volcan modulent le champ complet après
+  la source principale et les fusions. Leur bord est progressif et l’extérieur
+  conserve la variation du bruit ; aucune découpe dure ni génération imbriquée
+  dans une fusion n’est introduite.
+- Les profils R44 migrent vers un premier masque doux ; les anciennes données de
+  gabarit restent compatibles à la lecture mais ne sont plus un second étage
+  caché. Le dessin manuel et l’import de masques restent la prochaine tranche.
+
+## v2.0 DEV_8_R45 — 2026-09-22 — correctif de démarrage
+
+- Corrige le crash de démarrage de R44 : le formateur local des valeurs était
+  appelé par les contrôles de gabarit avant sa définition dans le rendu de
+  l’onglet Archétype.
+- Ajoute une régression ciblée sur l’ordre définition/utilisation ; aucun
+  comportement de génération ni aucun paramètre de R44 ne change.
+
+## v2.0 DEV_8_R44 — 2026-09-22 — première tranche des gabarits de formes
+
+- Remplace l’expérience R43 de masques attachés aux sources par un gabarit
+  spatial attaché à l’archétype.
+- Ajoute les formes paramétriques étoile, cœur, serpent et volcan, avec taille,
+  déplacement, rotation, douceur des bords et réglages propres à chaque forme.
+- Ajoute un aperçu dédié du gabarit ; les sources de bruit restent autonomes et
+  les fusions sont contraintes par la silhouette avant la normalisation native.
+- Les profils R43 et antérieurs migrent avec un gabarit `none` et leurs anciens
+  masques sont neutralisés à la frontière de schéma ; Legacy/Upgraded restent
+  inchangés lorsque le gabarit est neutre.
+
+## v2.0 DEV_8_R43 — 2026-09-21 — masques de sources autonomes
+
+- Ajoute à la source principale et à chaque fusion un groupe « Masque /
+  modulation », repliable et neutre par défaut.
+- Les masques disponibles sont hauteur, bordure rectangulaire, bande X, bande
+  Y, direction, pente, courbure et noise secondaire ; leur influence et leur
+  inversion sont réglables.
+- Les masques sont appliqués à l’intérieur du cadre fini déjà utilisé par la
+  source. Ils ne créent ni génération infinie ni masque radial implicite, et
+  les profils antérieurs migrent avec le type `none` identitaire.
+- Le schéma d’archétype passe à la version 12 ; Legacy/Upgraded restent
+  inchangés lorsque les masques sont neutres.
+
+## v2.0 DEV_8_R42 — 2026-09-21 — correction de l’espace de travail
+
+- Ancre réellement les contrôles de l’en-tête en haut de leur zone lorsque le
+  séparateur horizontal est déplacé ; agrandir l’espace au-dessus des previews
+  ne crée donc plus de vide entre le bord supérieur et les contrôles.
+- Conserve le reflow historique de « Session / Comparaison » : bloc central en
+  largeur confortable, puis bloc complet sous les contrôles lorsque la largeur
+  disponible devient compacte.
+- Réduit l’espace visuel entre le titre d’un groupe de réglages repliable et
+  son contenu.
+- Retire le redimensionnement adaptatif introduit par R41 pour les mini-previews
+  de sources et de fusions ; elles reviennent à leur surface fixe de 128²,
+  jusqu’à une future tranche dédiée.
+
+## v2.0 DEV_8_R41 — 2026-09-21 — espace de travail redimensionnable
+
+- Rend le groupe « Fondamentaux » repliable comme les trois groupes avancés,
+  tout en le laissant ouvert par défaut pour conserver un point d’entrée
+  immédiat sur chaque source.
+- Les mini-previews source et fusion calculent toujours leurs tableaux en basse
+  résolution, mais leur surface d’affichage suit la taille de la carte et se
+  repeint depuis le dernier résultat validé ; redimensionner l’interface ne
+  relance donc pas la génération du bruit.
+- Ajoute un second séparateur vertical entre l’en-tête et la zone carte/onglets.
+  Le séparateur horizontal carte/onglets reste indépendant, les deux hauteurs
+  ont des limites adaptées aux petites fenêtres et la position verticale est
+  mémorisée dans les préférences.
+
+## v2.0 DEV_8_R40 — 2026-09-21 — groupes de réglages repliables
+
+- Regroupe les réglages de chaque source de l’éditeur de noisemaps en quatre
+  familles : fondamentaux, transformations de sortie, remappage et
+  coordonnées.
+- Les fondamentaux restent visibles ; les trois familles avancées sont
+  repliables séparément pour chaque source. Aucun paramètre n’est supprimé,
+  désactivé par ce regroupement ou déplacé vers un autre profil.
+- Le compactage est purement ergonomique : les valeurs, les callbacks, les
+  miniatures, les previews et la génération Legacy/Upgraded restent inchangés.
+- Corrige la visibilité des groupes repliés : leur en-tête reste maintenant
+  présent quand le contenu est masqué, afin que sortie, remappage et
+  coordonnées puissent réellement être ouverts.
+
+## v2.0 DEV_8_R39 — 2026-09-21 — resets locaux et grilles de fusions
+
+- Ajoute deux resets locaux ciblés dans l’onglet Archétype : un pour le bloc
+  morphologie + source du relief + seuils, et un pour l’éditeur de fusions.
+  Ils restent désactivés lorsque leur bloc n’est pas modifié ; aucun bouton
+  n’est ajouté à chaque fusion et le reset global est conservé.
+- Ces resets synchronisent les contrôles et la pile existants en place, sans
+  reconstruire l’onglet ni effacer les previews visibles.
+- Sépare les grilles internes de chaque fusion : l’en-tête, les paramètres de
+  bruit et les actions disposent désormais de leurs propres colonnes. Les
+  champs longs ne décalent plus les réglages des lignes suivantes, sans retirer
+  de paramètre ni modifier le pipeline de génération.
+
+## v2.0 DEV_8_R38 — 2026-09-21 — remappage avancé des noises
+
+- Ajoute à chaque source autonome des points noir/blanc, des seuils bas/haut
+  durs ou adoucis, un plancher/plafond de sortie et une courbe asymétrique.
+- Les réglages sont indépendants pour la source principale et chaque fusion,
+  appliqués avant le cadre rectangulaire fini et neutres par défaut.
+- Le schéma d’archétype passe en version 11 ; les profils R37 et antérieurs
+  migrent avec des valeurs identitaires.
+
+## v2.0 DEV_8_R37 — 2026-09-21 — transformations de coordonnées
+
+- Ajoute à chaque source autonome un décalage X/Y, une échelle X/Y
+  indépendante, une répétition X/Y et une symétrie X/Y réglables.
+- Ces transformations sont appliquées avant les remappages de sortie et
+  restent bornées par le domaine rectangulaire fini des sources.
+- Le schéma d’archétype passe en version 10 ; les valeurs identitaires
+  préservent les profils R36 et antérieurs.
+
+## v2.0 DEV_8_R36 — 2026-09-21 — transformations communes des noises
+
+- Ajoute à chaque source de bruit autonome des remappages indépendants du
+  provider : inversion, valeur absolue, gamma et terrasses avec mélange
+  réglable. Les transformations sont appliquées avant le cadre fini et avant
+  le pipeline macro natif.
+- Les valeurs identitaires sont ajoutées à la migration du schéma 9 ; les
+  profils existants conservent donc exactement leur comportement par défaut.
+- Déplace l’aide de l’éditeur de noisemaps dans le titre de sa section, au
+  lieu de laisser le texte explicatif isolé sous les fusions.
+
+## v2.0 DEV_8_R35 — 2026-09-21 — preview fidèle et agencement corrigé
+
+- Supprime l’affichage de la passe indicative avant le résultat exact. La
+  dernière preview valide reste visible pendant le calcul ; lors de la
+  première génération ou après un reset, aucune carte intermédiaire étrangère
+  au rendu Legacy n’est peinte.
+- Rend la miniature « Source principale » à partir du même raster signé et des
+  mêmes transformations que « Bruit / hauteur », avec la même projection. Elle
+  ne peut donc plus montrer une géographie différente.
+- Corrige le double positionnement de la section « Seuils du relief » et la
+  place réellement en colonne 2, en haut du bloc « Morphologie du relief ».
+
+## v2.0 DEV_8_R34 — 2026-09-20 — previews sans détour et fusion Solo cadrée
+
+- Le mode « Solo » conserve désormais l’état « Activer » de la fusion
+  sélectionnée : une fusion désactivée ou à force nulle ne peut plus être
+  réactivée implicitement. Le bouton est grisé dans ce cas et son tooltip
+  rappelle qu’il s’agit d’une isolation de preview, source principale incluse.
+- Quand le lissage macro est désactivé, le worker ne lance plus la passe
+  indicative 192² avant la preview exacte. Une seule génération autoritative
+  est commitée, ce qui supprime l’étape visuelle et le coût redondant ; le
+  raffinement natif reste bien distinct de `_relax_relief`.
+- Corrige la miniature de la source principale Legacy : elle reconstruit le
+  champ natif brut pré-sculpture au lieu de réutiliser une hauteur transformée
+  par la morphologie ou une fusion. Les rapports exacts des sources actives
+  remplacent aussi les miniatures rapides à la fin du calcul.
+- Resserre visuellement « Seuils du relief » dans le bloc de morphologie sans
+  confondre son rôle sémantique, et déplace les explications longues vers des
+  tooltips compacts.
+
+## v2.0 DEV_8_R33 — 2026-09-20 — pile de fusions manipulable
+
+- Ajoute à chaque carte de fusion des actions de déplacement haut/bas,
+  duplication et suppression ; l’ordre visible devient l’ordre d’exécution
+  persistant des slots.
+- Ajoute un mode « Solo » limité à l’aperçu : une seule fusion est activée
+  dans la copie de preview, sans désactiver ni modifier les autres fusions du
+  profil réellement utilisé par le générateur.
+- Conserve les slots cachés, les miniatures brutes 96² et les previews en
+  place pendant ces opérations ; le plafond reste fixé à six fusions.
+
+## v2.0 DEV_8_R32 — 2026-09-20 — fusions dynamiques et previews accessibles
+
+- Rend le nombre de fusions configurable de `0` à `6`. Les slots masqués
+  conservent leurs réglages et ne participent pas à la composition tant qu’ils
+  ne sont pas inclus dans le nombre demandé.
+- Ajoute à droite de la source principale et de chaque fusion une miniature
+  brute 96² calculée directement depuis le provider, y compris avant
+  activation d’une fusion, sans lancer le pipeline macro natif.
+- Remonte le triptyque bruit/macro/contribution en tête de l’onglet Archétype
+  et l’affiche sur trois colonnes compactes afin qu’il reste visible en 1080p.
+- Précise que l’interrupteur de lissage retire uniquement `_relax_relief` : le
+  raffinement natif, la sculpture éventuelle et les interpolations propres aux
+  providers restent distincts et actifs.
+- Fait évoluer le schéma d’archétype en version 8 tout en migrant les profils
+  R31 et en préservant les deux fusions par défaut.
+- Place la section « Seuils du relief » en seconde colonne, à côté de la source
+  du relief, pour réduire la hauteur de l’éditeur sans toucher au pipeline.
+
+## v2.0 DEV_8_R31 — 2026-09-20 — preview exacte et applicabilité des réglages
+
+- Remplace, à la fin du calcul exact, la noise map rapide plafonnée à 192² par
+  le champ exact demandé ; les tailles 256² et supérieures ne réutilisent donc
+  plus une carte d’une autre résolution.
+- Commit également la contribution exacte du laboratoire quand une source ou
+  une fusion est active, sans effacer l’ancienne image pendant le calcul.
+- Désactive les contrôles non consommés par la famille sélectionnée et les
+  réglages de cadre quand la source est Legacy native ; la fréquence du bruit
+  blanc, les octaves de Perlin et les réglages de warp hors Domain Warp ne sont
+  plus présentés comme s’ils avaient un effet.
+- Renforce les tests du chemin de relaxation macro et du remplacement de la
+  preview indicative par la preview exacte.
+
+## v2.0 DEV_8_R30 — 2026-09-20 — lissage macro optionnel et ergonomie de source
+
+- Ajoute à l’onglet Archétype un interrupteur de lissage de la carte macro.
+  Désactivé, l’aperçu exact s’arrête après la sculpture native et avant
+  `_relax_relief`, ce qui accélère la recherche de paramètres de bruit.
+- Conserve la relaxation dans les générations Legacy/Upgraded réelles et garde
+  le comportement lissé par défaut dans l’aperçu.
+- Isole la première sélection de source du relief dans une ligne dédiée afin
+  que son champ reste visuellement adjacent à son label.
+- Ajoute au TODO la future remise à l’échelle des terrains et objets non liés à
+  la macro-forme selon le terrain réellement disponible, au plus tard en v2.1.
+
+## v2.0 DEV_8_R29 — 2026-09-20 — éditeur de noisemaps autonome
+
+- Remplace les trois providers faiblement réglables par neuf familles de bruit
+  autonomes : White, Value, Perlin, Simplex, fBm, Billow, Ridged, Worley et
+  Domain Warp, en plus de la référence Legacy native.
+- Expose par source fréquence, octaves, lacunarité, gain, rotation, étirement,
+  bias, contraste, warp, fréquence du warp et décalage de seed.
+- Transforme les deux anciennes couches terrestres en sources de fusion sur le
+  champ complet avec `replace`, `blend`, `add`, `subtract`, `multiply`, `min`
+  et `max` ; la soustraction peut désormais creuser de l’eau.
+- Intègre une limite rectangulaire au domaine de chaque source, avec marge et
+  transition vers l’eau réglables, sans masque radial imposant des îles rondes.
+- Sépare l’état personnalisé de l’Archétype du mode Générateur : modifier une
+  noisemap ne sélectionne plus le mode Générateur `Custom`.
+- Rétablit des previews indépendantes sans flash : noisemap et contribution
+  directes en 192², macro indicative immédiate, puis macro native exacte en
+  arrière-plan. L’ancienne image reste visible jusqu’à son remplacement.
+- Réduit l’affichage statistique de l’onglet à la répartition macro compacte et
+  donne la priorité aux contrôles de création/fusion.
+
+## v2.0 DEV_8_R27 — 2026-09-20 — matrice de cibles et qualification des providers
+
+- Ajoute une matrice versionnée pour Continental, Grandes îles et Petites îles,
+  couvrant les tailles natives `384–768`, les cas de joueurs représentatifs et
+  les miroirs utilisés par la première qualification.
+- Ajoute un rapport déterministe des providers de relief existants sur la
+  macro-preview : part terre/eau, bordure d’eau, masse dominante, contact de
+  côte et part montagne/neige, avec des gates explicites et lisibles.
+- Ajoute `tools/qualify_archetypes.py` pour reproduire la comparaison avec une
+  seed, une taille, un miroir ou un sous-ensemble de providers donné.
+- La qualification actuelle est volontairement limitée à la macro-preview :
+  starts, constructibilité, ressources, hydrologie détaillée et validation
+  éditeur/jeu restent des gates ultérieurs. Aucun provider, profil cible non
+  implémenté ou réglage de noise n’est ajouté dans R27.
+- Le run par défaut (`miroir 0`) passe `12/12`. En `miroir 3`, un cas natif
+  existant (`native_legacy`, `384²`, seed `20260920`) tombe à `0,23 %` de
+  montagne/neige et donne `11/12` ; les providers indépendants passent `9/9`.
+  R27 conserve ce diagnostic au lieu de modifier le moteur natif ou d’assouplir
+  le gate sans qualification supplémentaire.
+
+## v2.0 DEV_8_R26 — 2026-09-20 — cycle de preview atomique
+
+- Conserve le dernier triptyque complet (bruit/hauteur, macro et contribution
+  brute) visible pendant tout le recalcul d’une nouvelle preview.
+- La phase indicative n’est plus peinte : elle ne peut plus remplacer la
+  contribution précédente par une image neutre ni mélanger deux demandes.
+- Prépare les trois nouvelles images avant de modifier les objets `Canvas`,
+  puis mémorise le résultat seulement après leur commit complet ; une erreur
+  ou une valeur invalide conserve donc l’ancienne vue intacte.
+- Ne modifie ni les providers de bruit, ni les options d’archétype, ni la
+  génération Legacy/Upgraded. Cette révision ferme d’abord le cycle de rendu
+  avant la qualification comparative des providers prévue par la roadmap.
+
+## v2.0 DEV_8_R25 — 2026-09-20 — previews stables et comparaison des providers
+
+- Supprime le flash des previews d’archétype lors d’un re-preview : les images
+  sont remplacées dans leurs objets `Canvas` existants au lieu d’effacer les
+  panneaux avant chaque rendu.
+- Affiche une contribution neutre pendant le calcul exact, sans laisser une
+  ancienne contribution ou un panneau vide visibles.
+- Ajoute au rapport du laboratoire la part de terre brute et les quantiles
+  P10/P50/P90 de la source sélectionnée pour faciliter la comparaison des
+  providers indépendants.
+
+## v2.0 DEV_8_R24 — 2026-09-19 — contribution des couches isolée
+
+- Corrige la régression de R23 : le troisième aperçu ne rend plus une copie du
+  champ source lorsque seules les sources de relief sont modifiées.
+- Sépare dans le laboratoire le delta de la source (`source_delta`) et celui
+  des couches (`layer_delta`). L’image 3 reprend uniquement la contribution
+  brute des couches, en rouge/bleu ; le champ composé reste réservé au rapport
+  et au pipeline de génération.
+
+## v2.0 DEV_8_R23 — 2026-09-19 — correction de la composition brute
+
+- Corrige le troisième aperçu du laboratoire : il rend maintenant la
+  composition brute réelle (`source_height` + couches), au lieu de visualiser
+  le delta entre la source indépendante et le champ Legacy de référence.
+- Conserve ce delta dans le rapport du laboratoire pour les diagnostics, sans
+  le confondre avec la forme de la source active.
+
+## v2.0 DEV_8_R22 — 2026-09-19 — domaine fini des providers de relief
+
+- Rejette l’essai R21 d’enveloppe appliquée après la génération ; R22 repart
+  de R20 sans empiler une correction sur le champ obtenu.
+- Génère chaque provider indépendant dans un rectangle intérieur fini avec des
+  conditions de bord faibles intégrées au bruit ; l’extérieur est directement
+  de l’eau et les formes restent éloignées du cadre.
+- Réduit le nombre de cellules calculées pour les previews dynamiques, tout en
+  conservant l’indépendance du champ central et la parité native par défaut.
+
+## v2.0 DEV_8_R20 — 2026-09-19 — providers de bruit indépendants
+
+- Corrige le recadrage de R19 : un remplacement de bruit ne doit pas
+  conserver la côte ou le masque terrestre Legacy.
+- Ajoute trois sources complètes de relief (`fractal_fbm`, `warped_fbm`,
+  `ridged_fbm`) qui génèrent une matrice brute entière, eau comprise, avant
+  le pipeline natif de normalisation, sculpture, relaxation et classification.
+- Garde `native_legacy` comme source par défaut avec parité binaire ; les
+  couches optionnelles ciblent désormais `source_land`, c’est-à-dire le
+  domaine de la source réellement sélectionnée.
+- Étend le laboratoire et l’interface pour distinguer source de référence,
+  source active, champ composé et contributions de couches.
+- R20 ne crée pas encore de rôle lac/eau spécialisé : il valide d’abord la
+  qualité et l’indépendance des providers de relief.
+
+## v2.0 DEV_8_R18 — 2026-09-19 — laboratoire et contrat explicite des couches
+
+- Fait passer le schéma des profils à la version 5 et migre les profils R17
+  vers un contrat explicite par couche : `source`, `role`, `mask`, `operation`,
+  `stage` et `order`. L’ancienne clé `family` reste acceptée comme alias.
+- Ajoute un laboratoire déterministe du champ pré-normalisation : champ natif,
+  champ composé, domaine terrestre, contribution de chaque couche, cellules
+  touchées, bornes et moyenne du delta.
+- Relie ce rapport à la preview complète et affiche une carte des contributions
+  (rouge = rehausse, bleu = abaissement) ainsi que le détail sémantique de
+  chaque couche dans les diagnostics.
+- R18 ne remplace toujours pas le bruit Legacy, n’ajoute pas encore de rôle
+  eau/lac et ne modifie pas la sortie native par défaut.
+- Vérifications R18 : `499 passed`, compilation, self-test source, smoke-test
+  (`34` validations Upgraded + `18` Legacy) et empreintes natives protégées —
+  PASS ; la validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R17 — 2026-09-19 — couches de relief sémantiques et protégées
+
+- Repositionne les couches de bruit optionnelles avant la normalisation, la
+  sculpture et la relaxation natives. Elles modifient le relief terrestre
+  existant au lieu d’ajouter un champ global après le relief final.
+- Introduit le rôle `land_relief` et la fusion explicite `add`/`subtract`.
+  Les cellules natives d’eau sont conservées, y compris sur la couronne
+  extérieure ; R17 ne tente pas encore de créer des lacs ou des masques d’eau.
+- Remplace le champ unique par un bruit déterministe multi-échelles, partagé
+  par les previews, Legacy et Upgraded. Les couches actives ne réutilisent pas
+  le cache du champ natif non modifié, afin d’éviter une preview incohérente.
+- Rend la section UI lisible comme des composants de relief et refuse les rôles
+  ou opérations non implémentés dans le profil normalisé.
+- Vérifications R17 : `493 passed`, compilation, self-test source, smoke-test
+  (`34` validations Upgraded + `18` Legacy), tests de packaging et empreintes
+  natives protégées — PASS ; la validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R16 — 2026-09-19 — premières couches de bruit combinables
+
+- Ajoute au profil Continental deux couches de bruit procédurales optionnelles,
+  empilables et déterministes : une famille douce et une famille en crêtes,
+  chacune avec son échelle (`25–200 %`) et son intensité (`0–100 %`).
+- Les couches sont désactivées par défaut ; `100 % / 100 %` et le profil natif
+  inchangé conservent donc exactement la sortie existante.
+- Le même transformateur est consommé par la noise map, la carte macro et les
+  générateurs Legacy/Upgraded, avec une bordure d’eau réappliquée après la
+  morphologie. Le seed rend chaque couche reproductible.
+- Vérifications R16 : `490 passed`, compilation, self-test source, smoke-test
+  (`34` validations Upgraded + `18` Legacy) et mesure de preview à
+  `704²/768²` — la validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R15 — 2026-09-19 — progression de preview stabilisée
+
+- La barre de progression de l’onglet Archétype suit maintenant une seule
+  échelle : aperçu indicatif à `15 %`, calcul exact de `15 %` à `95 %`, puis
+  `100 %` uniquement lorsque le résultat final est peint.
+- Les rendus de snapshots lors d’un redimensionnement ne peuvent plus
+  annoncer à tort `100 %` pendant qu’une nouvelle demande calcule encore.
+- Une valeur ne peut plus reculer pendant une même demande ; elle ne revient à
+  zéro qu’au lancement d’une nouvelle preview, à la pause ou en cas d’erreur.
+- Vérifications R15 : `486 passed`, compilation, self-test et smoke-test — la
+  validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R14 — 2026-09-19 — relaxation exacte accélérée
+
+- Accélère la passe exacte `_relax_relief` utilisée par la preview macro et les
+  générations Legacy/Upgraded : l’ordre des corrections, les écritures `uint8`
+  et le nombre de passes restent identiques ; seul le support interne de la
+  boucle est optimisé pour éviter les accès NumPy cellule par cellule.
+- La preview conserve donc la macro exacte native, après l’étape indicative de
+  R13, sans réduction de résolution ni approximation supplémentaire.
+- Vérifications R14 : `485 passed`, 16 états natifs comparés à l’ancienne boucle,
+  compilation et smoke-test — la validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R13 — 2026-09-19 — macro indicative instantanée
+
+- La preview rapide affiche désormais la noise map et une macro provisoire à
+  cinq couleurs dès que le champ pré-relaxation est disponible.
+- Cette macro est explicitement indicative : elle est calculée depuis le
+  bruit rapide, sans sculpture ni `_relax_relief`, puis remplacée atomiquement
+  par la macro exacte issue de la heightmap native finale.
+- Le statut de l’onglet distingue clairement la macro indicative de la carte
+  exacte encore en cours ; les anciennes statistiques exactes sont masquées
+  pendant cette phase pour éviter toute confusion.
+- Aucun changement n’est apporté à la génération réelle, à la macro finale ou
+  au chemin natif Legacy/Upgraded.
+- Vérifications R13 : `485 passed`, compilation et smoke-test — la
+  validation visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R12 — 2026-09-19 — chemin rapide de la noise map
+
+- La noise map de l’onglet Archétype est maintenant produite par un chemin
+  preview dédié qui s’arrête après le champ natif signé, avant la sculpture et
+  la relaxation finale ; elle peut donc être affichée complète pendant que la
+  carte macro exacte poursuit son calcul.
+- Le champ natif non finalisé est mis en cache séparément de la morphologie :
+  les changements de seuil, d’échelle ou de contraste réutilisent le même
+  relief brut sans régénérer la noise map.
+- La morphologie est réappliquée avant les copies miroir et la bordure d’eau,
+  dans le même ordre que le moteur natif ; la parité des previews reste donc
+  vérifiée pour les deux modes miroir et les deux paramètres éditables.
+- L’échelle des formes est désormais plafonnée à `100 %` afin de conserver
+  une couronne d’eau autour de la carte ; le contraste reste libre dans ses
+  bornes existantes.
+- La génération réelle Legacy/Upgraded conserve `_relax_relief`. Cette passe
+  ordonnée corrige les écarts de hauteur entre voisins, répète jusqu’à
+  stabilisation et traite les marqueurs natifs de carrés spéciaux ; seul le
+  chemin d’affichage de la noise map s’arrête volontairement avant cette passe.
+- Vérifications R12 : `484 passed`, compilation et smoke-test — la validation
+  visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R11 — 2026-09-19 — première passe de morphologie Custom
+
+- Ajoute dans le profil d’archétype les premiers paramètres réellement
+  morphologiques : échelle spatiale des formes et contraste du relief.
+- Les paramètres sont appliqués au même champ de hauteur que celui utilisé par
+  la preview et par les moteurs Legacy/Upgraded ; ils ne sont pas de simples
+  transformations d’affichage.
+- Les valeurs `100 %` conservent la sortie native, avec une parité vérifiée
+  pour les profils Custom inchangés. Les seuils eau/montagne/neige restent
+  disponibles séparément.
+- Ajoute une section d’interface dédiée et un schéma de profil versionné pour
+  accueillir les futures couches de bruit, combinaisons et masques procéduraux.
+- Vérifications R11 : `479 passed`, compilation et smoke-test — la validation
+  visuelle Windows reste nécessaire.
+
+## v2.0 DEV_8_R10 — 2026-09-19 — fondation des masses jouables
+
+- Ajoute un diagnostic déterministe des masses terrestres connectées dans les
+  aperçus de l’onglet Archétype, sans présenter cette mesure comme une
+  validation complète des départs.
+- Enregistre dans chaque carte la masse d’herbe qui porte réellement les
+  départs provisoires : nombre de masses, taille de la principale, part de la
+  surface et appartenance des départs.
+- Ajoute une validation informative, non bloquante, pour signaler si tous les
+  départs restent dans la plus grande masse d’herbe.
+- Aucun pixel, choix de départ, contenu Legacy/Upgraded ou pipeline validé ne
+  change dans cette fondation ; le solveur de répartition reste la prochaine
+  étape.
+- Vérifications R10 : `475 passed`, compilation, self-test source, smoke-test
+  et contrôle après extraction — la validation visuelle Windows reste
+  nécessaire.
+
+## v2.0 DEV_8_R9 — 2026-09-19 — fiabilisation des callbacks Tk
+
+- Invalide les callbacks `after_idle` de mise en page du Générateur lorsqu’une
+  reconstruction détruit leurs anciens widgets ; les mesures et placements ne
+  peuvent plus viser un chemin Tcl obsolète.
+- Protège la détection de la molette sur le `popdown` temporaire des
+  `Combobox`, que Tk peut retourner sans l’enregistrer dans l’arbre
+  `nametowidget` de la fenêtre.
+- Ajoute une régression ciblée pour ce cas et conserve les callbacks comme des
+  no-op sûrs lorsqu’un widget disparaît pendant une passe de layout.
+- Vérifications R9 : `473 passed`, compilation, self-test source, smoke-test
+  et contrôle après extraction — la validation visuelle Windows reste
+  nécessaire.
+
+## v2.0 DEV_8_R8 — 2026-09-19 — contrat macro et parité de l’archétype
+
+- Rend explicite le contrat Continental complet dans l’onglet Archétype :
+  moteur de relief, famille de bruit, construction des plages, modèle de masse
+  terrestre et absence de micro-îles.
+- Les champs qui ne sont pas encore pilotés par un moteur réel sont verrouillés
+  au niveau du profil ; seuls les seuils du relief restent éditables, sans
+  risque de modifier un paramètre ignoré silencieusement.
+- Renforce la parité entre les valeurs implicites du moteur natif et le profil
+  Continental explicite sur plusieurs tailles et miroirs, pour Legacy comme
+  Upgraded.
+- Vérifications R8 : `472 passed`, compilation, self-test source, smoke-test
+  et contrôle après extraction — la validation visuelle Windows reste
+  nécessaire.
+
+## v2.0 DEV_8_R7 — 2026-09-19 — cycle de vie des aperçus et diagnostic macro
+
+- Les previews de l’onglet Archétype ne sont plus calculées ni planifiées
+  lorsque cet onglet n’est pas actif ; les changements sont différés sans
+  ralentir les autres vues.
+- Un travail devenu obsolète est invalidé proprement, la dernière image
+  complète reste affichée et un seul recalcul correspondant aux derniers
+  paramètres est relancé au retour dans l’onglet.
+- Ajoute sous les previews une répartition des cinq classes macro, avec un
+  avertissement explicite lorsqu’une classe est absente du résultat courant.
+- Vérifications R7 : `457 passed`, compilation, self-test source, smoke-test
+  et contrôle après extraction — la validation visuelle Windows reste à
+  effectuer.
+
+## v2.0 DEV_8_R6 — 2026-09-18 — fidélité native et seuils du relief
+
+- Les snapshots intermédiaires ne sont plus peints dans les canvases : la
+  dernière preview complète reste visible jusqu’à l’application atomique du
+  résultat final.
+- Les deux aperçus sont recalculés par une seule passe native complète, à la
+  taille demandée, sans résolution de travail plafonnée ni agrandissement
+  approximatif. La noise signée et la heightmap finale proviennent de cette
+  même passe.
+- Les seuils du relief peuvent descendre jusqu’à la borne native observée
+  `-30`. Le seuil neige est désormais borné à au moins `2` unités au-dessus
+  du seuil montagne, garde-fou correspondant à la transition minimale.
+- Les bornes relationnelles des Spinbox se mettent à jour en place et une
+  saisie invalide revient à la dernière valeur acceptée.
+- Vérifications R6 : `453 passed` et compilation — PASS. La validation
+  visuelle Windows reste à effectuer.
+
+## v2.0 DEV_8_R5 — 2026-09-18 — bruit signé et aperçu macro progressif
+
+- Le rendu progressif ne met à jour que la carte macro ; la noise map reste
+  celle du dernier résultat terminé pendant le calcul.
+- Les tailles élevées utilisent une résolution de travail `256×256`, agrandie
+  ensuite de façon déterministe, pour accélérer fortement les previews sans
+  toucher au moteur exact des cartes finales.
+- La noise map expose le champ natif signé avant le plancher de la heightmap :
+  plage `-30 … 225`. La heightmap du jeu conserve son plancher `0`.
+- L’aperçu adaptatif réagit aux changements de largeur de l’onglet et de sa
+  surface de défilement après stabilisation de la géométrie.
+- Vérifications R5 : `451 passed`, compilation, self-test source et smoke-test
+  (`33` validations Upgraded + `17` Legacy) — PASS.
+- Candidate locale : validation visuelle Windows encore nécessaire ; aucun
+  push de DEV8 n’est effectué dans cette passe.
+
+## v2.0 DEV_8_R4 — 2026-09-18 — fiabilisation des aperçus
+
+- Candidate corrective après les premiers essais de R3.
+- Conserve les derniers snapshots de bruit et de carte macro pendant le calcul,
+  afin que le premier rendu et la progression restent visibles sans bloquer
+  l’interface.
+- Les changements de projection et de taille rerendent immédiatement le
+  dernier snapshot, même avant la fin du calcul.
+- Remplace les tailles fixes par Petite (ancienne plus grande taille), Grande,
+  Très grande et Adaptative ; cette dernière suit la largeur utile de l’onglet.
+- Vérifications R4 : `450 passed`, compilation, self-test source, smoke-test
+  (`33` validations Upgraded + `17` Legacy), hashes protégés, archive fraîche
+  et contrôle après extraction — PASS ; la validation visuelle Windows reste à
+  effectuer.
+
+## v2.0 DEV_8_R3 — 2026-09-18 — projections, cache et progression des aperçus
+
+- Candidate locale suivante après validation utilisateur de R1 et R2.
+- Ajoute le choix de projection carrée ou parallélogramme pour les deux
+  aperçus, ainsi que trois tailles d’affichage sans recalcul de la carte.
+- Sépare le bruit de sa classification macro, réutilise le bruit en mémoire
+  pour une même configuration et accélère le chemin d’aperçu sans modifier le
+  moteur exact des cartes finales.
+- Rend les étapes intermédiaires visibles dans les deux fenêtres avec une
+  barre de progression discrète ; l’aperçu précédent reste affiché pendant
+  les changements.
+- Les vrais hexagones et la génération live détaillée du Générateur restent
+  reportés à la consolidation v2.1.
+- Vérifications R3 : `449 passed`, compilation, self-test source, smoke-test
+  (`33` validations Upgraded + `17` Legacy), hashes protégés, archive fraîche
+  et contrôle après extraction — PASS ; la validation visuelle Windows reste à
+  effectuer.
+
+## v2.0 DEV_8_R2 — 2026-09-18 — aperçus live de l’éditeur d’archétypes
+
+- Candidate de travail suivante après validation utilisateur de R1.
+- Ajoute un aperçu déterministe du bruit natif et un aperçu macro réduit aux
+  cinq classes eau, plage, herbe, montagne et neige, rafraîchis lors des
+  changements de paramètres, de seed, de taille ou de miroir.
+- Le calcul des tailles élevées passe par un worker afin de garder l’interface
+  réactive ; les résultats obsolètes sont ignorés.
+- Aucun nouvel archétype ni changement de contenu du Générateur dans cette
+  passe.
+- Vérifications locales : `447 passed`, compilation, self-test source,
+  smoke-test et lint ciblé ; candidate R2 en attente de validation visuelle.
+
+## v2.0 DEV_8_R1 — 2026-09-18 — socle de l’éditeur d’archétypes Custom
+
+- Ajoute un profil macro déclaratif séparé pour l’archétype Continental :
+  construction native du relief, seuils eau/montagne/neige et côte dérivée.
+- Rend l’onglet Archétype fonctionnel dans Custom : il charge le profil de
+  base, expose les paramètres réellement éditables, indique les modifications
+  et permet de restaurer le profil d’origine.
+- Une copie Custom inchangée conserve les résultats Legacy et Upgraded ; les
+  seuils modifiés sont appliqués au terrain Custom sans modifier les routes
+  natives directes.
+- Les archétypes supplémentaires et les deux aperçus temps réel (noise et
+  carte macro à cinq classes) ne sont pas encore inclus dans cette R1.
+- Vérifications locales : `442 passed`, compilation Python, diagnostics source,
+  smoke-test et contrôle après extraction ; R1 validée par l’utilisateur,
+  mais le périmètre DEV8 reste ouvert.
+
 ## v2.0 DEV_7 — 2026-09-18 — validation de la finition ergonomique du Générateur
 
 - Publie la candidate R26 validée par l’utilisateur comme checkpoint `DEV_7`.
@@ -1293,7 +2410,7 @@ et documentés ; les ajouts statistiques sont reportés à Stats V2.
 - Confirme que la composition spatiale R16/R17 reste proche du natif : environ
   50 % charbon, 22 % fer, 14–15 % or, 5 % gemmes et 8 % soufre.
 - Ajoute la mesure comparative dans
-  `references/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
+  `references/history/minerals/SETTLERS3_LEGACY_R17_QUANTITY_AND_FAMILY_MIX_REFERENCE_v1.md`.
 
 ## v2.0 DEV_1_R16 — 2026-08-30 — zones minérales aléatoires séquentielles
 

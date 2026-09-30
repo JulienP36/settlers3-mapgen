@@ -2,6 +2,31 @@
 
 This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_6_R47 continues from the validated DEV_5 checkpoint and the R46 candidate: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the independent Upgraded pipeline and the declarative Custom foundation. Public Legacy and Upgraded selections are specific presets of the same Custom contract; their internal native engines remain protected and separate. The Custom content sections expose semantic Minerals, Fish, Trees, Building Stones, Decorations and opt-in start-bonus controls. When a start bonus is active, the pipeline stages archetype-linked terrain, bonus terrain, global non-archetype terrain, bonus objects and global objects in that order; the no-bonus route stays on the native pass unchanged. Forest bonus adults are written before saplings. Active object passes maintain a live halo from actual writes across trees, saplings, stones and decorations, including the native Legacy pass, while the complete Building Stone footprint remains protected; no empty future zone is reserved. The mini-swamp bonus uses an extensible shape selector (`Native`/`Hexagon`), derives its extent from a bounded radius, and generates an independent Native component for each start with the same global swamp family plan. The scrollable UI surfaces coalesce scrollbar motion and resize work without changing generation behavior, and the decorated root window applies its native caption palette on first display. Before changing generation or binary-map behavior, follow `references/REFERENCE_INDEX.md` and the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
 
+## R67–R69 native relief blocks
+
+R67 started a staged decomposition of the native height builder. R69 adds a
+dedicated UI group for its parameters and exposes coarse-anchor variation. Its
+current order is:
+
+| Block | Current operation | Custom control (R70) |
+|---|---|---|
+| Coarse lattice | `_seed_coarse_relief` on the 64-cell grid | Anchor variation, 100% preserves Legacy |
+| Midpoint subdivision | `_refine_relief` / `_midpoint_value` | Master refinement plus independent coarse (32/16/8) and fine (4/2/1) bands; all 100% preserves Legacy |
+| Complete source replacement | Noise source provider, after subdivision | Existing complete-noise choices remain available |
+| Height normalization | `_normalize_relief` | Fixed to Legacy values |
+| Relief sculpture | `_run_sculpture_block` | Attempt count, 100% preserves Legacy |
+| Slope relaxation | `_run_relaxation_block` | Correction strength, 100% preserves Legacy |
+
+The Legacy default and all untouched profiles retain the same ordered PRNG
+stream. In particular, the new subdivision control changes only the midpoint
+range; it never skips a random draw. R67 does not yet allow blocks to be
+removed or reordered. Those operations need explicit input/output contracts
+and independent deterministic random streams before they can be safe.
+
+Complete noise maps remain a separate source-replacement path for experimental
+whole-map generation. They are neither removed nor required to use the Legacy
+block sequence as their full generator.
+
 ## Architectural boundary
 
 The application is deliberately split into a protected generation core and an evolving UI/tooling shell.

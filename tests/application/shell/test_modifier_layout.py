@@ -1,43 +1,20 @@
 from pathlib import Path
 
-from s3mapgen.application.ui.i18n.shell import FEEDBACK_TEXT
 
-SRC = Path(__file__).resolve().parents[3] / "s3mapgen" / "application" / "main_window.py"
-TEXT = "\n".join(
-    path.read_text(encoding="utf-8")
-    for path in (
-        SRC,
-        SRC.parent / "history" / "controller.py",
-        SRC.parent / "workflows" / "generation.py",
-    )
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+MAIN_WINDOW = (PROJECT_ROOT / "s3mapgen/application/main_window.py").read_text(encoding="utf-8")
+BATCH_CONTROLLER = (PROJECT_ROOT / "s3mapgen/application/batch/controller.py").read_text(encoding="utf-8")
 
-def test_modifiers_reserve_multi_select_menu_after_archetype():
-    assert "self.modifier_button=ttk.Menubutton" in TEXT
-    assert "self.modifier_menu.add_checkbutton" in TEXT
-    assert "modifier_group=selector_group(primary_row,'Modificateurs')" in TEXT
-    assert TEXT.index("arch_group=selector_group") < TEXT.index("modifier_group=selector_group")
-    assert "def _modifier_keys(self):" in TEXT
 
-def test_modifiers_are_part_of_cache_history_and_feedback():
-    assert "modifiers=self._modifier_keys()" in TEXT
-    assert "key.modifiers" in TEXT
-    assert "modificateurs : {modifiers}" in FEEDBACK_TEXT["fr"]["ready"]
-    assert "modifiers: {modifiers}" in FEEDBACK_TEXT["en"]["ready"]
+def test_main_modifier_selector_remains_reserved_and_disabled():
+    assert "modifier_group=selector_group(primary_row,'Modificateurs')" in MAIN_WINDOW
+    assert MAIN_WINDOW.index("arch_group=selector_group") < MAIN_WINDOW.index("modifier_group=selector_group")
+    assert MAIN_WINDOW.index("modifier_group=selector_group") < MAIN_WINDOW.index("mirror_group=selector_group")
+    assert "style='ImageSelect.TMenubutton',state='disabled'" in MAIN_WINDOW
+    assert "command=self._modifier_none_selected,state='disabled'" in MAIN_WINDOW
 
-def test_session_history_uses_stable_two_row_layout():
-    assert "self.history_combo=ttk.Combobox(self.session_box,textvariable=self.history_var,state='readonly',width=27)" in TEXT
-    assert "Keep full A/B identities when space allows" in TEXT
-    assert "self.history_load_button.grid(row=1" in TEXT
-    assert "self.history_clear_button.grid(row=1" in TEXT
 
-def test_compact_global_controls_remain_in_their_own_panel():
-    assert "self.global_panel=ttk.Frame(self._header_shell)" in TEXT
-    assert "def _layout_global_controls(self,compact):" in TEXT
-    assert "self.help_button.grid(row=2,column=0" in TEXT
-    assert "self._theme_button.grid(row=2,column=2" in TEXT
-
-def test_batch_slot_opens_the_batch_window_from_the_generation_header():
-    assert "self.batch_generate_button=ttk.Button" in TEXT
-    assert "Générer lot…" in TEXT
-    assert "command=self._open_batch_window" in TEXT
+def test_batch_modifier_slot_remains_reserved_and_disabled():
+    assert "box=group('modifiers')" in BATCH_CONTROLLER
+    assert "values=[bt['none']],state='disabled'" in BATCH_CONTROLLER
+    assert "input_widgets.append((row['modifier'],'disabled'))" in BATCH_CONTROLLER

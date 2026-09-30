@@ -1,7 +1,7 @@
 """Versioned user-settings loading, migration, validation and persistence."""
 
 from __future__ import annotations
-import json, os
+import json, math, os
 from pathlib import Path
 from ..shortcuts.bindings import DEFAULT_SHORTCUTS, canonicalize_shortcut
 
@@ -18,6 +18,7 @@ DEFAULTS = {
     'wheel_zoom': 1.10,
     'language': 'fr',
     'custom_sections_expanded': {},
+    'vertical_split_ratio': 0.32,
     'shortcuts': DEFAULT_SHORTCUTS,
 }
 
@@ -61,6 +62,15 @@ def load_settings() -> dict:
         {str(key): bool(value) for key, value in cfg.get('custom_sections_expanded', {}).items()}
         if isinstance(cfg.get('custom_sections_expanded'), dict)
         else {}
+    )
+    try:
+        split_ratio = float(cfg.get('vertical_split_ratio', 0.32))
+    except (TypeError, ValueError):
+        split_ratio = 0.32
+    cfg['vertical_split_ratio'] = (
+        max(0.20, min(0.65, split_ratio))
+        if math.isfinite(split_ratio)
+        else 0.32
     )
     cfg['shortcuts'] = _clean_shortcuts(cfg.get('shortcuts'))
     cfg['settings_version'] = SETTINGS_SCHEMA_VERSION

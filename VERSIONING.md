@@ -30,7 +30,7 @@ L'historique v1.6 est documenté rétroactivement avec `RC_n` afin d'éviter une
 - Lorsqu’un checkpoint est poussé, la ligne de développement suivante incrémente
   le compteur `DEV`. Un push n’est pas une release.
 - Une release n’existe qu’après la fin du périmètre, sa validation et le cycle
-  `RC`/`STABLE` prévu ; R48 n’est ni poussée ni publiée comme release.
+  `RC`/`STABLE` prévu ; R49 n’est ni poussée ni publiée comme release.
 
 
 ## Références de workflow
@@ -49,20 +49,16 @@ Ces fichiers doivent être consultés avant une nouvelle session de développeme
 ## Current development
 
 - Latest published STABLE: `v1.7`.
-- Latest published development checkpoint: `v2.0 DEV_7`.
-- Active development line: `v2.0 DEV_7` (prochaine tranche : archétypes
-  Custom).
-- Current local candidate: none. The former `v2.0 DEV_7_R26` candidate was
-  validated and promoted as `v2.0 DEV_7`. It contains only the validated
-  Générateur UI finish: terrain microcopy removal, dense-block ordering, the
-  three-column Bonus layout and the earlier responsive split threshold; the
-  engine, data, exports and generation rules are unchanged.
-- No suffixed DEV_7 candidate remains active after validation of the checkpoint.
-- Suffixed candidates (`DEV_X_R1`, `R2`, etc.) are local Windows-test/recovery artifacts. Publish only the completed `DEV_X` checkpoint without a revision suffix on `dev`.
-- Every validated DEV candidate, RC or STABLE stage must refresh `references/SETTLERS3_CURRENT_SNAPSHOT.md` before its final archive, commit or push. Validating a local `DEV_X_Rn` updates recovery state but never authorizes publishing that suffix.
-- v2.0 DEV_2 was the validated native-generator reset/reconstruction line;
-  v2.0 DEV_3 is the validated calibration line, v2.0 DEV_4 is the published
-  UI/export line, and v2.0 DEV_5 is the validated Upgraded finishing line.
-  The next development checkpoint is v2.0 DEV_6, focused on the Custom
-  generator. R-suffixed archives remain local Windows-test candidates; only
-  completed unsuffixed DEVs may be promoted to `dev`.
+- Latest published development checkpoint: `v2.0 DEV_8`, built from local
+  candidate R86 and pushed to branch `dev`.
+- Active development line: `v2.0 DEV_9` (Great Islands and remaining work).
+- DEV8 closes the Archetype tab with named `Classique` and `Continental`
+  profiles, and a dynamic `Personnalisé` state in the main Archetype selector.
+  Full noisemap generation remains available as an experimental option.
+- DEV8 validation: 641 regression tests, smoke checks and extracted-package
+  self-test PASS. The user confirmed Windows visual validation of R85; Custom
+  rivers and multi-size tests are declared complete.
+- `DEV_X_Rn` archives remain local candidates. Publish only complete unsuffixed
+  DEV checkpoints on `dev`; never publish an R suffix as a checkpoint.
+- Before the next DEV9 work, read `PROJECT_WORKFLOW.md`, the active TODO and
+  the current recovery snapshot.

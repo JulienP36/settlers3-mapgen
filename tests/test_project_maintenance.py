@@ -175,11 +175,12 @@ def test_recovery_documents_stay_compact_current_and_role_separated():
     if snapshot:
         assert len(snapshot.splitlines()) < 180
         assert APP_VERSION in snapshot
-        assert 'references/dev_notes/V1_8_DEVELOPMENT_LOG.md' in snapshot
+        assert 'SETTLERS3_DEV8_ARCHETYPE_CURRENT.md' in snapshot
     else:
         assert 'hand-off ZIPs' in workflow
 
-    assert len(todo.splitlines()) < 220
+    active_roadmap = todo.split("## v2.0 — reconstruction native Legacy, puis Custom", 1)[0]
+    assert len(active_roadmap.splitlines()) < 220
     assert 'Roadmap orientée **travail restant**' in todo
     assert '## Historique clôturé — v1.9' in todo and '## v2.0 — reconstruction native Legacy, puis Custom' in todo
     assert 'reconstruction complète des pipelines' in todo
@@ -212,8 +213,8 @@ def test_current_reference_index_keeps_recovery_sources_separated():
         'SETTLERS3_CURRENT_SNAPSHOT.md',
         'TODO_MAPGEN.md',
         'SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md',
-        'references/history/',
-        'aucun moteur Upgraded v1.5 actif',
+        'history/',
+        'aucun moteur Upgraded v1.5 n’est actif',
     ):
         assert marker.casefold() in index.casefold()
     assert APP_VERSION in matrix

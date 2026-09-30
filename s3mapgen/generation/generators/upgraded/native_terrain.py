@@ -19,6 +19,25 @@ import math
 
 import numpy as np
 
+from ....map_data.hexgrid import component_labels, neighbor_count
+from ...archetypes.morphology import (
+    apply_archetype_morphology,
+    apply_native_relief_source,
+    apply_native_noise_layers,
+)
+from ...archetypes.legacy_blocks import (
+    CUSTOM_CENTER_CORNER_BLEND_PERCENT,
+    CUSTOM_FINE_SCALE_BASE_PERCENT,
+    retain_largest_land_component,
+    seed_custom_legacy_anchors,
+    soften_custom_legacy_relief,
+)
+from ...archetypes.profiles import (
+    RELIEF_SOURCE_CUSTOM_LEGACY,
+    relief_source_parameter,
+    relief_thresholds,
+)
+
 
 MAX_SIDE = 1024
 
@@ -30,8 +49,17 @@ DESERT = 0x40
 SWAMP = 0x50
 RIVER_FIRST = 0x60
 RIVER_LAST = 0x63
+NATIVE_RIVER_SCAN_START = 0x0600
 SNOW = 0x80
 MUD = 0x90
+
+# Noise-profile reliefs expose substantially more candidate shoreline than the
+# calibrated native height field.  At the same acceptance rate this produces
+# roughly twice as many river cells, so the Custom/Upgraded noise-profile route
+# uses a reduced baseline while leaving the visible rate control proportional.
+# R53 measurements place its median cell count within about 10% of Legacy at
+# 384²/512² with this factor; 256² still shows wider seed-to-seed variation.
+CUSTOM_ARCHETYPE_RIVER_RATE_MULTIPLIER = 0.4
 
 TEMP_70 = 0x70
 TEMP_F0 = 0xF0
@@ -125,9 +153,16 @@ def _random_scaled(rng: NativeRng16, span: int) -> int:
     return (rng.next() * int(span)) >> 16
 
 
-def _midpoint_value(rng: NativeRng16, first: int, second: int, scale: int) -> int:
+def _midpoint_value(
+    rng: NativeRng16,
+    first: int,
+    second: int,
+    scale: int,
+    variation_percent: int = 100,
+) -> int:
     middle = (int(first) + int(second)) >> 1
-    delta = (110 * int(scale)) >> 6
+    native_delta = (110 * int(scale)) >> 6
+    delta = (native_delta * max(0, int(variation_percent))) // 100
     low = max(middle - delta, 0)
     high = min(middle + delta, 255)
     return low + ((rng.next() * (high - low)) >> 16)
@@ -211,9 +246,20 @@ def _initialize_cells(grid: NativeTerrainGrid) -> None:
     grid.object_flags.fill(0)
 
 
-def _seed_coarse_relief(grid: NativeTerrainGrid, rng: NativeRng16) -> None:
+def _seed_coarse_relief(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    *,
+    variation_percent: int = 100,
+) -> None:
     if grid.side <= 64:
         return
+
+    def anchor(span: int, center: int) -> int:
+        sample = _random_scaled(rng, span)
+        value = center + ((2 * sample - span) * int(variation_percent)) // 200
+        return min(255, max(0, value))
+
     for col in range(64, grid.side, 64):
         for row in range(64, grid.side, 64):
             outer_band = (
@@ -225,16 +271,30 @@ def _seed_coarse_relief(grid: NativeTerrainGrid, rng: NativeRng16) -> None:
                 or col < 129 or col > grid.side - 129
             )
             if outer_band:
-                value = _random_scaled(rng, 120)
+                value = anchor(120, 60)
             elif inner_band:
-                value = _random_scaled(rng, 250)
+                value = anchor(250, 125)
             else:
-                value = 50 + _random_scaled(rng, 200)
+                value = anchor(200, 150)
             grid.height[row, col] = value
 
 
-def _refine_relief(grid: NativeTerrainGrid, rng: NativeRng16) -> None:
-    for scale in (32, 16, 8, 4, 2, 1):
+def _refine_relief(
+    grid: NativeTerrainGrid,
+    rng: NativeRng16,
+    *,
+    variation_percent: int = 100,
+    large_scale_percent: int = 100,
+    fine_scale_percent: int = 100,
+    start_scale: int = 32,
+    center_corner_blend_percent: int = 0,
+) -> None:
+    all_scales = (32, 16, 8, 4, 2, 1)
+    if int(start_scale) not in all_scales:
+        raise ValueError("Le raffinement doit commencer sur une échelle native")
+    for scale in all_scales[all_scales.index(int(start_scale)):]:
+        band_percent = large_scale_percent if scale >= 8 else fine_scale_percent
+        scale_variation_percent = variation_percent * band_percent // 100
         step = 2 * scale
         for col in range(0, grid.side, step):
             for row in range(0, grid.side, step):
@@ -259,24 +319,139 @@ def _refine_relief(grid: NativeTerrainGrid, rng: NativeRng16) -> None:
                 top_left = int(grid.height[row, col])
                 grid.height[row + scale, col] = (
                     0 if zero_vertical else _midpoint_value(
-                        rng, top_left, int(grid.height[row_end, col]), scale
+                        rng, top_left, int(grid.height[row_end, col]), scale,
+                        scale_variation_percent,
                     )
                 )
                 grid.height[row, col + scale] = (
                     0 if zero_horizontal else _midpoint_value(
-                        rng, top_left, int(grid.height[row, col_end]), scale
+                        rng, top_left, int(grid.height[row, col_end]), scale,
+                        scale_variation_percent,
                     )
                 )
-                grid.height[row + scale, col + scale] = (
-                    0 if zero_diagonal else _midpoint_value(
-                        rng, top_left, int(grid.height[row_end, col_end]), scale
+                if zero_diagonal:
+                    grid.height[row + scale, col + scale] = 0
+                elif center_corner_blend_percent:
+                    bottom_right = int(grid.height[row_end, col_end])
+                    diagonal = (top_left + bottom_right) // 2
+                    four_corners = (
+                        top_left + int(grid.height[row, col_end])
+                        + int(grid.height[row_end, col]) + bottom_right
+                    ) // 4
+                    blend = int(center_corner_blend_percent)
+                    middle = (diagonal * (100 - blend) + four_corners * blend) // 100
+                    grid.height[row + scale, col + scale] = _midpoint_value(
+                        rng, middle, middle, scale, scale_variation_percent,
                     )
-                )
+                else:
+                    grid.height[row + scale, col + scale] = _midpoint_value(
+                        rng, top_left, int(grid.height[row_end, col_end]), scale,
+                        scale_variation_percent,
+                    )
 
 
 def _normalize_relief(grid: NativeTerrainGrid) -> None:
     raw = grid.height.astype(np.int16)
     grid.height[:] = np.where(raw < 0x1F, 0, raw - 0x1E).astype(np.uint8)
+
+
+def _native_refinement_percent(profile: dict | None) -> int:
+    if not isinstance(profile, dict):
+        return 100
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return 100
+    try:
+        return min(300, max(0, int(round(float(
+            morphology.get("native_refinement_percent", 100)
+        )))))
+    except (TypeError, ValueError):
+        return 100
+
+
+def _native_refinement_band_percent(profile: dict | None, key: str) -> int:
+    if not isinstance(profile, dict):
+        return 100
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return 100
+    try:
+        return min(200, max(0, int(round(float(morphology.get(key, 100))))) )
+    except (TypeError, ValueError):
+        return 100
+
+
+def _native_relaxation_strength_percent(profile: dict | None) -> int:
+    if not isinstance(profile, dict):
+        return 100
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return 100
+    if str(morphology.get("relief_source", "native_legacy")) not in {
+        "native_legacy",
+        RELIEF_SOURCE_CUSTOM_LEGACY,
+    }:
+        return 100
+    try:
+        return min(100, max(0, int(round(float(
+            morphology.get("native_relaxation_strength_percent", 100)
+        )))))
+    except (TypeError, ValueError):
+        return 100
+
+
+def _run_relaxation_block(
+    grid: NativeTerrainGrid,
+    *,
+    alternate_mode: bool,
+    strength_percent: int = 100,
+) -> int:
+    """Apply a share of the fully converged native slope correction."""
+
+    if strength_percent >= 100:
+        return _relax_relief(grid, alternate_mode)
+    before = grid.height.copy()
+    passes = _relax_relief(grid, alternate_mode)
+    after = grid.height.astype(np.int16)
+    original = before.astype(np.int16)
+    delta = after - original
+    magnitude = (np.abs(delta) * strength_percent + 50) // 100
+    signed_delta = np.where(delta < 0, -magnitude, magnitude)
+    grid.height[:] = np.clip(original + signed_delta, 0, 255).astype(np.uint8)
+    return passes
+
+
+def _native_sculpture_attempts_percent(profile: dict | None) -> int:
+    if not isinstance(profile, dict):
+        return 100
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return 100
+    if str(morphology.get("relief_source", "native_legacy")) not in {
+        "native_legacy",
+        RELIEF_SOURCE_CUSTOM_LEGACY,
+    }:
+        return 100
+    try:
+        return min(200, max(0, int(round(float(
+            morphology.get("native_sculpture_attempts_percent", 100)
+        )))))
+    except (TypeError, ValueError):
+        return 100
+
+
+def _native_coarse_variation_percent(profile: dict | None) -> int:
+    if not isinstance(profile, dict):
+        return 100
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return 100
+    try:
+        return min(200, max(0, int(round(float(
+            morphology.get("native_coarse_variation_percent", 100)
+        )))))
+    except (TypeError, ValueError):
+        return 100
 
 
 def _sculpt_density_guard(grid: NativeTerrainGrid, row: int, col: int) -> bool:
@@ -460,14 +635,25 @@ def _consume_sculpture_markers(grid: NativeTerrainGrid) -> None:
 
 
 def _relax_relief(grid: NativeTerrainGrid, alternate_mode: bool) -> int:
+    """Converge native neighbour-height bands in the ordered relief grid.
+
+    The game performs this in-place after refinement and sculpture.  It clamps
+    over-high neighbours, raises under-high predecessors, and repeats until
+    no local correction remains; marked four-cell squares use the stronger
+    native correction.  ``alternate_mode`` uses the diagonal orientation
+    used by mirrored relief variants.  Keep this in the real generation path
+    for native terrain parity; the preview-only noise path intentionally stops
+    before it because it displays the pre-relax signed field.
+    """
     # This pass is intentionally kept in-place and ordered: the native
-    # routine uses each write immediately for the following cell.  Binding
-    # the three fields locally removes millions of bounds-check helper calls
-    # while preserving that exact update order and uint8 wrapping.
+    # routine uses each write immediately for the following cell.  Work on
+    # Python row lists while retaining that exact order; NumPy scalar
+    # indexing inside the hot loop is several times slower at preview sizes
+    # such as 704x704.  The final copy restores the grid's uint8 array.
     side = grid.side
     height = grid.height
-    terrain = grid.terrain
-    temp70 = terrain == TEMP_70
+    values = height.tolist()
+    temp70 = (grid.terrain == TEMP_70).tolist() if not alternate_mode else None
     changed = True
     passes = 0
     max_passes = 128
@@ -481,91 +667,124 @@ def _relax_relief(grid: NativeTerrainGrid, alternate_mode: bool) -> int:
         changed = False
         if not alternate_mode:
             for col in range(2, side):
+                previous_col = col - 1
                 for row in range(1, side - 1):
-                    left = int(height[row, col - 1])
+                    row_values = values[row]
+                    left = row_values[previous_col]
                     low, high = left - 7, left + 5
-                    center = int(height[row, col])
+                    center = row_values[col]
                     if center > high:
-                        height[row, col] = high & 0xFF
+                        row_values[col] = high & 0xFF
                         changed = True
                         center = high
                     first_square = (
-                        temp70[row, col - 1]
-                        and temp70[row, col]
-                        and temp70[row - 1, col - 1]
-                        and temp70[row + 1, col]
+                        temp70[row][previous_col]
+                        and temp70[row][col]
+                        and temp70[row - 1][previous_col]
+                        and temp70[row + 1][col]
                     )
                     if first_square:
                         if center < low - 16:
-                            height[row, col - 1] = (center + 23) & 0xFF
+                            row_values[previous_col] = (center + 23) & 0xFF
                             changed = True
                     elif center < low:
-                        height[row, col - 1] = (center + 7) & 0xFF
+                        row_values[previous_col] = (center + 7) & 0xFF
                         changed = True
 
-                    south = int(height[row + 1, col])
+                    south_row = values[row + 1]
+                    south = south_row[col]
                     if south > high:
-                        height[row + 1, col] = high & 0xFF
+                        south_row[col] = high & 0xFF
                         changed = True
                         south = high
                     second_square = (
-                        temp70[row, col - 1]
-                        and temp70[row + 1, col]
-                        and temp70[row, col]
-                        and temp70[row + 1, col - 1]
+                        temp70[row][previous_col]
+                        and temp70[row + 1][col]
+                        and temp70[row][col]
+                        and temp70[row + 1][previous_col]
                     )
                     if second_square:
                         if south < low - 16:
-                            height[row, col - 1] = (south + 23) & 0xFF
+                            row_values[previous_col] = (south + 23) & 0xFF
                             changed = True
                     elif south < low:
-                        height[row, col - 1] = (south + 7) & 0xFF
+                        row_values[previous_col] = (south + 7) & 0xFF
                         changed = True
         else:
             for col in range(2, side):
+                previous_col = col - 1
                 for row in range(2, side):
-                    northwest = int(height[row - 1, col - 1])
+                    northwest = values[row - 1][previous_col]
                     low, high = northwest - 5, northwest + 5
-                    north = int(height[row - 1, col])
+                    north_row = values[row - 1]
+                    north = north_row[col]
                     if north > high:
-                        height[row - 1, col] = high & 0xFF
+                        north_row[col] = high & 0xFF
                         changed = True
                         north = high
                     if north < low:
-                        height[row - 1, col - 1] = (north + 5) & 0xFF
+                        north_row[previous_col] = (north + 5) & 0xFF
                         changed = True
-                    center = int(height[row, col])
+                    row_values = values[row]
+                    center = row_values[col]
                     if center > high:
-                        height[row, col] = high & 0xFF
+                        row_values[col] = high & 0xFF
                         changed = True
                         center = high
                     if center < low:
-                        height[row - 1, col - 1] = (center + 5) & 0xFF
+                        north_row[previous_col] = (center + 5) & 0xFF
                         changed = True
-                    west = int(height[row, col - 1])
+                    west = row_values[previous_col]
                     if west > high:
-                        height[row, col - 1] = high & 0xFF
+                        row_values[previous_col] = high & 0xFF
                         changed = True
                         west = high
                     if west < low:
-                        height[row, col - 1] = (west + 5) & 0xFF
+                        row_values[previous_col] = (west + 5) & 0xFF
                         changed = True
+    height[:, :] = np.asarray(values, dtype=np.uint8)
     return passes
 
 
-def _classify_relief(grid: NativeTerrainGrid) -> None:
+def _classify_relief(
+    grid: NativeTerrainGrid,
+    archetype_profile: dict | None = None,
+) -> tuple[int, int, int]:
+    water_threshold, mountain_threshold, snow_threshold = relief_thresholds(
+        archetype_profile
+    )
     interior = (slice(1, -1), slice(1, -1))
     heights = grid.height[interior]
     grid.terrain[interior] = np.select(
-        (heights == 0, heights < 0x8C, heights < 0xBE),
+        (
+            heights <= water_threshold,
+            heights < mountain_threshold,
+            heights < snow_threshold,
+        ),
         (WATER, GRASS, ROCK),
         default=SNOW,
     ).astype(np.uint8)
+    return water_threshold, mountain_threshold, snow_threshold
 
 
 def _clear_pre_river_fields(grid: NativeTerrainGrid) -> None:
     grid.variant.fill(0)
     grid.marker.fill(0)
+
+
+def _uses_noise_archetype_profile(profile: dict | None) -> bool:
+    if not isinstance(profile, dict):
+        return False
+    morphology = profile.get("morphology")
+    if not isinstance(morphology, dict):
+        return False
+    if str(morphology.get("relief_source", "native_legacy")) != "native_legacy":
+        return True
+    layers = morphology.get("noise_layers", ())
+    return isinstance(layers, (list, tuple)) and any(
+        isinstance(layer, dict) and bool(layer.get("enabled"))
+        for layer in layers
+    )
 
 
 def _normalize_outer_ocean_edge(grid: NativeTerrainGrid) -> None:
@@ -607,17 +826,39 @@ def _route_free(grid: NativeTerrainGrid, row: int, col: int) -> bool:
     return all(_marker_at(grid, row + dr, col + dc) == 0 for dr, dc in HEX6)
 
 
-def _river_candidate_filter(
+def _river_candidate_in_margin(
     grid: NativeTerrainGrid, row: int, col: int
+) -> bool:
+    return not (
+        row < 8 or col < 8 or row > grid.side - 8 or col > grid.side - 8
+    )
+
+
+def _river_candidate_filter(
+    grid: NativeTerrainGrid,
+    row: int,
+    col: int,
+    *,
+    margin_checked: bool = False,
+    allow_water_start: bool = True,
 ) -> tuple[bool, bool]:
-    if row < 8 or col < 8 or row > grid.side - 8 or col > grid.side - 8:
+    if not margin_checked and not _river_candidate_in_margin(grid, row, col):
         return False, False
     # The margin check above guarantees that the following ±4 window is
     # inside the active square.  This is a hot filter (4*area probes), so
     # direct array reads retain the same values without helper dispatch.
     marker = int(grid.marker[row, col])
     terrain = int(grid.terrain[row, col])
-    if terrain != WATER and marker < 2:
+    if terrain == WATER and not allow_water_start:
+        water_neighbours = sum(
+            int(_terrain_at(grid, row + dr, col + dc) == WATER)
+            for dr, dc in HEX6
+        )
+        # Custom embouchures may begin on the coast, but not in open sea
+        # or in the middle of a lake.
+        if water_neighbours > 4:
+            return False, False
+    if marker < 2 and terrain != WATER:
         return False, False
     continuation = marker >= 2
     if continuation:
@@ -629,7 +870,12 @@ def _river_candidate_filter(
 
 
 def _choose_first_river_step(
-    grid: NativeTerrainGrid, row: int, col: int, continuation: bool
+    grid: NativeTerrainGrid,
+    row: int,
+    col: int,
+    continuation: bool,
+    *,
+    allowed_mask: np.ndarray | None = None,
 ) -> int:
     best_direction = 0
     best_height = 256
@@ -650,6 +896,10 @@ def _choose_first_river_step(
             and int(marker[next_row - 1, next_col]) == 0
             and int(marker[next_row - 1, next_col - 1]) == 0
             and int(marker[next_row, next_col - 1]) == 0
+            and (
+                allowed_mask is None
+                or bool(allowed_mask[next_row, next_col])
+            )
         ):
             next_height = int(height[next_row, next_col])
             if next_height < best_height:
@@ -734,23 +984,15 @@ def grow_native_bonus_river(
     def route_free(row_: int, col_: int) -> bool:
         return _route_free(grid, row_, col_) and bool(allowed_mask[row_, col_])
 
-    # The native helper checks the six marker neighbours in addition to the
-    # candidate itself.  Repeat that exact test while applying the caller's
-    # allowed Grass mask to the first step.
-    first_direction = 0
-    best_height = 256
-    for direction, (dr, dc) in enumerate(HEX6, start=1):
-        next_row, next_col = row + dr, col + dc
-        if (
-            _inside(grid, next_row, next_col)
-            and int(terrain[next_row, next_col]) == GRASS
-            and bool(allowed_mask[next_row, next_col])
-            and _route_free(grid, next_row, next_col)
-        ):
-            next_height = int(height[next_row, next_col])
-            if next_height < best_height:
-                best_height = next_height
-                first_direction = direction
+    # Use the same native first-step selector as global rivers; the bonus
+    # pass adds only its caller-owned allowed-cell mask.
+    first_direction = _choose_first_river_step(
+        grid,
+        row,
+        col,
+        continuation,
+        allowed_mask=allowed_mask,
+    )
     if first_direction == 0 or _river_window_conflict(grid, row, col):
         return None
 
@@ -896,6 +1138,7 @@ def _generate_rivers(
     rng: NativeRng16,
     *,
     rate_percent: float = 100.0,
+    allow_water_start: bool = True,
 ) -> dict[str, int | float]:
     side = grid.side
     area = side * side
@@ -903,12 +1146,12 @@ def _generate_rivers(
     terrain = grid.terrain
     marker = grid.marker
     river_rate = min(500.0, max(0.0, float(rate_percent)))
-    # Keep the native attempt loop and its PRNG consumption unchanged.  A
-    # Custom rate only scales the native acceptance threshold: at 100% the
-    # native behavior is byte-for-byte on the same path, while 0%
-    # and higher values remain variations of that same river algorithm.
+    # The native scan consumes the 0x600 index left by the final relief
+    # refinement, advances by 0x97 modulo the active area, and checks the
+    # eight-cell margin before drawing from the PRNG. A Custom rate only
+    # changes the native acceptance threshold.
     acceptance_threshold = int(round(0x07D0 * river_rate / 100.0))
-    index = 0x600
+    index = NATIVE_RIVER_SCAN_START
     systems = 0
     river_cells = 0
     attempts = 4 * area
@@ -918,10 +1161,14 @@ def _generate_rivers(
         index += 0x97
         if index >= area:
             index -= area
+        if not _river_candidate_in_margin(grid, r, q):
+            continue
         if rng.next() >= acceptance_threshold:
             continue
 
-        accepted, continuation = _river_candidate_filter(grid, r, q)
+        accepted, continuation = _river_candidate_filter(
+            grid, r, q, margin_checked=True, allow_water_start=allow_water_start
+        )
         if not accepted:
             continue
         first_direction = _choose_first_river_step(grid, r, q, continuation)
@@ -1424,6 +1671,53 @@ def _apply_structural_transitions(grid: NativeTerrainGrid) -> None:
     _replace_if_neighbour(grid, SNOW, 0x23, 0x81)
 
 
+def _prune_orphan_custom_rivers(grid: NativeTerrainGrid) -> dict[str, int]:
+    """Remove Custom river components detached by native terrain cleanup.
+
+    The native in-place compatibility pass can erase a downstream cell after
+    its upstream neighbour has already been checked.  That leaves short river
+    fragments disconnected from the Water/shore they originally came from.
+    This repair is applied only to noise-based archetype profiles in this
+    engine; the Legacy-native profile keeps its original pipeline.
+    """
+
+    terrain = grid.terrain
+    river = (terrain >= RIVER_FIRST) & (terrain <= RIVER_LAST)
+    labels, count = component_labels(river)
+    if count == 0:
+        return {
+            "river_orphan_components_removed": 0,
+            "river_orphan_cells_removed": 0,
+        }
+
+    connected_labels = np.unique(labels[river & (neighbor_count(terrain <= 0x07) > 0)])
+    orphan_labels = np.setdiff1d(np.arange(1, count + 1), connected_labels)
+    if orphan_labels.size == 0:
+        return {
+            "river_orphan_components_removed": 0,
+            "river_orphan_cells_removed": 0,
+        }
+
+    remove = np.isin(labels, orphan_labels)
+    removed_cells = int(np.count_nonzero(remove))
+    terrain[remove] = GRASS
+    return {
+        "river_orphan_components_removed": int(orphan_labels.size),
+        "river_orphan_cells_removed": removed_cells,
+    }
+
+
+def _prune_and_record_custom_river_orphans(
+    grid: NativeTerrainGrid,
+    metadata: MutableMapping[str, object],
+) -> None:
+    if "river_profile_rate_multiplier" not in metadata:
+        return
+    removed = _prune_orphan_custom_rivers(grid)
+    for key, count in removed.items():
+        metadata[key] = int(metadata.get(key, 0)) + int(count)
+
+
 def _set_mode_variant_sentinels(grid: NativeTerrainGrid, mode: int) -> None:
     if mode & 0x01:
         for i in range(grid.side):
@@ -1498,6 +1792,7 @@ def generate_primary_terrain(
     progress=None,
     surface_rates=None,
     defer_non_archetype: bool = False,
+    archetype_profile: dict | None = None,
 ) -> NativeTerrainResult:
     """Generate the primary native terrain field.
 
@@ -1525,15 +1820,61 @@ def generate_primary_terrain(
     report("initialize")
     _initialize_cells(grid)
     report("coarse_relief")
-    _seed_coarse_relief(grid, rng)
+    custom_legacy = (
+        relief_source_parameter(archetype_profile)
+        == RELIEF_SOURCE_CUSTOM_LEGACY
+    )
+    if custom_legacy:
+        seed_custom_legacy_anchors(
+            grid.height,
+            rng,
+            variation_percent=_native_coarse_variation_percent(archetype_profile),
+        )
+    else:
+        _seed_coarse_relief(
+            grid,
+            rng,
+            variation_percent=_native_coarse_variation_percent(archetype_profile),
+        )
     report("relief_refinement")
-    _refine_relief(grid, rng)
+    fine_scale_percent = _native_refinement_band_percent(
+        archetype_profile,
+        "native_fine_scale_refinement_percent",
+    )
+    if custom_legacy:
+        fine_scale_percent = fine_scale_percent * CUSTOM_FINE_SCALE_BASE_PERCENT // 100
+    _refine_relief(
+        grid,
+        rng,
+        variation_percent=_native_refinement_percent(archetype_profile),
+        large_scale_percent=_native_refinement_band_percent(archetype_profile, "native_large_scale_refinement_percent"),
+        fine_scale_percent=fine_scale_percent,
+        start_scale=16 if custom_legacy else 32,
+        center_corner_blend_percent=(
+            CUSTOM_CENTER_CORNER_BLEND_PERCENT if custom_legacy else 0
+        ),
+    )
+    if custom_legacy:
+        grid.height[:, :] = soften_custom_legacy_relief(grid.height, seed=seed)
+    if archetype_profile is not None:
+        # Replace the complete raw field for independent R20 sources, then
+        # apply optional semantic layers in the selected source domain.
+        grid.height[:, :] = apply_native_relief_source(
+            grid.height,
+            archetype_profile,
+            seed=seed,
+        )
+        grid.height[:, :] = apply_native_noise_layers(
+            grid.height,
+            archetype_profile,
+            seed=seed,
+        )
     _normalize_relief(grid)
 
     relief_relax_passes = 0
     if mode == 0:
         report("relief_sculpture")
-        attempts = side * side // 16
+        attempts = (side * side // 16) * _native_sculpture_attempts_percent(archetype_profile) // 100
         for _ in range(attempts):
             # The first native expression is signed and truncates toward zero.
             numerator = rng.next() * side - 2
@@ -1542,13 +1883,36 @@ def generate_primary_terrain(
             if _interior(grid, row, col):
                 _sculpt_candidate(grid, row, col)
         _consume_sculpture_markers(grid)
-        relief_relax_passes = _relax_relief(grid, False)
+        relief_relax_passes = _run_relaxation_block(
+            grid,
+            alternate_mode=False,
+            strength_percent=_native_relaxation_strength_percent(archetype_profile),
+        )
     else:
         report("relief_relaxation_alternate")
-        relief_relax_passes = _relax_relief(grid, True)
+        relief_relax_passes = _run_relaxation_block(
+            grid,
+            alternate_mode=True,
+            strength_percent=_native_relaxation_strength_percent(archetype_profile),
+        )
+
+    if archetype_profile is not None:
+        transformed_height, _ = apply_archetype_morphology(
+            grid.height,
+            profile=archetype_profile,
+            seed=seed,
+            include_noise_layers=False,
+        )
+        grid.height[:] = transformed_height
+
+    if custom_legacy and relief_thresholds(archetype_profile)[0] >= 0:
+        retain_largest_land_component(
+            grid.height,
+            water_threshold=relief_thresholds(archetype_profile)[0],
+        )
 
     report("relief_classification")
-    _classify_relief(grid)
+    relief_threshold_values = _classify_relief(grid, archetype_profile)
     _clear_pre_river_fields(grid)
     report("rivers")
     river_rate = 100.0
@@ -1559,9 +1923,23 @@ def generate_primary_terrain(
                 river_rate = min(500.0, max(0.0, float(river_section.get("rate_percent", 100.0))))
             except (TypeError, ValueError):
                 river_rate = 100.0
-    river_meta = _generate_rivers(grid, rng, rate_percent=river_rate)
+    noise_archetype_profile = _uses_noise_archetype_profile(archetype_profile)
+    river_rate_multiplier = (
+        CUSTOM_ARCHETYPE_RIVER_RATE_MULTIPLIER if noise_archetype_profile else 1.0
+    )
+    effective_river_rate = river_rate * river_rate_multiplier
+    river_meta = _generate_rivers(
+        grid, rng, rate_percent=effective_river_rate,
+        allow_water_start=not noise_archetype_profile,
+    )
+    if noise_archetype_profile:
+        river_meta["river_rate_percent"] = river_rate
+        river_meta["river_effective_rate_percent"] = effective_river_rate
+        river_meta["river_profile_rate_multiplier"] = river_rate_multiplier
     report("structural_transitions")
     _apply_structural_transitions(grid)
+    if noise_archetype_profile:
+        river_meta.update(_prune_orphan_custom_rivers(grid))
     report("terrain_families")
     custom_rates = None
     if isinstance(surface_rates, dict) and isinstance(surface_rates.get("terrains"), dict):
@@ -1584,6 +1962,7 @@ def generate_primary_terrain(
         reference_grid = _copy_native_grid(grid)
         reference_rng = _copy_native_rng(rng)
         _mirror_terrain_only(grid, mode)
+        _prune_and_record_custom_river_orphans(grid, river_meta)
         continuation = DeferredTerrainPass(
             grid=grid,
             rng=rng,
@@ -1617,6 +1996,8 @@ def generate_primary_terrain(
             "terrain_families_deferred": True,
             **river_meta,
         }
+        if archetype_profile is not None:
+            metadata["archetype_relief_thresholds"] = list(relief_threshold_values)
         return NativeTerrainResult(
             grid.height.copy(),
             grid.terrain.copy(),
@@ -1692,6 +2073,7 @@ def generate_primary_terrain(
     # Must follow mirror copies: both triangular traversals can write onto
     # the outer edge.  Keep the final serialized perimeter deep Water7.
     _normalize_outer_ocean_edge(grid)
+    _prune_and_record_custom_river_orphans(grid, river_meta)
 
     metadata: dict[str, object] = {
         "native_terrain_core": "native_calibrated",
@@ -1714,6 +2096,8 @@ def generate_primary_terrain(
         },
         **river_meta,
     }
+    if archetype_profile is not None:
+        metadata["archetype_relief_thresholds"] = list(relief_threshold_values)
     if custom_terrain_meta is not None:
         metadata["custom_terrain"] = custom_terrain_meta
     return NativeTerrainResult(
@@ -1826,6 +2210,7 @@ def resume_deferred_terrain(
         )
 
     metadata = dict(result.metadata)
+    _prune_and_record_custom_river_orphans(grid, metadata)
     metadata.update(
         {
             "native_micro_terrain_12_cells": int(np.count_nonzero(grid.terrain == 0x12)),

@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import tkinter as tk
 
-from ....generation.archetypes import ARCHETYPE_ORDER
 from ....generation.modes import MODE_ORDER
 from ...analysis.core import format_stats_report
 from ..viewer.options import HEATMAP_ICON_COLORS, VIEW_ICON_COLORS
 from .shell import (
-    ARCHETYPE_LABELS, COMMAND_LABELS, LANGUAGE_LABELS, MIRROR_LABELS, MODE_LABELS, NONE_LABELS,
+    ARCHETYPE_INPUT_LABELS, ARCHETYPE_LABELS, COMMAND_LABELS, LANGUAGE_LABELS, MIRROR_LABELS, MODE_LABELS, NONE_LABELS,
     PREVIEW_START_MARKER_LABELS, PROJECTION_LABELS, TEXTS, THEME_LABELS,
     WINDOW_TITLES,
 )
@@ -46,16 +45,21 @@ class LanguageController:
         self.heatmap_combo.configure(width=max(14,min(22,max(len(v) for v in HEATMAP_LABELS[lang].values())+1)))
         self.heatmap_var.set(HEATMAP_LABELS[lang][hk]);self.heatmap_combo._sync_icon()
         self.mode_combo.configure(values=[MODE_LABELS[lang][k] for k in MODE_ORDER]);self.mode.set(MODE_LABELS[lang][mk])
-        self.arch_combo.configure(values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER]);self.arch.set(ARCHETYPE_LABELS[lang][ak])
+        self.arch.set(ARCHETYPE_LABELS[lang][ak])
+        if hasattr(self,'_custom_refresh_main_archetype_input'):
+            self._custom_refresh_main_archetype_input()
+        else:
+            self.arch_combo.configure(values=[ARCHETYPE_INPUT_LABELS[lang][k] for k in ('classic','continental','large_islands','small_islands')])
+            self.arch_input.set(ARCHETYPE_INPUT_LABELS[lang]['classic'])
+        if hasattr(self,'modifier_text'):
+            self.modifier_text.set(NONE_LABELS.get(lang,NONE_LABELS['en']))
+            try:self.modifier_menu.entryconfigure(0,label=NONE_LABELS.get(lang,NONE_LABELS['en']))
+            except tk.TclError:pass
         if hasattr(self,'mirror_combo'):
             mirror=self._mirror_key()
             self.mirror_combo.configure(values=list(MIRROR_LABELS[lang].values()))
             self.mirror_combo.configure(width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2))
             self.mirror.set(MIRROR_LABELS[lang][mirror])
-        if hasattr(self,'modifier_text'):
-            self.modifier_text.set(self._modifier_summary())
-            try:self.modifier_menu.entryconfigure(0,label=NONE_LABELS.get(lang,NONE_LABELS['en']))
-            except tk.TclError:pass
         if self._theme_combo:self._theme_combo.configure(values=list(THEME_LABELS[lang].values()))
         self.theme_var.set(THEME_LABELS[lang][self.prefs['theme']])
         if self._projection_combo:self._projection_combo.configure(values=list(PROJECTION_LABELS[lang].values()))

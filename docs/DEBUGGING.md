@@ -25,6 +25,12 @@ python tests/run_smoke.py
 python run_gui.py --self-test
 ```
 
+Pour reproduire la qualification déterministe des providers d’archétype :
+
+```text
+python tools/qualify_archetypes.py --output qualification.json
+```
+
 Their roles are distinct:
 
 - pytest covers UI helpers, formats, analysis, cache behavior and regression contracts;

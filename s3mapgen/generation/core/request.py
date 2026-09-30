@@ -44,8 +44,8 @@ def native_size_warning_kind(side: int) -> str | None:
 class GenerationRequest:
     """Demande immuable adressée à un générateur concret.
 
-    Les modificateurs ne sont pas encore interprétés : leur emplacement est
-    réservé dans le contrat afin d'éviter une future rupture d'API.
+    Le champ ``modifiers`` est réservé ; aucun générateur ne les interprète
+    encore et les valeurs non vides sont refusées.
     """
 
     side: int

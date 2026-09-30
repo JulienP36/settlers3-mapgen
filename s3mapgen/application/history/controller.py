@@ -15,7 +15,7 @@ from ..rendering.preview import START_MARKER_SCALES, render
 from ..session.cache import ImportedHistoryKey
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.history import HISTORY_TEXT, _CONTEXT_TEXT, _HISTORY_CAPACITY_DIALOG_TEXT
-from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, LOWER_NONE_LABELS, MODE_LABELS, TEXTS
+from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MODE_LABELS, TEXTS
 from ..ui.theme import THEME_PALETTES
 from ..ui.widgets import _history_heading_lock_icon, _history_role_icon, _thumbnail_with_magnifier
 
@@ -89,9 +89,9 @@ class HistoryController:
         if isinstance(key,ImportedHistoryKey):
             name=meta.get('source_name') or f'{key.source_format} import'
             return f'{prefix} · {name} · {key.source_format} · {meta.get("side","?")} · {meta.get("players",0)}P'
-        lang=self.prefs.get('language','fr');mods=LOWER_NONE_LABELS.get(lang,LOWER_NONE_LABELS['en']) if not key.modifiers else '+'.join(key.modifiers)
+        lang=self.prefs.get('language','fr')
         mode=MODE_LABELS[lang].get(key.mode,key.mode);archetype=ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)
-        return f'{prefix} · {key.seed} · {key.side} · {key.players}P · {mode} · {archetype} · {mods}'
+        return f'{prefix} · {key.seed} · {key.side} · {key.players}P · {mode} · {archetype}'
 
     def _history_origin(self,key):
         return self.session_cache.metadata(key).get('origin','generated')

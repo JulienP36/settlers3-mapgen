@@ -142,6 +142,13 @@ class SettingsController:
             widget = self.winfo_containing(int(event.x_root), int(event.y_root))
             if widget is None:
                 widget = getattr(event, "widget", None)
+        except KeyError:
+            # ttk::combobox creates a transient ``popdown`` to display its
+            # list.  Tk can return that path from winfo_containing even though
+            # it is not registered in this window's nametowidget tree.  It is
+            # still an input surface: leave the wheel event to Tk instead of
+            # trying to scroll the surrounding tab.
+            return True
         except (AttributeError, TypeError, tk.TclError):
             widget = getattr(event, "widget", None)
         while widget is not None:
@@ -359,7 +366,7 @@ class SettingsController:
         return self.prefs.get('theme','dark')
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'custom_sections_expanded':self.prefs.get('custom_sections_expanded',{}),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'custom_sections_expanded':self.prefs.get('custom_sections_expanded',{}),'vertical_split_ratio':float(self.prefs.get('vertical_split_ratio',0.32)),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _schedule_prefs_save(self):
         if self._prefs_save_after is not None:

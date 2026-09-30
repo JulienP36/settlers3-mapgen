@@ -79,7 +79,7 @@ class BatchController:
             box=group('archetype');row['arch_var']=tk.StringVar(value=ARCHETYPE_LABELS[lang][current_arch])
             row['arch']=ttk.Combobox(box,textvariable=row['arch_var'],values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER],state='readonly',width=17);row['arch'].pack();input_widgets.append((row['arch'],'readonly'))
             box=group('modifiers');row['modifier_var']=tk.StringVar(value=bt['none'])
-            row['modifier']=ttk.Combobox(box,textvariable=row['modifier_var'],values=[bt['none']],state='readonly',width=13);row['modifier'].pack();input_widgets.append((row['modifier'],'readonly'))
+            row['modifier']=ttk.Combobox(box,textvariable=row['modifier_var'],values=[bt['none']],state='disabled',width=13);row['modifier'].pack();input_widgets.append((row['modifier'],'disabled'))
             box=group('mirror');row['mirror_var']=tk.StringVar(value=MIRROR_LABELS[lang][current_mirror])
             mirror_width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2)
             row['mirror']=ttk.Combobox(box,textvariable=row['mirror_var'],values=list(MIRROR_LABELS[lang].values()),state='readonly',width=mirror_width);row['mirror'].pack();input_widgets.append((row['mirror'],'readonly'))
@@ -341,9 +341,10 @@ class BatchController:
                 for key,label in row['group_labels'].items():label.configure(text=bt[key])
                 row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
                 row['arch'].configure(values=[ARCHETYPE_LABELS[lang][key] for key in ARCHETYPE_ORDER]);row['arch_var'].set(ARCHETYPE_LABELS[lang][arch])
+                row['modifier'].configure(values=[bt['none']],state='disabled');row['modifier_var'].set(bt['none'])
                 if row.get('mirror') is not None:
                     row['mirror'].configure(values=list(MIRROR_LABELS[lang].values()),width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2));row['mirror_var'].set(MIRROR_LABELS[lang][mirror])
-                row['modifier'].configure(values=[bt['none']]);row['modifier_var'].set(bt['none']);row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
+                row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
                 state=row.get('state','waiting');key='not_cached' if state=='not_cached' else ('cached' if row.get('cached') else ('success' if state=='success' else state))
                 if key=='failed':text=bt['failed'].format(error=row.get('error',''))
                 elif key in bt:text=bt[key]
@@ -415,7 +416,8 @@ class BatchController:
             elif seed is None:error=BATCH_TEXT[lang]['invalid_seed']
             if error:
                 errors.append(BATCH_TEXT[lang]['invalid_row'].format(index=row['index'],error=error));continue
-            digest = self._custom_config_digest() if mode == 'custom' and hasattr(self, '_custom_config_digest') else ''
+            config = self._custom_config_for_generation(mode, archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self, '_custom_config', None) if mode == 'custom' else None)
+            digest = config.digest if config is not None else ''
             revision=cache_engine_revision(mode, archetype, digest)
             key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror,configuration_digest=digest)
             row['size_warning_kind']=native_size_warning_kind(side) if mode=='legacy' and archetype=='continental' else None
@@ -517,10 +519,8 @@ class BatchController:
         try:
             out=self.session_cache.get(key);cached=out is not None
             if out is None:
-                if key.mode == 'custom':
-                    out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=getattr(self,'_custom_config',None))
-                else:
-                    out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)
+                config = self._custom_config_for_generation(key.mode, key.archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self,'_custom_config',None) if key.mode == 'custom' else None)
+                out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config)
             self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'});row['history_key']=key;row['result']=out;row['cached']=cached;self._batch_last_success=out
             result_state='cached' if cached else 'success'
             result_text=self._batch_text(result_state)

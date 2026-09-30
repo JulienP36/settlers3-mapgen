@@ -1,7 +1,9 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
+from s3mapgen.application.settings.controller import SettingsController
 from s3mapgen.map_data.binary import read_area, read_starts
 from s3mapgen.application.rendering.preview import compose_rendered_map, render, render_square_base
 
@@ -95,6 +97,17 @@ def test_scrollbar_drag_is_coalesced_without_delaying_wheel_scrolling():
     assert 'SCROLLABLE_INPUT_WIDGET_CLASSES' in SETTINGS_SRC
     assert 'def _scrollable_tab_wheel_is_over_input(self, event):' in SETTINGS_SRC
     assert 'if self._scrollable_tab_wheel_is_over_input(event):' in SETTINGS_SRC
+
+
+class _ComboboxPopdownProbe(SettingsController):
+    def winfo_containing(self, _x_root, _y_root):
+        raise KeyError("popdown")
+
+
+def test_combobox_popdown_wheel_lookup_is_treated_as_input():
+    event = SimpleNamespace(x_root=10, y_root=20, widget=None)
+
+    assert _ComboboxPopdownProbe()._scrollable_tab_wheel_is_over_input(event) is True
 
 
 def test_resize_redraw_settles_at_one_frame_without_rebuilding_every_event():

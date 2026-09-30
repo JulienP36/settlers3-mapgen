@@ -66,12 +66,14 @@ Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohére
 La règle de version suivie par le projet est stricte : chaque modification de
 la candidate incrémente `R`; le compteur `DEV` n’avance qu’après un push d’un
 checkpoint; une release n’est créée qu’une fois le périmètre terminé et validé.
-Le checkpoint courant est désormais `v2.0 DEV_7`, publié sur `dev` après la
-validation utilisateur de R26. R26 retire l’aide redondante de Terrains, place
-les blocs denses à gauche, ajoute la grille à trois colonnes du Bonus et avance
-le seuil de reflow, sans modifier le moteur, les données ou les règles de
-génération. La prochaine tranche prévue est l’implémentation des archétypes
-Custom ; les détails restent suivis dans `TODO_MAPGEN.md`.
+Le dernier checkpoint publié est `v2.0 DEV_8`, issu de la candidate locale
+R86. DEV8 est terminée : le sélecteur principal Archétype affiche l’état
+dynamique « Personnalisé », et la suite complète compte 641 tests réussis.
+L’utilisateur a confirmé la validation visuelle Windows R85 ; les rivières
+Custom et les tests multi-tailles sont terminés. Tous les travaux restants,
+dont Grandes îles et le comportement dynamique « Personnalisé » pour Mode,
+relèvent de DEV9. L’index et le snapshot dans `references/` décrivent le corpus
+compact actualisé et conservent le SHA du push.
 
 Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
 

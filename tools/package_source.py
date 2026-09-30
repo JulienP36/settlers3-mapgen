@@ -108,6 +108,17 @@ EXCLUDED_SOURCE_SUFFIXES = {".log", ".pyc", ".pyo", ".sav", ".zip"}
 EXCLUDED_SOURCE_NAMES = {".DS_Store", "Thumbs.db"}
 
 
+def _is_temporary_scaffold_file(relative_path: Path) -> bool:
+    """Exclude interrupted atomic-write files beside bundled scaffolds."""
+
+    if not relative_path.parts or relative_path.parts[0] != "data":
+        return False
+    return any(
+        relative_path.name.startswith(f".{target}.")
+        for target in ("scaffold_768.edm", "scaffold_768.map")
+    )
+
+
 class SourcePackageError(RuntimeError):
     """Raised when a source archive cannot be built or validated safely."""
 
@@ -123,6 +134,8 @@ def _filesystem_source_files(project_root: Path) -> list[Path]:
         if FORBIDDEN_ARCHIVE_PARTS.intersection(relative_path.parts):
             continue
         if source.name in EXCLUDED_SOURCE_NAMES:
+            continue
+        if _is_temporary_scaffold_file(relative_path):
             continue
         if source.suffix.lower() in EXCLUDED_SOURCE_SUFFIXES:
             continue
@@ -156,7 +169,12 @@ def _source_files(project_root: Path) -> list[Path]:
         for raw in result.stdout.split(b"\0")
         if raw
     ]
-    files = [path for path in relative_paths if (project_root / path).is_file()]
+    files = [
+        path
+        for path in relative_paths
+        if (project_root / path).is_file()
+        and not _is_temporary_scaffold_file(path)
+    ]
     # ``references/`` is intentionally ignored by the GitHub working tree, but
     # it remains part of the hand-off source ZIP so the recovery/audit context
     # is not lost between candidate packages.

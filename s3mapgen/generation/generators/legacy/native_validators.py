@@ -93,6 +93,15 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
         # present that native mode as a failed generation in the UI.
         hard=False,
     )
+    if (
+        state.metadata.get("mode_key") == "custom"
+        and "river_profile_rate_multiplier" in state.metadata
+    ):
+        add(
+            "CUSTOM_RIVER_WATER_CONNECTION",
+            _river_components_touch_water(terrain),
+            "each HEX6 river component touches Water or shore",
+        )
     add("NATIVE_MIRROR_RELIEF", _mirror_ok(height, int(mode)), f"mode={int(mode)}")
     add("NATIVE_MIRROR_TERRAIN", _mirror_ok(terrain, int(mode)), f"mode={int(mode)}")
     resources = state.resources
@@ -125,6 +134,15 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
         and not np.any(state.accessibility[objects == 127] != 0),
         "object cells are non-walkable except exhausted stones")
     add("NATIVE_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
+    start_mass = state.metadata.get("startable_mass", {})
+    if isinstance(start_mass, dict):
+        add(
+            "NATIVE_STARTABLE_GRASS_MASS",
+            bool(start_mass.get("all_starts_in_largest_grass_mass", False)),
+            f"starts={start_mass.get('starts_in_largest_grass_mass', 0)}/{start_mass.get('start_count', 0)} "
+            f"masses={start_mass.get('grass_mass_count', 0)}",
+            hard=False,
+        )
     return out
 
 

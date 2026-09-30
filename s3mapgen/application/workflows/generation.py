@@ -19,7 +19,7 @@ from ...generation.core import (
 from ...generation.modes import MODES, cache_engine_revision
 from ..session.cache import GenerationCacheKey
 from ..ui.i18n.common import _lang_text
-from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS, NONE_LABELS
+from ..ui.i18n.shell import ARCHETYPE_INPUT_LABELS, ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS, NONE_LABELS
 
 
 class GenerationWorkflowController:
@@ -51,6 +51,20 @@ class GenerationWorkflowController:
                 if label==value:return key
         return next((k for k,v in ARCHETYPES.items() if v.label==value),'continental')
 
+    def _arch_display_label(self, language=None):
+        """Return the visible profile name for the selected geography."""
+
+        language = language or self.prefs.get('language','fr')
+        selection_key = (
+            self._custom_main_archetype_input_key()
+            if hasattr(self, '_custom_main_archetype_input_key')
+            else self._arch_key()
+        )
+        return ARCHETYPE_INPUT_LABELS.get(language, ARCHETYPE_INPUT_LABELS['en']).get(
+            selection_key,
+            ARCHETYPE_LABELS.get(language, ARCHETYPE_LABELS['en'])[self._arch_key()],
+        )
+
     def _mirror_key(self):
         value=self.mirror.get()
         for labels in MIRROR_LABELS.values():
@@ -59,18 +73,13 @@ class GenerationWorkflowController:
         return 0
 
     def _modifier_keys(self):
-        # The future multi-select architecture is reserved. The only currently
-        # valid state is no modifier, represented by an empty tuple.
+        """Return the empty value for the reserved, disabled modifier slot."""
         return ()
 
-    def _modifier_summary(self):
-        return NONE_LABELS.get(self.prefs.get('language','fr'),NONE_LABELS['en'])
-
     def _modifier_none_selected(self):
-        # “None” is exclusive by definition and cannot be unchecked while it is
-        # the sole available entry.
-        self.modifier_none.set(True);self.modifier_text.set(self._modifier_summary())
-        self._selection_changed();self._feedback('modifier_none','info')
+        """Keep the reserved placeholder callback safe if invoked indirectly."""
+        self.modifier_none.set(True)
+        self.modifier_text.set(NONE_LABELS.get(self.prefs.get('language','fr'),NONE_LABELS['en']))
 
     def random_seed(self):
         self.seed.set(str(random.randint(1,2_147_483_647)));self._feedback('seed_randomized','info',seed=str(self.seed.get()))
@@ -82,11 +91,11 @@ class GenerationWorkflowController:
         """Refresh the status strip without invoking any UI rebuild hook."""
 
         s=int(self.size.get());mkey=self._mode_key();akey=self._arch_key();m=MODES[mkey];a=ARCHETYPES[akey];lang=self.prefs.get('language','fr');warning_key=self._legacy_size_warning_key(mkey,akey,s)
-        mode=MODE_LABELS[lang][mkey];arch=ARCHETYPE_LABELS[lang][akey];modifiers=self._modifier_summary()
+        mode=MODE_LABELS[lang][mkey];arch=self._arch_display_label(lang)
         if not m.implemented:self._feedback('mode_reserved','warning',mode=mode)
         elif not a.implemented:self._feedback('arch_reserved','warning',archetype=arch)
         elif warning_key:self._feedback(warning_key,'warning',side=s,max_players=NATIVE_LIMITS[s])
-        else:self._feedback('ready','ready',mode=mode,archetype=arch,modifiers=modifiers,side=s,players=int(self.players.get()))
+        else:self._feedback('ready','ready',mode=mode,archetype=arch,side=s,players=int(self.players.get()))
 
     def _selection_changed(self):
         self._refresh_selection_feedback()
@@ -111,25 +120,25 @@ class GenerationWorkflowController:
     def _cache_key(self):
         mode = self._mode_key()
         archetype = self._arch_key()
-        digest = self._custom_config_digest() if mode == 'custom' and hasattr(self, '_custom_config_digest') else ''
+        digest = self._custom_config_digest() if hasattr(self, '_custom_config_digest') else ''
         return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest)
 
     def generate(self):
         try:
             side=int(self.size.get())
             key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
-            mode=MODE_LABELS[lang][key.mode];arch=ARCHETYPE_LABELS[lang][key.archetype];modifiers=self._modifier_summary()
+            mode=MODE_LABELS[lang][key.mode];arch=self._arch_display_label(lang)
             warning_key=self._legacy_size_warning_key(key.mode,key.archetype,key.side)
             if cached is not None:
                 self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(False);self._refresh_history()
                 if warning_key:self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
                 else:self._feedback('cache_hit','success',seed=key.seed)
                 return
-            msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
-            custom_config = getattr(self, '_custom_config', None) if key.mode == 'custom' else None
+            msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
+            custom_config = self._custom_config_for_generation(key.mode, key.archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self, '_custom_config', None) if key.mode == 'custom' else None)
             self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config)
             retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(False)
-            done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,modifiers=modifiers,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
+            done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
             if warning_key:
                 self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
             elif not retained:

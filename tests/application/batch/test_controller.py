@@ -28,7 +28,7 @@ class Var:
         self.value = value
 
 
-def row(index, *, mode="Héritage (Legacy)", archetype="Continental", mirror="Aucun", side="768", players="4", seed="100"):
+def row(index, *, mode="Classique", archetype="Continental", mirror="Aucun", side="768", players="4", seed="100"):
     return {
         "index": index,
         "mode_var": Var(mode),
@@ -61,8 +61,8 @@ def test_batch_is_bilingual_and_replaces_the_reserved_placeholder():
 
 def test_batch_collects_one_to_four_independent_generation_keys():
     dummy = batch_dummy([
-        row(1, mode="Héritage (Legacy)", players="4", seed="101"),
-        row(2, mode="Amélioré (Upgraded)", players="8", seed="202"),
+        row(1, mode="Classique", players="4", seed="101"),
+        row(2, mode="Amélioré", players="8", seed="202"),
     ])
     requests = MainWindow._batch_collect_requests(dummy)
     assert [request["key"].seed for request in requests] == [101, 202]
@@ -81,7 +81,7 @@ def test_batch_collects_native_size_and_mirror_parameters():
 
 
 def test_batch_accepts_mirror_for_upgraded_maps():
-    dummy = batch_dummy([row(1, mode="Amélioré (Upgraded)", side="256", players="2", mirror="Les deux")])
+    dummy = batch_dummy([row(1, mode="Amélioré", side="256", players="2", mirror="Les deux")])
     request = MainWindow._batch_collect_requests(dummy)[0]["key"]
     assert request.mode == "upgraded"
     assert request.mirror_mode == 3
@@ -95,7 +95,7 @@ def test_batch_rejects_unknown_sizes_before_starting():
 
 def test_batch_queue_is_sequential_and_populates_history_and_ab_actions():
     assert "request=self._batch_queue.pop(0)" in SRC
-    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode)" in SRC
+    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config)" in SRC
     assert "self.session_cache.put(key,out)" in SRC
     assert "self.after(30,self._batch_run_next)" in SRC
     assert "self._set_compare_output(slot,out)" in SRC

@@ -12,6 +12,10 @@ from typing import Any, Mapping
 from .start_packages import default_start_package_keys, normalize_start_package_keys
 from .sections import default_sections, normalize_sections
 from ..generators.upgraded.profile import load_profile as load_active_upgraded_profile
+from ..archetypes.profiles import (
+    default_archetype_profile,
+    normalize_archetype_profile,
+)
 
 
 _STRUCTURAL_ROOTS = frozenset(
@@ -229,6 +233,7 @@ class CustomGenerationConfig:
     start_packages: tuple[str, ...] | None = None
     schema_version: int = 2
     sections: dict[str, Any] = field(default_factory=dict)
+    archetype_profile: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.base_mode not in {"legacy", "upgraded"}:
@@ -243,6 +248,14 @@ class CustomGenerationConfig:
         object.__setattr__(self, "profile", sanitize_custom_profile(self.profile))
         object.__setattr__(self, "start_packages", packages)
         object.__setattr__(self, "sections", deepcopy(dict(self.sections)))
+        object.__setattr__(
+            self,
+            "archetype_profile",
+            normalize_archetype_profile(
+                self.archetype_profile or default_archetype_profile(self.base_archetype),
+                archetype_key=self.base_archetype,
+            ),
+        )
 
     @property
     def digest(self) -> str:
@@ -256,6 +269,7 @@ class CustomGenerationConfig:
             "profile": deepcopy(self.profile),
             "start_packages": list(self.start_packages),
             "sections": deepcopy(self.sections),
+            "archetype_profile": deepcopy(self.archetype_profile),
         }
 
     @classmethod
@@ -275,6 +289,9 @@ class CustomGenerationConfig:
             sections=deepcopy(dict(value.get("sections", {})))
             if isinstance(value.get("sections", {}), Mapping)
             else {},
+            archetype_profile=deepcopy(dict(value.get("archetype_profile", {})))
+            if isinstance(value.get("archetype_profile", {}), Mapping)
+            else {},
         )
 
     def with_value(self, path, value: Any) -> "CustomGenerationConfig":
@@ -285,6 +302,39 @@ class CustomGenerationConfig:
             self.start_packages,
             self.schema_version,
             self.sections,
+            self.archetype_profile,
+        )
+
+    def with_archetype_value(self, path, value: Any) -> "CustomGenerationConfig":
+        """Return a copy with one archetype-owned scalar replaced."""
+
+        return CustomGenerationConfig(
+            self.base_mode,
+            self.base_archetype,
+            self.profile,
+            self.start_packages,
+            self.schema_version,
+            self.sections,
+            set_path(self.archetype_profile, path, value),
+        )
+
+    def with_archetype_profile(
+        self,
+        profile: Mapping[str, Any],
+        *,
+        base_archetype: str | None = None,
+    ) -> "CustomGenerationConfig":
+        """Return a copy with a complete archetype profile."""
+
+        archetype = str(base_archetype or self.base_archetype)
+        return CustomGenerationConfig(
+            self.base_mode,
+            archetype,
+            self.profile,
+            self.start_packages,
+            self.schema_version,
+            self.sections,
+            deepcopy(dict(profile)),
         )
 
     def with_start_packages(self, keys) -> "CustomGenerationConfig":
@@ -295,6 +345,7 @@ class CustomGenerationConfig:
             tuple(keys),
             self.schema_version,
             self.sections,
+            self.archetype_profile,
         )
 
     def with_sections(self, sections: Mapping[str, Any]) -> "CustomGenerationConfig":
@@ -307,6 +358,7 @@ class CustomGenerationConfig:
             self.start_packages,
             self.schema_version,
             deepcopy(dict(sections)),
+            self.archetype_profile,
         )
 
     def semantic_sections(self) -> dict[str, Any]:
@@ -335,6 +387,7 @@ class CustomGenerationConfig:
             "base_mode": self.base_mode,
             "base_archetype": self.base_archetype,
             "configuration_digest": self.digest,
+            "archetype_profile": deepcopy(self.archetype_profile),
             "start_packages": list(self.start_packages),
             # A package toggle is itself a Custom change.  Materialize the
             # semantic sections even when no scalar field has been edited yet;
@@ -358,6 +411,7 @@ def build_custom_config(
     upgraded_path: Path | str | None = None,
     start_packages=None,
     sections: Mapping[str, Any] | None = None,
+    archetype_profile: Mapping[str, Any] | None = None,
 ) -> CustomGenerationConfig:
     selected = (
         deepcopy(dict(profile))
@@ -375,6 +429,9 @@ def build_custom_config(
         tuple(start_packages) if start_packages is not None else default_start_package_keys(),
         2,
         deepcopy(dict(sections)) if isinstance(sections, Mapping) else {},
+        deepcopy(dict(archetype_profile))
+        if isinstance(archetype_profile, Mapping)
+        else default_archetype_profile(base_archetype),
     )
 
 
@@ -392,4 +449,6 @@ __all__ = (
     "profile_digest",
     "sanitize_custom_profile",
     "set_path",
+    "default_archetype_profile",
+    "normalize_archetype_profile",
 )

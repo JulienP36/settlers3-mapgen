@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 _WORDS = {
     "fr": {
         "river": "Rivière", "water": "Eau", "fish": "Poissons", "minerals": "Minerais",
@@ -170,6 +169,534 @@ _CUSTOM_SECTION_TEXT = {
     },
     "section_modified": {
         "fr": "· modifié", "en": "· modified", "de": "· geändert", "es": "· modificado",
+    },
+    "archetype_base_profile": {
+        "fr": "Profil de base", "en": "Base profile", "de": "Basisprofil", "es": "Perfil base",
+    },
+    "archetype_profile_classic": {
+        "fr": "Classique", "en": "Classic", "de": "Klassisch", "es": "Clásico",
+    },
+    "archetype_profile_continental": {
+        "fr": "Continental", "en": "Continental", "de": "Kontinental", "es": "Continental",
+    },
+    "archetype_profile_edited": {
+        "fr": "Profil personnalisé", "en": "Custom profile", "de": "Benutzerprofil", "es": "Perfil personalizado",
+    },
+    "archetype_profile_hint": {
+        "fr": "Classique reprend le Legacy natif ; Continental reprend le relief Legacy dérivé validé. Modifier un réglage crée un Profil personnalisé.",
+        "en": "Classic keeps native Legacy; Continental uses the validated Legacy-derived relief. Editing a setting creates a Custom profile.",
+        "de": "Klassisch behält das native Legacy bei; Kontinental verwendet das validierte, vom Legacy abgeleitete Relief. Eine Änderung erstellt ein Benutzerprofil.",
+        "es": "Clásico conserva Legacy nativo; Continental usa el relieve validado derivado de Legacy. Al cambiar un ajuste se crea un perfil personalizado.",
+    },
+    "archetype_macro_profile": {
+        "fr": "Construction macro", "en": "Macro construction", "de": "Makroaufbau", "es": "Construcción macro",
+    },
+    "archetype_layout_engine": {
+        "fr": "Moteur de forme", "en": "Shape engine", "de": "Formmotor", "es": "Motor de forma",
+    },
+    "archetype_noise_model": {
+        "fr": "Modèle de bruit", "en": "Noise model", "de": "Rauschmodell", "es": "Modelo de ruido",
+    },
+    "archetype_relief_source": {
+        "fr": "Source du relief", "en": "Relief source", "de": "Reliefquelle", "es": "Fuente del relieve",
+    },
+    "archetype_relief_source_hint": {
+        "fr": "Legacy natif conserve son relief d’origine. Legacy par blocs construit un continent, des chaînes montagneuses et des bassins intérieurs, puis utilise le raffinement, la sculpture et la relaxation natifs. Les sources noise-map complètes restent des générateurs indépendants.",
+        "en": "Native Legacy keeps its original relief. Legacy blocks builds a continent, mountain belts and inland basins, then uses native refinement, sculpture and relaxation. Complete noise-map sources remain independent generators.",
+        "de": "Native Legacy behält sein ursprüngliches Relief. Legacy-Blöcke erzeugt einen Kontinent, Gebirgsketten und Binnenbecken und verwendet anschließend native Verfeinerung, Modellierung und Glättung. Vollständige Noise-Map-Quellen bleiben unabhängige Generatoren.",
+        "es": "Legacy nativo conserva su relieve original. Legacy por bloques crea un continente, cordilleras y cuencas interiores y luego usa el refinamiento, modelado y suavizado nativos. Las fuentes de noise map completas siguen siendo generadores independientes.",
+    },
+    "archetype_relief_source_native": {
+        "fr": "Legacy natif", "en": "Native Legacy", "de": "Native Legacy", "es": "Legacy nativo",
+    },
+    "archetype_relief_source_custom_legacy": {
+        "fr": "Legacy par blocs", "en": "Legacy blocks", "de": "Legacy-Blöcke", "es": "Legacy por bloques",
+    },
+    "archetype_relief_source_fractal": {
+        "fr": "fBm fractal", "en": "Fractal fBm", "de": "Fraktales fBm", "es": "fBm fractal",
+    },
+    "archetype_relief_source_warped": {
+        "fr": "fBm déformé", "en": "Warped fBm", "de": "Verzerrtes fBm", "es": "fBm deformado",
+    },
+    "archetype_relief_source_ridged": {
+        "fr": "fBm crêtes", "en": "Ridged fBm", "de": "Kamm-fBm", "es": "fBm de crestas",
+    },
+    "archetype_noise_range": {
+        "fr": "Plage du bruit", "en": "Noise range", "de": "Rauschbereich", "es": "Rango del ruido",
+    },
+    "archetype_coast_model": {
+        "fr": "Construction des plages", "en": "Shore construction", "de": "Uferaufbau", "es": "Construcción de costas",
+    },
+    "archetype_coast_derived": {
+        "fr": "Dérivée de la relation eau/terrain", "en": "Derived from water/land relation", "de": "Aus Wasser-/Landbeziehung abgeleitet", "es": "Derivada de la relación agua/terreno",
+    },
+    "archetype_coast_custom": {
+        "fr": "Construction dédiée", "en": "Dedicated construction", "de": "Eigene Konstruktion", "es": "Construcción propia",
+    },
+    "archetype_mass_model": {
+        "fr": "Masse terrestre", "en": "Land-mass model", "de": "Landmassenmodell", "es": "Modelo de masa terrestre",
+    },
+    "archetype_micro_islands": {
+        "fr": "Micro-îles", "en": "Micro-islands", "de": "Mikroinseln", "es": "Microislas",
+    },
+    "archetype_relief_group": {
+        "fr": "Seuils du relief", "en": "Relief thresholds", "de": "Reliefschwellen", "es": "Umbrales del relieve",
+    },
+    "archetype_morphology_group": {
+        "fr": "Morphologie du relief", "en": "Relief morphology", "de": "Reliefmorphologie", "es": "Morfología del relieve",
+    },
+    "archetype_legacy_blocks_group": {
+        "fr": "Blocs natifs Legacy", "en": "Native Legacy blocks", "de": "Native Legacy-Blöcke", "es": "Bloques nativos Legacy",
+    },
+    "archetype_native_coarse_variation": {
+        "fr": "Variation des points d’ancrage (%)", "en": "Anchor-point variation (%)", "de": "Variation der Ankerpunkte (%)", "es": "Variación de los puntos de anclaje (%)",
+    },
+    "archetype_native_coarse_variation_hint": {
+        "fr": "Variation aléatoire des hauteurs posées sur la grille Legacy de 64 cases, avant les subdivisions. 100 % conserve exactement le Legacy ; 0 % fixe chaque bande à sa hauteur moyenne.",
+        "en": "Random variation of heights on the Legacy 64-cell lattice, before subdivision. 100% exactly preserves Legacy; 0% fixes each band at its mean height.",
+        "de": "Zufallsvariation der Höhen auf dem 64-Zellen-Legacy-Raster vor der Unterteilung. 100 % entspricht exakt Legacy; 0 % setzt jedes Band auf seine mittlere Höhe.",
+        "es": "Variación aleatoria de las alturas en la cuadrícula Legacy de 64 celdas, antes de subdividir. 100 % conserva exactamente Legacy; 0 % fija cada franja en su altura media.",
+    },
+    "archetype_noise_layers_group": {
+        "fr": "Composants de relief", "en": "Relief components", "de": "Reliefkomponenten", "es": "Componentes del relieve",
+    },
+    "archetype_noise_layer_count": {
+        "fr": "Nombre de fusions",
+        "en": "Fusion count",
+        "de": "Anzahl Fusionen",
+        "es": "Número de fusiones",
+    },
+    "archetype_noise_adaptive_frequency": {
+        "fr": "Adapter les fréquences à la taille de carte",
+        "en": "Scale frequencies with map size",
+        "de": "Frequenzen an die Kartengröße anpassen",
+        "es": "Adaptar frecuencias al tamaño del mapa",
+    },
+    "archetype_noise_adaptive_frequency_hint": {
+        "fr": "Activé : les valeurs saisies servent de référence à 768 cases. La fréquence baisse sur les petites cartes et monte sur les grandes ; les octaves trop fines sont retirées des petits domaines. Désactivé : comportement actuel.",
+        "en": "On: entered values are the 768-cell reference. Frequencies fall on smaller maps and rise on larger ones; octaves too fine for small domains are removed. Off: current behavior.",
+        "de": "Ein: Die Eingaben gelten als Referenz für 768 Zellen. Auf kleineren Karten sinken die Frequenzen, auf größeren steigen sie; zu feine Oktaven entfallen auf kleinen Karten. Aus: aktuelles Verhalten.",
+        "es": "Activado: los valores introducidos sirven de referencia para 768 celdas. Las frecuencias bajan en mapas pequeños y suben en los grandes; se eliminan las octavas demasiado finas para dominios pequeños. Desactivado: comportamiento actual.",
+    },
+    "archetype_noise_layer": {
+        "fr": "Couche {index}", "en": "Layer {index}", "de": "Schicht {index}", "es": "Capa {index}",
+    },
+    "archetype_noise_family": {
+        "fr": "Type", "en": "Type", "de": "Typ", "es": "Tipo",
+    },
+    "archetype_noise_scale": {
+        "fr": "Échelle", "en": "Scale", "de": "Skala", "es": "Escala",
+    },
+    "archetype_noise_strength": {
+        "fr": "Intensité", "en": "Strength", "de": "Stärke", "es": "Intensidad",
+    },
+    "archetype_noise_operation": {
+        "fr": "Fusion", "en": "Blend", "de": "Mischung", "es": "Fusión",
+    },
+    "archetype_noise_add": {
+        "fr": "Rehausser", "en": "Raise", "de": "Anheben", "es": "Elevar",
+    },
+    "archetype_noise_subtract": {
+        "fr": "Abaisser", "en": "Lower", "de": "Absenken", "es": "Bajar",
+    },
+    "archetype_noise_smooth": {
+        "fr": "Ondulations", "en": "Rolling", "de": "Wellen", "es": "Ondulaciones",
+    },
+    "archetype_noise_ridged": {
+        "fr": "Crêtes", "en": "Ridged", "de": "Kamm", "es": "Crestas",
+    },
+    "archetype_noise_layers_hint": {
+        "fr": "Les composants modulent le domaine terrestre de la source choisie avant la normalisation et la relaxation natives. Ils ne créent pas encore de lacs ; désactivés, ils ne changent rien à la source.",
+        "en": "Components modulate the selected source's land domain before native normalization and relaxation. They do not create lakes yet; disabled components leave the source unchanged.",
+        "de": "Komponenten verändern den Landbereich der gewählten Quelle vor der nativen Normalisierung und Glättung. Sie erzeugen noch keine Seen; deaktivierte Komponenten ändern die Quelle nicht.",
+        "es": "Los componentes modifican el dominio terrestre de la fuente elegida antes de la normalización y relajación nativas. Todavía no crean lagos; desactivados no cambian la fuente.",
+    },
+    "archetype_noise_masks_hint": {
+        "fr": "Un masque réduit ou inverse l’influence d’une source dans son rectangle fini : hauteur, bordure, bandes, direction, pente, courbure ou autre noise. Influence 0 % = neutre.",
+        "en": "A mask reduces or inverts a source's influence inside its finite rectangle: height, edge, bands, direction, slope, curvature or another noise. Influence 0% = neutral.",
+        "de": "Eine Maske verringert oder invertiert den Einfluss einer Quelle innerhalb ihres endlichen Rechtecks: Höhe, Rand, Bänder, Richtung, Neigung, Krümmung oder anderes Rauschen. Einfluss 0 % = neutral.",
+        "es": "Una máscara reduce o invierte la influencia de una fuente dentro de su rectángulo finito: altura, borde, bandas, dirección, pendiente, curvatura u otro ruido. Influencia 0 % = neutra.",
+    },
+    "archetype_shape_group": {
+        "fr": "Gabarit de forme", "en": "Shape template", "de": "Formgitter", "es": "Plantilla de forma",
+    },
+    "archetype_shape_subtitle": {
+        "fr": "Structure spatiale de la macro-forme", "en": "Spatial structure of the macro shape", "de": "Räumliche Struktur der Makroform", "es": "Estructura espacial de la macroforma",
+    },
+    "archetype_shape_hint": {
+        "fr": "Le gabarit définit une forme de carte dans laquelle les sources de bruit sont générées. Il ne crée pas un bruit secondaire et ne dépend d’aucune fusion.",
+        "en": "The template defines a map shape in which noise sources are generated. It does not create a secondary noise and does not depend on any fusion.",
+        "de": "Das Gitter definiert eine Kartenform, in der Rauschquellen erzeugt werden. Es erzeugt kein sekundäres Rauschen und hängt von keiner Fusion ab.",
+        "es": "La plantilla define una forma de mapa dentro de la que se generan las fuentes de ruido. No crea un ruido secundario ni depende de ninguna fusión.",
+    },
+    "archetype_shape_type": {
+        "fr": "Forme", "en": "Shape", "de": "Form", "es": "Forma",
+    },
+    "archetype_shape_width": {
+        "fr": "Largeur %", "en": "Width %", "de": "Breite %", "es": "Anchura %",
+    },
+    "archetype_shape_height": {
+        "fr": "Hauteur %", "en": "Height %", "de": "Höhe %", "es": "Altura %",
+    },
+    "archetype_shape_offset_x": {
+        "fr": "Décalage X %", "en": "Offset X %", "de": "Versatz X %", "es": "Desfase X %",
+    },
+    "archetype_shape_offset_y": {
+        "fr": "Décalage Y %", "en": "Offset Y %", "de": "Versatz Y %", "es": "Desfase Y %",
+    },
+    "archetype_shape_rotation": {
+        "fr": "Rotation °", "en": "Rotation °", "de": "Drehung °", "es": "Rotación °",
+    },
+    "archetype_shape_softness": {
+        "fr": "Douceur bord %", "en": "Edge softness %", "de": "Randweichheit %", "es": "Suavidad borde %",
+    },
+    "archetype_shape_points": {
+        "fr": "Pointes", "en": "Points", "de": "Spitzen", "es": "Puntas",
+    },
+    "archetype_shape_inner_radius": {
+        "fr": "Creux étoile %", "en": "Star inner radius %", "de": "Stern-Innenradius %", "es": "Radio interior estrella %",
+    },
+    "archetype_shape_thickness": {
+        "fr": "Épaisseur %", "en": "Thickness %", "de": "Dicke %", "es": "Grosor %",
+    },
+    "archetype_shape_turns": {
+        "fr": "Ondulations", "en": "Turns", "de": "Windungen", "es": "Ondulaciones",
+    },
+    "archetype_shape_amplitude": {
+        "fr": "Amplitude %", "en": "Amplitude %", "de": "Amplitude %", "es": "Amplitud %",
+    },
+    "archetype_shape_taper": {
+        "fr": "Pointe des extrémités %", "en": "End taper %", "de": "Endverjüngung %", "es": "Afinado extremos %",
+    },
+    "archetype_shape_crater": {
+        "fr": "Cratère %", "en": "Crater %", "de": "Krater %", "es": "Cráter %",
+    },
+    "archetype_shape_relief": {
+        "fr": "Relief du dôme %", "en": "Dome relief %", "de": "Kuppelrelief %", "es": "Relieve de cúpula %",
+    },
+    "archetype_shape_templates_hint": {
+        "fr": "Les fusions restent des sources indépendantes. Le gabarit de forme agit au niveau de la macro-géographie et leur interdit de recréer du terrain hors de sa silhouette.",
+        "en": "Fusions remain independent sources. The shape template acts at macro-geography level and prevents them from recreating terrain outside its silhouette.",
+        "de": "Fusionen bleiben unabhängige Quellen. Das Formgitter wirkt auf Makrogeografie-Ebene und verhindert Terrain außerhalb seiner Silhouette.",
+        "es": "Las fusiones siguen siendo fuentes independientes. La plantilla actúa a nivel de macrogeografía e impide recrear terreno fuera de su silueta.",
+    },
+    "archetype_mask_group": {
+        "fr": "Masques spatiaux", "en": "Spatial masks", "de": "Räumliche Masken", "es": "Máscaras espaciales",
+    },
+    "archetype_mask_subtitle": {
+        "fr": "Modulation douce du champ complet après les fusions", "en": "Soft modulation of the complete field after fusions", "de": "Sanfte Modulation des vollständigen Feldes nach Fusionen", "es": "Modulación suave del campo completo después de las fusiones",
+    },
+    "archetype_mask_hint": {
+        "fr": "Un masque n’écrase pas le terrain hors de sa forme : il module toute la noisemap, avec une transition douce sur son bord et une variation conservée à l’extérieur. Le type Dessin libre permet de peindre ou d’importer une grille en niveaux de gris.",
+        "en": "A mask does not erase terrain outside its shape: it modulates the whole noisemap, with a soft edge transition and variation preserved outside. Freehand lets you paint or import a grayscale grid.",
+        "de": "Eine Maske löscht Terrain außerhalb ihrer Form nicht: Sie moduliert die gesamte Noisemap mit weichem Randübergang und erhaltener Variation außerhalb. Freihand ermöglicht das Malen oder Importieren eines Graustufenrasters.",
+        "es": "Una máscara no borra el terreno fuera de su forma: modula todo el noisemap, con una transición suave en el borde y variación conservada fuera. Dibujo libre permite pintar o importar una cuadrícula en escala de grises.",
+    },
+    "archetype_mask_layer_count": {
+        "fr": "Nombre de masques", "en": "Mask count", "de": "Anzahl Masken", "es": "Número de máscaras",
+    },
+    "archetype_mask_operation": {
+        "fr": "Opération", "en": "Operation", "de": "Operation", "es": "Operación",
+    },
+    "archetype_mask_strength": {
+        "fr": "Influence %", "en": "Strength %", "de": "Stärke %", "es": "Influencia %",
+    },
+    "archetype_mask_layer": {
+        "fr": "Masque {index}", "en": "Mask {index}", "de": "Maske {index}", "es": "Máscara {index}",
+    },
+    "archetype_noise_lab_none": {
+        "fr": "Laboratoire : aucun composant actif.",
+        "en": "Lab: no active component.",
+        "de": "Labor: keine aktive Komponente.",
+        "es": "Laboratorio: ningún componente activo.",
+    },
+    "archetype_noise_lab_total": {
+        "fr": "Laboratoire : {count} composant(s) actif(s), {percent} % des cellules modifiées.",
+        "en": "Lab: {count} active component(s), {percent}% of cells modified.",
+        "de": "Labor: {count} aktive Komponente(n), {percent}% der Zellen verändert.",
+        "es": "Laboratorio: {count} componente(s) activo(s), {percent}% de celdas modificadas.",
+    },
+    "archetype_noise_lab_source": {
+        "fr": "Source complète : {source}.",
+        "en": "Complete source: {source}.",
+        "de": "Vollständige Quelle: {source}.",
+        "es": "Fuente completa: {source}.",
+    },
+    "archetype_noise_lab_source_metrics": {
+        "fr": "Profil brut : terre {land} % · hauteurs P10/P50/P90 {p10}/{p50}/{p90}.",
+        "en": "Raw profile: land {land}% · P10/P50/P90 heights {p10}/{p50}/{p90}.",
+        "de": "Rohprofil: Land {land}% · Höhen P10/P50/P90 {p10}/{p50}/{p90}.",
+        "es": "Perfil bruto: tierra {land}% · alturas P10/P50/P90 {p10}/{p50}/{p90}.",
+    },
+    "archetype_noise_lab_layer": {
+        "fr": "Couche {index} : {source} · rôle {role} · masque {mask} · étape {stage} · {operation} · ordre {order} · {affected} % · delta {minimum}…{maximum}",
+        "en": "Layer {index}: {source} · role {role} · mask {mask} · stage {stage} · {operation} · order {order} · {affected}% · delta {minimum}…{maximum}",
+        "de": "Schicht {index}: {source} · Rolle {role} · Maske {mask} · Stufe {stage} · {operation} · Reihenfolge {order} · {affected}% · Delta {minimum}…{maximum}",
+        "es": "Capa {index}: {source} · rol {role} · máscara {mask} · etapa {stage} · {operation} · orden {order} · {affected}% · delta {minimum}…{maximum}",
+    },
+    "archetype_noise_contribution": {
+        "fr": "Contribution brute des fusions (rouge = rehausse, bleu = abaisse)",
+        "en": "Raw fusion contribution (red = raise, blue = lower)",
+        "de": "Roher Fusionsbeitrag (rot = höher, blau = niedriger)",
+        "es": "Contribución bruta de las fusiones (rojo = subir, azul = bajar)",
+    },
+    "archetype_noise_contribution_short": {
+        "fr": "Contribution brute",
+        "en": "Raw contribution",
+        "de": "Roher Beitrag",
+        "es": "Contribución bruta",
+    },
+    "archetype_noise_role_land_relief": {
+        "fr": "relief terrestre",
+        "en": "land relief",
+        "de": "Landrelief",
+        "es": "relieve terrestre",
+    },
+    "archetype_noise_mask_native_land": {
+        "fr": "terre native",
+        "en": "native land",
+        "de": "natives Land",
+        "es": "tierra nativa",
+    },
+    "archetype_noise_mask_source_land": {
+        "fr": "terre de la source",
+        "en": "source land",
+        "de": "Quellenland",
+        "es": "tierra de la fuente",
+    },
+    "archetype_noise_stage_pre_normalize": {
+        "fr": "avant normalisation",
+        "en": "before normalization",
+        "de": "vor Normalisierung",
+        "es": "antes de normalizar",
+    },
+    "archetype_shape_scale": {
+        "fr": "Échelle des formes", "en": "Shape scale", "de": "Formmaßstab", "es": "Escala de formas",
+    },
+    "archetype_relief_contrast": {
+        "fr": "Contraste du relief", "en": "Relief contrast", "de": "Reliefkontrast", "es": "Contraste del relieve",
+    },
+    "archetype_native_large_scale_refinement": {
+        "fr": "Variation grandes formes (32–8) (%)", "en": "Large-scale variation (32–8) (%)", "de": "Variation großer Formen (32–8) (%)", "es": "Variación de formas grandes (32–8) (%)",
+    },
+    "archetype_native_fine_scale_refinement": {
+        "fr": "Variation détails fins (4–1) (%)", "en": "Fine-detail variation (4–1) (%)", "de": "Variation feiner Details (4–1) (%)", "es": "Variación de detalles finos (4–1) (%)",
+    },
+    "archetype_native_sculpture_attempts": {
+        "fr": "Tentatives de sculpture (%)", "en": "Sculpture attempts (%)", "de": "Sculpturversuche (%)", "es": "Intentos de escultura (%)",
+    },
+    "archetype_native_relaxation_strength": {
+        "fr": "Intensité de correction des pentes (%)", "en": "Slope-correction strength (%)", "de": "Stärke der Hangkorrektur (%)", "es": "Intensidad de corrección de pendientes (%)",
+    },
+    "archetype_native_refinement": {
+        "fr": "Variation du raffinement natif (%)", "en": "Native refinement variation (%)", "de": "Variation der nativen Verfeinerung (%)", "es": "Variación del refinamiento nativo (%)",
+    },
+    "archetype_frame_margin": {
+        "fr": "Marge du domaine (%)", "en": "Domain margin (%)", "de": "Bereichsrand (%)", "es": "Margen del dominio (%)",
+    },
+    "archetype_edge_falloff": {
+        "fr": "Transition de bord", "en": "Edge transition", "de": "Randübergang", "es": "Transición de borde",
+    },
+    "archetype_shape_scale_hint": {
+        "fr": "100 % conserve l’échelle native. Une valeur inférieure resserre l’échantillonnage et réduit l’échelle apparente des formes ; le pourtour reste aquatique.",
+        "en": "100% keeps the native scale. Lower values tighten the sampling and reduce the apparent form scale; the perimeter remains water.",
+        "de": "100 % behält den nativen Maßstab. Niedrigere Werte verkleinern den sichtbaren Formmaßstab; der Rand bleibt Wasser.",
+        "es": "100 % conserva la escala nativa. Los valores inferiores reducen la escala aparente de las formas; el perímetro sigue siendo agua.",
+    },
+    "archetype_relief_contrast_hint": {
+        "fr": "100 % conserve l’amplitude native. Une valeur supérieure accentue les écarts de hauteur ; une valeur inférieure adoucit le relief.",
+        "en": "100% keeps the native amplitude. Higher values strengthen height differences; lower values soften the relief.",
+        "de": "100 % behält die native Amplitude. Höhere Werte verstärken Höhenunterschiede; niedrigere Werte glätten das Relief.",
+        "es": "100 % conserva la amplitud nativa. Los valores superiores acentúan las diferencias de altura; los inferiores suavizan el relieve.",
+    },
+    "archetype_native_large_scale_refinement_hint": {
+        "fr": "Intensité aléatoire des subdivisions aux échelles 32, 16 et 8. Combinée au réglage général ; 100 % garde l’amplitude native de cette bande.",
+        "en": "Random subdivision strength at scales 32, 16 and 8. Combined with the master setting; 100% keeps this band’s native amplitude.",
+        "de": "Zufällige Unterteilungsstärke bei Maßstab 32, 16 und 8. Wird mit der Haupteinstellung kombiniert; 100 % behält die native Amplitude dieses Bereichs.",
+        "es": "Intensidad aleatoria de subdivisión en escalas 32, 16 y 8. Se combina con el ajuste general; 100 % conserva la amplitud nativa de esta banda.",
+    },
+    "archetype_native_fine_scale_refinement_hint": {
+        "fr": "Intensité aléatoire des subdivisions aux échelles 4, 2 et 1. Sur Legacy par blocs, la base est atténuée à 75 % pour limiter les petites cuvettes ; ce réglage la multiplie. Sur Legacy natif, 100 % garde l’amplitude native.",
+        "en": "Random subdivision strength at scales 4, 2 and 1. Legacy Blocks starts from a 75% baseline to limit tiny basins; this control scales that baseline. Native Legacy keeps its 100% amplitude.",
+        "de": "Zufällige Unterteilungsstärke bei Maßstab 4, 2 und 1. Legacy mit Blöcken beginnt mit 75 %, um kleine Senken zu begrenzen; diese Einstellung skaliert diesen Wert. Das native Legacy behält 100 %.",
+        "es": "Intensidad aleatoria de subdivisión en escalas 4, 2 y 1. Legacy por bloques parte de un 75 % para limitar las pequeñas cuencas; este control multiplica esa base. Legacy nativo conserva el 100 %.",
+    },
+    "archetype_native_sculpture_attempts_hint": {
+        "fr": "Nombre de tentatives du bloc de sculpture après le raffinement. 100 % correspond au nombre natif ; 0 % désactive les tentatives. Peut changer la consommation aléatoire de ce bloc.",
+        "en": "Number of attempts in the sculpture block after refinement. 100% is the native count; 0% disables attempts. This can change random-number consumption in this block.",
+        "de": "Anzahl der Versuche im Sculpturblock nach der Verfeinerung. 100 % entspricht der nativen Anzahl; 0 % deaktiviert die Versuche. Dadurch kann sich der Zufallszahlenverbrauch dieses Blocks ändern.",
+        "es": "Número de intentos del bloque de escultura tras el refinamiento. 100 % equivale a la cantidad nativa; 0 % desactiva los intentos. Puede cambiar el consumo aleatorio de este bloque.",
+    },
+    "archetype_native_relaxation_strength_hint": {
+        "fr": "Part de la correction locale appliquée après la relaxation native. 100 % conserve toute la correction Legacy ; 0 % garde les hauteurs issues de la sculpture avant relaxation. Les valeurs intermédiaires préservent davantage de ruptures et de pentes abruptes. Ce réglage est distinct du nombre de points examinés par la sculpture.",
+        "en": "Share of the local correction applied after native relaxation. 100% keeps the full Legacy correction; 0% keeps the sculpted heights before relaxation. Intermediate values preserve more local breaks and steeper slopes. This setting is separate from how many points sculpture examines.",
+        "de": "Anteil der lokalen Korrektur nach der nativen Relaxation. 100 % behält die vollständige Legacy-Korrektur bei; 0 % behält die vor der Relaxation skulptierten Höhen. Zwischenwerte erhalten mehr lokale Stufen und steilere Hänge. Diese Einstellung ist unabhängig von der Anzahl der von der Skulptur geprüften Punkte.",
+        "es": "Parte de la corrección local aplicada tras la relajación nativa. 100 % conserva toda la corrección Legacy; 0 % mantiene las alturas esculpidas antes de relajar. Los valores intermedios preservan más rupturas locales y pendientes pronunciadas. Este ajuste es distinto de cuántos puntos examina la escultura.",
+    },
+    "archetype_native_refinement_hint": {
+        "fr": "Intensité de variation aléatoire des subdivisions du bloc Legacy, de l’échelle 32 jusqu’à la case. 100 % conserve exactement le Legacy. Utilisé seulement avec la source « Legacy natif » ; les sources noisemaps complètes restent indépendantes.",
+        "en": "Random variation strength in the Legacy subdivision block, from scale 32 down to individual cells. 100% exactly preserves Legacy. Used only with the Native Legacy source; complete noise-map sources remain independent.",
+        "de": "Stärke der Zufallsvariation im Legacy-Unterteilungsblock von Maßstab 32 bis zur einzelnen Zelle. 100 % entspricht exakt Legacy. Nur mit der Quelle „Natives Legacy“ verwendet; vollständige Noise-Map-Quellen bleiben unabhängig.",
+        "es": "Intensidad de variación aleatoria del bloque de subdivisión Legacy, desde escala 32 hasta cada celda. 100 % conserva exactamente Legacy. Solo se usa con la fuente Legacy nativa; las fuentes completas de mapas de ruido siguen siendo independientes.",
+    },
+    "archetype_frame_margin_hint": {
+        "fr": "Sur le domaine Continental calibré, 0 % correspond à la petite marge testée en R66 ; 4 % rétablit l’ancienne marge de 18 cases sur 768. La transition de bord est réglée séparément.",
+        "en": "On the calibrated Continental domain, 0% matches the small ocean margin tested in R66; 4% restores the former 18-cell margin on a 768 map. Edge transition is controlled separately.",
+        "de": "Im kalibrierten Continental-Bereich entspricht 0 % dem kleinen, in R66 getesteten Ozeanrand; 4 % stellt den früheren Rand von 18 Zellen auf einer 768er Karte wieder her. Der Randübergang wird separat eingestellt.",
+        "es": "0 % no añade un marco sin generación. En el preset Continental, 5 % restablece el marco anterior de 18 celdas; en otros perfiles, el valor escala con el dominio.",
+    },
+    "archetype_edge_falloff_hint": {
+        "fr": "Largeur sur laquelle la source rejoint naturellement l’eau avant son cadre. La transition est carrée, pas un masque radial qui arrondit les continents.",
+        "en": "Width over which the source naturally reaches water before its frame. The transition is rectangular, not a radial mask that rounds landmasses.",
+        "de": "Breite, über die die Quelle vor ihrem Rahmen natürlich Wasser erreicht. Der Übergang ist rechteckig und keine radiale Maske, die Landmassen abrundet.",
+        "es": "Anchura en la que la fuente llega naturalmente al agua antes del marco. La transición es rectangular, no una máscara radial que redondea las masas.",
+    },
+    "archetype_height_unit": {
+        "fr": "hauteur", "en": "height", "de": "Höhe", "es": "altura",
+    },
+    "archetype_water_threshold": {
+        "fr": "Seuil eau", "en": "Water threshold", "de": "Wasserschwelle", "es": "Umbral de agua",
+    },
+    "archetype_mountain_threshold": {
+        "fr": "Seuil montagne", "en": "Mountain threshold", "de": "Bergschwelle", "es": "Umbral de montaña",
+    },
+    "archetype_snow_threshold": {
+        "fr": "Seuil neige", "en": "Snow threshold", "de": "Schneeschwelle", "es": "Umbral de nieve",
+    },
+    "archetype_water_threshold_hint": {
+        "fr": "Les hauteurs inférieures ou égales à cette valeur deviennent de l’eau. Le bruit natif descend jusqu’à -30 ; la hauteur de jeu reste toutefois bloquée à 0 sous l’eau.",
+        "en": "Heights at or below this value become water. Native noise reaches -30; the game heightmap is still floored at 0 underwater.",
+        "de": "Höhen bis einschließlich diesem Wert werden zu Wasser. Das native Rauschen reicht bis -30; die Spiel-Höhenkarte bleibt unter Wasser bei 0.",
+        "es": "Las alturas menores o iguales a este valor se convierten en agua. El ruido nativo baja hasta -30, pero la altura del juego queda limitada a 0 bajo el agua.",
+    },
+    "archetype_mountain_threshold_hint": {
+        "fr": "À partir de cette hauteur, le terrain devient rocheux/montagneux, jusqu’au seuil de neige. Il doit rester au-dessus du seuil eau.",
+        "en": "From this height, terrain becomes rocky/mountainous until the snow threshold. It must stay above the water threshold.",
+        "de": "Ab dieser Höhe wird das Terrain felsig/bergig bis zur Schneeschwelle. Der Wert muss über der Wasserschwelle bleiben.",
+        "es": "A partir de esta altura, el terreno se vuelve rocoso/montañoso hasta el umbral de nieve. Debe quedar por encima del umbral de agua.",
+    },
+    "archetype_snow_threshold_hint": {
+        "fr": "À partir de cette hauteur, le terrain est classé neige. Le seuil reste au moins 2 unités au-dessus de celui de la montagne pour préserver la transition minimale.",
+        "en": "From this height, terrain is classified as snow. It stays at least 2 units above the mountain threshold to preserve the minimum transition.",
+        "de": "Ab dieser Höhe wird das Terrain als Schnee klassifiziert. Der Wert bleibt mindestens 2 Einheiten über der Bergschwelle, um den Mindestübergang zu erhalten.",
+        "es": "A partir de esta altura, el terreno se clasifica como nieve. Se mantiene al menos 2 unidades por encima del umbral de montaña para conservar la transición mínima.",
+    },
+    "archetype_unimplemented_hint": {
+        "fr": "Cet archétype est encore réservé : ses paramètres seront activés avec son moteur macro.",
+        "en": "This archetype is still reserved: its parameters will be enabled with its macro engine.",
+        "de": "Dieser Archetyp ist noch reserviert: Seine Parameter werden mit dem Makromotor aktiviert.",
+        "es": "Este arquetipo sigue reservado: sus parámetros se activarán con su motor macro.",
+    },
+    "archetype_preview_noise": {
+        "fr": "Bruit / hauteur",
+        "en": "Noise / height",
+        "de": "Rauschen / Höhe",
+        "es": "Ruido / altura",
+    },
+    "archetype_preview_macro": {
+        "fr": "Carte macro",
+        "en": "Macro map",
+        "de": "Makrokarte",
+        "es": "Mapa macro",
+    },
+    "archetype_preview_projection": {
+        "fr": "Projection",
+        "en": "Projection",
+        "de": "Projektion",
+        "es": "Proyección",
+    },
+    "archetype_preview_size": {
+        "fr": "Taille",
+        "en": "Size",
+        "de": "Größe",
+        "es": "Tamaño",
+    },
+    "archetype_preview_macro_relaxation": {
+        "fr": "Lissage de la carte macro",
+        "en": "Smooth macro map",
+        "de": "Makrokarte glätten",
+        "es": "Suavizado del mapa macro",
+    },
+    "archetype_preview_macro_relaxation_hint": {
+        "fr": "Désactivez-le pour accélérer les essais : seule la relaxation finale disparaît. Le raffinement natif et les interpolations propres aux noises restent actifs.",
+        "en": "Disable it for faster iteration: only final relaxation is removed. Native refinement and each noise provider's interpolation remain active.",
+        "de": "Für schnellere Versuche deaktivieren: Nur die letzte Relaxation entfällt. Native Verfeinerung und die Interpolation der Noise-Quellen bleiben aktiv.",
+        "es": "Desactívelo para iterar más rápido: solo se elimina la relajación final. El refinamiento nativo y la interpolación de cada ruido siguen activos.",
+    },
+    "archetype_noise_setting_applicability_hint": {
+        "fr": "Les réglages grisés ne sont pas consommés par la famille sélectionnée ; points noir/blanc remappent l’amplitude, douceur à 0 % = seuil dur, plancher/plafond bornent la sortie, la courbe asymétrique favorise une moitié du relief, puis décalage, échelle, répétition et symétrie agissent dans le cadre fini.",
+        "en": "Greyed-out settings are not consumed by the selected family; black/white points remap amplitude, 0% softness means a hard threshold, floor/ceiling bound the output, curve bias favors one relief half, then offset, scale, repeat and symmetry act inside the finite frame.",
+        "de": "Ausgegraute Einstellungen werden von der gewählten Familie nicht verwendet; Schwarz-/Weißpunkt remappen die Amplitude, 0 % Weichheit bedeutet eine harte Schwelle, Unter-/Obergrenze beschränken die Ausgabe, der Kurvenbias bevorzugt eine Reliefhälfte, danach wirken Versatz, Skalierung, Wiederholung und Symmetrie im endlichen Rahmen.",
+        "es": "Los ajustes atenuados no los usa la familia seleccionada; los puntos negro/blanco remapean la amplitud, 0 % de suavidad significa un umbral duro, suelo/techo limitan la salida, el sesgo de curva favorece una mitad del relieve, y después desplazamiento, escala, repetición y simetría actúan dentro del marco finito.",
+    },
+    "archetype_preview_progress": {
+        "fr": "Génération de l’aperçu : {percent} %",
+        "en": "Generating preview: {percent}%",
+        "de": "Vorschau wird erzeugt: {percent} %",
+        "es": "Generando vista previa: {percent} %",
+    },
+    "archetype_preview_noise_ready": {
+        "fr": "Noise map prête · macro indicative · carte exacte en cours…",
+        "en": "Noise map ready · indicative macro · exact map still calculating…",
+        "de": "Noise-Map bereit · indikative Makrokarte · exakte Karte wird noch berechnet…",
+        "es": "Mapa de ruido lista · macro indicativa · mapa exacto en curso…",
+    },
+    "archetype_preview_paused": {
+        "fr": "Aperçu en pause hors de l’onglet Archétype.",
+        "en": "Preview paused while the Archetype tab is inactive.",
+        "de": "Vorschau pausiert, solange der Archetyp-Tab inaktiv ist.",
+        "es": "Vista previa en pausa mientras la pestaña Arquetipo no está activa.",
+    },
+    "archetype_preview_meta": {
+        "fr": "Aperçu : {side}×{side} · seed {seed}",
+        "en": "Preview: {side}×{side} · seed {seed}",
+        "de": "Vorschau: {side}×{side} · Seed {seed}",
+        "es": "Vista previa: {side}×{side} · seed {seed}",
+    },
+    "archetype_preview_stats": {
+        "fr": "Répartition macro : Eau {water} % · Plage {beach} % · Herbe {grass} % · Montagne {mountain} % · Neige {snow} %",
+        "en": "Macro split: Water {water}% · Beach {beach}% · Grass {grass}% · Mountain {mountain}% · Snow {snow}%",
+        "de": "Makroverteilung: Wasser {water} % · Strand {beach} % · Gras {grass} % · Berg {mountain} % · Schnee {snow} %",
+        "es": "Reparto macro: Agua {water} % · Playa {beach} % · Hierba {grass} % · Montaña {mountain} % · Nieve {snow} %",
+    },
+    "archetype_preview_mass": {
+        "fr": "Masse terrestre principale : {share} % des terres · {count} masse(s) macro.",
+        "en": "Main landmass: {share}% of land · {count} macro mass(es).",
+        "de": "Größte Landmasse: {share} % der Landfläche · {count} Makromasse(n).",
+        "es": "Masa terrestre principal: {share} % de la tierra · {count} masa(s) macro.",
+    },
+    "archetype_preview_warning": {
+        "fr": "Avertissement : aucune zone observée pour {classes} dans cet aperçu.",
+        "en": "Warning: no area observed for {classes} in this preview.",
+        "de": "Warnung: Für {classes} wurde in dieser Vorschau kein Bereich beobachtet.",
+        "es": "Advertencia: no se ha observado ninguna zona de {classes} en esta vista previa.",
+    },
+    "archetype_preview_invalid": {
+        "fr": "Aperçu en attente : taille ou seed invalide.",
+        "en": "Preview waiting: invalid size or seed.",
+        "de": "Vorschau wartet: ungültige Größe oder Seed.",
+        "es": "Vista previa en espera: tamaño o seed no válidos.",
+    },
+    "archetype_preview_unimplemented": {
+        "fr": "Aperçu réservé avec cet archétype.",
+        "en": "Preview reserved for this archetype.",
+        "de": "Vorschau für diesen Archetyp reserviert.",
+        "es": "Vista previa reservada para este arquetipo.",
+    },
+    "archetype_preview_water": {
+        "fr": "Eau", "en": "Water", "de": "Wasser", "es": "Agua",
+    },
+    "archetype_preview_beach": {
+        "fr": "Plage", "en": "Beach", "de": "Strand", "es": "Playa",
+    },
+    "archetype_preview_grass": {
+        "fr": "Herbe", "en": "Grass", "de": "Gras", "es": "Hierba",
+    },
+    "archetype_preview_mountain": {
+        "fr": "Montagne", "en": "Mountain", "de": "Berg", "es": "Montaña",
+    },
+    "archetype_preview_snow": {
+        "fr": "Neige", "en": "Snow", "de": "Schnee", "es": "Nieve",
     },
     "decoration_hint": {
         "fr": "0 % = absente · 100 % = profil sélectionné · 500 % = maximum.",

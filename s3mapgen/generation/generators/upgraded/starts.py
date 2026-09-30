@@ -6,6 +6,7 @@ import numpy as np
 
 from ....map_data.constants import GRASS, START_FOOTPRINT
 from ....map_data.hexgrid import dilate, hex_distance
+from ...archetypes.masses import analyze_startable_masses
 
 
 def _footprint_ok(terrain: np.ndarray, x: int, y: int) -> bool:
@@ -70,6 +71,11 @@ def place_starts(state, players: int, rng: np.random.Generator, *, technical_cle
         starts.append(best)
 
     state.starts = starts
+    state.metadata["startable_mass"] = analyze_startable_masses(
+        terrain,
+        starts,
+        candidate_centers_considered=len(points),
+    )
     reservation = np.zeros((side, side), dtype=bool)
     for x, y in starts:
         for dx, dy in START_FOOTPRINT:

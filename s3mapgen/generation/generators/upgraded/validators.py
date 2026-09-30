@@ -20,8 +20,20 @@ from ....map_data.constants import (
     SWAMP_IDS,
     WATER_IDS,
 )
-from ....map_data.hexgrid import neighbor_count
+from ....map_data.hexgrid import component_labels, neighbor_count
 from ...rules import ValidationResult
+
+
+def _river_components_touch_water(terrain: np.ndarray) -> bool:
+    river = np.isin(terrain, RIVER_IDS)
+    if not river.any():
+        return True
+    labels, count = component_labels(river)
+    touching = neighbor_count(np.isin(terrain, WATER_IDS)) > 0
+    return all(
+        np.any((labels == label) & touching)
+        for label in range(1, count + 1)
+    )
 
 
 def _shore_distance(state) -> np.ndarray:
@@ -65,6 +77,16 @@ def validate(state, profile: dict) -> list[ValidationResult]:
 
     water = np.isin(terrain, WATER_IDS)
     river = np.isin(terrain, RIVER_IDS)
+    if (
+        state.metadata.get("mode_key") == "custom"
+        and "river_profile_rate_multiplier" in state.metadata
+    ):
+        river_connections_ok = _river_components_touch_water(terrain)
+        add(
+            "CUSTOM_RIVER_WATER_CONNECTION",
+            river_connections_ok,
+            "each HEX6 river component touches Water directly",
+        )
     mountain = np.isin(terrain, MOUNTAIN_FAMILY_IDS)
     mud_count = int(np.isin(terrain, (23, 144, 145)).sum())
     custom_mud_rate = 0.0
@@ -294,6 +316,15 @@ def validate(state, profile: dict) -> list[ValidationResult]:
         if lake_transition_ok
         else "bonus lake water touches grass directly",
     )
+    start_mass = state.metadata.get("startable_mass", {})
+    if isinstance(start_mass, dict):
+        add(
+            "UPGRADED_STARTABLE_GRASS_MASS",
+            bool(start_mass.get("all_starts_in_largest_grass_mass", False)),
+            f"starts={start_mass.get('starts_in_largest_grass_mass', 0)}/{start_mass.get('start_count', 0)} "
+            f"masses={start_mass.get('grass_mass_count', 0)}",
+            hard=False,
+        )
     return out
 
 

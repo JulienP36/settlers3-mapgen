@@ -88,6 +88,13 @@ def generate(
         and custom_runtime.get("sections")
         else None
     )
+    archetype_profile = (
+        custom_runtime.get("archetype_profile")
+        if isinstance(custom_runtime, dict)
+        and isinstance(custom_runtime.get("archetype_profile"), dict)
+        and is_custom
+        else None
+    )
     active_start_packages = (
         tuple(str(value) for value in custom_runtime.get("start_packages", ()))
         if is_custom and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
@@ -108,6 +115,7 @@ def generate(
             progress=(lambda name: progress(f"continental_upgraded.native.{name}", "") if progress else None),
             surface_rates=custom_sections,
             defer_non_archetype=priority_bonus_route,
+            archetype_profile=archetype_profile,
         ),
     )
 

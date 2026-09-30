@@ -11,8 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .shell import NATIVE_LIMITS, ShellWindow
-from ..generation.modes import MODES, MODE_ORDER
-from ..generation.archetypes import ARCHETYPES, ARCHETYPE_ORDER
+from ..generation.modes import MODE_ORDER
 from .batch import BatchController
 from .history import HistoryController
 from .analysis.controller import AnalysisController
@@ -31,9 +30,11 @@ from .session.cache import SessionGenerationCache, SessionStatsCache
 from .analysis.core import format_stats_report
 from .platform.titlebar import apply_native_titlebar
 from .ui.i18n.shell import (
+    ARCHETYPE_INPUT_LABELS,
     FEEDBACK_TEXT,
     LANGUAGE_LABELS,
     MIRROR_LABELS,
+    MODE_LABELS,
 )
 from .ui.widgets import (
     ColorMenuSelect,
@@ -118,7 +119,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self._build_foundation();self._configure_settings_and_navigation();self._build_custom_parameter_tabs();top=self.header_root
 
         self._header_shell=ttk.Frame(top)
-        self._header_shell.grid(row=0,column=0,sticky='ew')
+        self._header_shell.grid(row=0,column=0,sticky='new')
         top.columnconfigure(0,weight=1)
         self.generation_panel=ttk.Frame(self._header_shell)
         self.global_panel=ttk.Frame(self._header_shell)
@@ -131,17 +132,18 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         # Generation row 1: selectors and their own independent action bar.
         primary_row=ttk.Frame(self.generation_panel);primary_row.pack(anchor='w',fill='x')
         mode_group=selector_group(primary_row,'Mode');mode_group.pack(side='left',padx=(0,5))
-        self.mode_combo=ttk.Combobox(mode_group,textvariable=self.mode,values=[MODES[k].label for k in MODE_ORDER],state='readonly',width=20)
+        selector_language=self.prefs.get('language','fr')
+        self.mode_combo=ttk.Combobox(mode_group,textvariable=self.mode,values=[MODE_LABELS[selector_language][k] for k in MODE_ORDER],state='readonly',width=20)
         self.mode_combo.pack();self.mode_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
         arch_group=selector_group(primary_row,'Archétype');arch_group.pack(side='left',padx=(0,5))
-        self.arch_combo=ttk.Combobox(arch_group,textvariable=self.arch,values=[ARCHETYPES[k].label for k in ARCHETYPE_ORDER],state='readonly',width=18)
-        self.arch_combo.pack();self.arch_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
+        self.arch_combo=ttk.Combobox(arch_group,textvariable=self.arch_input,values=[ARCHETYPE_INPUT_LABELS[selector_language][key] for key in ('classic','continental','large_islands','small_islands')],state='readonly',width=21)
+        self.arch_combo.pack();self.arch_combo.bind('<<ComboboxSelected>>',lambda e:self._custom_main_archetype_input_changed())
         modifier_group=selector_group(primary_row,'Modificateurs');modifier_group.pack(side='left',padx=(0,7))
         self.modifier_label=modifier_group.winfo_children()[0]
         self.modifier_none=tk.BooleanVar(value=True);self.modifier_text=tk.StringVar(value='Aucun')
-        self.modifier_button=ttk.Menubutton(modifier_group,textvariable=self.modifier_text,width=14,style='ImageSelect.TMenubutton')
+        self.modifier_button=ttk.Menubutton(modifier_group,textvariable=self.modifier_text,width=14,style='ImageSelect.TMenubutton',state='disabled')
         self.modifier_menu=tk.Menu(self.modifier_button,tearoff=False);self.modifier_button.configure(menu=self.modifier_menu)
-        self.modifier_menu.add_checkbutton(label='Aucun',variable=self.modifier_none,command=self._modifier_none_selected)
+        self.modifier_menu.add_checkbutton(label='Aucun',variable=self.modifier_none,command=self._modifier_none_selected,state='disabled')
         self.modifier_button.pack()
         mirror_group=selector_group(primary_row,'Miroir');mirror_group.pack(side='left',padx=(0,5))
         mirror_language=self.prefs.get('language','fr')
@@ -295,7 +297,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         # width so translations are never clipped.
         try:
             self.mode_combo.configure(width=15 if compact else 20)
-            self.arch_combo.configure(width=13 if compact else 18)
+            self.arch_combo.configure(width=21 if compact else 22)
             self.modifier_button.configure(width=9 if compact else 14)
             self.lang_combo.configure(width=9 if compact else 11)
         except tk.TclError:pass

@@ -78,7 +78,7 @@ class ThemeController:
         for selector in (getattr(self,'_view_combo',None),getattr(self,'heatmap_combo',None),getattr(self,'lang_combo',None)):
             if isinstance(selector,ColorMenuSelect):selector.set_menu_theme(field,fg,panel,fg)
         if hasattr(self,'modifier_menu'):
-            try:self.modifier_menu.configure(background=field,foreground=fg,activebackground=panel,activeforeground=fg)
+            try:self.modifier_menu.configure(background=field,foreground=fg,activebackground=panel,activeforeground=fg,disabledforeground=muted)
             except tk.TclError:pass
         self._apply_history_window_theme()
         self._apply_history_capacity_dialog_theme()

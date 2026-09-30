@@ -46,7 +46,171 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_7 / Custom generator finish
+## Current state — v2.0 DEV_8
+
+DEV8 is published on the `dev` branch from the R86 candidate. It closes the
+Archetype work: the main selector shows “Custom” after an effective profile
+edit, then returns to the named profile when one is selected. The full
+recovery references remain in the local hand-off archive and are excluded
+from GitHub. All 641 regression tests pass.
+
+DEV9 is next, including the Great Islands archetype and the remaining work in
+`TODO_MAPGEN.md`.
+
+### R55 — previews and providers for Continental Custom
+
+R55 fixes the framing of fusion and mask thumbnails: the absolute envelope of
+the native-calibrated Continental profile is now reduced from the real map
+side to the 128² thumbnails. Fusions no longer look zoomed out, and masks can
+no longer reintroduce influence into the ocean frame. Historical percentage
+profiles keep their previous behavior.
+
+R54 added `hybrid_fbm`, `turbulence`, `worley_f1`, `worley_f2`, and
+`worley_f2_minus_f1`. R55 adds `heterogeneous_fbm` and
+`ridged_multifractal`, available as the primary source, a fusion, or a mask
+source in the **Archetype** tab. These are exploration building blocks; the
+named R53 composition remains exactly unchanged and no geometry is drawn by
+hand.
+
+## Continental Custom R53 preset — noise composition
+
+R53 keeps the genuinely independent Continental Custom preset:
+`Continental Custom R53 — fBm + warp + ridges`. It starts with an autonomous
+fBm field, applies a light `domain_warp` blend (`15%`), then a low-strength
+additive `ridged` fusion (`12%`). These are exactly the sources, operations and
+settings visible in the **Archetype** tab; no drawing, shape template or hidden
+geometry code is embedded in the preset.
+
+Its outer domain is now calibrated against the measured native envelope: the
+frame and transition use absolute cells, so the surrounding ocean no longer
+grows proportionally with map size. The Continental land mass therefore keeps
+an extent close to the native profile.
+
+In the application, choose **Custom**, **Continental**, then the preset in the
+**Base profile** selector on the **Archetype** tab. The primary source and both
+fusions remain editable in that same tab. Native Continental remains available
+as the reference profile, and the Legacy/Upgraded code paths are unchanged.
+
+`python tools/qualify_continental_custom.py` replays the preset across
+`384/512/768`, three seeds and mirror modes `0/3`, then runs the Legacy-based
+Custom route for player cases `2/4/max`. Hard gates cover validations, exact
+start count, uniqueness and map bounds. `startable_mass` remains a soft
+diagnostic; Windows and in-game visual validation are the next step.
+
+## Recent history — v2.0 DEV_8_R50 / manual-mask qualification
+
+R50 adds deterministic qualification for the drawable/imported mask provider.
+`python tools/qualify_manual_masks.py` covers the representative sizes
+`384/512/768`, three seeds (`20260920/21/22`) and all four native mirror
+modes by default. The report checks signal reproducibility, effect on the
+complete preview, coverage stability, variation outside the mask and the
+native water border. `--mask path/to/image.png` qualifies an imported image
+with the same 64×64 grayscale resampling used by the editor. This remains
+diagnostic tooling and does not change generation.
+
+## Recent history — v2.0 DEV_8_R49 / drawable masks
+
+R49 keeps the independent mask stack and its generic spatial contract, and adds
+the `Freehand` provider. Each slot can open a 64×64 grid to paint or erase a
+grayscale influence, import an image, and export the mask as PNG. The grid is
+resampled through the shared size, position, rotation and softness controls;
+the operation modulates the complete field after fusions while preserving
+variation outside the mask. The editor window now follows the dark theme
+correctly. New archetypes still start with zero active fusions.
+
+## Recent history — v2.0 DEV_8_R42 / resizable workspace
+
+R42 keeps R40's four explicit setting families and also makes the core group
+collapsible, while leaving it open by default. Source and fusion thumbnails
+deliberately remain fixed at 128², as in R40, until a dedicated future slice.
+The header stays anchored to the top when the sash moves, and Session /
+Comparison keeps its historical two-position responsive reflow. A second
+vertical sash adjusts the space between the header and the map/tabs workspace,
+and its position is remembered.
+
+## Recent history — v2.0 DEV_8_R41 / first adaptive workspace
+
+R41 briefly made the noise thumbnails adaptive; R42 removes that behavior at
+the user's request without changing their calculation or placement.
+
+## Recent history — v2.0 DEV_8_R40 / collapsible setting groups
+
+R40 grouped every noisemap source's settings into four explicit families:
+core, output transforms, remapping, and coordinates. Core settings remained
+visible, while the three advanced groups could be collapsed independently.
+
+## Recent history — v2.0 DEV_8_R39 / focused archetype ergonomics
+
+R39 keeps the global archetype reset and adds only two local resets, disabled
+until their block is modified: morphology/relief source/thresholds, then the
+fusion editor. The resets update controls and previews in place without
+clearing the visible view, and no reset button is added to each fusion. Fusion
+cards also separate their header, parameter and action grids so long fields no
+longer shift the rows below them.
+
+## Recent history — v2.0 DEV_8_R38 / advanced noise remapping
+
+R38 adds independent advanced remapping to every autonomous source: black/white
+points to expand or narrow the input range, hard or softened low/high
+thresholds, output floor/ceiling clamps, and an asymmetric response curve.
+These controls run before the finite frame, remain neutral by default, and are
+available independently on the primary source and every fusion. They can make
+relief flatter, stepped, more concentrated, or deliberately asymmetric without
+introducing an implicit mask.
+
+R37 adds independent coordinate transforms to every autonomous source: X/Y
+offset, independent X/Y scale, X/Y repetition and X/Y symmetry. They run before
+the R36 output remaps, remain bounded by the finite inner rectangle, and are
+available independently on the primary source and every fusion. Identity
+defaults preserve R36 profiles.
+
+R36 keeps R35's exact preview behavior and adds provider-independent output
+transformations to every autonomous source: inversion, absolute value, gamma,
+and terracing with adjustable blending. The noisemap editor help now sits in
+its title, and identity defaults preserve existing profiles.
+
+R34 fixes Solo so it isolates only an already-enabled fusion in the preview,
+keeps the primary source, and never changes the profile used by real
+generation. A disabled or zero-strength fusion can no longer be re-enabled by
+that button.
+
+When macro smoothing is disabled, the preview now goes directly to the exact
+calculation without running or displaying an intermediate indicative pass.
+Native refinement remains active; only `_relax_relief` is omitted from this
+fast preview. Toggling the option also invalidates any previous calculation
+immediately, so an obsolete result cannot overwrite the selected state. Each
+fusion thumbnail is now 128²; action buttons are placed after all setting rows,
+and the “Primary source” thumbnail shows the relief source before fusion while
+“Noise / height” remains the composed view.
+
+R33 makes the fusion stack directly editable from each card: move a slot up
+or down, duplicate a fusion, delete it, or isolate its effect in a Solo
+preview. Solo never changes the profile used by real generation; it disables
+the other fusions only in the preview copy.
+
+R32 moves the three main views to a single 1080p-friendly row at the top of the
+tab. The fusion count is configurable from zero to six without losing hidden
+slot settings. The primary source and every fusion have a raw 128² thumbnail
+computed directly from their provider without running the macro pipeline. R31
+still guarantees consistency between indicative and exact passes and greys out
+settings the selected source does not consume.
+
+R30 continues R29, which replaces the shape-preset direction with an actual noisemap editor. The
+primary source can use Native Legacy, white, Value, Perlin, Simplex, fBm,
+Billow, Ridged, Worley or Domain Warp noise. Up to six autonomous sources
+can be fused using replace, blend, add, subtract, multiply, minimum or maximum.
+Every source exposes frequency, octaves, lacunarity, gain, rotation, stretch,
+bias, contrast, warp and seed offset. The domain remains a finite inner
+rectangle with configurable margin and edge transition.
+
+Editing the Archetype tab now customizes the archetype without switching the
+Generator mode to Custom. The noisemap and its contribution render directly
+on a live 192² grid without waiting for native relaxation; the exact macro map
+continues in the background. Panels replace their images independently and in
+place, with no blank frame. Detailed laboratory statistics were removed from
+the UI in favor of useful controls. The macro-map smoothing pass can now be
+disabled to iterate on noise faster; this preview-only setting does not alter
+real map generation.
 
 The `v2.0 DEV_1` generation was validated and published on GitHub. `DEV_2` was
 the validated native reset checkpoint, and `DEV_3` is now the validated and
@@ -82,8 +246,109 @@ functionally. R60 now compacts the lake/river panel into four columns,
 shortens the native-water avoidance label, and keeps each shape list directly
 beside its label. R61 replaces that label with “Native-water check radius” and
 aligns every lake/river control in one vertical column. Generation logic
-remains the R59 behavior. DEV_7 publishes the Custom-generator UX finish; the
-next tranche is Custom archetypes. The semantic sections remain Minerals, Fish,
+remains the R59 behavior. DEV_7 publishes the Custom-generator UX finish.
+`DEV_8_R1` was validated and opened the Archetype tab with a declarative Continental macro
+profile: an unchanged Custom copy reuses the same relief thresholds, while
+edited thresholds affect its own generation. The live noise and five-class
+macro-map previews, with square/parallelogram projection, adjustable display
+size, noise reuse and adaptive sizing, with atomic final painting, signed noise
+`-30 … 225`, full native generation without a resolution approximation and
+resize-aware adaptive sizing, are part of the `DEV_8_R11` foundation. Preview work is
+paused while the Archetype tab is inactive, then resumes with only the latest
+useful request when the tab becomes active again; the last complete image stays
+visible and the macro map reports the distribution of its five classes, warning
+when one is absent. The Continental contract is also shown explicitly: relief
+engine, noise family, signed range, derived shores, land-mass model and the
+absence of micro-islands. Those fields stay locked until a real engine consumes
+them; relief thresholds are checked against implicit native defaults across
+multiple sizes and mirrors. Hexagons and detailed live generation in the
+Generator remain deferred to v2.1. R9 also hardens Generator reflow callbacks
+after tab reconstruction and wheel detection over Tk's transient combobox
+popdown menus. R10 adds connected-land diagnostics to the preview and records
+the actual grass mass carrying provisional starts, without changing generated
+maps. R11 adds the first real Custom morphology controls: spatial shape scale
+and relief contrast. At `100%`, native output remains unchanged; the same fields
+feed the previews and both native-derived engines. R17 keeps the two optional,
+stackable procedural layers but makes them semantic relief components: the
+implemented role is `land_relief`, and each layer uses an explicit `add` or
+`subtract` blend. They are applied before native normalization, sculpture and
+relaxation, only to existing land cells; native water cells, including the
+outer border, remain protected. R17 does not yet create lakes or a new
+water/land mask. R46 now adds an independent parametric mask stack with soft
+modulation outside each shape; drawn/imported masks and specialized roles
+remain future extensions.
+R12 separates the noise-map display path: the signed native field is shown as
+soon as raw relief generation completes, before sculpture and final relaxation,
+while the exact macro map continues in the background. Raw fields are cached
+independently from morphology, and mirror copies plus the water border are
+reapplied in the same order as the native preview. Shape scale is capped at
+`100%` so water remains around the map. The native `_relax_relief` pass remains
+unchanged in real generation; it repairs local height gaps until stable before
+terrain classification and is bypassed only by the fast noise-map display.
+R13 also derives an indicative five-class macro raster immediately from that
+same fast field. It is clearly marked as provisional, then replaced by the
+exact macro map when sculpture and `_relax_relief` finish; exact statistics are
+hidden during this interim state. Real Legacy/Upgraded generation remains
+unchanged in output. R14 speeds up the exact ordered relaxation loop while
+preserving its corrections and `uint8` result, substantially reducing waits at
+sizes `704+` without approximating the final preview. R15 gives the visible
+progress one global scale: `0–15%` for the indicative field, `15–95%` for the
+exact calculation, and `100%` only after the final render; resize callbacks can
+no longer complete or rewind it prematurely. R17 keeps the optional, stackable
+and deterministic procedural noise layers but makes them semantic relief
+components: `land_relief` with an explicit `add` or `subtract` blend. Disabled
+by default, they leave native output unchanged; when enabled, they modify
+existing land before native normalization and relaxation, while native water
+cells remain protected and the unchanged native-field cache is bypassed.
+R24 corrects the R23 regression in the laboratory's third preview: image 1
+shows the selected relief source, while image 3 shows only the raw layer
+contribution in red/blue. The source-versus-Legacy delta and the composed field
+remain separate in the diagnostic report.
+R25 removes the flash during re-previews by replacing images inside their
+existing panels and adds raw land share plus P10/P50/P90 heights to help
+compare providers.
+R26 keeps the last complete triptych visible throughout recalculation: the
+indicative phase is no longer painted, and noise/height, macro and raw
+contribution are prepared before being replaced together only when the exact
+preview is complete. Errors or invalid values keep the previous view. No noise
+provider, noise setting or Legacy/Upgraded generation path changes; the next
+roadmap step is the target matrix and reproducible qualification of the
+existing providers.
+R27 adds that matrix for Continental, Large Islands and Small Islands, covering
+native sizes `384–768`, player cases `2 / 4 / maximum`, and mirrors `0 / 3`.
+The new `python tools/qualify_archetypes.py` command compares existing providers
+using the actual macro preview: land/water share, outer border, dominant mass,
+coast contact and mountain/snow relief. This first pass intentionally stops at
+macro preview; starts, buildability, resources, detailed hydrology and
+editor/game validation remain later gates. The default run passes `12/12`;
+mirror 3 exposes one existing native case at `384²` with `0.23%`
+mountain/snow (`11/12`), while the independent providers pass `9/9`. This
+diagnostic remains open for the next step.
+
+R22 replaces the rejected R21 post-generation envelope: each provider is
+generated directly inside a finite inner rectangle with low boundary
+conditions carried by the noise itself; the area outside the frame is water.
+There is no corrective layer stacked after generation, shapes are not cropped
+at the domain edge, and dynamic previews calculate fewer cells.
+
+R20 corrected the R19 boundary mistake: changing the noise now replaces the
+complete raw elevation matrix, including its water, instead of preserving the
+Legacy coast and land mask. Three independent providers are available:
+`fractal_fbm`, `warped_fbm` and `ridged_fbm`. The native engine then consumes
+that field and applies its own normalization, macro shaping, relaxation and
+classification. `native_legacy` remains the default and its output is guarded
+by binary parity. Optional layers target the selected source's `source_land`
+domain, so they cannot silently reintroduce the Legacy coast. The laboratory
+separates the reference field, active source, source delta and layer
+contributions. R20 does not yet claim specialized lake or water roles.
+
+R18 makes each component contract inspectable: source, role, mask, stage, blend
+and order. The completed preview exposes the native field before composition,
+the composed field and a contribution map where red raises relief and blue
+lowers it; the statistics list affected cells and delta bounds. R17 profile keys
+are migrated without changing their meaning. R18 still does not replace the
+Legacy source or create lakes.
+The semantic sections remain Minerals, Fish,
 Trees, Building Stones, Decorations and detailed start-bonus controls, dynamic
 translations, profiles
 derived from presets, a configuration fingerprint in the cache,
@@ -152,8 +417,8 @@ profile, including `30%` of adult trees in forests; Legacy defaults to no forest
 and no saplings. The Decorations section exposes an independent `0–500%`
 appearance rate for each static family already recognized by the generator;
 `100%` preserves the selected profile, while IDs and terrain/collision rules
-remain internal. The DEV6 socle still awaits user validation, followed by the
-Dev 7 Custom archetype and Dev 8 first modifiers.
+remain internal. The DEV6 foundation and DEV7 UX finish are published; DEV8
+now continues with the Custom archetype editor.
 
 Minerals were compared before removal: the former generator had a globally
 similar family mix to the native SAV corpus, but its deposits were much too
@@ -252,6 +517,12 @@ The source package can validate its bundled runtime resources without opening th
 python run_gui.py --self-test
 ```
 
+To reproduce the first provider qualification:
+
+```text
+python tools/qualify_archetypes.py --output qualification.json
+```
+
 See [Debugging and validation](docs/DEBUGGING.md) for the full maintenance workflow.
 
 R58 keeps the R48 engine and R47's forced-centre search through D+34 and uses
@@ -268,7 +539,8 @@ beside their inputs, grays inactive mineral sprites, sets the swamp radius
 maximum to `16 HEX6`, bounds each core to `1–820` cells, and makes the prorata
 total dynamic (`820/1,640/2,460`) according to active minerals. OFF keeps R46 behavior.
 Forests, stones and swamps are user-validated; mineral zones and the lake/river
-still need separate validation. DEV6 remains a local candidate. Bonus lakes
+still need separate validation. At that point, DEV7 was published and DEV8_R1 remained a local
+candidate. Bonus lakes
 use two shoreline rings, and bonus rivers use the native local construction
 instead of a global distance route. R58 caps the lake radius at `16 HEX6` and
 the maximum river target at `6` per lake.
