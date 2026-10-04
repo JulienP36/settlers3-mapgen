@@ -62,7 +62,7 @@ def generate(
         custom_runtime.get("archetype_profile")
         if isinstance(custom_runtime, dict)
         and isinstance(custom_runtime.get("archetype_profile"), dict)
-        and is_custom
+        and (is_custom or custom_runtime.get("base_archetype") != "continental")
         else None
     )
 
@@ -90,7 +90,7 @@ def generate(
 
     active_start_packages = (
         tuple(str(value) for value in custom_runtime.get("start_packages", ()))
-        if is_custom and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
+        if isinstance(custom_runtime, dict) and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
         else ()
     )
     priority_bonus_route = bool(active_start_packages)
@@ -108,6 +108,7 @@ def generate(
             defer_non_archetype=priority_bonus_route,
             defer_global_content=priority_bonus_route,
             archetype_profile=archetype_profile,
+            players=request.players,
         ),
     )
     mode_label = "Custom" if is_custom else "Legacy"
@@ -126,8 +127,8 @@ def generate(
             "players": int(request.players),
             "mode": mode_label,
             "mode_key": mode_key,
-            "archetype": "Continental",
-            "archetype_key": "continental",
+            "archetype": "Large Islands" if custom_runtime.get("base_archetype") == "large_islands" else "Continental",
+            "archetype_key": custom_runtime.get("base_archetype", "continental"),
             "profile": profile["profile_name"],
             "generator": generator_name,
             "engine_revision": engine_revision,
@@ -180,6 +181,7 @@ def generate(
             request.players,
             SeedStreams(request.seed).rng("starts_bridge"),
             technical_clear=max(12, request.side // 52),
+            island_labels=result.topology_labels,
         ),
     )
     state.metadata.update(
@@ -415,6 +417,17 @@ def generate(
             "legacy.accessibility",
             "legacy.validate",
         ]
+
+    if result.topology_labels is not None:
+        from ...archetypes.large_islands import summarize_island_terrain_features
+        # The visible start bonus is the sole producer of guaranteed mini swamps.
+        state.metadata["large_island_topology"]["start_swamp_required"] = (
+            "start_mini_swamp" in active_start_packages
+            and bool((custom_sections or {}).get("start_bonus", {}).get("mini_swamp", {}).get("enabled", True))
+        )
+        state.metadata["large_island_features"] = summarize_island_terrain_features(
+            state.terrain, result.topology_labels
+        )
 
     water = np.isin(state.terrain, WATER_IDS)
     state.height[water] = 0

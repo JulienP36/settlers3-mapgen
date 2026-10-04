@@ -6,16 +6,17 @@
 
 > **Note de développement / transparence :** ce projet est conçu, dirigé, testé et validé humainement, avec un usage important de **ChatGPT / OpenAI comme assistance d’implémentation**, notamment pour le backend, l’analyse technique et les outils de reverse-engineering. Cette assistance fait partie explicitement du processus de développement du projet.
 
-## État actuel — v2.0 DEV_8
+## État actuel — v2.0 DEV_9
 
-DEV8 est publiée sur la branche `dev`, sur la base de la candidate R86. Elle clôt
-l’onglet Archétype : le sélecteur principal affiche « Personnalisé » après une
-modification effective puis revient au profil nommé lorsqu’il est resélectionné.
-Les références complètes restent dans l’archive locale ; elles ne sont pas
-poussées dans GitHub. La suite de non-régression compte 641 tests réussis.
+DEV9 clôt le focus **Grandes îles**, sur la base de R25 validée : une île et
+un départ par joueur, relief indépendant, profils/composition communs et
+rivières améliorées adaptatives. La source alternative s’appelle désormais
+« Grandes îles — relief ondulé ». Voir [le bilan DEV9](docs/DEV_9_CHECKPOINT.md).
 
-La prochaine étape est DEV9, consacrée notamment à Grandes îles et aux autres
-travaux restants listés dans `TODO_MAPGEN.md`.
+Qualification R25 : 818 tests, sept cartes et quatre exports PASS. Les
+références complètes sont conservées dans le ZIP source et exclues du push.
+Les anciens reports DEV9 passent à DEV10 ; leur répartition et Petites îles
+(DEV10 ou DEV11) seront décidées au prochain bilan. Voir `TODO_MAPGEN.md`.
 
 ## Présentation du projet
 

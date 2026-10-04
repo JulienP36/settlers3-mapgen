@@ -1,4 +1,276 @@
-# Settlers III MapGen — journal de validation des candidates DEV8
+# Settlers III MapGen — journal de validation
+
+## Checkpoint 2.0 DEV_9 — Grandes îles
+
+Périmètre R25 validé et clôture/publication explicitement autorisées le 2026-10-04.
+Renommage traduit de la source alternative, clés sauvegardées conservées.
+R25 : 818 tests PASS, sept cartes/quatre exports, R21/Classique exactes ;
+compilation, hashes protégés et auto-test extrait PASS.
+Finalisation : 41 tests ciblés PASS (34,56 s), libellés FR/EN/DE/ES PASS ;
+smoke Legacy/Upgraded et checksum PASS, compilation/hashes protégés PASS.
+Code de génération identique à R25 ; suite complète R25 réutilisée (nom/docs seuls).
+Auto-test du ZIP final à consigner lors de sa livraison.
+Anciennes validations non consignées hors focus transférées au bilan DEV10 ;
+aucune confirmation Windows/en jeu inventée. Bilan : docs/DEV_9_CHECKPOINT.md.
+
+## Historique — candidate locale 2.0 DEV_9_R25
+
+Finition du bruit montagneux ; côtes source R24 conservées.
+818 tests PASS (540,98 s), 35 ciblés PASS ; sept cartes/quatre exports PASS.
+Six côtes R24 exactes, deux cartes R21 et deux Classique exactes.
+Compilation et hashes protégés PASS ; gain local ~32–35 %, total variable.
+Archive contrôlée : CRC, parité source et auto-test extrait PASS.
+Notes : `references/dev_notes/DEV9_R25_ROUNDED_MOUNTAINS.md`.
+Grandes îles validée par l’utilisateur le 2026-10-04.
+Clôture globale DEV9 à décider après revue des reports ; aucun push DEV9.
+
+## Candidate précédente 2.0 DEV_9_R24
+
+Essai Simplex multi-échelles local, sans warping du bruit côtier/intérieur.
+Surface source et construction insulaire conservées ; résultats par seed
+et proportions effectives différents. Qualification consignée avant livraison
+avec rendus réels, contrats de terrain, exports, tests et mesures de temps.
+810 tests PASS (538,32 s), 43 ciblés PASS ; sept cartes et quatre exports
+PASS, deux cartes R21 exactes. Compilation PASS.
+R21 conservée ; rivières R20 et contrôles R23 inchangés.
+Temps sur trois paires : aperçus +0,2–0,8 s, complet variable selon cas ;
+ZIP et auto-test extrait contrôlés avant livraison.
+Rendu Windows à valider ; aucun push DEV9.
+Notes : `references/dev_notes/DEV9_R24_MULTISCALE_SIMPLEX.md`.
+
+## Candidate précédente 2.0 DEV_9_R23
+
+Source R21 sélectionnable, détails du contour actuel légèrement arrondis,
+molette verrouillée sur champs désactivés et resets individuels.
+Six champs historiques exacts ; deux cartes R21 exactes (Area/départs),
+sept cartes actuelles et quatre exports MAP/EDM contrôlés PASS. Deux Classique
+restent exactes à R22.
+810 cas vérifiés : suite 806 PASS / 4 écarts corrigés, puis 35 contrôles
+sources/diagnostics et 16 contrôles maintenance/paquet PASS ; 106 ciblés PASS.
+Compilation PASS ; ZIP/auto-test extrait contrôlés avant livraison.
+Temps grand témoin 768/20 : complet ~13→18 s, aperçu ~3,4 s.
+Rendu/ergonomie Windows à valider ; aucun push DEV9.
+Notes : `references/dev_notes/DEV9_R23_SAVED_RELIEF_AND_LOCAL_RESETS.md`.
+
+## Candidate précédente 2.0 DEV_9_R22
+
+Alternative de bruit sans déformation des coordonnées, pointes légèrement
+atténuées. Six champs, sept cartes et quatre exports PASS ; 92 ciblés PASS
+(274,94 s). Deux Classique exactes à R21 ; 793 tests PASS (722,32 s), compilation PASS.
+Rivières, profils de seuils et deux moteurs natifs exacts aux octets R21.
+Temps isolés comparés sur cinq cas ; ZIP et auto-test extrait contrôlés.
+Rendu Windows à valider ; aucun push DEV9.
+Notes : `references/dev_notes/DEV9_R22_UNWARPED_MIDPOINT.md`.
+
+## Candidate précédente 2.0 DEV_9_R21
+
+Complément du détail côtier après réserve utilisateur sur R20 validée.
+Six comparaisons source, sept cartes complètes et quatre exports contrôlés PASS ;
+deux Classique exactes. 792 cas vérifiés : suite 791 PASS / ancienne attente R20
+du numéro Windows corrigée, puis 16 contrôles paquet/maintenance PASS.
+91 ciblés PASS, compilation PASS. Rendu Windows R21 requis.
+Rivières et neige 200 exactes R20 ; aucun push DEV9.
+Temps comparés sur cinq cas : 512/15 plus lent, recontrôlé ; rendu et durée
+complète Windows à valider. Coût direct du détail ~0,01 s sur 512/15.
+Notes : `references/dev_notes/DEV9_R21_UNIFORM_COAST_DETAIL.md`.
+
+## Candidate précédente 2.0 DEV_9_R20
+
+Détail des côtes contraintes et longueur Amélioré selon la terre connectée,
+branches conservées. Neige 200. 789 tests PASS (578,96 s), 88 ciblés PASS,
+7 cartes complètes et 4 exports MAP/EDM contrôlés ; deux Classique exactes.
+Six comparaisons de masques et trois paires 768/42 avec 4/8/20 joueurs.
+Cinq paires de temps sans validations concurrentes. R20 explicitement validée
+par l’utilisateur le 2026-10-03 : Grandes îles, côtes et rivières retenues en l’état.
+Aucun push DEV9. Notes : `references/dev_notes/DEV9_R20_COAST_DETAIL_AND_LOCAL_RIVERS.md`.
+
+## Candidate précédente 2.0 DEV_9_R19
+
+Raffinement hiérarchique des côtes et montagnes Grandes îles. Calibration R18
+conservée. 785 tests PASS (692,12 s), 14 champs et 7 cartes qualifiées,
+4 exports MAP/EDM PASS. Temps complets comparés sur cinq cas sans jobs
+concurrents : quatre plus rapides, un +0,16 s ; aperçu 768/4 +0,58 s.
+Retour visuel R19 très positif ; côtes contraintes et rivières nombreuses îles
+à affiner ; neige 195 demandée pour la suite. R18 : proportions validées provisoirement, gain visuel insuffisant.
+Aucun push DEV9 ; R17 et rivières R16 validées.
+Notes : `references/dev_notes/DEV9_R19_MIDPOINT_ISLAND_SHAPES.md`.
+
+## Candidate précédente 2.0 DEV_9_R18
+
+Formes, proportions et coût Grandes îles. 783 cas vérifiés : suite 782 PASS (504.29 s), ancien témoin géométrique
+actualisé puis six tests PASS. 14 paires de relief, 14 cartes/quatre exports PASS. Temps du relief réduit ; un cas complet +1,4 s (terrains
+natifs). Proportions R18 validées provisoirement ; gain visuel insuffisant. Aucun push DEV9.
+Contrôle Windows attendu. R17 validée par l’utilisateur le 2026-10-03.
+Notes : `references/dev_notes/DEV9_R18_ISLAND_SHAPES_AND_BALANCE.md`.
+
+## Candidate précédente 2.0 DEV_9_R17
+
+Raccordement des défauts et mini-marais unique. 780 cas vérifiés : suite 775 PASS ; nommage et quatre anciennes attentes
+de bonus actualisés puis 12 contrôles PASS. Sept cartes et huit exports PASS ; auto-test
+source PASS. Contrôle Windows des raccordements R17 attendu. Aucun push DEV9. R16 rivières Amélioré validée
+par l’utilisateur le 2026-10-03, algorithme inchangé. Aucun push DEV9.
+Notes : `references/dev_notes/DEV9_R17_PROFILE_DEFAULTS.md`.
+
+## Candidate précédente 2.0 DEV_9_R16
+
+Amélioré : nombre et longueur adaptés à la taille et à la terre réelle.
+772 tests PASS ; 22 cartes et six exports PASS. Rivières validées par l’utilisateur. Aucun push DEV9.
+Notes : `references/dev_notes/DEV9_R16_RIVER_SIZE_SCALING.md`.
+
+## Historique — candidate locale 2.0 DEV_9_R15
+
+Quantité Amélioré générale et défaut Grandes îles.
+22 cartes complètes et six exports PASS. Suite : 766 PASS / une assertion
+de version R14 corrigée ; 123 contrôles ciblés finaux PASS. Windows requis. Aucun push DEV9.
+Reprise : `references/dev_notes/DEV9_R15_RIVER_QUANTITY.md`.
+
+## Historique — candidate locale 2.0 DEV_9_R14
+
+Algorithme de rivières général dérivé du natif, sélectionnable dans Générateur.
+Classique reste le défaut ; relief R13 inchangé. Suite complète : **761 PASS**
+(499,02 s). Neuf paires complètes, six exports et six contrôles bruit/miroirs
+PASS. Compilation et auto-test source PASS. Livraison après auto-test extrait.
+Validation Windows requise ; aucun push DEV9.
+Reprise : `references/dev_notes/DEV9_R14_SELECTABLE_IMPROVED_RIVERS.md`.
+
+## Historique — candidate locale 2.0 DEV_9_R13
+
+Profils de base chargés en place ; Profil personnalisé conditionnel.
+Variation fine côtière sur Grandes îles, traceur natif inchangé.
+Sept paires complètes qualifiées ; quatre exports MAP/EDM exacts à la relecture.
+Suite : 745 PASS / une assertion de version R12 corrigée puis revalidée
+parmi 16 contrôles version/maintenance PASS ; 746 cas contrôlés.
+Contrôle Windows et rendu des rivières requis.
+Aucun push DEV9. Reprise : `references/dev_notes/DEV9_R13_PROFILES_AND_COASTAL_RELIEF.md`.
+
+## Historique — candidate locale 2.0 DEV_9_R12
+
+R11 rejetée : ses restrictions contredisaient la fonction des onglets.
+R12 fournit l’éditeur commun, trois profils de base, sources libres distinguées
+entre compositions et bruits, fusions/masques/seuils réellement consommés.
+Six cartes via Custom identiques aux presets R11/R10 ; 31 tests de composition
+et 46 contrôles qualification/preview/packaging PASS. **739 tests PASS**
+(474,46 s) en suite complète ; trois contrôles ciblés du dernier masque à force
+zéro PASS. Quatre exports MAP/EDM relus exactement. Compilation et auto-test
+source PASS ; ZIP livré après auto-test extrait. Validation Windows
+requise. Aucun nouveau correctif de relief/traceur pour les longues rivières.
+Détails : `references/dev_notes/DEV9_R12_COMMON_ARCHETYPE_EDITOR.md`.
+Aucun push DEV9.
+
+R11 : 703 tests PASS mais interface rejetée par l’utilisateur.
+R10 : amélioration partielle ; petites cartes et côtes encore à corriger.
+
+## Historique — candidate locale 2.0 DEV_9_R9
+
+Corrections Classique et traceur natif, autorisées le 2026-10-01. Parité du
+relief/rivières/transitions sur les cas vérifiés ; validation en jeu Windows
+R9 à recevoir. Grandes îles reste indépendante, heightmaps témoins R8
+inchangées ; longues rivières encore à affiner. Qualification et résultats :
+`references/dev_notes/DEV9_R9_QUALIFICATION.json` et
+`references/dev_notes/DEV9_R9_CLASSIC_CORRECTIONS.md`.
+Suite complète finale : **676 tests PASS** (371,79 s), compilation et auto-test
+source PASS. 14 comparaisons natives exactes et 18 exports contrôlés.
+Aucun push DEV9. Les validations ci-dessous sont historiques.
+
+## Historique — candidate locale 2.0 DEV_9_R8
+
+Prototype de recherche intégré : pente côtière initiale non nulle, progression
+adaptée à chaque île et bruit intérieur stabilisé. Géométrie R5, traceur/taux
+natifs et relaxation conservés. Les 18 champs de hauteur et masques comparés
+correspondent exactement au prototype autorisé. Export réel Amélioré 384/8,
+seed42 : contrats bloquants, checksums, Area et départs EDM/MAP vérifiés.
+25 tests ciblés et auto-test source PASS. La suite complète a donné 658 PASS
+et un échec documentaire : ce journal mentionnait encore R7 comme candidate
+courante. Cette entrée corrige le journal ; revalidation ciblée consignée
+dans `references/dev_notes/DEV9_R8_QUALIFICATION.json`.
+
+Validation Windows du relief et des rivières attendue. Les marches de 55/108
+cases ne sont pas approuvées ; longueur/quantité et rares îles pauvres restent
+à affiner après retour utilisateur. Candidate locale, aucun push DEV9.
+
+## Candidate précédente 2.0 DEV_9_R7 — historique
+
+Relief continu sans plancher 14 ni enveloppe séparée, formes R5 conservées,
+masque retiré de Contribution brute. 51 tests ciblés preview/UI/packaging PASS.
+Cinq comparaisons de relief et trois cartes Amélioré qualifiées : contrats
+bloquants PASS, formes R6 conservées. Compilation, auto-test source, relecture
+EDM/MAP et hashes protégés PASS. Suite complète : **658 PASS** en 580.72 s. Le ZIP de livraison conserve les 104
+fichiers de références actualisés et est auto-testé après extraction.
+Voir `references/dev_notes/DEV9_R7_QUALIFICATION.json`.
+Aucun push ; validation visuelle de la heightmap attendue. Quantité de rivières
+à revoir ensuite.
+
+## Candidate précédente 2.0 DEV_9_R6 — historique
+
+- Formes/processus R5 validés pour la 2.0 et un joueur par île confirmé par
+  l’utilisateur. R6 conserve la géométrie et affine uniquement le relief.
+- Terres basses côtières élargies et amplitude du relief aléatoire favorisée
+  à l’intérieur réel par la distance HEX6 à la mer ; relaxation native active.
+- Tests ciblés initiaux : 16 PASS ; contrôle côtier étendu et packaging après
+  ajustement du plancher de relief : 7 PASS. Suite complète : **658 PASS** en
+  606,47 s.
+- Six cartes Amélioré (384/8, 512/15, 768/20, deux seeds par taille) : tous
+  contrats bloquants PASS. Cinq comparaisons de relief : labels R5 identiques,
+  p95 côtier 6–7 → 3–4 et montagnes plus loin de la mer. Mesures compactes dans
+  `references/dev_notes/DEV9_R6_QUALIFICATION.json`.
+- Compilation, auto-test source, hashes protégés et relecture des exports
+  d’exemple PASS. ZIP contrôlé par l’auto-test après extraction avant livraison,
+  avec les 102 références actualisées et les quatre fichiers de l’exemple R6.
+  Aucun push ; validation visuelle du relief et des rivières encore attendue.
+
+## Candidate précédente 2.0 DEV_9_R5 — historique
+
+- Contours infléchis avant les contraintes d’espace et relief progressif
+  près de la mer, avec lissage natif et masque visible dans Archétype.
+- Suite Grandes îles : **16 passed**, dont vérification des hauteurs basses
+  sur les trois premières couronnes côtières. Cartes Amélioré qualifiées
+  384/8, 512/15 et 768/20 : tous les contrats bloquants PASS.
+- Exemple exporté dans `examples/dev9_r5/` ; données compactes et comparaison
+  avec R4 dans `references/dev_notes/DEV9_R5_QUALIFICATION.json`.
+- Suite complète : **658 passed** en 367,75 s. Compilation et auto-tests
+  source/paquet extrait PASS ; hashes protégés inchangés. L’archive conserve
+  les **100 fichiers de références** et les quatre fichiers de l’exemple R5.
+- Candidate locale, aucun push ; validation visuelle Windows attendue.
+
+## Candidate précédente 2.0 DEV_9_R4 — historique
+
+- Masques indépendants, surface proche de 50 % avant rivages et relief local
+  continu, suivi du lissage natif. Preview en trois étapes avec masque visible.
+- Générations Amélioré 384/8 (deux seeds), 512/15, 768/20 : tous les contrats
+  bloquants PASS, 52,52–53,25 % de terre finale ; surfaces d’île min/max ≥0,971.
+- Exemple exporté EDM/MAP/PNG/rapport dans `examples/dev9_r4/`.
+- Compilation et auto-test source PASS. Suite complète : **657 passed**, une
+  assertion de version Windows restée à R3 corrigée ; les **6 tests packaging
+  PASS** ensuite, soit **658 cas vérifiés**. Le test de paquet extrait et son
+  auto-test passent. Profil, bibliothèque et workflow protégés inchangés.
+  Archive avec les **98 fichiers de références** actualisés.
+- Validation visuelle Windows attendue. R4 est locale, aucun push.
+
+## Candidate précédente 2.0 DEV_9_R3 — historique
+
+- La relaxation native mode 0 est réappliquée à la hauteur finale des îles ;
+  la preview macro suit ce comportement.
+- Le relief est relevé doucement dans l’intérieur d’une île seulement quand la
+  relaxation a fait disparaître son sommet montagneux. L’écart côtier reste
+  protégé ; un chenal marin d’au moins 8 cellules ou 1,5 % de la carte est
+  réservé entre les îles et au bord de carte.
+- Générations qualifiées : Upgraded 384/4, 512/4, 768/4 ; Legacy 384/8 et
+  Legacy 768/20 via la suite dédiée. Contrats de départ, séparation, montagne,
+  marais et rivières PASS ; terre mesurée : 43,4 %, 49,1 %, 47,4 % et 24,5 %
+  pour les quatre premières configurations.
+- `python -m pytest tests/test_large_islands.py -q` : **10 passed**.
+  Première suite complète : **649 passed**, deux tests de maintenance ont
+  échoué uniquement parce que le snapshot et la matrice indiquaient encore R2 ;
+  les deux tests ont passé après correction des références. `compileall` PASS.
+- Auto-test source et auto-test après extraction du ZIP : PASS ; profil Legacy,
+  bibliothèque native et références protégés par leurs hashes. Le ZIP contient
+  366 fichiers, 96 références et les quatre fichiers de l’exemple R3.
+  Candidate locale ; aucune publication ni push. Validation visuelle Windows à
+  venir.
+
+## Candidate précédente 2.0 DEV_9_R2 — historique
+
+Les îles sont créées séparément, une par joueur ; chaque rivière manquante reçoit une relance du traceur natif limitée à son île. Contrôles dédiés, preview liée aux joueurs. Suite complète R2 : 651 tests réussis ; compilation et auto-test des ressources PASS, y compris après extraction du ZIP. L’archive contient 95 références et l’exemple R2. Validation visuelle Windows à venir. Aucun push.
 
 ## Checkpoint DEV publié — v2.0 DEV_8 (candidate R86)
 

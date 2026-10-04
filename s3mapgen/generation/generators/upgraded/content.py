@@ -2344,10 +2344,10 @@ class UpgradedContent:
                     if cells is not None:
                         break
                 if cells is None:
-                    if self.side == self.reference_side:
+                    if self.side == self.reference_side and state.metadata.get("archetype_key", "continental") == "continental":
                         raise RuntimeError(f"Upgraded mineral placement failed for family {family:#x}")
                     # The copied no-gap morphology remains the calibrated
-                    # 768×768 path.  Other editor sizes must still generate
+                    # 768×768 continental path. Other sizes and island maps must still generate
                     # even when their fragmented support cannot accommodate
                     # the calibrated blob geometry; use deterministic
                     # individual support cells and expose the fallback in
@@ -3734,6 +3734,8 @@ class UpgradedContent:
         bad = (objects != 0) & np.isin(terrain, MOUNTAIN_FAMILY_IDS)
         objects[bad] = 0
         access[bad] = 0
+        # EXE 0x518BEE–0x518BFB blocks the retained sculpture terrain family.
+        access[terrain == 0x70] = 1
         self.log("accessibility.upgraded_finalize")
 
 

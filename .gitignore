@@ -30,3 +30,6 @@ dist/
 artifacts/
 build/windows/work/
 .venv-build/
+
+# Local candidate map examples retained only in recovery archives.
+examples/dev9_r*/

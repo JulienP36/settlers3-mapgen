@@ -30,6 +30,7 @@ from .previews import (
 from .morphology import generate_mask_component_previews
 from .profiles import (
     MASK_LAYER_MANUAL_GRID_SIDE,
+    NATIVE_NOISE_MINIMUM,
     RELIEF_SOURCE_OPTIONS,
     continental_noise_calibration_profile,
     default_archetype_profile,
@@ -124,15 +125,15 @@ ARCHETYPE_TARGETS: tuple[ArchetypeTargetSpec, ...] = (
         key="large_islands",
         label="Grandes îles",
         topology_goal="Plusieurs grandes masses insulaires séparées et jouables.",
-        implemented=False,
+        implemented=True,
         land_share_min_percent=25.0,
         land_share_max_percent=75.0,
-        largest_mass_min_percent=35.0,
+        largest_mass_min_percent=0.0,
         edge_water_min_percent=100.0,
         coast_contact_max_percent=40.0,
         relief_share_min_percent=2.0,
         relief_share_max_percent=50.0,
-        mass_count_guidance="Plusieurs masses de taille comparable ; le nombre exact sera calibré sur les cartes de référence.",
+        mass_count_guidance="Plusieurs masses de taille comparable ; une île par joueur.",
     ),
     ArchetypeTargetSpec(
         key="small_islands",
@@ -1115,14 +1116,23 @@ def measure_preview(preview: ArchetypePreview) -> QualificationMetrics:
     water = ~land
     coast_cells = land & _touching_water(water)
     lab = getattr(preview, "noise_lab", None)
+    island_source = preview.island_mask is not None and preview.source_noise is not None
+    island_raw = (
+        np.clip(preview.source_noise.astype(np.int16) - NATIVE_NOISE_MINIMUM, 0, 255)
+        if island_source else None
+    )
+    island_values = island_raw[preview.source_noise > preview.thresholds[0]] if island_source else None
+    if island_source and not island_values.size:
+        island_values = island_raw.ravel()
     return QualificationMetrics(
         side=int(preview.side),
         seed=int(preview.seed),
         mirror_mode=int(preview.mirror_mode),
         source=(
+            str(preview.source_name) if preview.source_name is not None else
             str(lab.source_name)
             if lab is not None
-            else "native_legacy"
+            else "large_islands" if island_source else "native_legacy"
         ),
         macro_class_percentages=tuple(float(value) for value in percentages),
         macro_land_percent=float(np.mean(land) * 100.0),
@@ -1140,12 +1150,15 @@ def measure_preview(preview: ArchetypePreview) -> QualificationMetrics:
             percentages[MACRO_MOUNTAIN] + percentages[MACRO_SNOW]
         ),
         raw_source_land_percent=(
-            float(lab.source_land_percent) if lab is not None else None
+            float(lab.source_land_percent) if lab is not None
+            else float(np.mean(preview.source_noise > preview.thresholds[0]) * 100)
+            if island_source else None
         ),
         raw_source_height_percentiles=(
             tuple(float(value) for value in lab.source_height_percentiles)
             if lab is not None
-            else None
+            else tuple(float(value) for value in np.percentile(island_values, (10, 50, 90)))
+            if island_source else None
         ),
     )
 

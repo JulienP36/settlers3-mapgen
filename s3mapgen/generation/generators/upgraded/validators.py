@@ -79,7 +79,8 @@ def validate(state, profile: dict) -> list[ValidationResult]:
     river = np.isin(terrain, RIVER_IDS)
     if (
         state.metadata.get("mode_key") == "custom"
-        and "river_profile_rate_multiplier" in state.metadata
+        and ("river_profile_rate_multiplier" in state.metadata
+             or state.metadata.get("river_algorithm") == "improved")
     ):
         river_connections_ok = _river_components_touch_water(terrain)
         add(
@@ -317,7 +318,7 @@ def validate(state, profile: dict) -> list[ValidationResult]:
         else "bonus lake water touches grass directly",
     )
     start_mass = state.metadata.get("startable_mass", {})
-    if isinstance(start_mass, dict):
+    if isinstance(start_mass, dict) and not state.metadata.get("large_island_starts"):
         add(
             "UPGRADED_STARTABLE_GRASS_MASS",
             bool(start_mass.get("all_starts_in_largest_grass_mass", False)),
@@ -325,6 +326,8 @@ def validate(state, profile: dict) -> list[ValidationResult]:
             f"masses={start_mass.get('grass_mass_count', 0)}",
             hard=False,
         )
+    from ...archetypes.large_islands import validate_island_contract
+    out.extend(validate_island_contract(state))
     return out
 
 

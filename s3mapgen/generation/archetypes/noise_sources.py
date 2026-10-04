@@ -353,7 +353,7 @@ _SIMPLEX_GRADIENTS = np.asarray(
 )
 
 
-def _simplex_noise(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
+def _simplex_noise(x: np.ndarray, y: np.ndarray, seed: int, *, gradients=None) -> np.ndarray:
     """Vectorized 2-D simplex noise with deterministic coordinate hashing."""
 
     f2 = np.float32(0.3660254037844386)
@@ -373,6 +373,14 @@ def _simplex_noise(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
 
     def corner(ix, iy, dx, dy):
         attenuation = 0.5 - dx * dx - dy * dy
+        if gradients is not None:
+            gradient = gradients[(_hash2(ix, iy, seed) & (len(gradients) - 1)).astype(np.intp)]
+            dot = gradient[..., 0] * dx + gradient[..., 1] * dy
+            # A bounded positive polynomial avoids the general fourth-power
+            # evaluator. The original provider below keeps its exact bytes.
+            attenuation = np.maximum(attenuation, 0.)
+            squared = attenuation * attenuation
+            return squared * squared * dot
         gradient = _SIMPLEX_GRADIENTS[(_hash2(ix, iy, seed) & 7).astype(np.intp)]
         dot = gradient[..., 0] * dx + gradient[..., 1] * dy
         return np.where(attenuation > 0.0, attenuation**4 * dot, 0.0)

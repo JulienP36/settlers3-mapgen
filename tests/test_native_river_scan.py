@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from s3mapgen.generation.generators.legacy import native_terrain as legacy_native
 from s3mapgen.generation.generators.upgraded import native_terrain as upgraded_native
@@ -15,7 +16,7 @@ class _CountingZeroRng:
         return 0
 
 
-def test_native_river_scan_uses_refinement_cursor_and_skips_edge_rng_draws():
+def test_native_river_scan_starts_at_zero_and_skips_edge_rng_draws():
     side = 256
     expected_draws = 4 * (side - 15) ** 2
     engines = (
@@ -24,7 +25,7 @@ def test_native_river_scan_uses_refinement_cursor_and_skips_edge_rng_draws():
     )
 
     for module, grid_type in engines:
-        assert module.NATIVE_RIVER_SCAN_START == 0x0600
+        assert module.NATIVE_RIVER_SCAN_START == 0
         sampled: list[tuple[int, int]] = []
         original_filter = module._river_candidate_filter
 
@@ -43,10 +44,9 @@ def test_native_river_scan_uses_refinement_cursor_and_skips_edge_rng_draws():
         finally:
             module._river_candidate_filter = original_filter
 
-        # The game carries 0x600 from the last relief-refinement pass. At
-        # 256² the first four scan positions fail the margin; the fifth is
-        # (row 92, col 8), the first one allowed to draw from the PRNG.
-        assert sampled == [(92, 8)]
+        # EXE 0x517625 clears EBX. With step 0x97, the first admissible
+        # scan position on 256² is (row 66, col 8).
+        assert sampled == [(66, 8)]
         assert rng.calls == expected_draws
         assert result["river_attempts"] == 4 * side * side
 
@@ -85,3 +85,25 @@ def test_bonus_river_first_step_uses_the_shared_native_selector():
     row, col, side, continuation, received_allowed = received[0]
     assert (row, col, side, continuation) == (16, 16, 32, False)
     assert received_allowed is allowed
+
+
+@pytest.mark.parametrize("module", [legacy_native, upgraded_native])
+@pytest.mark.parametrize("continuation", [False, True])
+def test_native_first_step_selects_highest_even_after_restoring_source(module, continuation):
+    grid = module.NativeTerrainGrid.empty(32)
+    row, col = 16, 16
+    grid.terrain.fill(module.GRASS)
+    grid.marker.fill(0)
+    grid.height.fill(10)
+    # Highest is the last direction. Every continuation route check includes
+    # the source, which must be cleared again after the previous restoration.
+    dr, dc = module.HEX6[-1]
+    grid.height[row + dr, col + dc] = 40
+    grid.marker[row, col] = 3 if continuation else 0
+    saved = grid.marker.copy()
+    assert module._choose_first_river_step(grid, row, col, continuation) == 6
+    assert np.array_equal(grid.marker, saved)
+    # Equal heights retain the earliest admissible direction.
+    dr, dc = module.HEX6[0]
+    grid.height[row + dr, col + dc] = 40
+    assert module._choose_first_river_step(grid, row, col, continuation) == 1

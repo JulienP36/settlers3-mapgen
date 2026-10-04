@@ -587,6 +587,12 @@ _CUSTOM_SECTION_TEXT = {
         "de": "Dieser Archetyp ist noch reserviert: Seine Parameter werden mit dem Makromotor aktiviert.",
         "es": "Este arquetipo sigue reservado: sus parámetros se activarán con su motor macro.",
     },
+    "archetype_islands_steps_hint": {
+        "fr": "Une île indépendante par joueur, environ 50 % de terre au total. Le relief monte progressivement depuis la mer, avec des variations propres à chaque île et le lissage natif.",
+        "en": "One independent island per player, about 50% total land. Relief rises gradually from the sea, with variation unique to each island and native smoothing.",
+        "de": "Eine unabhängige Insel je Spieler, etwa 50 % Land insgesamt. Das Relief steigt vom Meer aus allmählich an, mit eigenen Variationen je Insel und nativer Glättung.",
+        "es": "Una isla independiente por jugador, cerca del 50 % de tierra total. El relieve asciende gradualmente desde el mar, con variaciones propias de cada isla y suavizado nativo.",
+    },
     "archetype_preview_noise": {
         "fr": "Bruit / hauteur",
         "en": "Noise / height",
@@ -769,6 +775,21 @@ _CUSTOM_SECTION_TEXT = {
     },
     "rivers": {
         "fr": "Rivières", "en": "Rivers", "de": "Flüsse", "es": "Ríos",
+    },
+    "river_algorithm": {
+        "fr": "Algorithme", "en": "Algorithm", "de": "Algorithmus", "es": "Algoritmo",
+    },
+    "river_algorithm_native": {
+        "fr": "Classique", "en": "Classic", "de": "Klassisch", "es": "Clásico",
+    },
+    "river_algorithm_improved": {
+        "fr": "Amélioré", "en": "Improved", "de": "Verbessert", "es": "Mejorado",
+    },
+    "river_algorithm_hint": {
+        "fr": "Classique : tracé d'origine.\nAmélioré : quitte la côte après l'embouchure et favorise des parcours moins rectilignes et plus courts. Compatible avec tous les archétypes ; nombre et longueur adaptés à la taille, quantité ajustée à la surface terrestre.",
+        "en": "Classic: original tracing.\nImproved: leaves the coast after the mouth and favours less straight, shorter routes. Available for all archetypes; quantity and length adapt to map size; quantity also follows land area.",
+        "de": "Klassisch: ursprünglicher Verlauf.\nVerbessert: verlässt die Küste nach der Mündung und bevorzugt weniger gerade, kürzere Verläufe. Für alle Archetypen verfügbar; Anzahl und Länge passen sich an die Kartengröße an; die Anzahl berücksichtigt die Landfläche.",
+        "es": "Clásico: trazado original.\nMejorado: abandona la costa tras la desembocadura y favorece recorridos menos rectos y más cortos. Disponible para todos los arquetipos; cantidad y longitud se adaptan al tamaño; la cantidad también considera la superficie terrestre.",
     },
     "river_rate": {
         "fr": "Taux global de rivières", "en": "Global river rate", "de": "Globale Flussrate", "es": "Tasa global de ríos",

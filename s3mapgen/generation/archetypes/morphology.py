@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
+from copy import deepcopy
 
 import numpy as np
 
@@ -25,6 +26,7 @@ from .profiles import (
     NATIVE_NOISE_MAXIMUM,
     NATIVE_NOISE_MINIMUM,
     RELIEF_SOURCE_CUSTOM_LEGACY,
+    ISLAND_RELIEF_SOURCES,
     SHAPE_TEMPLATE_DEFAULTS,
     finite_domain_parameters,
     mask_layer_parameters,
@@ -961,6 +963,12 @@ def _source_to_raw(
     if source_name == RELIEF_SOURCE_CUSTOM_LEGACY:
         normalized = raw.astype(np.float32) / 255.0
         return raw.copy(), normalized, np.ones(raw.shape, dtype=bool)
+    if source_name in ISLAND_RELIEF_SOURCES:
+        normalized = _apply_source_mask(
+            raw.astype(np.float32) / 255.0,
+            relief_source_mask(profile), int(seed), settings,
+        )
+        return np.rint(normalized * 255.0).astype(np.uint8), normalized, np.ones(raw.shape, dtype=bool)
     normalized, domain = _configured_source_field(
         raw.shape[0],
         int(seed),
@@ -1475,6 +1483,7 @@ def generate_noise_component_previews(
     mirror_mode: int = 0,
     include_principal: bool = True,
     source_height: np.ndarray | None = None,
+    players: int = 4,
     domain_side: int | None = None,
     component_cache: MutableMapping | None = None,
 ) -> tuple[np.ndarray, tuple[np.ndarray, ...]]:
@@ -1499,7 +1508,24 @@ def generate_noise_component_previews(
     if not include_principal:
         principal = np.zeros((side, side), dtype=np.uint8)
     elif source_height is None:
-        if source_name == NATIVE_RELIEF_SOURCE:
+        if source_name in ISLAND_RELIEF_SOURCES:
+            from .previews import generate_archetype_preview
+
+            # Complete compositions need their actual domain and population;
+            # evaluating them as an ordinary noise on zeros gives a blank card.
+            native_side = max(384, int(np.ceil((domain_side or side) / 64.0)) * 64)
+            source_profile = deepcopy(normalized)
+            source_profile["morphology"].update(
+                noise_layer_count=0, mask_layer_count=0,
+                shape_scale_percent=100, relief_contrast_percent=100,
+            )
+            preview = generate_archetype_preview(
+                source_profile, native_side, seed, mirror_mode, players=players,
+            )
+            values = np.clip(preview.source_noise - NATIVE_NOISE_MINIMUM, 0, 255)
+            indices = np.rint(np.linspace(0, native_side - 1, side)).astype(np.intp)
+            principal = values[np.ix_(indices, indices)].astype(np.uint8)
+        elif source_name == NATIVE_RELIEF_SOURCE:
             # The Legacy source is not a configurable provider.  Rebuilding
             # it through ``_source_to_raw(zeros)`` would produce a black
             # thumbnail, while reusing the composed display noise would make

@@ -46,16 +46,17 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_8
+## Current state — v2.0 DEV_9
 
-DEV8 is published on the `dev` branch from the R86 candidate. It closes the
-Archetype work: the main selector shows “Custom” after an effective profile
-edit, then returns to the named profile when one is selected. The full
-recovery references remain in the local hand-off archive and are excluded
-from GitHub. All 641 regression tests pass.
+DEV9 completes the **Large islands** focus from validated R25: one island and
+start per player, independent relief, shared composition controls and adaptive
+improved rivers. The alternative source is named “Large islands — rolling
+relief”. See [the DEV9 checkpoint](docs/DEV_9_CHECKPOINT.md).
 
-DEV9 is next, including the Great Islands archetype and the remaining work in
-`TODO_MAPGEN.md`.
+R25 qualification: 818 tests, seven complete maps and four exports PASS.
+Full recovery references remain in the source ZIP and outside the Git push.
+Earlier DEV9 work outside this scope moves to DEV10 for prioritization.
+Small islands is planned for DEV10 or DEV11; see `TODO_MAPGEN.md`.
 
 ### R55 — previews and providers for Continental Custom
 

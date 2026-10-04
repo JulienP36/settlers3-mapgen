@@ -34,9 +34,12 @@ from ...archetypes.legacy_blocks import (
 )
 from ...archetypes.profiles import (
     RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_LARGE_ISLANDS,
+    RELIEF_SOURCE_LARGE_ISLANDS_R21,
     relief_source_parameter,
     relief_thresholds,
 )
+from ...archetypes.island_source import generate_island_source, uses_island_source
 
 
 MAX_SIDE = 1024
@@ -49,7 +52,7 @@ DESERT = 0x40
 SWAMP = 0x50
 RIVER_FIRST = 0x60
 RIVER_LAST = 0x63
-NATIVE_RIVER_SCAN_START = 0x0600
+NATIVE_RIVER_SCAN_START = 0
 SNOW = 0x80
 MUD = 0x90
 
@@ -61,7 +64,7 @@ MUD = 0x90
 # 384²/512² with this factor; 256² still shows wider seed-to-seed variation.
 CUSTOM_ARCHETYPE_RIVER_RATE_MULTIPLIER = 0.4
 
-TEMP_70 = 0x70
+TEMP_70 = 0x70  # Native sculpture terrain, retained after classification.
 TEMP_F0 = 0xF0
 TEMP_F3 = 0xF3
 
@@ -110,6 +113,7 @@ class NativeTerrainResult:
     resources: np.ndarray | None = None
     object_flags: np.ndarray | None = None
     deferred: "DeferredTerrainPass | None" = None
+    topology_labels: np.ndarray | None = None
 
 
 class NativeRng16:
@@ -316,21 +320,24 @@ def _refine_relief(
                     row == 0 or row_end == grid.side - 1
                     or col == 0 or col_end == grid.side - 1
                 )
+                # EXE still calls the PRNG when both bounds are zero.
                 top_left = int(grid.height[row, col])
                 grid.height[row + scale, col] = (
-                    0 if zero_vertical else _midpoint_value(
+                    _midpoint_value(rng, 0, 0, scale, 0) if zero_vertical else _midpoint_value(
                         rng, top_left, int(grid.height[row_end, col]), scale,
                         scale_variation_percent,
                     )
                 )
                 grid.height[row, col + scale] = (
-                    0 if zero_horizontal else _midpoint_value(
+                    _midpoint_value(rng, 0, 0, scale, 0) if zero_horizontal else _midpoint_value(
                         rng, top_left, int(grid.height[row, col_end]), scale,
                         scale_variation_percent,
                     )
                 )
                 if zero_diagonal:
-                    grid.height[row + scale, col + scale] = 0
+                    grid.height[row + scale, col + scale] = _midpoint_value(
+                        rng, 0, 0, scale, 0,
+                    )
                 elif center_corner_blend_percent:
                     bottom_right = int(grid.height[row_end, col_end])
                     diagonal = (top_left + bottom_right) // 2
@@ -390,6 +397,8 @@ def _native_relaxation_strength_percent(profile: dict | None) -> int:
     if str(morphology.get("relief_source", "native_legacy")) not in {
         "native_legacy",
         RELIEF_SOURCE_CUSTOM_LEGACY,
+        RELIEF_SOURCE_LARGE_ISLANDS,
+        RELIEF_SOURCE_LARGE_ISLANDS_R21,
     }:
         return 100
     try:
@@ -419,6 +428,26 @@ def _run_relaxation_block(
     signed_delta = np.where(delta < 0, -magnitude, magnitude)
     grid.height[:] = np.clip(original + signed_delta, 0, 255).astype(np.uint8)
     return passes
+
+
+def relax_large_island_height(
+    height: np.ndarray,
+    *,
+    archetype_profile: dict | None = None,
+) -> tuple[np.ndarray, int]:
+    """Reapply the native relief-relaxation pass after island height remapping."""
+    values = np.asarray(height, dtype=np.uint8)
+    if values.ndim != 2 or values.shape[0] != values.shape[1]:
+        raise ValueError("Le relief des îles doit être carré")
+    grid = NativeTerrainGrid.empty(values.shape[0])
+    grid.height[:] = values
+    grid.terrain.fill(WATER)
+    passes = _run_relaxation_block(
+        grid,
+        alternate_mode=False,
+        strength_percent=_native_relaxation_strength_percent(archetype_profile),
+    )
+    return grid.height.copy(), passes
 
 
 def _native_sculpture_attempts_percent(profile: dict | None) -> int:
@@ -471,156 +500,134 @@ def _sculpt_proximity_guard(grid: NativeTerrainGrid, row: int, col: int) -> bool
 
 
 def _sculpt_candidate(grid: NativeTerrainGrid, row: int, col: int) -> None:
-    height = _height_at(grid, row, col)
-    diagonal_height = _height_at(grid, row, col + 1)
-    if not (height > 30 and height < 100 and height - 10 > diagonal_height):
-        return
-    if not _sculpt_proximity_guard(grid, row, col):
-        return
+    """Follow EXE 0x516CDE–0x5172C0, including successive state blocks.
 
-    _set_terrain(grid, row, col, TEMP_70)
-    _set_terrain(grid, row, col + 1, TEMP_F0)
-    current_row, current_col = row, col
-    state = 3
-    pass_index = 0
-    failed = False
-    steps = 0
-    max_steps = max(64, grid.side * 8)
-
-    while True:
-        steps += 1
-        if steps > max_steps:
-            raise RuntimeError(
-                f"La sculpture native du relief ne progresse pas autour de "
-                f"({row},{col}) pour {grid.side}x{grid.side} "
-                f"(limite de {max_steps} étapes)"
-            )
-        if pass_index == 0:
-            if state == 4:
-                delta = _height_at(grid, current_row - 1, current_col - 1) - _height_at(grid, current_row - 1, current_col)
-                if delta <= 5 or not _sculpt_density_guard(grid, current_row - 1, current_col - 1):
-                    failed = True
-                else:
-                    _set_terrain(grid, current_row - 1, current_col - 1, TEMP_70)
-                    current_row -= 1
-                    current_col -= 1
-                    state = 3
-            elif state == 3:
-                if not _sculpt_density_guard(grid, current_row - 1, current_col):
-                    failed = True
-                else:
-                    d1 = _height_at(grid, current_row, current_col) - _height_at(grid, current_row - 1, current_col)
-                    d2 = _height_at(grid, current_row - 1, current_col) - _height_at(grid, current_row, current_col + 1)
-                    if d2 <= d1:
-                        if d1 <= 5:
+    A successful block can immediately execute its new state in the
+    same iteration. The phase-specific continue/break edges below
+    preserve that flow and its height-check timing.
+    """
+    H = lambda r, c: _height_at(grid, r, c)
+    guard = lambda r, c: _sculpt_density_guard(grid, r, c)
+    put = lambda r, c, v: _set_terrain(grid, r, c, v)
+    if not (30 < H(row, col) < 100 and H(row, col) - 10 > H(row, col + 1)) or not _sculpt_proximity_guard(grid, row, col):
+        return
+    put(row, col, TEMP_70)
+    put(row, col + 1, TEMP_F0)
+    for phase in range(2):
+        r, c, state = (row, col, 3)
+        steps = 0
+        while True:
+            failed = False
+            while True:
+                steps += 1
+                if steps > max(64, grid.side * 8):
+                    raise RuntimeError('La sculpture native dépasse sa limite de parcours')
+                if phase == 0:
+                    if state == 4:
+                        if H(r - 1, c - 1) - H(r - 1, c) <= 5 or not guard(r - 1, c - 1):
                             failed = True
-                        else:
-                            _set_terrain(grid, current_row - 1, current_col, TEMP_F0)
-                            state = 4
-                    elif d2 <= 5:
-                        failed = True
-                    else:
-                        _set_terrain(grid, current_row - 1, current_col, TEMP_70)
-                        current_row -= 1
-                        state = 2
-            elif state == 2:
-                if not _sculpt_density_guard(grid, current_row, current_col + 1):
-                    failed = True
-                else:
-                    d1 = _height_at(grid, current_row, current_col) - _height_at(grid, current_row, current_col + 1)
-                    d2 = _height_at(grid, current_row, current_col + 1) - _height_at(grid, current_row + 1, current_col)
-                    if d2 <= d1:
-                        if d1 <= 5:
-                            failed = True
-                        else:
-                            # This apparently asymmetric target is present in
-                            # the native block and is intentional.
-                            _set_terrain(grid, current_row - 1, current_col, TEMP_F0)
-                            state = 4
-                    elif d2 <= 5:
-                        failed = True
-                    else:
-                        _set_terrain(grid, current_row - 1, current_col, TEMP_70)
-                        current_row -= 1
-                        state = 2
-            elif state == 1:
-                delta = _height_at(grid, current_row, current_col) - _height_at(grid, current_row + 1, current_col)
-                if delta <= 5 or not _sculpt_density_guard(grid, current_row + 1, current_col + 1):
-                    failed = True
-                else:
-                    _set_terrain(grid, current_row + 1, current_col + 1, TEMP_F0)
-                    state = 2
-            else:
-                failed = True
-        else:
-            if state == 4:
-                delta = _height_at(grid, current_row, current_col) - _height_at(grid, current_row, current_col + 1)
-                if delta <= 5 or not _sculpt_density_guard(grid, current_row, current_col + 1):
-                    failed = True
-                else:
-                    _set_terrain(grid, current_row, current_col + 1, TEMP_F0)
-                    state = 3
-            elif state == 3:
-                if not _sculpt_density_guard(grid, current_row + 1, current_col + 1):
-                    failed = True
-                else:
-                    d1 = _height_at(grid, current_row, current_col) - _height_at(grid, current_row + 1, current_col)
-                    d2 = _height_at(grid, current_row + 1, current_col) - _height_at(grid, current_row, current_col + 1)
-                    if d2 <= d1:
-                        if d1 <= 5:
-                            failed = True
-                        else:
-                            _set_terrain(grid, current_row + 1, current_col, TEMP_F0)
-                            state = 2
-                    elif d2 <= 5:
-                        failed = True
-                    else:
-                        _set_terrain(grid, current_row + 1, current_col + 1, TEMP_70)
-                        current_row += 1
-                        current_col += 1
-                        state = 4
-            elif state == 2:
-                if not _sculpt_density_guard(grid, current_row + 1, current_col):
-                    failed = True
-                else:
-                    d1 = _height_at(grid, current_row, current_col) - _height_at(grid, current_row, current_col + 1)
-                    d2 = _height_at(grid, current_row, current_col + 1) - _height_at(grid, current_row + 1, current_col)
-                    if d2 <= d1:
-                        if d1 <= 5:
-                            failed = True
-                        else:
-                            _set_terrain(grid, current_row + 1, current_col, TEMP_F0)
-                            state = 1
-                    elif d2 <= 5:
-                        failed = True
-                    else:
-                        _set_terrain(grid, current_row + 1, current_col, TEMP_70)
-                        current_row += 1
+                            break
+                        put(r - 1, c - 1, TEMP_70)
+                        r -= 1
+                        c -= 1
                         state = 3
-            elif state == 1:
-                delta = _height_at(grid, current_row, current_col - 1) - _height_at(grid, current_row - 1, current_col)
-                if delta <= 5 or not _sculpt_density_guard(grid, current_row, current_col - 1):
-                    failed = True
+                        continue
+                    if state == 3:
+                        if not guard(r - 1, c):
+                            failed = True
+                            break
+                        d1 = H(r, c) - H(r - 1, c)
+                        d2 = H(r - 1, c) - H(r, c + 1)
+                        if d2 <= d1 and d1 > 5:
+                            put(r - 1, c, TEMP_F0)
+                            state = 4
+                            break
+                        if d2 <= 5:
+                            failed = True
+                            break
+                        put(r - 1, c, TEMP_70)
+                        r -= 1
+                        state = 2
+                        continue
+                    if state == 2:
+                        if not guard(r, c + 1):
+                            failed = True
+                            break
+                        d1 = H(r, c) - H(r, c + 1)
+                        d2 = H(r, c + 1) - H(r + 1, c + 1)
+                        if d2 <= d1 and d1 > 5:
+                            put(r, c + 1, TEMP_F0)
+                            state = 3
+                            break
+                        if d2 <= 5:
+                            failed = True
+                            break
+                        put(r, c + 1, TEMP_70)
+                        c += 1
+                        state = 1
+                        continue
+                    if state == 1:
+                        if H(r, c) - H(r + 1, c + 1) <= 5 or not guard(r + 1, c + 1):
+                            failed = True
+                            break
+                        put(r + 1, c + 1, TEMP_F0)
+                        state = 2
+                        break
                 else:
-                    _set_terrain(grid, current_row, current_col - 1, TEMP_70)
-                    # The native block decrements the current column before
-                    # entering state 2.  Omitting this update makes the
-                    # state-1/state-2 pair revisit the same cell forever on
-                    # some reliefs (notably seed 297650040 at 256x256).
-                    current_col -= 1
-                    state = 2
-            else:
+                    if state == 4:
+                        if H(r, c) - H(r, c + 1) <= 5 or not guard(r, c + 1):
+                            failed = True
+                            break
+                        put(r, c + 1, TEMP_F0)
+                        state = 3
+                        continue
+                    if state == 3:
+                        if not guard(r + 1, c + 1):
+                            failed = True
+                            break
+                        d1 = H(r, c) - H(r + 1, c + 1)
+                        d2 = H(r + 1, c + 1) - H(r, c + 1)
+                        if d2 <= d1 and d1 > 5:
+                            put(r + 1, c + 1, TEMP_F0)
+                            state = 2
+                            continue
+                        if d2 <= 5:
+                            failed = True
+                            break
+                        put(r + 1, c + 1, TEMP_70)
+                        r += 1
+                        c += 1
+                        state = 4
+                        break
+                    if state == 2:
+                        if not guard(r + 1, c):
+                            failed = True
+                            break
+                        d1 = H(r, c) - H(r + 1, c)
+                        d2 = H(r + 1, c) - H(r + 1, c + 1)
+                        if d2 <= d1 and d1 > 5:
+                            put(r + 1, c, TEMP_F0)
+                            state = 1
+                            continue
+                        if d2 <= 5:
+                            failed = True
+                            break
+                        put(r + 1, c, TEMP_70)
+                        r += 1
+                        state = 3
+                        break
+                    if state == 1:
+                        if H(r, c - 1) - H(r + 1, c) <= 5 or not guard(r, c - 1):
+                            failed = True
+                            break
+                        put(r, c - 1, TEMP_70)
+                        c -= 1
+                        state = 2
+                        break
                 failed = True
-
-        current_height = _height_at(grid, current_row, current_col)
-        if 30 <= current_height <= 100 and not failed:
-            continue
-        pass_index += 1
-        if pass_index > 1:
-            break
-        current_row, current_col = row, col
-        state = 3
-        failed = False
+                break
+            if failed or not 30 <= H(r, c) <= 100:
+                break
 
 
 def _consume_sculpture_markers(grid: NativeTerrainGrid) -> None:
@@ -749,13 +756,19 @@ def _relax_relief(grid: NativeTerrainGrid, alternate_mode: bool) -> int:
 def _classify_relief(
     grid: NativeTerrainGrid,
     archetype_profile: dict | None = None,
+    signed_noise: np.ndarray | None = None,
 ) -> tuple[int, int, int]:
     water_threshold, mountain_threshold, snow_threshold = relief_thresholds(
         archetype_profile
     )
     interior = (slice(1, -1), slice(1, -1))
     heights = grid.height[interior]
-    grid.terrain[interior] = np.select(
+    if signed_noise is not None and water_threshold < 0:
+        heights = np.where(heights == 0, signed_noise[interior], heights)
+    # EXE 0x5175D8 preserves sculpture terrain 0x70. It is
+    # also excluded from the native river and biome candidates.
+    preserved = grid.terrain[interior] == TEMP_70
+    classified = np.select(
         (
             heights <= water_threshold,
             heights < mountain_threshold,
@@ -764,6 +777,7 @@ def _classify_relief(
         (WATER, GRASS, ROCK),
         default=SNOW,
     ).astype(np.uint8)
+    np.copyto(grid.terrain[interior], classified, where=~preserved)
     return water_threshold, mountain_threshold, snow_threshold
 
 
@@ -773,16 +787,23 @@ def _clear_pre_river_fields(grid: NativeTerrainGrid) -> None:
 
 
 def _uses_noise_archetype_profile(profile: dict | None) -> bool:
+    if uses_island_source(profile):
+        return False
     if not isinstance(profile, dict):
         return False
     morphology = profile.get("morphology")
     if not isinstance(morphology, dict):
         return False
-    if str(morphology.get("relief_source", "native_legacy")) != "native_legacy":
+    # A complete island provider retains its existing native river route.
+    # Giving it an explicit source name must not select experimental noise rates.
+    if str(morphology.get("relief_source", "native_legacy")) not in {
+        "native_legacy", RELIEF_SOURCE_LARGE_ISLANDS,
+    }:
         return True
     layers = morphology.get("noise_layers", ())
     return isinstance(layers, (list, tuple)) and any(
         isinstance(layer, dict) and bool(layer.get("enabled"))
+        and int(layer.get("strength_percent", 0)) > 0
         for layer in layers
     )
 
@@ -878,14 +899,16 @@ def _choose_first_river_step(
     allowed_mask: np.ndarray | None = None,
 ) -> int:
     best_direction = 0
-    best_height = 256
+    best_height = -1
     marker = grid.marker
     terrain = grid.terrain
     height = grid.height
     saved_marker = int(marker[row, col])
-    if continuation:
-        marker[row, col] = 0
     for direction, (dr, dc) in enumerate(HEX6, start=1):
+        # The native backedge clears the source again for each
+        # direction; restoring it once must not block later tests.
+        if continuation:
+            marker[row, col] = 0
         next_row, next_col = row + dr, col + dc
         if (
             int(terrain[next_row, next_col]) == GRASS
@@ -902,13 +925,12 @@ def _choose_first_river_step(
             )
         ):
             next_height = int(height[next_row, next_col])
-            if next_height < best_height:
+            # cmp selected,candidate; jae skip: highest wins.
+            if next_height > best_height:
                 best_height = next_height
                 best_direction = direction
         if continuation:
             marker[row, col] = saved_marker
-    if continuation:
-        marker[row, col] = saved_marker
     return best_direction
 
 
@@ -1139,18 +1161,27 @@ def _generate_rivers(
     *,
     rate_percent: float = 100.0,
     allow_water_start: bool = True,
+    algorithm: str = "native",
 ) -> dict[str, int | float]:
+    river_policy = None
+    if algorithm == "improved":
+        from ...river_policy import ImprovedRiverPolicy
+        river_policy = ImprovedRiverPolicy(grid.terrain)
     side = grid.side
     area = side * side
     height = grid.height
     terrain = grid.terrain
     marker = grid.marker
     river_rate = min(500.0, max(0.0, float(rate_percent)))
-    # The native scan consumes the 0x600 index left by the final relief
-    # refinement, advances by 0x97 modulo the active area, and checks the
+    # EXE 0x517625 zeroes the initial cursor. The scan then advances
+    # by 0x97 modulo the active area, and checks the
     # eight-cell margin before drawing from the PRNG. A Custom rate only
     # changes the native acceptance threshold.
     acceptance_threshold = int(round(0x07D0 * river_rate / 100.0))
+    proposal_threshold = acceptance_threshold
+    if river_policy is not None:
+        river_policy.quantity(side, terrain, river_rate)
+        proposal_threshold = river_policy.proposal_threshold(acceptance_threshold)
     index = NATIVE_RIVER_SCAN_START
     systems = 0
     river_cells = 0
@@ -1163,7 +1194,8 @@ def _generate_rivers(
             index -= area
         if not _river_candidate_in_margin(grid, r, q):
             continue
-        if rng.next() >= acceptance_threshold:
+        acceptance_draw = rng.next()
+        if acceptance_draw >= proposal_threshold:
             continue
 
         accepted, continuation = _river_candidate_filter(
@@ -1171,7 +1203,17 @@ def _generate_rivers(
         )
         if not accepted:
             continue
-        first_direction = _choose_first_river_step(grid, r, q, continuation)
+        if continuation and acceptance_draw >= acceptance_threshold:
+            continue
+        if (river_policy is not None and not continuation
+                and acceptance_draw >= river_policy.mouth_threshold(proposal_threshold)):
+            continue
+        if river_policy is not None and continuation:
+            first_direction = _choose_first_river_step(
+                grid, r, q, continuation, allowed_mask=river_policy.inland,
+            )
+        else:
+            first_direction = _choose_first_river_step(grid, r, q, continuation)
         if first_direction == 0 or _river_window_conflict(grid, r, q):
             continue
 
@@ -1188,6 +1230,8 @@ def _generate_rivers(
         first_dr, first_dc = HEX6[first_direction - 1]
         current_row += first_dr
         current_col += first_dc
+        if river_policy is not None:
+            river_policy.start(current_row, current_col, continuation)
 
         forward_steps = 0
         while True:
@@ -1237,6 +1281,10 @@ def _generate_rivers(
                                 - candidate_height + offset
                                 for ndr, ndc in HEX6
                             )
+                        if river_policy is not None:
+                            score = river_policy.score(
+                                score, candidate_row, candidate_col, path_count,
+                            )
                         scores[slot] = score
                 direction = _wrap_direction(direction + 1)
 
@@ -1263,6 +1311,8 @@ def _generate_rivers(
                     previous_direction = chosen_direction
                     same_direction_count = 1
                 current_row, current_col = next_row, next_col
+                if river_policy is not None:
+                    river_policy.advance(current_row, current_col)
                 scan_start = _wrap_direction(chosen_direction - 1)
                 continue
 
@@ -1292,6 +1342,8 @@ def _generate_rivers(
                 break
 
             current_row, current_col = start_row, start_col
+            if river_policy is not None:
+                river_policy.committed(continuation, path_count)
             incoming_direction = 0
             trace_steps = 0
             while True:
@@ -1374,7 +1426,23 @@ def _generate_rivers(
             if incompatible:
                 grid.terrain[row, col] = GRASS
 
+    quantity_meta = {}
+    if river_policy is not None:
+        quantity_meta = {
+            "river_land_cells": river_policy.land_cells,
+            "river_mouth_acceptance_threshold": proposal_threshold,
+            "river_length_scale": river_policy.length_scale,
+            "river_mouth_length_mean": (
+                river_policy.mouth_length_total / river_policy.mouths
+                if river_policy.mouths else 0.0
+            ),
+            "river_mouth_length_max": river_policy.max_mouth_length,
+            "river_mouth_target": river_policy.mouth_target,
+            "river_committed_mouths": river_policy.mouths,
+            "river_committed_branches": river_policy.branches,
+        }
     return {
+        **quantity_meta,
         "river_attempts": attempts,
         "river_systems": systems,
         "river_cells": river_cells,
@@ -1711,7 +1779,8 @@ def _prune_and_record_custom_river_orphans(
     grid: NativeTerrainGrid,
     metadata: MutableMapping[str, object],
 ) -> None:
-    if "river_profile_rate_multiplier" not in metadata:
+    if ("river_profile_rate_multiplier" not in metadata
+            and metadata.get("river_algorithm") != "improved"):
         return
     removed = _prune_orphan_custom_rivers(grid)
     for key, count in removed.items():
@@ -1793,6 +1862,7 @@ def generate_primary_terrain(
     surface_rates=None,
     defer_non_archetype: bool = False,
     archetype_profile: dict | None = None,
+    players: int = 4,
 ) -> NativeTerrainResult:
     """Generate the primary native terrain field.
 
@@ -1819,126 +1889,161 @@ def generate_primary_terrain(
 
     report("initialize")
     _initialize_cells(grid)
-    report("coarse_relief")
-    custom_legacy = (
-        relief_source_parameter(archetype_profile)
-        == RELIEF_SOURCE_CUSTOM_LEGACY
-    )
-    if custom_legacy:
-        seed_custom_legacy_anchors(
-            grid.height,
-            rng,
-            variation_percent=_native_coarse_variation_percent(archetype_profile),
-        )
+    if uses_island_source(archetype_profile):
+        relief_relax_passes = 0
     else:
-        _seed_coarse_relief(
+        report("coarse_relief")
+        custom_legacy = (
+            relief_source_parameter(archetype_profile)
+            == RELIEF_SOURCE_CUSTOM_LEGACY
+        )
+        if custom_legacy:
+            seed_custom_legacy_anchors(
+                grid.height,
+                rng,
+                variation_percent=_native_coarse_variation_percent(archetype_profile),
+            )
+        else:
+            _seed_coarse_relief(
+                grid,
+                rng,
+                variation_percent=_native_coarse_variation_percent(archetype_profile),
+            )
+        report("relief_refinement")
+        fine_scale_percent = _native_refinement_band_percent(
+            archetype_profile,
+            "native_fine_scale_refinement_percent",
+        )
+        if custom_legacy:
+            fine_scale_percent = fine_scale_percent * CUSTOM_FINE_SCALE_BASE_PERCENT // 100
+        _refine_relief(
             grid,
             rng,
-            variation_percent=_native_coarse_variation_percent(archetype_profile),
+            variation_percent=_native_refinement_percent(archetype_profile),
+            large_scale_percent=_native_refinement_band_percent(archetype_profile, "native_large_scale_refinement_percent"),
+            fine_scale_percent=fine_scale_percent,
+            start_scale=16 if custom_legacy else 32,
+            center_corner_blend_percent=(
+                CUSTOM_CENTER_CORNER_BLEND_PERCENT if custom_legacy else 0
+            ),
         )
-    report("relief_refinement")
-    fine_scale_percent = _native_refinement_band_percent(
-        archetype_profile,
-        "native_fine_scale_refinement_percent",
-    )
-    if custom_legacy:
-        fine_scale_percent = fine_scale_percent * CUSTOM_FINE_SCALE_BASE_PERCENT // 100
-    _refine_relief(
-        grid,
-        rng,
-        variation_percent=_native_refinement_percent(archetype_profile),
-        large_scale_percent=_native_refinement_band_percent(archetype_profile, "native_large_scale_refinement_percent"),
-        fine_scale_percent=fine_scale_percent,
-        start_scale=16 if custom_legacy else 32,
-        center_corner_blend_percent=(
-            CUSTOM_CENTER_CORNER_BLEND_PERCENT if custom_legacy else 0
-        ),
-    )
-    if custom_legacy:
-        grid.height[:, :] = soften_custom_legacy_relief(grid.height, seed=seed)
-    if archetype_profile is not None:
-        # Replace the complete raw field for independent R20 sources, then
-        # apply optional semantic layers in the selected source domain.
-        grid.height[:, :] = apply_native_relief_source(
-            grid.height,
-            archetype_profile,
-            seed=seed,
-        )
-        grid.height[:, :] = apply_native_noise_layers(
-            grid.height,
-            archetype_profile,
-            seed=seed,
-        )
-    _normalize_relief(grid)
+        if custom_legacy:
+            grid.height[:, :] = soften_custom_legacy_relief(grid.height, seed=seed)
+        if archetype_profile is not None:
+            # Replace the complete raw field for independent R20 sources, then
+            # apply optional semantic layers in the selected source domain.
+            grid.height[:, :] = apply_native_relief_source(
+                grid.height,
+                archetype_profile,
+                seed=seed,
+            )
+            grid.height[:, :] = apply_native_noise_layers(
+                grid.height,
+                archetype_profile,
+                seed=seed,
+            )
+        _normalize_relief(grid)
 
-    relief_relax_passes = 0
-    if mode == 0:
-        report("relief_sculpture")
-        attempts = (side * side // 16) * _native_sculpture_attempts_percent(archetype_profile) // 100
-        for _ in range(attempts):
-            # The first native expression is signed and truncates toward zero.
-            numerator = rng.next() * side - 2
-            row = 1 + math.trunc(numerator / 65536)
-            col = 1 + ((rng.next() * (side - 3)) >> 16)
-            if _interior(grid, row, col):
-                _sculpt_candidate(grid, row, col)
-        _consume_sculpture_markers(grid)
-        relief_relax_passes = _run_relaxation_block(
-            grid,
-            alternate_mode=False,
-            strength_percent=_native_relaxation_strength_percent(archetype_profile),
-        )
-    else:
-        report("relief_relaxation_alternate")
-        relief_relax_passes = _run_relaxation_block(
-            grid,
-            alternate_mode=True,
-            strength_percent=_native_relaxation_strength_percent(archetype_profile),
-        )
+        relief_relax_passes = 0
+        if mode == 0:
+            report("relief_sculpture")
+            attempts = (side * side // 16) * _native_sculpture_attempts_percent(archetype_profile) // 100
+            for _ in range(attempts):
+                # The first native expression is signed and truncates toward zero.
+                numerator = rng.next() * side - 2
+                row = 1 + math.trunc(numerator / 65536)
+                col = 1 + ((rng.next() * (side - 3)) >> 16)
+                if _interior(grid, row, col):
+                    _sculpt_candidate(grid, row, col)
+            _consume_sculpture_markers(grid)
+            relief_relax_passes = _run_relaxation_block(
+                grid,
+                alternate_mode=False,
+                strength_percent=_native_relaxation_strength_percent(archetype_profile),
+            )
+        else:
+            report("relief_relaxation_alternate")
+            relief_relax_passes = _run_relaxation_block(
+                grid,
+                alternate_mode=True,
+                strength_percent=_native_relaxation_strength_percent(archetype_profile),
+            )
 
-    if archetype_profile is not None:
-        transformed_height, _ = apply_archetype_morphology(
-            grid.height,
-            profile=archetype_profile,
-            seed=seed,
-            include_noise_layers=False,
-        )
-        grid.height[:] = transformed_height
+        if archetype_profile is not None:
+            transformed_height, _ = apply_archetype_morphology(
+                grid.height,
+                profile=archetype_profile,
+                seed=seed,
+                include_noise_layers=False,
+            )
+            grid.height[:] = transformed_height
 
-    if custom_legacy and relief_thresholds(archetype_profile)[0] >= 0:
-        retain_largest_land_component(
-            grid.height,
-            water_threshold=relief_thresholds(archetype_profile)[0],
+        if custom_legacy and relief_thresholds(archetype_profile)[0] >= 0:
+            retain_largest_land_component(
+                grid.height,
+                water_threshold=relief_thresholds(archetype_profile)[0],
+            )
+
+    topology_labels = None
+    topology_report = None
+    signed_noise = None
+    if uses_island_source(archetype_profile):
+        if mode:
+            raise ValueError("Grandes îles utilise le mode sans miroir")
+        fields = generate_island_source(
+            side, players, seed, archetype_profile,
+            native_relaxation=lambda values: relax_large_island_height(
+                values, archetype_profile=archetype_profile,
+            ),
         )
+        grid.height[:] = fields.height
+        signed_noise = fields.noise
+        topology_labels, topology_report = fields.topology_labels, fields.report
 
     report("relief_classification")
-    relief_threshold_values = _classify_relief(grid, archetype_profile)
+    relief_threshold_values = _classify_relief(grid, archetype_profile, signed_noise)
     _clear_pre_river_fields(grid)
     report("rivers")
     river_rate = 100.0
+    river_algorithm = "native"
     if isinstance(surface_rates, dict):
         river_section = surface_rates.get("rivers", {})
         if isinstance(river_section, dict):
+            if river_section.get("algorithm") == "improved":
+                river_algorithm = "improved"
             try:
                 river_rate = min(500.0, max(0.0, float(river_section.get("rate_percent", 100.0))))
             except (TypeError, ValueError):
                 river_rate = 100.0
     noise_archetype_profile = _uses_noise_archetype_profile(archetype_profile)
     river_rate_multiplier = (
-        CUSTOM_ARCHETYPE_RIVER_RATE_MULTIPLIER if noise_archetype_profile else 1.0
+        CUSTOM_ARCHETYPE_RIVER_RATE_MULTIPLIER
+        if noise_archetype_profile and river_algorithm == "native" else 1.0
     )
     effective_river_rate = river_rate * river_rate_multiplier
     river_meta = _generate_rivers(
         grid, rng, rate_percent=effective_river_rate,
         allow_water_start=not noise_archetype_profile,
+        algorithm=river_algorithm,
     )
+    river_meta["river_algorithm"] = river_algorithm
     if noise_archetype_profile:
         river_meta["river_rate_percent"] = river_rate
         river_meta["river_effective_rate_percent"] = effective_river_rate
         river_meta["river_profile_rate_multiplier"] = river_rate_multiplier
+    if topology_report is not None and river_rate <= 0:
+        topology_report["preset_features_required"] = False
+    if topology_labels is not None and river_rate > 0:
+        from ...archetypes.large_islands import complete_missing_island_rivers
+        river_meta.update(complete_missing_island_rivers(
+            grid, topology_labels, seed=seed,
+            generate_native=lambda g, r, **kw: _generate_rivers(
+                g, r, algorithm=river_algorithm, **kw,
+            ), rng_factory=NativeRng16,
+        ))
     report("structural_transitions")
     _apply_structural_transitions(grid)
-    if noise_archetype_profile:
+    if noise_archetype_profile or river_algorithm == "improved":
         river_meta.update(_prune_orphan_custom_rivers(grid))
     report("terrain_families")
     custom_rates = None
@@ -1953,6 +2058,11 @@ def generate_primary_terrain(
         "dry_grass": 100.0,
         "details": 100.0,
     }
+    if topology_report is not None and (
+        river_rate != 100.0
+        or (custom_rates is not None and custom_rates != native_default_rates)
+    ):
+        topology_report["preset_features_required"] = False
     custom_mud_rate = (
         float(custom_rates["mud"])
         if custom_rates is not None
@@ -1998,6 +2108,12 @@ def generate_primary_terrain(
         }
         if archetype_profile is not None:
             metadata["archetype_relief_thresholds"] = list(relief_threshold_values)
+        if topology_report is not None:
+            metadata["island_relief_source"] = topology_report
+        if topology_labels is not None:
+            metadata["large_island_topology"] = topology_report
+            from ...archetypes.large_islands import summarize_island_terrain_features
+            metadata["large_island_features"] = summarize_island_terrain_features(grid.terrain, topology_labels)
         return NativeTerrainResult(
             grid.height.copy(),
             grid.terrain.copy(),
@@ -2008,6 +2124,7 @@ def generate_primary_terrain(
             grid.resources.copy(),
             grid.object_flags.copy(),
             continuation,
+            topology_labels=topology_labels,
         )
     native_reference_terrain = None
     if custom_rates is not None:
@@ -2100,6 +2217,12 @@ def generate_primary_terrain(
         metadata["archetype_relief_thresholds"] = list(relief_threshold_values)
     if custom_terrain_meta is not None:
         metadata["custom_terrain"] = custom_terrain_meta
+    if topology_report is not None:
+        metadata["island_relief_source"] = topology_report
+    if topology_labels is not None:
+        metadata["large_island_topology"] = topology_report
+        from ...archetypes.large_islands import summarize_island_terrain_features
+        metadata["large_island_features"] = summarize_island_terrain_features(grid.terrain, topology_labels)
     return NativeTerrainResult(
         grid.height.copy(),
         grid.terrain.copy(),
@@ -2109,6 +2232,7 @@ def generate_primary_terrain(
         grid.objects.copy(),
         grid.resources.copy(),
         grid.object_flags.copy(),
+        topology_labels=topology_labels,
     )
 
 
@@ -2235,6 +2359,7 @@ def resume_deferred_terrain(
         grid.objects.copy(),
         grid.resources.copy(),
         grid.object_flags.copy(),
+        topology_labels=result.topology_labels,
     )
 
 

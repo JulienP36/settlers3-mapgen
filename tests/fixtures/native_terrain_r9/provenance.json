@@ -1,0 +1,117 @@
+{
+  "source_exe_sha256": "25a6de6703ea3f9d88537aa309192ff0399b81f8a1221f40a222f36dc6be37a6",
+  "method": "Instruction-by-instruction replay; independent of Python production engine",
+  "addresses": {
+    "relaxation": "0x5175B7",
+    "rivers": "0x517E63",
+    "structural": "0x517F59"
+  },
+  "scope": "height, marker, primary terrain and PRNG; not full game or later content",
+  "fixtures": [
+    {
+      "side": 384,
+      "seed": 42,
+      "mode": 0,
+      "stage": "relaxation",
+      "rng_native": [
+        64675,
+        10969,
+        24553
+      ],
+      "native_70_cells": 55,
+      "native_sha256": "f28aac1a66afc8dd3fb68ffceccffc7c25bbcb0e2352e39682509a8029625271",
+      "fixture": "384_42_0_relaxation.npz",
+      "fixture_sha256": "0d1761d3b9d68468e3c2878e0d655a626db86cdf93bbef2c07b762193db41a2a"
+    },
+    {
+      "side": 384,
+      "seed": 42,
+      "mode": 0,
+      "stage": "rivers",
+      "rng_native": [
+        27289,
+        21599,
+        32322
+      ],
+      "native_70_cells": 55,
+      "native_sha256": "8657a11a0b8bc6705031ed593f6c8569c337aeeb4aa6e841f2d02bb8ca621ac8",
+      "fixture": "384_42_0_rivers.npz",
+      "fixture_sha256": "1211d12087dfa9ecf9531abf227e1b9932a980e48f275a6d3ebb2da96d255acb"
+    },
+    {
+      "side": 384,
+      "seed": 42,
+      "mode": 0,
+      "stage": "structural",
+      "rng_native": [
+        27289,
+        21599,
+        32322
+      ],
+      "native_70_cells": 55,
+      "native_sha256": "5d56b9dbbd96dd28d3416103933f91d1e3db6b2f64a965bd7436e55599a36dba",
+      "fixture": "384_42_0_structural.npz",
+      "fixture_sha256": "b4e452b0068cc75a3c15cf8fb6918a9c03a0c932ac5072a61f3d21f8f1fb86cc"
+    },
+    {
+      "side": 768,
+      "seed": 2026093006,
+      "mode": 0,
+      "stage": "relaxation",
+      "rng_native": [
+        20994,
+        65181,
+        61361
+      ],
+      "native_70_cells": 0,
+      "native_sha256": "be719f3d8d84e33c937edf6e94fc95240d5cac6b7c228494061a1db6d9cf55bb",
+      "fixture": "768_2026093006_0_relaxation.npz",
+      "fixture_sha256": "c1ae3c305159d378aeee59c34c66069980dac38cd5f8ea71cc6378874d6a5073"
+    },
+    {
+      "side": 768,
+      "seed": 2026093006,
+      "mode": 0,
+      "stage": "rivers",
+      "rng_native": [
+        52921,
+        33610,
+        2220
+      ],
+      "native_70_cells": 0,
+      "native_sha256": "0ed684079a2cb723006a9f6da83a9011a6f92a684b5258e6c396ebd94aaaedc3",
+      "fixture": "768_2026093006_0_rivers.npz",
+      "fixture_sha256": "878fe2128708ee605dd783273f7ee51b82d368a0af748b4dfb156628b2e5523a"
+    },
+    {
+      "side": 768,
+      "seed": 2026093006,
+      "mode": 0,
+      "stage": "structural",
+      "rng_native": [
+        52921,
+        33610,
+        2220
+      ],
+      "native_70_cells": 0,
+      "native_sha256": "7889fadfd59becfcd1b8d0d82dbb4e85634d06ce26927def73df9e1b9718df15",
+      "fixture": "768_2026093006_0_structural.npz",
+      "fixture_sha256": "1ab525f1955619afddd3f124cff5bcfb031045a091d2d37813e243779d42e5b2"
+    },
+    {
+      "side": 384,
+      "seed": 297650040,
+      "mode": 1,
+      "stage": "relaxation",
+      "rng_native": [
+        42775,
+        14343,
+        44793
+      ],
+      "native_70_cells": 0,
+      "native_sha256": "17ed165156585a31d9693bf8a6f420f1df4277150adc2ab17ca2eca1801c4d2a",
+      "fixture": "384_297650040_1_relaxation.npz",
+      "fixture_sha256": "4d6deade4d244e43fc8d6688b142b2767495773d987018971d328dc708ba9e7e"
+    }
+  ]
+}

@@ -402,6 +402,17 @@ class CustomGenerationConfig:
         return profile
 
 
+def default_river_algorithm(base_archetype, archetype_profile=None):
+    """Named Classic uses the native tracer; other geographies use Improved."""
+    profile = archetype_profile or default_archetype_profile(base_archetype)
+    source = profile.get("morphology", {}).get("relief_source")
+    return "native" if base_archetype == "continental" and source == "native_legacy" else "improved"
+
+
+def default_archetype_start_packages(base_archetype):
+    return ("start_mini_swamp",) if base_archetype == "large_islands" else default_start_package_keys()
+
+
 def build_custom_config(
     base_mode: str = "upgraded",
     base_archetype: str = "continental",
@@ -422,11 +433,14 @@ def build_custom_config(
             upgraded_path=upgraded_path,
         )
     )
+    if sections is None and default_river_algorithm(base_archetype, archetype_profile) == "improved":
+        sections = default_sections(selected, str(base_mode))
+        sections["rivers"]["algorithm"] = "improved"
     return CustomGenerationConfig(
         str(base_mode),
         str(base_archetype),
         selected,
-        tuple(start_packages) if start_packages is not None else default_start_package_keys(),
+        tuple(start_packages) if start_packages is not None else default_archetype_start_packages(base_archetype),
         2,
         deepcopy(dict(sections)) if isinstance(sections, Mapping) else {},
         deepcopy(dict(archetype_profile))

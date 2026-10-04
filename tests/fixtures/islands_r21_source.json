@@ -1,0 +1,44 @@
+[
+  {
+    "side": 256,
+    "players": 2,
+    "seed": 42,
+    "height_sha256": "75ca8a6b10d95b0ec9e2f0f5acb388368a05302a83ac91c6a3256fe49cf48540",
+    "labels_sha256": "c06aa9a0b8d6efd8023a343a1d9256ea16db106e3590db4ff365e209ab98fa6c"
+  },
+  {
+    "side": 384,
+    "players": 4,
+    "seed": 2026093004,
+    "height_sha256": "48e1452fe45877dd5855ceb9db9cdcc29189acceb4946d30701e42521e2c73b2",
+    "labels_sha256": "ad10332e268e61f218ba2780c44577151a2cea55690ec49a3c294cf67e4567fd"
+  },
+  {
+    "side": 384,
+    "players": 8,
+    "seed": 42,
+    "height_sha256": "8a97f54739029759398dc09ea6332436ddd09e626c1aeec1ef137eb3e8ffa0ba",
+    "labels_sha256": "4a36b52d40146f101ed0b270c3b61cee6d559718c7d6a82697702944e2756578"
+  },
+  {
+    "side": 512,
+    "players": 15,
+    "seed": 1,
+    "height_sha256": "473533bb556a12d367bac04a02fa8e4a92721ea9259221a6c03172cae726c193",
+    "labels_sha256": "cdad7c7d65ac1d3e31df75b48340c1f1e6fd70e3d4092d18be8cb0505f2a6864"
+  },
+  {
+    "side": 768,
+    "players": 20,
+    "seed": 2026093008,
+    "height_sha256": "f00e8b2fcf7f529f541a82ffbc51f33314861bfb14199f6849324dc1fbcd8ebb",
+    "labels_sha256": "15687c6d209e1a6cd1a627c2e149465bd0fc5725fcd2cfeda7cc58da7a388bbc"
+  },
+  {
+    "side": 768,
+    "players": 4,
+    "seed": 2026093006,
+    "height_sha256": "39b5d21fb16ff45279b198c5c396e0ad98393d8da6e8055efeaa5ebd75fcdb12",
+    "labels_sha256": "77a50dbd33cf222f4adbe2d2e16050eeb7d0e5869534c206dd25bbb572dfced3"
+  }
+]

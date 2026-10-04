@@ -71,7 +71,6 @@ class MapGenerator:
                     profile=custom_profile,
                     legacy_path=self.profile_path,
                     upgraded_path=self.upgraded_profile_path,
-                    start_packages=(),
                 ),
                 custom_profile is not None,
             )
@@ -104,7 +103,7 @@ class MapGenerator:
         custom_profile = kwargs.pop("custom_profile", None)
         custom_base_mode = str(kwargs.pop("custom_base_mode", "upgraded"))
         if mode == "legacy":
-            if archetype != "continental":
+            if archetype not in {"continental", "large_islands"}:
                 raise NotImplementedError(
                     "Native Legacy v1 currently implements the Continental archetype only"
                 )

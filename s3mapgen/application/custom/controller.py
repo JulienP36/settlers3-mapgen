@@ -12,11 +12,14 @@ from tkinter import filedialog, ttk
 import numpy as np
 from PIL import Image, ImageTk
 
+from ...generation.archetypes.island_source import uses_island_source
+
 from ...generation.archetypes import (
     ARCHETYPES,
     CONTINENTAL_CUSTOM_PROFILE_KEY,
     MACRO_PALETTE,
     NATIVE_NOISE_MINIMUM,
+    NOISE_LAYER_DEFAULTS,
     NOISE_LAYER_COUNT,
     NOISE_LAYER_COUNT_BOUNDS,
     NOISE_LAYER_FAMILY_OPTIONS,
@@ -27,6 +30,7 @@ from ...generation.archetypes import (
     NOISE_MASK_INCREMENTS,
     NOISE_MASK_SOURCE_OPTIONS,
     NOISE_MASK_TYPE_OPTIONS,
+    MASK_LAYER_DEFAULTS,
     MASK_LAYER_COUNT,
     MASK_LAYER_COUNT_BOUNDS,
     MASK_LAYER_COMMON_BOUNDS,
@@ -45,6 +49,9 @@ from ...generation.archetypes import (
     SHAPE_TEMPLATE_TYPE_OPTIONS,
     RELIEF_SOURCE_DEFAULT,
     RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_LARGE_ISLANDS,
+    RELIEF_SOURCE_LARGE_ISLANDS_R21,
+    ISLAND_RELIEF_SOURCES,
     thresholds_on_relief_source_change,
     RELIEF_SOURCE_OPTIONS,
     ArchetypePreview,
@@ -69,6 +76,7 @@ from ...generation.archetypes import (
     reorder_mask_layers,
     reorder_noise_layers,
 )
+from ...generation.custom.config import default_river_algorithm, default_archetype_start_packages
 from ...generation.custom import (
     DECORATION_FAMILY_KEYS,
     DECORATION_RATE_MAX,
@@ -81,6 +89,7 @@ from ...generation.custom import (
     MINERAL_SPECS,
     RESOURCE_MAXIMUM,
     RESOURCE_MINIMUM,
+    RIVER_ALGORITHMS,
     RIVER_RATE_MAX,
     RIVER_RATE_MIN,
     RIVER_RATE_STEP,
@@ -226,6 +235,16 @@ def _configure_integer_spinbox_steps(
     widget.configure(increment=int(arrow_step))
 
     def on_wheel(event, direction=None):
+        # ttk disabled/readonly states must also block our custom wheel binding.
+        try:
+            if widget.instate(["disabled"]) or widget.instate(["readonly"]):
+                return "break"
+        except (AttributeError, tk.TclError):
+            try:
+                if str(widget.cget("state")) in {"disabled", "readonly"}:
+                    return "break"
+            except (AttributeError, tk.TclError):
+                pass
         if direction is None:
             button = getattr(event, "num", None)
             if button == 4:
@@ -250,13 +269,13 @@ def _configure_integer_spinbox_steps(
             current = int(round(float(variable.get())))
         except (TypeError, ValueError):
             return "break"
-        target = max(
-            int(minimum),
-            min(
-                int(maximum),
-                current + direction * int(wheel_step) * notches,
-            ),
-        )
+        # Relational bounds can change after selecting another profile.
+        try:
+            lower = int(float(widget.cget("from")))
+            upper = int(float(widget.cget("to")))
+        except (AttributeError, TypeError, ValueError, tk.TclError):
+            lower, upper = int(minimum), int(maximum)
+        target = max(lower, min(upper, current + direction * int(wheel_step) * notches))
         if target != current:
             variable.set(str(target))
             callback()
@@ -520,12 +539,9 @@ class CustomGeneratorController:
             restore()
 
     def _custom_preset_config(self, mode: str, archetype: str) -> CustomGenerationConfig:
-        # DEV6 exposes the Continental profile.  The archetype contract tab is
-        # already present for future island profiles, so the same profile can
-        # be inspected while those engines remain explicitly unavailable.
-        # Built-in Legacy/Upgraded presets do not carry Custom start packages:
-        # each bonus is explicitly opted into from its own panel.
-        return build_custom_config(mode, archetype, start_packages=())
+        # Named archetypes share the same defaults in the UI and both engines.
+        # Large islands activates the visible mini-swamp package by default.
+        return build_custom_config(mode, archetype)
 
     def _custom_ensure_config(
         self,
@@ -795,46 +811,37 @@ class CustomGeneratorController:
         }
 
     def _custom_archetype_relief_source_options(self, language: str) -> dict[str, str]:
+        composition = _lang_text(language, "Composition", "Composition", "Komposition", "Composición")
+        noise = _lang_text(language, "Bruit", "Noise", "Rauschen", "Ruido")
         labels = {
-            RELIEF_SOURCE_DEFAULT: _lang_text(language, "Natif Legacy", "Native Legacy", "Legacy nativ", "Legacy nativo"),
-            RELIEF_SOURCE_CUSTOM_LEGACY: custom_section_text(
-                "archetype_relief_source_custom_legacy",
-                language,
-            ),
-            **self._custom_archetype_noise_family_options(language),
+            RELIEF_SOURCE_DEFAULT: custom_section_text("archetype_profile_classic", language),
+            RELIEF_SOURCE_CUSTOM_LEGACY: custom_section_text("archetype_relief_source_custom_legacy", language),
+            RELIEF_SOURCE_LARGE_ISLANDS: _lang_text(language, "Grandes îles", "Large islands", "Große Inseln", "Islas grandes"),
+            RELIEF_SOURCE_LARGE_ISLANDS_R21: _lang_text(language, "Grandes îles — relief ondulé", "Large islands — rolling relief", "Große Inseln — welliges Relief", "Islas grandes — relieve ondulado"),
         }
         return {
-            key: labels[key]
-            for key in RELIEF_SOURCE_OPTIONS
-            if key in labels
+            **{key: f"{composition} · {label}" for key, label in labels.items()},
+            **{key: f"{noise} · {label}" for key, label in self._custom_archetype_noise_family_options(language).items()},
         }
 
     def _custom_archetype_profile_options(self, language: str) -> dict[str, str]:
-        """Return the named macro compositions offered by the Archetype tab."""
-
+        """All implemented presets populate the same archetype editor."""
         options = {
             "native": custom_section_text("archetype_profile_classic", language),
+            CONTINENTAL_CUSTOM_PROFILE_KEY: custom_section_text("archetype_profile_continental", language),
+            "large_islands": _lang_text(language, "Grandes îles", "Large islands", "Große Inseln", "Islas grandes"),
         }
-        if self._custom_current_archetype() == "continental":
-            options[CONTINENTAL_CUSTOM_PROFILE_KEY] = custom_section_text(
-                "archetype_profile_continental",
-                language,
-            )
-        options["edited"] = custom_section_text(
-            "archetype_profile_edited",
-            language,
-        )
+        config = getattr(self, "_custom_config", None)
+        if config is not None and self._custom_archetype_profile_selection_key(config.archetype_profile) == "edited":
+            options["edited"] = custom_section_text("archetype_profile_edited", language)
         return options
 
     def _custom_archetype_profile_presets(self) -> dict[str, dict]:
-        """Return fresh profiles for the named composition selector."""
-
-        presets = {
-            "native": default_archetype_profile(self._custom_current_archetype())
+        return {
+            "native": default_archetype_profile("continental"),
+            CONTINENTAL_CUSTOM_PROFILE_KEY: continental_legacy_blocks_profile(),
+            "large_islands": default_archetype_profile("large_islands"),
         }
-        if self._custom_current_archetype() == "continental":
-            presets[CONTINENTAL_CUSTOM_PROFILE_KEY] = continental_legacy_blocks_profile()
-        return presets
 
     def _custom_archetype_profile_selection_key(self, profile: dict) -> str:
         """Identify whether the current payload is native, named or edited."""
@@ -848,7 +855,7 @@ class CustomGeneratorController:
         """Map the displayed profile choice to the current macro profile."""
 
         archetype = self._custom_current_archetype()
-        if archetype != "continental":
+        if archetype not in {"continental", "large_islands"}:
             return archetype
         config = self._custom_profile_for_display()
         profile_key = self._custom_archetype_profile_selection_key(
@@ -857,6 +864,7 @@ class CustomGeneratorController:
         return {
             "native": "classic",
             CONTINENTAL_CUSTOM_PROFILE_KEY: "continental",
+            "large_islands": "large_islands",
         }.get(profile_key, "edited")
 
     def _custom_main_archetype_input_options(self, language: str) -> dict[str, str]:
@@ -903,26 +911,73 @@ class CustomGeneratorController:
         if selected == "edited" or selected is None:
             self._custom_refresh_main_archetype_input()
             return
-        if selected in ("classic", "continental"):
-            self.arch.set(ARCHETYPE_LABELS[language]["continental"])
-            mode = self._custom_current_mode()
-            config = self._custom_ensure_config(
-                mode if mode in ("legacy", "upgraded") else None,
-                "continental",
-            )
-            profile = (
-                default_archetype_profile("continental")
-                if selected == "classic"
-                else continental_legacy_blocks_profile()
-            )
-            self._custom_config = config.with_archetype_profile(
-                profile,
-                base_archetype="continental",
-            )
-            self._custom_last_concrete_archetype = "continental"
+        preset_key = {"classic": "native", "continental": CONTINENTAL_CUSTOM_PROFILE_KEY,
+                      "large_islands": "large_islands"}.get(selected)
+        if preset_key is not None:
+            self._custom_apply_archetype_preset(preset_key)
         else:
             self.arch.set(ARCHETYPE_LABELS[language][selected])
-        self._selection_changed()
+            self._selection_changed()
+
+    def _custom_apply_archetype_preset(self, key: str) -> None:
+        """Load a named archetype in place, retaining Generator and editor state."""
+        mode = self._custom_current_mode()
+        config = self._custom_ensure_config(
+            mode if mode in ("legacy", "upgraded") else None,
+            self._custom_current_archetype(),
+        )
+        preset = self._custom_archetype_profile_presets()[key]
+        archetype = preset["archetype_key"]
+        sections = config.semantic_sections()
+        algorithm = default_river_algorithm(archetype, preset)
+        sections["rivers"]["algorithm"] = algorithm
+        packages = set(config.start_packages)
+        packages.discard("start_mini_swamp")
+        packages.update(default_archetype_start_packages(archetype))
+        config = config.with_sections(sections).with_start_packages(packages)
+        variable = getattr(self, "_custom_river_algorithm_var", None)
+        if variable is not None:
+            variable.set(custom_section_text(f"river_algorithm_{algorithm}", self._custom_language()))
+        for package, variable in getattr(self, "_custom_package_vars", {}).items():
+            variable.set(package in config.start_packages)
+        self._custom_refresh_start_bonus_controls()
+        if config.archetype_profile == preset and config == self._custom_config:
+            return
+        archetype = preset["archetype_key"]
+        was_implemented = ARCHETYPES[self._custom_current_archetype()].implemented
+        self.arch.set(ARCHETYPE_LABELS[self._custom_language()][archetype])
+        if not was_implemented:
+            # Reserved tabs have no active common editor to synchronize.
+            self._custom_config = config.with_archetype_profile(preset, base_archetype=archetype)
+            self._custom_last_concrete_archetype = archetype
+            self._selection_changed()
+            return
+        self._custom_last_ui_mode = mode
+        self._custom_last_ui_archetype = archetype
+        self._custom_archetype_baseline = default_archetype_profile(archetype)
+        self._custom_archetype_noise_layer_solo = None
+        next_config = config.with_archetype_profile(preset, base_archetype=archetype)
+        self._custom_section_baseline = build_custom_config(
+            next_config.base_mode, archetype, profile=next_config.profile,
+            archetype_profile=preset,
+        ).semantic_sections()
+        self._custom_activate_archetype(next_config)
+        if (mode in ("legacy", "upgraded")
+                and (next_config.semantic_sections() != build_custom_config(mode, archetype, archetype_profile=preset).semantic_sections()
+                     or next_config.start_packages != default_archetype_start_packages(archetype))):
+            # Unrelated Generator edits survive a named-profile selection.
+            self._custom_enter_custom_mode_without_render(next_config)
+        self._custom_sync_archetype_editor_values()
+        refresh_sections = getattr(self, "_custom_refresh_section_headers", None)
+        if callable(refresh_sections):
+            refresh_sections()
+        language = self._custom_language()
+        label = self._custom_archetype_profile_options(language)[key]
+        self._custom_status_var.set(_lang_text(language, f"Profil chargé : {label}.",
+            f"Profile loaded: {label}.", f"Profil geladen: {label}.", f"Perfil cargado: {label}."))
+        refresh_feedback = getattr(self, "_refresh_selection_feedback", None)
+        if callable(refresh_feedback):
+            refresh_feedback()
 
     def _custom_archetype_profile_changed(self) -> None:
         """Apply one complete inspectable composition from the selector."""
@@ -938,19 +993,7 @@ class CustomGeneratorController:
         )
         if selected == "edited":
             return
-        mode = self._custom_current_mode()
-        config = self._custom_ensure_config(
-            mode if mode in ("legacy", "upgraded") else None,
-            self._custom_current_archetype(),
-        )
-        current = self._custom_archetype_profile_selection_key(
-            config.archetype_profile
-        )
-        if selected == current:
-            return
-        preset = self._custom_archetype_profile_presets()[selected]
-        self._custom_config = config.with_archetype_profile(preset)
-        self._selection_changed()
+        self._custom_apply_archetype_preset(selected)
 
     def _custom_archetype_noise_operation_options(self, language: str) -> dict[str, str]:
         labels = {
@@ -1294,6 +1337,10 @@ class CustomGeneratorController:
                 relax_macro,
                 refresh_main,
             )
+            if uses_island_source(profile):
+                players_var = getattr(self, "players", None)
+                players = int(players_var.get()) if players_var is not None else 4
+                self._custom_archetype_preview_request += (players,)
             self._custom_archetype_preview_completed = None
             self._custom_archetype_preview_noise_completed = None
             self._custom_archetype_components_completed = None
@@ -1329,6 +1376,8 @@ class CustomGeneratorController:
                 if request is None:
                     self._custom_archetype_preview_worker = None
                     return
+            players = request[7] if len(request) == 8 else 4
+            request = request[:7]
             if len(request) == 6:
                 request_id, profile, side, seed, mirror_mode, relax_macro = request
                 refresh_main = True
@@ -1421,6 +1470,7 @@ class CustomGeneratorController:
                     noise_cache=self._custom_archetype_preview_noise_cache,
                     progress=report_progress,
                     relax_macro=relax_macro,
+                    players=players,
                 )
                 error = None
             except Exception as exc:  # pragma: no cover - surfaced in the UI
@@ -1717,9 +1767,9 @@ class CustomGeneratorController:
         )
         if not committed:
             return
-        if component_source is not None:
+        if component_source is not None or getattr(preview, "island_mask", None) is not None:
             self._custom_render_archetype_component_previews(
-                component_source,
+                preview.noise if component_source is None else component_source,
                 component_layers,
                 primary_noise=(
                     getattr(preview, "source_noise", None)
@@ -2051,10 +2101,13 @@ class CustomGeneratorController:
             return False
         baseline = getattr(self, "_custom_section_baseline", None)
         if not isinstance(baseline, dict) or not baseline:
-            baseline = default_sections(config.profile, config.base_mode)
+            baseline = build_custom_config(
+                config.base_mode, config.base_archetype, profile=config.profile,
+                archetype_profile=config.archetype_profile,
+            ).semantic_sections()
         current = config.semantic_sections()
         if key == "start_bonus":
-            return bool(config.start_packages) or current.get(key, {}) != baseline.get(key, {})
+            return config.start_packages != default_archetype_start_packages(config.base_archetype) or current.get(key, {}) != baseline.get(key, {})
         if key == "decorations":
             return (
                 current.get("decorations", {}) != baseline.get("decorations", {})
@@ -2101,6 +2154,18 @@ class CustomGeneratorController:
                     except tk.TclError:
                         pass
         self._custom_refresh_main_archetype_input()
+        if config is not None:
+            key = config.base_archetype
+            language = self._custom_language()
+            labels = ARCHETYPE_LABELS.get(language, ARCHETYPE_LABELS["en"])
+            selection_label = getattr(self, "_custom_archetype_selection_label", None)
+            description_label = getattr(self, "_custom_archetype_description_label", None)
+            if selection_label is not None:
+                selection_label.configure(text=_lang_text(language,
+                    f"Sélection actuelle : {labels[key]}", f"Current selection: {labels[key]}",
+                    f"Aktuelle Auswahl: {labels[key]}", f"Selección actual: {labels[key]}"))
+            if description_label is not None:
+                description_label.configure(text=archetype_description(key, language))
         label = getattr(self, "_custom_archetype_modified_label", None)
         button = getattr(self, "_custom_archetype_reset_button", None)
         if label is None or button is None:
@@ -2163,10 +2228,11 @@ class CustomGeneratorController:
         config = getattr(self, "_custom_config", None)
         if config is None or not self._custom_archetype_is_modified():
             return
-        self._custom_config = config.with_archetype_profile(
+        self._custom_activate_archetype(config.with_archetype_profile(
             default_archetype_profile(config.base_archetype)
-        )
-        self._selection_changed()
+        ))
+        self._custom_archetype_noise_layer_solo = None
+        self._custom_sync_archetype_editor_values()
 
     @staticmethod
     def _custom_archetype_section_paths(key: str) -> tuple[tuple[str, ...], ...]:
@@ -2191,6 +2257,10 @@ class CustomGeneratorController:
                 ("relief", "mountain_threshold"),
                 ("relief", "snow_threshold"),
             )
+        if key == "primary_source":
+            return tuple(("morphology", name) for name in (
+                "relief_source", "relief_source_settings", "relief_source_mask",
+            ))
         if key == "noise_editor":
             return (
                 ("morphology", "size_adaptive_frequency"),
@@ -2231,6 +2301,7 @@ class CustomGeneratorController:
             ("morphology", getattr(self, "_custom_archetype_morphology_reset_button", None)),
             ("noise_editor", getattr(self, "_custom_archetype_noise_reset_button", None)),
             ("mask_editor", getattr(self, "_custom_archetype_mask_reset_button", None)),
+            ("primary_source", getattr(self, "_custom_archetype_primary_reset_button", None)),
         )
         for key, button in buttons:
             if button is None:
@@ -2329,6 +2400,7 @@ class CustomGeneratorController:
         self._custom_refresh_archetype_mask_layer_cards(mask_count)
         self._custom_refresh_archetype_noise_setting_states(source)
         self._custom_refresh_archetype_mask_layer_states()
+        self._custom_refresh_archetype_shape_states()
         self._custom_refresh_archetype_noise_layer_action_states()
         self._custom_refresh_archetype_ranges()
         self._custom_refresh_archetype_header()
@@ -2345,9 +2417,35 @@ class CustomGeneratorController:
         profile = deepcopy(config.archetype_profile)
         for path in paths:
             profile = set_path(profile, path, deepcopy(get_path(baseline, path)))
+        if key == "primary_source":
+            mountain, snow = thresholds_on_relief_source_change(
+                config.archetype_profile["morphology"]["relief_source"],
+                profile["morphology"]["relief_source"],
+                profile["relief"]["mountain_threshold"], profile["relief"]["snow_threshold"],
+            )
+            profile["relief"].update(mountain_threshold=mountain, snow_threshold=snow)
         if key == "noise_editor":
             # Solo is preview-only state, but it belongs to the editor stack's
             # reset semantics rather than surviving a reset by accident.
+            self._custom_archetype_noise_layer_solo = None
+        self._custom_activate_archetype(config.with_archetype_profile(profile))
+        self._custom_sync_archetype_editor_values()
+
+    def _custom_reset_archetype_component(self, kind: str, index: int) -> None:
+        """Restore one slot without changing stack length, order or other slots."""
+        config = getattr(self, "_custom_config", None)
+        if config is None or not getattr(self, "_custom_archetype_editor_editable", True):
+            return
+        if kind not in {"noise", "mask"}:
+            return
+        morphology = config.archetype_profile["morphology"]
+        index = int(index)
+        if not 0 <= index < int(morphology[f"{kind}_layer_count"]):
+            return
+        defaults = NOISE_LAYER_DEFAULTS if kind == "noise" else MASK_LAYER_DEFAULTS
+        profile = deepcopy(config.archetype_profile)
+        profile["morphology"][f"{kind}_layers"][index] = deepcopy(defaults[index])
+        if kind == "noise" and getattr(self, "_custom_archetype_noise_layer_solo", None) == index:
             self._custom_archetype_noise_layer_solo = None
         self._custom_activate_archetype(config.with_archetype_profile(profile))
         self._custom_sync_archetype_editor_values()
@@ -3139,6 +3237,7 @@ class CustomGeneratorController:
                 "duplicate": active and count < NOISE_LAYER_COUNT,
                 "delete": active,
                 "solo": active and layer_enabled,
+                "reset": active,
             }
             for action, widget in widgets.items():
                 try:
@@ -3564,7 +3663,15 @@ class CustomGeneratorController:
             widget = getattr(self, "_custom_archetype_spinboxes", {}).get(setting_key)
             if widget is None:
                 continue
-            applies = uses_complete_noise_source
+            # Island geometry owns its source envelope. These controls still
+            # define the domain of its optional fusion and mask layers.
+            config = getattr(self, "_custom_config", None)
+            morphology = config.archetype_profile["morphology"] if config is not None else {}
+            applies = uses_complete_noise_source and (
+                primary_source not in ISLAND_RELIEF_SOURCES
+                or morphology.get("noise_layer_count", 0) > 0
+                or morphology.get("mask_layer_count", 0) > 0
+            )
             try:
                 widget.configure(state="normal" if editable and applies else "disabled")
             except tk.TclError:
@@ -3815,14 +3922,17 @@ class CustomGeneratorController:
         config = getattr(self, "_custom_config", None)
         if config is None or not self._custom_section_is_modified(key):
             return
-        baseline = default_sections(config.profile, config.base_mode)
+        baseline = build_custom_config(
+            config.base_mode, config.base_archetype, profile=config.profile,
+                archetype_profile=config.archetype_profile,
+        ).semantic_sections()
         sections = config.semantic_sections()
         if key == "decorations":
             sections["decorations"] = deepcopy(baseline.get("decorations", {}))
             sections["objects"] = deepcopy(baseline.get("objects", {}))
         elif key in sections:
             sections[key] = deepcopy(baseline.get(key, {}))
-        packages = () if key == "start_bonus" else config.start_packages
+        packages = default_archetype_start_packages(config.base_archetype) if key == "start_bonus" else config.start_packages
         self._custom_config = config.with_sections(sections).with_start_packages(packages)
         language = self._custom_language()
         if self._custom_current_mode() != "custom":
@@ -3845,7 +3955,10 @@ class CustomGeneratorController:
         language = self._custom_language()
         mode = self._custom_current_mode()
         archetype = self._custom_current_archetype()
-        self._custom_section_baseline = default_sections(config.profile, config.base_mode)
+        self._custom_section_baseline = build_custom_config(
+            config.base_mode, config.base_archetype, profile=config.profile,
+                archetype_profile=config.archetype_profile,
+        ).semantic_sections()
 
         ttk.Label(root, text=_lang_text(language, "Générateur", "Generator", "Generator", "Generador"), style="Section.TLabel").grid(
             row=0, column=0, sticky="w", pady=(0, 3)
@@ -4628,9 +4741,34 @@ class CustomGeneratorController:
         )
         rivers.columnconfigure(0, weight=0)
         river_values = sections["rivers"]
+        river_algorithm_line = ttk.Frame(rivers)
+        river_algorithm_line.grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Label(river_algorithm_line, text=custom_section_text("river_algorithm", language)).grid(
+            row=0, column=0, sticky="w",
+        )
+        add_info(river_algorithm_line, 0, custom_section_text("river_algorithm_hint", language), column=1)
+        river_algorithm_labels = {
+            key: custom_section_text("river_algorithm_" + key, language)
+            for key in RIVER_ALGORITHMS
+        }
+        river_algorithm_var = tk.StringVar(value=river_algorithm_labels[river_values["algorithm"]])
+        self._custom_river_algorithm_var = river_algorithm_var
+        river_algorithm_combo = ttk.Combobox(
+            river_algorithm_line, textvariable=river_algorithm_var,
+            values=[river_algorithm_labels[key] for key in RIVER_ALGORITHMS],
+            state="readonly", width=18,
+        )
+        river_algorithm_combo.grid(row=0, column=2, sticky="w", padx=(4, 0))
+        river_algorithm_combo.bind(
+            "<<ComboboxSelected>>",
+            lambda event: self._custom_section_changed(
+                ("rivers", "algorithm"),
+                next(key for key, label in river_algorithm_labels.items() if label == river_algorithm_var.get()),
+            ),
+        )
         add_spin(
             rivers,
-            0,
+            1,
             custom_section_text("river_rate", language),
             ("rivers", "rate_percent"),
             river_values["rate_percent"],
@@ -6525,7 +6663,7 @@ class CustomGeneratorController:
             text=_lang_text(language, "Archétype", "Archetype", "Archetyp", "Arquetipo"),
             style="Section.TLabel",
         ).grid(row=0, column=0, sticky="w", pady=(0, 4))
-        ttk.Label(
+        self._custom_archetype_selection_label = ttk.Label(
             root,
             text=_lang_text(
                 language,
@@ -6534,14 +6672,16 @@ class CustomGeneratorController:
                 f"Aktuelle Auswahl: {labels[key]}",
                 f"Selección actual: {labels[key]}",
             ),
-        ).grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Label(
+        )
+        self._custom_archetype_selection_label.grid(row=1, column=0, sticky="w", pady=3)
+        self._custom_archetype_description_label = ttk.Label(
             root,
             text=archetype_description(key, language),
             style="Hint.TLabel",
             wraplength=680,
             justify="left",
-        ).grid(row=2, column=0, sticky="w", pady=(0, 12))
+        )
+        self._custom_archetype_description_label.grid(row=2, column=0, sticky="w", pady=(0, 12))
 
         profile_header = ttk.Frame(root)
         profile_header.grid(row=3, column=0, sticky="w", pady=(0, 8))
@@ -7209,6 +7349,16 @@ class CustomGeneratorController:
             text=_lang_text(language, "Source principale", "Primary source", "Hauptquelle", "Fuente principal"),
             padding=6,
         )
+        base_title = ttk.Frame(noise_box)
+        ttk.Label(base_title, text=_lang_text(language, "Source principale", "Primary source", "Hauptquelle", "Fuente principal")).grid(row=0, column=0)
+        self._custom_archetype_primary_reset_button = ttk.Button(
+            base_title,
+            text=_lang_text(language, "Réinitialiser", "Reset", "Zurücksetzen", "Restablecer"),
+            command=lambda: self._custom_reset_archetype_section("primary_source"),
+            padding=(4, 1),
+        )
+        self._custom_archetype_primary_reset_button.grid(row=0, column=1, padx=(8, 0))
+        base_card.configure(labelwidget=base_title)
         count_line = ttk.Frame(noise_box)
         count_line.grid(row=1, column=0, sticky="w", pady=(0, 6))
         ttk.Label(
@@ -7246,13 +7396,13 @@ class CustomGeneratorController:
             "relief_source_mask", NOISE_MASK_DEFAULTS
         )
         self._custom_archetype_relief_mask_vars = {}
-        for key, default in NOISE_MASK_DEFAULTS.items():
-            value = base_mask.get(key, default)
-            if key == "type":
+        for mask_key, default in NOISE_MASK_DEFAULTS.items():
+            value = base_mask.get(mask_key, default)
+            if mask_key == "type":
                 value = mask_options[str(value)]
-            elif key == "source":
+            elif mask_key == "source":
                 value = mask_source_options[str(value)]
-            self._custom_archetype_relief_mask_vars[key] = tk.StringVar(
+            self._custom_archetype_relief_mask_vars[mask_key] = tk.StringVar(
                 value=display_setting(value) if isinstance(value, (int, float)) else str(value)
             )
         base_variables = {
@@ -7412,6 +7562,11 @@ class CustomGeneratorController:
                 pady=(4, 0),
             )
             action_widgets = {
+                "reset": ttk.Button(
+                    action_line,
+                    text=_lang_text(language, "Réinitialiser", "Reset", "Zurücksetzen", "Restablecer"),
+                    command=lambda layer_index=index: self._custom_reset_archetype_component("noise", layer_index),
+                ),
                 "up": ttk.Button(
                     action_line,
                     text="↑",
@@ -7597,6 +7752,7 @@ class CustomGeneratorController:
                 padding=6,
             )
             self._custom_archetype_mask_layer_cards[index] = card
+            card.grid(row=index + 1, column=0, sticky="nw", pady=(0, 6))
             if index >= mask_count:
                 card.grid_remove()
             enabled_var = tk.BooleanVar(value=bool(layer.get("enabled", False)))
@@ -7734,6 +7890,11 @@ class CustomGeneratorController:
             action_line = ttk.Frame(card)
             action_line.grid(row=2, column=0, sticky="w", pady=(4, 0))
             action_widgets = {
+                "reset": ttk.Button(
+                    action_line,
+                    text=_lang_text(language, "Réinitialiser", "Reset", "Zurücksetzen", "Restablecer"),
+                    command=lambda layer_index=index: self._custom_reset_archetype_component("mask", layer_index),
+                ),
                 "up": ttk.Button(
                     action_line,
                     text="↑",
@@ -7954,7 +8115,7 @@ class CustomGeneratorController:
                 "Der Archetyp erzeugt eine autonome rohe Noisemap. Der gewählte Generatormodus bleibt unverändert und wandelt dieses Feld anschließend in eine spielbare Karte um.",
                 "El arquetipo construye un noisemap bruto autónomo. El modo Generador seleccionado no cambia y después transforma este campo en un mapa jugable.",
             )
-            if key == "continental"
+            if key in ("continental", "large_islands")
             else _lang_text(
                 language,
                 "Contrat de distribution réservé : cet archétype n’est pas encore implémenté.",
@@ -7983,6 +8144,13 @@ class CustomGeneratorController:
             wraplength=680,
             justify="left",
         ).grid(row=13, column=0, sticky="w", pady=(12, 0))
+        if hasattr(self, "players"):
+            trace_id = self.players.trace_add("write", lambda *args: (
+                self._custom_schedule_archetype_preview_refresh(*args)
+                if uses_island_source(self._custom_profile_for_display().archetype_profile)
+                else None
+            ))
+            self._custom_archetype_preview_trace_ids.append((self.players, trace_id))
         for variable in (self.size, self.seed, self.mirror):
             trace_id = variable.trace_add(
                 "write",

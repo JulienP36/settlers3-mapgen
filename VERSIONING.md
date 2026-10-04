@@ -49,16 +49,12 @@ Ces fichiers doivent être consultés avant une nouvelle session de développeme
 ## Current development
 
 - Latest published STABLE: `v1.7`.
-- Latest published development checkpoint: `v2.0 DEV_8`, built from local
-  candidate R86 and pushed to branch `dev`.
-- Active development line: `v2.0 DEV_9` (Great Islands and remaining work).
-- DEV8 closes the Archetype tab with named `Classique` and `Continental`
-  profiles, and a dynamic `Personnalisé` state in the main Archetype selector.
-  Full noisemap generation remains available as an experimental option.
-- DEV8 validation: 641 regression tests, smoke checks and extracted-package
-  self-test PASS. The user confirmed Windows visual validation of R85; Custom
-  rivers and multi-size tests are declared complete.
-- `DEV_X_Rn` archives remain local candidates. Publish only complete unsuffixed
-  DEV checkpoints on `dev`; never publish an R suffix as a checkpoint.
-- Before the next DEV9 work, read `PROJECT_WORKFLOW.md`, the active TODO and
-  the current recovery snapshot.
+- Validated development checkpoint: `v2.0 DEV_9`, from local R25, on `dev`.
+- Runtime version `2.0 DEV_9`, Windows tuple `(2, 0, 9, 0)` ; no R suffix.
+- DEV9 closes the Large islands focus and the related improved river/profile work.
+- The small source-label rename is included in this checkpoint, with saved keys intact.
+- R25 qualification: 818 tests, seven complete maps, four exports and extracted ZIP PASS.
+- Next line: DEV10, prioritizing previous DEV9 work outside the completed scope.
+  Small islands is DEV10 or DEV11; further derived archetypes are undecided.
+- DEV/RC are not Releases. Only complete unsuffixed DEV checkpoints are pushed.
+- Read PROJECT_WORKFLOW, TODO and the available recovery snapshot before next work.

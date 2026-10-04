@@ -719,6 +719,8 @@ def finalize_accessibility(state) -> dict:
     # generating synthetic collision masks.
     access[(objects != 0) & ~water] = 1
     access[(objects == 127) & ~water] = 0
+    # EXE 0x518BEE–0x518BFB blocks the retained sculpture terrain family.
+    access[terrain == 0x70] = 1
     return {"blocked_water": int(water.sum()), "blocked_objects": int((objects != 0).sum())}
 
 

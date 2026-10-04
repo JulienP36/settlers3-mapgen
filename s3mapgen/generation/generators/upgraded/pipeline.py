@@ -19,6 +19,7 @@ from ...archetypes.continental import ContinentalV1, assemble_continental_state
 from ...contracts import GenerationOutput
 from ...core.request import GenerationRequest
 from ...core.seed_streams import SeedStreams
+from ....map_data.constants import WATER_IDS
 from .content import UpgradedContent
 from .native_terrain import generate_primary_terrain, resume_deferred_terrain
 from .starts import place_starts
@@ -54,7 +55,7 @@ def generate(
     arch_spec = get_archetype(archetype)
     if not arch_spec.implemented:
         raise NotImplementedError(f"L'archétype {arch_spec.label} n'est pas implémenté")
-    if arch_spec.key != "continental":
+    if arch_spec.key not in {"continental", "large_islands"}:
         raise NotImplementedError("Le pipeline Upgraded natif ne porte pour l'instant que Continental")
     ContinentalV1().prepare(request.side, request.players)
     if int(mirror_mode) not in (0, 1, 2, 3):
@@ -92,12 +93,12 @@ def generate(
         custom_runtime.get("archetype_profile")
         if isinstance(custom_runtime, dict)
         and isinstance(custom_runtime.get("archetype_profile"), dict)
-        and is_custom
+        and (is_custom or custom_runtime.get("base_archetype") != "continental")
         else None
     )
     active_start_packages = (
         tuple(str(value) for value in custom_runtime.get("start_packages", ()))
-        if is_custom and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
+        if isinstance(custom_runtime, dict) and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
         else ()
     )
     priority_bonus_route = bool(active_start_packages)
@@ -116,6 +117,7 @@ def generate(
             surface_rates=custom_sections,
             defer_non_archetype=priority_bonus_route,
             archetype_profile=archetype_profile,
+            players=request.players,
         ),
     )
 
@@ -177,6 +179,7 @@ def generate(
             request.players,
             SeedStreams(request.seed).rng("upgraded_starts_bridge"),
             technical_clear=max(12, request.side // 52),
+            island_labels=result.topology_labels,
         ),
     )
     state.metadata.update(
@@ -256,6 +259,21 @@ def generate(
             "note": "Les sections Terrains/Minerais/Poissons/Rivières/Arbres/Pierres/Décorations/Objets et les cinq bonus de départ sont raccordés ; les lacs natifs, la neige et les paramètres structurels restent ceux du cœur Upgraded.",
         }
 
+    if result.topology_labels is not None:
+        from ...archetypes.large_islands import summarize_island_terrain_features
+        # The visible start bonus is the sole producer of guaranteed mini swamps.
+        state.metadata["large_island_topology"]["start_swamp_required"] = (
+            "start_mini_swamp" in active_start_packages
+            and bool((custom_sections or {}).get("start_bonus", {}).get("mini_swamp", {}).get("enabled", True))
+        )
+        state.metadata["large_island_features"] = summarize_island_terrain_features(
+            state.terrain, result.topology_labels
+        )
+        content._final_accessibility(state)
+
+    # A user water threshold can submerge positive source elevations. The
+    # exported sea is flat at zero, just as in the native Legacy finalization.
+    state.height[np.isin(state.terrain, WATER_IDS)] = 0
     validations = validate(state, profile)
     state.metadata["pipeline"] = (
         [

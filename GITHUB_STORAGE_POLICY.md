@@ -17,3 +17,6 @@ each hand-off ZIP. Consequently, the ZIP retains the full recovery context even
 though the normal GitHub push does not.
 
 For long-term binary checkpoint storage, prefer Git LFS or GitHub Releases rather than committing every generated EDM/MAP/SAV into normal Git history.
+
+DEV9 candidate map examples (`examples/dev9_r*/`) stay local and in recovery
+ZIPs; validated source/tests/fixtures and public notes are pushed.

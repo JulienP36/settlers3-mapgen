@@ -1,0 +1,11 @@
+{
+  "source_candidate": "2.0 DEV_9_R9",
+  "description": "Independent island baseline, native R9 relaxation, no additional detail; verified identical to retained R8 witness.",
+  "seed": 42,
+  "side": 384,
+  "players": 8,
+  "mountain_threshold": 140,
+  "snow_threshold": 190,
+  "source_module_sha256": "60813a0d14c9e9411ef9c762ea0822b542b68219e3e7596fc6773ddebb946692",
+  "fixture_sha256": "3e6fa3990006d99f85dbe38213d6d0b0b61c3d501dc292e57fe780a8e0c4f402"
+}

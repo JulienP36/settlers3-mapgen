@@ -157,9 +157,9 @@ def rocky_equivalent_radius(
         key=lambda radius: (abs(rocky_equal_core_cells(radius) - target_per_zone), radius),
     )
 
-# Rivers use the existing native attempt loop.  The public value changes only
-# the chance that a native attempt is accepted; the hexagonal route, length
-# rules, water connection and cleanup remain engine invariants.
+# Both algorithms derive from the native scan and marker routing.
+# Rate controls acceptance; improved adds coast and route-score policies.
+RIVER_ALGORITHMS = ("native", "improved")
 RIVER_RATE_MIN = 0.0
 RIVER_RATE_MAX = 500.0
 RIVER_RATE_STEP = 1.0
@@ -539,6 +539,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
             "band_thickness": DEFAULT_FISH_BAND_THICKNESS,
         },
         "rivers": {
+            "algorithm": "native",
             "rate_percent": 100.0,
         },
         "terrains": {
@@ -791,6 +792,8 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
     fallback_rivers = base.setdefault("rivers", {"rate_percent": 100.0})
     raw_rivers = source.get("rivers", {})
     raw_rivers = raw_rivers if isinstance(raw_rivers, Mapping) else {}
+    river_algorithm = raw_rivers.get("algorithm", fallback_rivers.get("algorithm", "native"))
+    fallback_rivers["algorithm"] = river_algorithm if river_algorithm in RIVER_ALGORITHMS else "native"
     fallback_rivers["rate_percent"] = round(
         _clamp(
             raw_rivers.get("rate_percent", fallback_rivers.get("rate_percent", 100.0)),

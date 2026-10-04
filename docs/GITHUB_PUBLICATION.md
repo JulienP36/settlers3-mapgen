@@ -69,3 +69,12 @@ The four files are stored in `docs/screenshots/` and recorded in `references/SET
 - Release artifacts must be built from the validated source state, not from an unrelated working directory.
 - The RC phase may fix defects, polish, optimize and improve documentation after feature freeze.
 - Community outreach is optional and never a prerequisite for development.
+
+
+## Checkpoint DEV9 — 2026-10-04
+
+DEV9 completes the validated Large islands scope. The unsuffixed checkpoint
+is published to `dev` with source/tests/public notes. `references/` and local
+DEV9 candidate map examples remain outside the Git push, inside the recovery
+ZIP. No tag or Release. Earlier out-of-scope DEV9 work moves to DEV10 for
+prioritization; Small islands is DEV10 or DEV11. See `DEV_9_CHECKPOINT.md`.

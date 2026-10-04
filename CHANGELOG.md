@@ -1,5 +1,340 @@
 # Changelog
 
+## v2.0 DEV_9 — 2026-10-04 — Grandes îles validée
+
+- Clôture DEV9 sur le périmètre Grandes îles, issu de R25 : formes, relief,
+  proportions, intégration Archétype et rivières améliorées validés.
+- Renomme la source alternative « Grandes îles — relief ondulé » dans les
+  quatre langues, en conservant sa clé sauvegardée et son algorithme.
+- Conserve les correctifs profils/UI, défauts Générateur et mini-marais unique.
+- Transfère les anciens reports DEV9 hors périmètre à DEV10 ; Petites îles
+  reste DEV10 ou DEV11, avec d’éventuels autres forks après bilan.
+- Consolide la feuille de candidate dans `docs/DEV_9_CHECKPOINT.md`.
+- Qualification R25 : 818 tests, sept cartes, quatre exports et ZIP extrait PASS.
+  Finalisation : 41 ciblés, traductions et smoke/checksum PASS ; checkpoint `dev` sans R.
+
+## v2.0 DEV_9_R25 — 2026-10-04 — finition montagneuse et calcul local
+
+- Affine les directions du Simplex intérieur ; côtes source R24 conservées.
+- Simplifie le calcul du placement et le polynôme du nouveau bruit.
+- Conserve les réglages de proportions, neige 200, rivières et source R21.
+- Grandes îles R25 validée le 2026-10-04 ; clôture globale DEV9 à décider.
+- Renommage de la source R21 prévu au prochain changement, sans build dédiée.
+
+## v2.0 DEV_9_R24 — 2026-10-04 — essai Simplex multi-échelles sans warping
+
+- Remplace le bruit insulaire local actuel par du Simplex multi-échelles,
+  pour les côtes et le relief intérieur ; aucune déformation par un autre bruit.
+- Au plus six niveaux vectorisés dans les domaines locaux, détails atténués,
+  échelle continue selon l’île ; pas de grille raffinée/paddée supplémentaire.
+- Garde la construction des îles, les chenaux, la cible source et la calibration
+  du relief. Neige 200, rivières R20, source R21 et contrôles R23 conservés.
+- Les silhouettes et proportions effectives changent avec le bruit : candidate
+  expérimentale à comparer sous Windows, aucun push DEV9.
+
+## v2.0 DEV_9_R23 — 2026-10-03 — source R21 et réglages individuels
+
+- Ajoute « Grandes îles — variante R21 » aux sources de relief, avec la
+  géométrie et le bruit d’origine ; previews, fusions/masques et moteurs raccordés.
+- Affine seulement les petites découpes de la source actuelle : filtrage local
+  du champ côtier avant sélection et déplacements de contour légèrement réduits.
+  Le preset garde cette source ; surfaces, chenaux, neige 200 et rivières R20 conservés.
+- La molette respecte les états désactivé/lecture seule des champs numériques,
+  ainsi que l’état réel des sélecteurs.
+- Resets individuels source principale, fusion et masque ; autres éléments,
+  nombre/ordre des slots et paramètres Générateur conservés.
+- Qualification : `references/dev_notes/DEV9_R23_SAVED_RELIEF_AND_LOCAL_RESETS.md`.
+  Candidate locale pour contrôle Windows, aucun push DEV9.
+
+## v2.0 DEV_9_R22 — 2026-10-03 — bruit moins ondulé, pointes atténuées
+
+- Essaie un raffinement local sans domain warp des coordonnées : une seule
+  grille, deux orientations mélangées à 85/15 ; centres à quatre coins équilibrés.
+- Réduit légèrement l’accentuation des pointes : 1,5→1,25 cellule sur le score,
+  2,5→2,25 cellules sur le recul territorial ; conserve du détail sur les lacs.
+- Surface source, placement et chenaux conservés ; rivières et neige 200 inchangées.
+- Les silhouettes à seed identique changent avec le bruit alternatif. R22 à
+  juger sous Windows ; R20 reste la base validée, aucun push DEV9.
+
+## v2.0 DEV_9_R21 — 2026-10-03 — détail homogène des côtes et lacs
+
+R20 validée, puis réserve utilisateur sur quelques contours encore lisses.
+
+- Réutilise le détail fin du champ existant, pondéré par la pente locale du
+  score, pour agir aussi sur les côtes libres et les contours de lacs.
+- Correction avant sélection du masque ; surface source exacte, domaine sûr,
+  chenaux et centres conservés. Aucun nouveau champ de bruit ni passe native.
+- Rivières R20, seuil neige 200 et proportions source conservés.
+- Rendu R21 à valider ; candidate locale, aucun push DEV9.
+
+## v2.0 DEV_9_R20 — 2026-10-03 — côtes contraintes et rivières locales
+
+R20 explicitement validée par l’utilisateur le 2026-10-03 : Grandes îles,
+côtes et rivières retenues en l’état. Références synchronisées, code inchangé.
+
+- Réutilise le détail fin du champ hiérarchique dans le recul depuis les
+  territoires ; déplacement borné, domaine sûr et forme globale conservés.
+- Amélioré : potentiel de longueur adapté à la surface terrestre HEX6
+  connectée, pour les embouchures et branches ; admission/quantité inchangées.
+- Neige reste 200 après annulation explicite de la demande de 195.
+- Classique et raccordements R17 conservés ; candidate locale sans push.
+
+## v2.0 DEV_9_R19 — 2026-10-03 — raffinement des formes insulaires
+
+Retour utilisateur très positif ; conserver la base, affiner les côtes
+contraintes, neige 195 demandée et scaling rivières sur nombreuses îles à étudier.
+
+- Remplace les champs Simplex des côtes et du relief par un raffinement
+  hiérarchique local inspiré des midpoints Classique, jusqu’à une cellule.
+- Décalage, rotation et déformation de grille pour réduire les alignements ;
+  largeur centrale, surfaces comparables et chenaux préservés.
+- Calibration des hauteurs R18, neige 200, rivières R16 et défauts R17 conservés.
+- Candidate locale à essayer sous Windows ; aucune validation visuelle implicite.
+
+## v2.0 DEV_9_R18 — 2026-10-03 — formes et proportions Grandes îles
+
+Retour utilisateur : proportions validées provisoirement ; différence visuelle
+insuffisante. Recherche suivante : raffinement Classique pour les formes.
+
+- Masque insulaire à 56,5 % avant les plages, pour viser 55–60 % de terre finale.
+- Contours déformés sans champ de bruit supplémentaire ; relief davantage
+  multi-échelle et montagnes petites îles renforcées.
+- Compression douce des sommets et seuil neige du preset relevé à 200.
+- Calcul des côtes/connexité limité aux territoires locaux pour réduire le coût.
+- Classique, traceurs de rivière validés et bonus visibles R17 conservés.
+
+## v2.0 DEV_9_R17 — 2026-10-03 — défauts Générateur cohérents
+
+- Mini-marais Grandes îles activé dans la case visible ; passe cachée supprimée.
+- Bonus unique configurable et désactivable, dans les deux moteurs.
+- Classique choisit les rivières classiques ; tous les autres profils choisissent
+  Amélioré. Choix manuel libre, synchronisation des contrôles en place.
+- Algorithme R16 validé conservé ; suite recentrée sur tailles/formes et
+  montagne/neige Grandes îles, Archipel hors 2.0, équilibrage départs ultérieur.
+
+## v2.0 DEV_9_R16 — 2026-10-03 — rivières adaptées à la taille
+
+- Amélioré : baisse de la cible des embouchures sur petites cartes, hausse
+  sur grandes cartes ; surface terrestre réelle toujours prise en compte.
+- Pénalité de longueur adaptée au côté de carte, sans découpe après peinture.
+- Davantage d’occasions de nouvelles embouchures au-dessus de 512 ; branches
+  au taux utilisateur, sans nouveau tirage RNG ni modification du relief.
+- Classique, protections de côte, sinuosité et réglages UI R15 conservés.
+
+## v2.0 DEV_9_R15 — 2026-10-03 — quantité générale des rivières
+
+- Amélioré adapte les nouvelles embouchures à la taille et à la terre disponible,
+  avec un frein progressif ; conserve le taux des branches et le trajet R14.
+- Retire le facteur noise 0,4 pour Amélioré ; Classique reste inchangé.
+- Grandes îles sélectionne Amélioré par défaut, sans reconstruire les onglets ;
+  choix Classique libre ensuite, autres réglages conservés.
+- Anciens profils et choix explicites préservés. Contrôle Windows requis.
+
+## v2.0 DEV_9_R14 — 2026-10-03 — rivières améliorées sélectionnables
+
+- Ajoute Algorithme Classique/Amélioré à la section Rivières du Générateur,
+  disponible pour tous les archétypes dans les deux moteurs et enregistré dans les profils.
+- Amélioré dérive du traceur natif : quitte l’eau après l’embouchure, favorise
+  la sinuosité et pénalise progressivement les longs parcours, sans changer le relief.
+- Reprises des îles sans rivière raccordées au choix actif ; orphelines nettoyées.
+- Classique reste le défaut des presets et anciens profils. Validation Windows requise.
+
+## v2.0 DEV_9_R13 — 2026-10-02 — profils en place et relief côtier
+
+- Changer de profil de base actualise les contrôles existants sans recréer les
+  onglets ; conserve les sections ouvertes et le défilement, et remet Solo à zéro.
+- Profil personnalisé est absent des choix tant qu’un profil nommé est intact.
+- Les trois profils du sélecteur principal utilisent le même chargement en place.
+- Les bornes de la molette suivent les seuils relationnels du profil actuel.
+- Grandes îles : variation fine sur les six premières rangées terrestres,
+  projetée dans les pentes HEX6 existantes. Montagnes et contours conservés,
+  traceur/taux/seuils inchangés. Moins de rivières côtières sur les témoins ;
+  certains longs parcours subsistent, rendu Windows à valider.
+- Classique et Continental conservent leurs champs et règles de génération.
+
+## v2.0 DEV_9_R12 — 2026-10-02 — éditeur Archétype commun
+
+- Ajoute Grandes îles au Profil de base commun et laisse choisir toutes les
+  sources, distinguées entre compositions complètes et bruits simples.
+- Raccorde fusions et masques insulaires au moteur et à la preview, avec la
+  même interface et les mêmes opérations que les autres sources.
+- Découple les seuils de la construction insulaire ; respecte les changements
+  du Générateur, notamment rivière zéro et marais désactivés.
+- Corrige l’affichage initial des cartes de masque et la hauteur de mer finale
+  Amélioré avec seuil d’eau positif. Schéma 21 conserve les choix de source.
+- Six cartes témoins reproduites exactement par les réglages de preset.
+  739 tests PASS, quatre exports MAP/EDM relus ; compilation/auto-test source PASS.
+  Aucun nouvel affinage des longs tracés. Validation Windows R12 requise.
+- R11 restrictive rejetée ; ses validations techniques restent historiques.
+
+## v2.0 DEV_9_R11 — 2026-10-02 — Grandes îles dans Archétype
+
+- Identifie la source complète Grandes îles dans le profil et reprend les
+  anciens profils sans modifier leurs seuils ni leur géographie.
+- Affiche la carte Source principale avec le relief complet de preview,
+  incluant la progression côtière, la relaxation et les ondulations des plaines.
+- Conserve les seuils éditables ; n’expose plus de commandes continentales
+  ignorées pour cette source. Aucune nouvelle vue masque ni modification
+  des algorithmes R10. Le nombre de joueurs suit la demande de preview.
+- Qualification R11 : 703 tests PASS, six cartes complètes et quatre previews
+  identiques à R10 ; compilation et auto-test source PASS.
+- Retour R10 : amélioration partielle, défauts de rivières sur petites cartes
+  et le long des côtes encore ouverts. Validation visuelle R11 attendue.
+
+
+## v2.0 DEV_9_R10 — 2026-10-02 — ondulations locales des plaines insulaires
+
+- Ajoute un détail indépendant à échelles fixes en cases, borné par les écarts
+  HEX6 et fondu avant les hauts piémonts ; côtes, montagnes et neige conservées.
+- Conserve le noyau Classique R9, le traceur, son taux, les reprises et les
+  seuils Rocky/Snow. Aucun plafond de rivière ni modification après tracé.
+- Qualification : 21 tests ciblés PASS ; suite complète 679 PASS et une
+  assertion de version actualisée, puis 16 contrôles de version/documentation
+  PASS. Douze générations comparées, quatre exports MAP/EDM relus exactement.
+- Mesures et qualification : `references/dev_notes/DEV9_R10_PLAIN_DETAIL.md`
+  et `DEV9_R10_QUALIFICATION.json`. Validation visuelle Windows attendue.
+
+
+
+Qualification R9 : **676 tests PASS**, 14 comparaisons natives exactes,
+18 exports MAP/EDM contrôlés. Validation Windows R9 attendue.
+## v2.0 DEV_9_R9 — 2026-10-01 — corrections du Classique et du traceur partagé
+
+- Corrige raffinement/RNG, sculpture, préservation des contraintes natives
+  0x70, scan rivière à zéro, premier pas maximal et reprises par direction.
+- Accepte le terrain natif 0x70 et conserve son blocage jusqu’à l’export.
+- Remplace les anciens hashes du port erroné par des fixtures indépendantes
+  issues des instructions de l’EXE ; ajoute des cas ciblés de premier pas.
+- Grandes îles garde formes et hauteurs R8 ; régression vérifiant qu’aucun
+  relief Classique n’y est construit. L’affinage des plaines/rivières suit.
+- Parité du noyau jusqu’aux transitions sur les cas documentés, neuf cartes
+  complètes et leurs exports qualifiés. Voir les références R9 pour les
+  résultats finaux de tests et les limites. Pas de validation Windows R9
+  encore reçue ; candidate locale, références incluses, aucun push DEV9.
+
+## v2.0 DEV_9_R8 — 2026-10-01 — pente côtière et bruit intérieur stabilisé
+
+- Intègre le prototype de recherche : pente initiale basse mais non nulle,
+  progression adaptée à chaque île et bruit intérieur recentré pour réduire
+  les grandes couronnes plates et stabiliser les montagnes.
+- Conserve géométrie R5, traceur et taux natifs, relaxation et previews communes.
+  Aucun nouveau quota ou paramètre UI.
+- Ajoute une protection de non-régression sur les portions de rivières à très
+  basse altitude et les larges bandes côtières quantifiées.
+- Retour utilisateur R8 : montagnes nettement meilleures, probablement proches
+  de l’idéal sur quelques essais ; conserver cette base. Rivières toujours trop
+  longues vers l’intérieur. Audit du mécanisme et essais locaux documentés,
+  sans correction R9 intégrée. Audit Classique/jeu ajouté au TODO pour les lacs
+  centraux des grandes cartes, planification éventuellement DEV10 à décider.
+- 25 tests ciblés PASS ; 659 cas de non-régression vérifiés : suite complète
+658 PASS / un échec de version documentaire, corrigé puis revalidé avec les
+tests de maintenance et packaging. Compilation, auto-test source, exports et
+hashes protégés PASS. Les 18 heightmaps et masques sont identiques au prototype.
+ZIP livré contrôlé après extraction ; retour utilisateur partiel positif sur
+les montagnes. Rivières et clôture DEV9 restent ouvertes.
+  Candidate locale sans push, références incluses dans le ZIP.
+
+## v2.0 DEV_9_R7 — 2026-10-01 — relief côtier continu
+
+- Remplace plancher intérieur et enveloppe séparée par une progression
+  continue depuis la mer, accélérant vers l’intérieur, avec bruit local
+  borné sans écrasement des creux/sommets. Lissage natif et formes R5 conservés.
+- Retire le masque de Contribution brute, sans le déplacer ; titres et ordre
+  des aperçus habituels restaurés.
+- Consigne le retour R6 (plateaux, amélioration limitée) et reporte l’étude de
+  la quantité de rivières après validation de la heightmap. Taux inchangé.
+- Cinq comparaisons conservent les contours R6 et réduisent les aplats
+  intérieurs locaux mesurés ; trois cartes Amélioré passent leurs contrats.
+  51 tests ciblés et **658 tests de non-régression PASS** ; compilation,
+  auto-test source et exports vérifiés. Les 104 références sont incluses dans
+  le ZIP, contrôlé après extraction avant livraison. Candidate locale sans push.
+
+## v2.0 DEV_9_R6 — 2026-10-01 — terres basses côtières et relief intérieur
+
+- Consigne la validation utilisateur des formes et du processus R5 pour la
+  2.0, avec un départ par île confirmé sur ses essais ; contours inchangés.
+- Élargit la progression douce depuis la mer et favorise le relief montagneux
+  dans l’intérieur réel de chaque île, par la distance HEX6 à la côte.
+  Le bruit détermine les massifs, sans sommet central imposé.
+- Le masque d’Archétype montre le poids appliqué au relief ; la heightmap et
+  la macro utilisent le constructeur réel avec relaxation native.
+- Cinq comparaisons conservent les contours R5 ; hauteur moyenne des
+  couronnes 4–10 environ divisée par deux et p95 côtier 6–7 → 3–4.
+  Six cartes Amélioré 384/8, 512/15, 768/20 passent tous les contrats bloquants.
+- **658 tests PASS**, compilation, auto-test source et relecture des exports
+  PASS ; ZIP contrôlé après extraction avant livraison, avec les 102
+  références actualisées. Candidate locale, aucun push. Le relief et les
+  rivières restent à valider visuellement.
+
+
+## v2.0 DEV_9_R5 — 2026-10-01 — contours et hauteurs côtières adoucis
+
+- Infléchit les contours avant les limites réservées aux autres îles/bords,
+  en conservant surfaces comparables et chenaux navigables.
+- Applique réellement le masque progressif au relief : faibles variations
+  près de la mer, puis réintroduction des détails vers l’intérieur. Adoucit
+  le départ de la montée côtière et sa jonction avec les hauteurs libres.
+  La relaxation native reste active ; le masque demeure visible dans Archétype.
+- Comparaisons 384/4, 384/8, 768/20 : contacts directs de côte avec la limite
+  stricte 13–18 % → 0 % ; hauteur maximale des trois premières couronnes 21 → 5–6.
+  Cartes qualifiées : 51,97–52,49 % de terre, contrats par île PASS.
+- Inscrit les échecs possibles de pose des minerais Amélioré au TODO 2.1.
+- 658 tests de non-régression et auto-tests source/paquet extrait PASS ;
+  références actualisées incluses. Formes/processus validés par l’utilisateur
+  pour la 2.0 ; relief/rivières poursuivis en R6.
+
+## v2.0 DEV_9_R4 — 2026-10-01 — masques et relief insulaire indépendants
+
+- Répartit des centres aléatoires puis construit un masque par île, avec des
+  surfaces comparables et environ 50 % de terre avant transitions côtières.
+  Les îles ont des contours irréguliers et des chenaux réservés.
+- Génère un relief continu propre à chaque île, puis utilise la relaxation
+  native ; retire le relief continental jetable, le remappage des quantiles
+  et le relèvement des montagnes après lissage. Réessaie localement le bruit
+  lorsqu’une île manque de relief montagneux.
+- Archétype affiche le masque, les hauteurs et la macro ; masque automatique
+  non éditable. Les contrôles de source continentale sans effet sur les îles
+  sont masqués pour cette candidate, conservés sur Continental.
+- Autorise le repli minéral déjà existant pour le support insulaire à 768²,
+  en conservant quotas et supports ; la calibration continentale reste stricte.
+- Mesures Amélioré 384/8, 512/15 et 768/20 : 52,5–53,3 % de terre finale,
+  une île/départ et montagne, marais, rivière par joueur ; contrats PASS.
+  Candidate locale, validation visuelle Windows attendue.
+
+## v2.0 DEV_9_R3 — 2026-09-30 — relaxation native des Grandes îles
+
+- Applique au relief insulaire remappé la passe de relaxation mode 0 récupérée
+  du jeu, après la formation des îles et avant la classification des terrains.
+  La preview macro reprend le même passage quand le lissage natif est activé.
+- Après cette passe, un léger dôme intérieur à pente douce rétablit un sommet
+  montagneux uniquement si une petite île a perdu son seul relief au-dessus du
+  seuil. Il n’élève pas les cellules océaniques et garde le profil de côte.
+- Maintient un chenal d’eau d’au moins 8 cellules (ou 1,5 % de la taille) entre
+  les îles et au bord de carte, pour éviter leur réunion après les transitions
+  de côte.
+- Vérifications génération : 384²/4 joueurs (43,4 % de terre), 512²/4
+  (49,1 %), 768²/4 (47,4 %) et 384²/8 (24,5 %), avec les contrats de masse,
+  montagne, marais, rivière et départs satisfaits. Les tests ciblés passent ;
+  649 tests de la suite complète ont passé au premier passage et les deux tests
+  restants ont ensuite passé après mise à jour de ces références.
+- Compilation, self-test de l’application et self-test après extraction du ZIP
+  PASS. Archive de 366 fichiers avec les 96 références et l’exemple R3.
+- Candidate locale, sans push. Validation visuelle Windows encore attendue.
+
+## v2.0 DEV_9_R2 — 2026-09-30 — îles autonomes
+
+- Remplace le découpage d’un continent R1 par la création indépendante d’une île par joueur, avec large mer entre les côtes. Centres sans lien aux spawns, hauteurs dérivées et équilibrées à partir du relief natif, élimination des composantes satellites accidentelles.
+- Un départ et un marais par île ; aperçu lié au nombre de joueurs ; relance du tracé natif dans les seules îles manquant de rivière. Le miroir reste désactivé.
+- R1 est documentée comme essai rejeté dans `references/dev_notes/DEV9_R1_LARGE_ISLANDS.md`. 651 tests passent ; compilation et self-test des ressources PASS.
+
+
+## v2.0 DEV_9_R1 — 2026-09-30 — candidate locale Grandes îles
+
+- Première génération Grandes îles : relief continental natif découpé en une île comparable par joueur ; départ et marais sur chacune ; aperçu suivant le nombre de joueurs.
+- Contrôles de séparation finale, montagnes, marais et diagnostic des rivières par île. Mode miroir indisponible pour ce preset pendant R1.
+- Voir `DEV_CANDIDATE_NOTES.md` et `references/dev_notes/DEV9_R1_LARGE_ISLANDS.md`.
+
+
 ## v2.0 DEV_8 — 2026-09-30 — clôture DEV8 (candidate R86)
 
 - Le sélecteur principal Archétype affiche désormais « Personnalisé » quand

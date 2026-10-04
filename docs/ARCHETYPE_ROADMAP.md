@@ -1,11 +1,15 @@
 # Roadmap des archétypes Custom
 
-> DEV8 est terminée avec R86. Tous les éléments ouverts de cette roadmap
-> sont transférés à DEV9.
+## Cap actuel — DEV9 clôturée, 2026-10-04
 
-Document de cap actualisé jusqu’à R76. Les numéros R sont des repères de contenu ; ils ne
-doivent pas empêcher de regrouper ou de réordonner les travaux selon les
-retours de test.
+- Grandes îles R25, rivières améliorées et raccordements validés ; checkpoint DEV9.
+- Source alternative renommée « Grandes îles — relief ondulé ».
+- Anciens reports hors scope transférés à DEV10 pour priorisation après push.
+- Petites îles : DEV10 ou DEV11, fork de Grandes îles ; autres forks éventuels.
+- Finitions/publication : à répartir après bilan, aucun jalon DEV11 figé.
+- Archipel hors 2.0 ; aucun nouveau fork engagé dans ce checkpoint.
+
+Les repères historiques ci-dessous ne redéfinissent pas le scope terminé.
 
 ## Objectif
 
@@ -15,7 +19,7 @@ autonomes et réutilisables seuls. Les usages spécialisés passent par les
 opérations, transformations et masques appliqués au bruit, pas par des
 providers artificiellement enfermés dans un rôle.
 
-## Dernier prototype
+## Prototype historique R76
 
 R76 garde la grille d’ancres aléatoires et le raffinement natif de R75, avec
 moins de basses ancres près des bords, une plage basse légèrement plus large
@@ -26,7 +30,7 @@ centrale. Le Legacy natif et les sources noise-map complètes restent
 indépendants. Vérifier sous Windows à 384/512/768 ; les rivières restent
 reportées.
 
-## Suite immédiate
+## Repères historiques et idées à replanifier
 
 - [x] **Pile de fusions lisible — première tranche R33** : ordre haut/bas,
   duplication, suppression, activation rapide et mode Solo d’aperçu sont
@@ -150,17 +154,17 @@ reportées.
   miroirs sur bordure d’eau, proportion terre/eau, masses connectées, diversité
   du relief, part montagne/neige et formes non coupées.
 
-## Chantiers DEV9
+## Historique DEV9 — clôturé
 
 - [x] **Rivières Custom hors Legacy** : réglées selon le retour utilisateur
   avec un bruit plus doux près des bords d’eau. Ne pas rouvrir sans nouvelle
   reproduction ; le Legacy natif reste protégé.
 
-## Profils cibles DEV9
+## Idées de profils à replanifier
 
 - [ ] Continental compact irrégulier.
 - [ ] Continent fragmenté avec mers intérieures.
-- [ ] Grandes îles et petit archipel.
+- Grandes îles : DEV9 validée et clôturée ; Archipel : hors 2.0.
 - [ ] Deux continents opposés, péninsules et détroits.
 - [ ] Dorsale montagneuse, hauts plateaux et bassins.
 - [ ] Profils circulaires ou quasi-atoll lorsque les masques le permettent.
@@ -170,10 +174,10 @@ sur plusieurs seeds, tailles et miroirs, garder une distribution terre/eau
 contrôlable, éviter le relief plat et les micro-masses accidentelles, puis
 rester compatible avec la génération jouable.
 
-## Gate DEV9 : macro-forme et placement des joueurs
+## Principes de qualification et équilibrage ultérieur
 
-Le placement des joueurs doit être calibré en même temps que les premiers
-archétypes non continentaux, et non validé après coup.
+Le placement légal des joueurs reste qualifié avec chaque archétype. Comparer
+plusieurs algorithmes pour leur équilibrage est un chantier futur distinct.
 
 - [ ] Pour Grandes îles et Petites îles, comparer « une île principale par
   joueur », « un joueur par île » et « plusieurs joueurs sur une même île »

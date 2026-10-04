@@ -21,7 +21,7 @@ from typing import Any
 
 from .noise_sources import NOISE_SOURCE_OPTIONS
 
-ARCHETYPE_PROFILE_SCHEMA_VERSION = 20
+ARCHETYPE_PROFILE_SCHEMA_VERSION = 21
 
 # The native relief pass first builds an unsigned 0..255 field and then
 # applies ``raw - 0x1E`` while flooring water at zero.  The signed value shown
@@ -88,11 +88,17 @@ NATIVE_CALIBRATED_FRAME_BASE_PERCENT = 1
 
 RELIEF_SOURCE_DEFAULT = "native_legacy"
 RELIEF_SOURCE_CUSTOM_LEGACY = "legacy_blocks"
+# Complete island geometry and height provider, composable like other sources.
+RELIEF_SOURCE_LARGE_ISLANDS = "large_islands"
+RELIEF_SOURCE_LARGE_ISLANDS_R21 = "large_islands_r21"
+ISLAND_RELIEF_SOURCES = (RELIEF_SOURCE_LARGE_ISLANDS, RELIEF_SOURCE_LARGE_ISLANDS_R21)
 CUSTOM_LEGACY_MOUNTAIN_THRESHOLD = 98
 CUSTOM_LEGACY_SNOW_THRESHOLD = 125
+# Principal sources include complete compositions and elementary noises.
 RELIEF_SOURCE_OPTIONS = (
     RELIEF_SOURCE_DEFAULT,
     RELIEF_SOURCE_CUSTOM_LEGACY,
+    *ISLAND_RELIEF_SOURCES,
     *NOISE_SOURCE_OPTIONS,
 )
 
@@ -1325,6 +1331,12 @@ def default_archetype_profile(key: str = "continental") -> dict[str, Any]:
     key = str(key)
     if key == "continental":
         return deepcopy(CONTINENTAL_ARCHETYPE_PROFILE)
+    if key == "large_islands":
+        result = deepcopy(CONTINENTAL_ARCHETYPE_PROFILE)
+        result.update(profile_name="Large Islands", archetype_key=key, mass={"layout": key, "micro_islands": False})
+        result["morphology"]["relief_source"] = RELIEF_SOURCE_LARGE_ISLANDS
+        result["relief"]["snow_threshold"] = 200
+        return result
     return _reserved_profile(key)
 
 
@@ -1433,6 +1445,12 @@ def normalize_archetype_profile(
         # Legacy Custom generator introduced in R74.
         "legacy_derived": RELIEF_SOURCE_CUSTOM_LEGACY,
     }.get(relief_source, relief_source)
+    if key == "large_islands" and source_schema_version < 21:
+        # Earlier saved island profiles inherited a Continental source label,
+        # although generation always used the complete island provider.
+        if relief_source not in (*RELIEF_SOURCE_OPTIONS, RELIEF_SOURCE_LARGE_ISLANDS):
+            raise ValueError(f"Source de relief inconnue : {relief_source}")
+        relief_source = RELIEF_SOURCE_LARGE_ISLANDS
     if relief_source not in RELIEF_SOURCE_OPTIONS:
         raise ValueError(f"Source de relief inconnue : {relief_source}")
     normalized_morphology["relief_source"] = relief_source
@@ -1716,7 +1734,7 @@ def iter_archetype_parameter_descriptors(
 def relief_thresholds(profile: Mapping[str, Any] | None = None) -> tuple[int, int, int]:
     """Return ``(water, mountain, snow)`` thresholds for a classifier."""
 
-    normalized = normalize_archetype_profile(profile, archetype_key="continental")
+    normalized = normalize_archetype_profile(profile, archetype_key=str((profile or {}).get("archetype_key", "continental")))
     relief = normalized["relief"]
     return (
         int(relief["water_threshold"]),
@@ -1899,6 +1917,9 @@ __all__ = (
     "MORPHOLOGY_DEFAULTS",
     "RELIEF_SOURCE_DEFAULT",
     "RELIEF_SOURCE_CUSTOM_LEGACY",
+    "RELIEF_SOURCE_LARGE_ISLANDS",
+    "RELIEF_SOURCE_LARGE_ISLANDS_R21",
+    "ISLAND_RELIEF_SOURCES",
     "CUSTOM_LEGACY_MOUNTAIN_THRESHOLD",
     "CUSTOM_LEGACY_SNOW_THRESHOLD",
     "thresholds_on_relief_source_change",

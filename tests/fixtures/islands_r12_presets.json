@@ -1,0 +1,219 @@
+{
+  "provenance": "R11 complete map qualification, identical to R10; six Area channels and starts",
+  "cases": [
+    {
+      "case": [
+        "legacy",
+        "continental",
+        384,
+        4,
+        42
+      ],
+      "area_sha256": "f117844b2b598b685d4396a82ee7b62dd14d6a1f69a15fb70ffc513660915e22",
+      "starts": [
+        [
+          125,
+          71
+        ],
+        [
+          43,
+          316
+        ],
+        [
+          336,
+          39
+        ],
+        [
+          273,
+          322
+        ]
+      ],
+      "hard_pass": true
+    },
+    {
+      "case": [
+        "upgraded",
+        "continental",
+        384,
+        4,
+        42
+      ],
+      "area_sha256": "69957ab014090c1ee5f6139a78d9b2ce1685627416cbfd6a0106485cb2afaf67",
+      "starts": [
+        [
+          278,
+          73
+        ],
+        [
+          45,
+          318
+        ],
+        [
+          249,
+          283
+        ],
+        [
+          77,
+          41
+        ]
+      ],
+      "hard_pass": true
+    },
+    {
+      "case": [
+        "legacy",
+        "large_islands",
+        384,
+        8,
+        42
+      ],
+      "area_sha256": "6393d38d8c12246ff8b1de8dcc912279b5ccecfa4999fd83b9bc06b5b7d05bc4",
+      "starts": [
+        [
+          284,
+          81
+        ],
+        [
+          43,
+          196
+        ],
+        [
+          321,
+          330
+        ],
+        [
+          192,
+          195
+        ],
+        [
+          328,
+          179
+        ],
+        [
+          203,
+          101
+        ],
+        [
+          74,
+          28
+        ],
+        [
+          72,
+          336
+        ]
+      ],
+      "hard_pass": true,
+      "preview_noise_sha256": "fb9071ef1094ffa04ece4d60d8928f028090e948da0ceefe0fb0cf1dc82f2e9a",
+      "preview_macro_sha256": "0c03567902b0602da50eaa0f414993a9e9a22d3fbd0b199471c797b3209d8fee"
+    },
+    {
+      "case": [
+        "upgraded",
+        "large_islands",
+        384,
+        8,
+        42
+      ],
+      "area_sha256": "568f8aa4f408e9c1b62d04dde0adc2bbf3875130a9671971a8c8d7ad1ef289fb",
+      "starts": [
+        [
+          289,
+          43
+        ],
+        [
+          50,
+          202
+        ],
+        [
+          321,
+          330
+        ],
+        [
+          213,
+          256
+        ],
+        [
+          314,
+          179
+        ],
+        [
+          202,
+          94
+        ],
+        [
+          88,
+          77
+        ],
+        [
+          107,
+          305
+        ]
+      ],
+      "hard_pass": true,
+      "preview_noise_sha256": "fb9071ef1094ffa04ece4d60d8928f028090e948da0ceefe0fb0cf1dc82f2e9a",
+      "preview_macro_sha256": "0c03567902b0602da50eaa0f414993a9e9a22d3fbd0b199471c797b3209d8fee"
+    },
+    {
+      "case": [
+        "legacy",
+        "large_islands",
+        768,
+        4,
+        2026093006
+      ],
+      "area_sha256": "b1ebf3310d5d6abfe5aaa5aaeb6be361869d7c511eed5eaeefbc8f6493fd351a",
+      "starts": [
+        [
+          85,
+          467
+        ],
+        [
+          614,
+          618
+        ],
+        [
+          489,
+          201
+        ],
+        [
+          316,
+          103
+        ]
+      ],
+      "hard_pass": true,
+      "preview_noise_sha256": "94c641397b2ca38f4b7aa99f4653620c7457adac05df29be4fd4c96868d93287",
+      "preview_macro_sha256": "e72b5422243296173ce8c625de64cf98c6e1c59219235bd042d8839592e82779"
+    },
+    {
+      "case": [
+        "upgraded",
+        "large_islands",
+        768,
+        4,
+        2026093006
+      ],
+      "area_sha256": "d4fb1002d163f05b5c5cd72c42a8f4dd14f19a12a89690f0d25b68d62abf8d6f",
+      "starts": [
+        [
+          227,
+          572
+        ],
+        [
+          584,
+          586
+        ],
+        [
+          594,
+          183
+        ],
+        [
+          215,
+          185
+        ]
+      ],
+      "hard_pass": true,
+      "preview_noise_sha256": "94c641397b2ca38f4b7aa99f4653620c7457adac05df29be4fd4c96868d93287",
+      "preview_macro_sha256": "e72b5422243296173ce8c625de64cf98c6e1c59219235bd042d8839592e82779"
+    }
+  ]
+}

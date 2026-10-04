@@ -332,7 +332,7 @@ def test_legacy_custom_uses_historical_hex_mineral_placer():
 
 def test_custom_keeps_unimplemented_archetypes_guarded():
     with pytest.raises(NotImplementedError):
-        gen().generate(2,2026081901,mode='custom',archetype='large_islands',side=256)
+        gen().generate(2,2026081901,mode='custom',archetype='small_islands',side=256)
 
 def test_legacy_native_rebuild_is_reachable():
     result=gen().generate(2,2026081901,mode='legacy',archetype='continental',side=384)

@@ -66,14 +66,15 @@ Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohére
 La règle de version suivie par le projet est stricte : chaque modification de
 la candidate incrémente `R`; le compteur `DEV` n’avance qu’après un push d’un
 checkpoint; une release n’est créée qu’une fois le périmètre terminé et validé.
-Le dernier checkpoint publié est `v2.0 DEV_8`, issu de la candidate locale
-R86. DEV8 est terminée : le sélecteur principal Archétype affiche l’état
-dynamique « Personnalisé », et la suite complète compte 641 tests réussis.
-L’utilisateur a confirmé la validation visuelle Windows R85 ; les rivières
-Custom et les tests multi-tailles sont terminés. Tous les travaux restants,
-dont Grandes îles et le comportement dynamique « Personnalisé » pour Mode,
-relèvent de DEV9. L’index et le snapshot dans `references/` décrivent le corpus
-compact actualisé et conservent le SHA du push.
+Le checkpoint courant validé est `v2.0 DEV_9`, issu de R25 et du renommage
+de la source alternative. DEV9 est clôturée sur le focus Grandes îles,
+avec les rivières améliorées et raccordements associés. Le 2026-10-04,
+l’utilisateur autorise explicitement sa publication sur `dev`.
+Tous les anciens reports DEV9 hors périmètre passent à DEV10, à trier après
+le push. Petites îles est prévue DEV10 ou DEV11 ; d’autres forks éventuels
+et la répartition des finitions seront décidés après bilan.
+Le bilan public est `docs/DEV_9_CHECKPOINT.md` ; l’index et le snapshot local
+conservent les références complètes et le SHA effectivement publié.
 
 Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
 
@@ -191,7 +192,7 @@ Dans ce projet, **découvrabilité GitHub** désigne précisément l’exploitat
 
 Ne pas élargir automatiquement ce chantier à une stratégie SEO, à du bourrage de mots-clés dans le README ou à une campagne communautaire.
 
-Les éléments suivants appartiennent aussi à la finition/publication de DEV_11, mais restent des tâches distinctes de la découvrabilité GitHub :
+Les éléments suivants appartiennent aussi à la finition/publication après DEV9 (répartition à décider au bilan DEV10), mais restent des tâches distinctes de la découvrabilité GitHub :
 
 - conserver le README français et fournir une entrée anglaise clairement liée ;
 - ajouter des captures réelles et récentes de l’application ;

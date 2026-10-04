@@ -101,6 +101,8 @@ def test_continental_archetype_profile_records_native_macro_defaults():
     assert RELIEF_SOURCE_OPTIONS == (
         "native_legacy",
         "legacy_blocks",
+        "large_islands",
+        "large_islands_r21",
         "white",
         "value",
         "perlin",
@@ -147,7 +149,7 @@ def test_adaptive_frequency_toggle_migrates_older_profiles_and_requires_a_bool()
         archetype_key="continental",
     )
 
-    assert old_profile["schema_version"] == 20
+    assert old_profile["schema_version"] == 21
     assert old_profile["morphology"]["size_adaptive_frequency"] is False
 
     with pytest.raises(ValueError, match="size_adaptive_frequency"):
@@ -559,7 +561,7 @@ def test_previous_custom_legacy_thresholds_migrate_to_the_real_altitude_range():
         "morphology": {"relief_source": RELIEF_SOURCE_CUSTOM_LEGACY},
     }
     migrated = normalize_archetype_profile(old, archetype_key="continental")
-    assert migrated["schema_version"] == 20
+    assert migrated["schema_version"] == 21
     assert migrated["relief"]["mountain_threshold"] == CUSTOM_LEGACY_MOUNTAIN_THRESHOLD
     assert migrated["relief"]["snow_threshold"] == CUSTOM_LEGACY_SNOW_THRESHOLD
     assert normalize_archetype_profile(migrated, archetype_key="continental") == migrated
@@ -1331,7 +1333,7 @@ def test_advanced_remap_defaults_migrate_older_profiles_as_identity_values():
     )
     settings = profile["morphology"]["relief_source_settings"]
 
-    assert profile["schema_version"] == 20
+    assert profile["schema_version"] == 21
     assert settings["frequency"] == 6.0
     assert settings["remap_low_percent"] == 0
     assert settings["remap_high_percent"] == 100
@@ -2449,8 +2451,10 @@ def test_legacy_midpoint_refinement_parameter_is_editable_in_both_engines():
             assert not np.array_equal(native.height, band_result.height)
         sculpture_profile = default_archetype_profile("continental")
         sculpture_profile["morphology"]["native_sculpture_attempts_percent"] = 50
-        sculpture_baseline = generate(256, 297650040)
-        sculpture = generate(256, 297650040, archetype_profile=sculpture_profile)
+        # The corrected native routine has no effective sculpture on the
+        # old 256/297650040 case. Use a native fixture with real constraints.
+        sculpture_baseline = generate(384, 42)
+        sculpture = generate(384, 42, archetype_profile=sculpture_profile)
         assert not np.array_equal(sculpture_baseline.height, sculpture.height)
         relax_baseline = generate(256, 297650040)
         relax_profile = default_archetype_profile("continental")
@@ -2523,10 +2527,10 @@ def test_native_refinement_parameter_refreshes_live_previews_and_cache():
         generate_relief_preview_fields,
     )
     _base_noise, base_sculpted_height = generate_relief_preview_fields(
-        256, 297650040, archetype_profile=sculpture_baseline_profile
+        384, 42, archetype_profile=sculpture_baseline_profile
     )
     _edited_noise, edited_sculpted_height = generate_relief_preview_fields(
-        256, 297650040, archetype_profile=sculpture_only
+        384, 42, archetype_profile=sculpture_only
     )
     assert not np.array_equal(edited_sculpted_height, base_sculpted_height)
     relaxed_profile = deepcopy(baseline_profile)
@@ -2571,3 +2575,45 @@ def test_native_refinement_parameter_refreshes_live_previews_and_cache():
         changed_profile, 128, 20260918
     )
     assert not np.array_equal(source_baseline, source_changed)
+
+
+@pytest.mark.parametrize("old_source", ["native_legacy", "legacy_blocks", "perlin"])
+def test_saved_island_profiles_identify_the_complete_provider_without_changing_settings(old_source):
+    from s3mapgen.generation.archetypes import RELIEF_SOURCE_LARGE_ISLANDS
+    profile = default_archetype_profile("large_islands")
+    profile["schema_version"] = 20
+    profile["morphology"]["relief_source"] = old_source
+    profile["relief"]["mountain_threshold"] = 130
+    before = deepcopy(profile)
+    normalized = normalize_archetype_profile(profile, archetype_key="large_islands")
+    assert profile == before
+    assert normalized["morphology"]["relief_source"] == RELIEF_SOURCE_LARGE_ISLANDS
+    assert normalized["relief"] == profile["relief"]
+    assert normalized["mass"] == profile["mass"]
+    assert normalize_archetype_profile(normalized, archetype_key="large_islands") == normalized
+
+
+@pytest.mark.parametrize("archetype,source", [
+    ("continental", "unknown_source"), ("large_islands", "unknown_source"),
+])
+def test_relief_source_cannot_silently_select_an_unsupported_provider(archetype, source):
+    profile = default_archetype_profile(archetype)
+    profile["morphology"]["relief_source"] = source
+    with pytest.raises(ValueError, match="Source de relief inconnue"):
+        normalize_archetype_profile(profile, archetype_key=archetype)
+
+
+def test_saved_custom_island_config_roundtrips_with_the_effective_source():
+    from s3mapgen.generation.custom import build_custom_config
+    from s3mapgen.generation.custom.config import CustomGenerationConfig
+    config = build_custom_config("upgraded", "large_islands")
+    saved = config.to_dict()
+    saved["archetype_profile"]["schema_version"] = 20
+    saved["archetype_profile"]["morphology"]["relief_source"] = "native_legacy"
+    saved["archetype_profile"]["relief"]["mountain_threshold"] = 130
+    restored = CustomGenerationConfig.from_dict(saved)
+    assert restored.base_mode == "upgraded"
+    assert restored.base_archetype == "large_islands"
+    assert restored.archetype_profile["morphology"]["relief_source"] == "large_islands"
+    assert restored.archetype_profile["relief"]["mountain_threshold"] == 130
+    assert CustomGenerationConfig.from_dict(restored.to_dict()).to_dict() == restored.to_dict()

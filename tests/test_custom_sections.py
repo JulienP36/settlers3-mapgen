@@ -85,7 +85,7 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
     assert sections["minerals"]["average_quantity"] == {key: 10 for key in MINERAL_KEYS}
     assert sections["fish"]["average_quantity"] == 10
     assert sections["fish"]["band_thickness"] == 12
-    assert sections["rivers"] == {"rate_percent": 100.0}
+    assert sections["rivers"] == {"algorithm": "native", "rate_percent": 100.0}
     assert sections["objects"] == {"grass_compatible_on_dry_and_details": False}
     assert sections["trees"] == {
         "base_quota_percent": 100.0,
@@ -164,7 +164,7 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
     assert legacy["fish"]["average_quantity"] == 8
     assert legacy["fish"]["near_shore"] is False
     assert legacy["fish"]["fill_percent"] == 36.5
-    assert legacy["rivers"] == {"rate_percent": 100.0}
+    assert legacy["rivers"] == {"algorithm": "native", "rate_percent": 100.0}
     assert legacy["trees"] == {
         "base_quota_percent": 100.0,
         "saplings": {

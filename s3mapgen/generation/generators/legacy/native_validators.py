@@ -17,6 +17,7 @@ _KNOWN_PRIMARY_IDS = {
     0x40, 0x41,
     0x50, 0x51,
     0x60, 0x61, 0x62, 0x63,
+    0x70,
     0x80, 0x81,
     0x90, 0x91,
 }
@@ -77,7 +78,8 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
         bool(np.all(edge_terrain == 0x07) and np.all(edge_height == 0)),
         f"terrain={sorted(set(map(int, edge_terrain)))} height_max={int(edge_height.max(initial=0))}",
     )
-    add("NATIVE_NO_WORK_SENTINELS", not np.isin(terrain, (0x70, 0xF0, 0xF3, 0xFE, 0xFF)).any(), "temporary terrain values cleared")
+    add("NATIVE_NO_WORK_SENTINELS", not np.isin(terrain, (0xF0, 0xF3, 0xFE, 0xFF)).any(), "temporary terrain values cleared")
+    add("NATIVE_SCULPTURE_ACCESS", not np.any(state.accessibility[terrain == 0x70] != 1), "retained native sculpture terrain is non-walkable")
     add("NATIVE_RIVER_NO_BAD_NEIGHBOUR", _river_neighbours_are_legal(terrain), "river cleanup-compatible neighbours")
     mirror_mode = int(mode) & 0x03
     river_components_ok = _river_components_touch_water(terrain)
@@ -95,7 +97,8 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
     )
     if (
         state.metadata.get("mode_key") == "custom"
-        and "river_profile_rate_multiplier" in state.metadata
+        and ("river_profile_rate_multiplier" in state.metadata
+             or state.metadata.get("river_algorithm") == "improved")
     ):
         add(
             "CUSTOM_RIVER_WATER_CONNECTION",
@@ -135,7 +138,7 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
         "object cells are non-walkable except exhausted stones")
     add("NATIVE_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
     start_mass = state.metadata.get("startable_mass", {})
-    if isinstance(start_mass, dict):
+    if isinstance(start_mass, dict) and not state.metadata.get("large_island_starts"):
         add(
             "NATIVE_STARTABLE_GRASS_MASS",
             bool(start_mass.get("all_starts_in_largest_grass_mass", False)),
@@ -143,6 +146,8 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
             f"masses={start_mass.get('grass_mass_count', 0)}",
             hard=False,
         )
+    from ...archetypes.large_islands import validate_island_contract
+    out.extend(validate_island_contract(state))
     return out
 
 

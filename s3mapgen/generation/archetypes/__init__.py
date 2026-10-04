@@ -102,6 +102,9 @@ from .profiles import (
     NOISE_SOURCE_SETTING_INCREMENTS,
     RELIEF_SOURCE_DEFAULT,
     RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_LARGE_ISLANDS,
+    RELIEF_SOURCE_LARGE_ISLANDS_R21,
+    ISLAND_RELIEF_SOURCES,
     CUSTOM_LEGACY_MOUNTAIN_THRESHOLD,
     CUSTOM_LEGACY_SNOW_THRESHOLD,
     thresholds_on_relief_source_change,
@@ -181,7 +184,7 @@ ARCHETYPES = {
         'Macro-topologie : une masse terrestre principale avec océan périphérique.'
     ),
     'large_islands': Archetype(
-        'large_islands', 'Large Islands', False,
+        'large_islands', 'Large Islands', True,
         'Macro-topologie : plusieurs grandes masses insulaires.'
     ),
     'small_islands': Archetype(
@@ -282,6 +285,9 @@ __all__ = [
     "QUALIFICATION_SIZES",
     "RELIEF_SOURCE_DEFAULT",
     "RELIEF_SOURCE_CUSTOM_LEGACY",
+    "RELIEF_SOURCE_LARGE_ISLANDS",
+    "RELIEF_SOURCE_LARGE_ISLANDS_R21",
+    "ISLAND_RELIEF_SOURCES",
     "CUSTOM_LEGACY_MOUNTAIN_THRESHOLD",
     "CUSTOM_LEGACY_SNOW_THRESHOLD",
     "thresholds_on_relief_source_change",

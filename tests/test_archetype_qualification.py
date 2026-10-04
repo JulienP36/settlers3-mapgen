@@ -38,7 +38,7 @@ def test_target_matrix_covers_the_first_three_archetype_families():
         "small_islands",
     ]
     assert matrix["archetypes"][0]["implemented"] is True
-    assert all(row["implemented"] is False for row in matrix["archetypes"][1:])
+    assert [row["implemented"] for row in matrix["archetypes"]] == [True, True, False]
 
 
 def test_qualification_player_cases_include_small_and_maximum_populations():
@@ -168,12 +168,12 @@ def test_qualification_report_exposes_deferred_gameplay_gates():
 
 
 def test_unimplemented_target_cannot_be_qualified_as_if_it_existed():
-    with pytest.raises(NotImplementedError, match="Grandes îles"):
+    with pytest.raises(NotImplementedError, match="Petites îles"):
         qualify_preview(
             default_archetype_profile("continental"),
             384,
             20260920,
-            target_key="large_islands",
+            target_key="small_islands",
         )
 
 

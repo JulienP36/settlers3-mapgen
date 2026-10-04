@@ -18,7 +18,7 @@ def _footprint_ok(terrain: np.ndarray, x: int, y: int) -> bool:
     return True
 
 
-def place_starts(state, players: int, rng: np.random.Generator, *, technical_clear: int = 14) -> np.ndarray:
+def place_starts(state, players: int, rng: np.random.Generator, *, technical_clear: int = 14, island_labels: np.ndarray | None = None) -> np.ndarray:
     """Place provisional starts and return only their exact footprints.
 
     Candidates are naturally flat grass cells, sampled with a maximin rule.
@@ -27,6 +27,10 @@ def place_starts(state, players: int, rng: np.random.Generator, *, technical_cle
     settlers or SAV records; the native Upgraded placement remains a separate
     future pass.
     """
+
+    if island_labels is not None:
+        from ...archetypes.large_islands import place_island_starts
+        return place_island_starts(state, players, rng, island_labels, technical_clear)
 
     side = state.side
     terrain = state.terrain

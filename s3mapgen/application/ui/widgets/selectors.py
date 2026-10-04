@@ -37,7 +37,7 @@ class ColorMenuSelect(ttk.Menubutton):
         self._sync_icon()
 
     def _choose(self, key, label):
-        if not self._enabled:
+        if not self._enabled or self.instate(["disabled"]):
             return
         self.variable.set(label)
         self._sync_icon()
@@ -52,7 +52,7 @@ class ColorMenuSelect(ttk.Menubutton):
                 break
 
     def _wheel_step(self, step):
-        if not self._enabled or not self._items:
+        if not self._enabled or self.instate(["disabled"]) or not self._items:
             return "break"
         labels = [item[1] for item in self._items]
         try:
