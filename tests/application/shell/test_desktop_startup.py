@@ -30,10 +30,11 @@ def test_desktop_generator_controls_and_departure_menu_are_reachable(tmp_path, m
         desktop_width, desktop_height = area.right - area.left, area.bottom - area.top
     available_width = max(1, desktop_width - 48)
     available_height = max(1, desktop_height - 80)
-    # A small CI desktop exercises an even tighter viewport than the normal
-    # application minimum, without changing that minimum in production.
     minimum_width, minimum_height = app.minsize()
-    app.minsize(min(minimum_width, available_width), min(minimum_height, available_height))
+    assert available_width >= minimum_width and available_height >= minimum_height, (
+        f'Desktop work area {desktop_width}x{desktop_height} cannot fit the normal '
+        f'application minimum {minimum_width}x{minimum_height}; prepare the CI desktop first.'
+    )
     errors = []
     app.report_callback_exception = lambda *args: errors.append(
         ''.join(traceback.format_exception(*args)))
@@ -62,7 +63,14 @@ def test_desktop_generator_controls_and_departure_menu_are_reachable(tmp_path, m
             settle()
         hit = app.winfo_containing(widget.winfo_rootx() + widget.winfo_width() // 2,
                                    widget.winfo_rooty() + widget.winfo_height() // 2)
-        assert hit is widget, f'{widget} is covered by {hit}; {widget.winfo_rootx()},{widget.winfo_rooty()}'
+        assert hit is widget, (
+            f'{widget} is covered by {hit}; widget=' 
+            f'{widget.winfo_rootx()},{widget.winfo_rooty()},'
+            f'{widget.winfo_width()}x{widget.winfo_height()}; '
+            f'window={app.geometry()}; desktop={desktop_width}x{desktop_height}; '
+            f'canvas={canvas.winfo_geometry() if canvas else None}; '
+            f'view={canvas.yview() if canvas else None}'
+        )
 
     try:
         for language in ('fr', 'en', 'de', 'es'):

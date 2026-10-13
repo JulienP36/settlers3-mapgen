@@ -1,5 +1,16 @@
 ## Maintenance DEV10 — tests Windows du build
 
+### Suivi Windows — préparation du bureau CI
+
+Le run `38466312292` confirme les 57 tests Custom/Tcl PASS (Tcl 8.6.15).
+Le clic desktop échoue encore sur le petit bureau du runner. La préparation CI
+sélectionne désormais un mode Windows supporté d'au moins 1920×1080 et vérifie
+la taille vue par Tk avant le test. Le minimum de production 1080×720 reste
+conservé dans le test ; aucune assertion de clic supprimée. Diagnostic détaillé
+fenêtre/canvas/vue ajouté. Les tests locaux précédents en 1024 utilisaient un
+minimum abaissé de test ; ils ne qualifient pas ce nouveau protocole.
+La préparation Windows et le build final restent à confirmer dans le prochain run.
+
 Le premier build du checkpoint échoue : 1304 PASS, un contrôle réel de widget
 hors hit-test et une erreur intermittente de création Tcl (`init.tcl`).
 Correction des conditions de test : fenêtre positionnée dans la zone de travail,
