@@ -18,7 +18,7 @@ comportement natif. Les corrections hydrologiques concernent Amélioré.
 
 L'historique détaillé est dans [CHANGELOG](CHANGELOG.md). Les références de
 recherche et les preuves de qualification restent dans le ZIP source.
-DEV10 est un checkpoint de développement ; la promotion RC/STABLE reste à venir.
+DEV10 est un checkpoint de développement ; la qualification finale se poursuit sur `dev` avant publication STABLE, sans étape RC.
 
 ## Présentation du projet
 
@@ -635,7 +635,7 @@ L'historique Git rétroactif est conservé depuis la v1.0 avec des tags de versi
 
 ## Récupérer la dernière release STABLE
 
-Sous Windows, `update_latest_release.bat` interroge uniquement la dernière GitHub Release publiée et télécharge son archive officielle dans `updates/`. Il ne suit ni `main`, ni les builds DEV/RC et n'écrase jamais l'installation courante.
+Sous Windows, `update_latest_release.bat` interroge uniquement la dernière GitHub Release publiée et télécharge son archive officielle dans `updates/`. Il ne suit ni `main`, ni les builds DEV et n'écrase jamais l'installation courante.
 
 R58 reprend le moteur R48 et le forçage R47 (recherche par couronnes successives jusqu’à D+34)
 et ajoute aux zones minérales charbon/fer/or une forme organique arrondie de

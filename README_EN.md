@@ -54,7 +54,7 @@ a dedicated editor is deferred beyond 2.0.
 
 The maximum size is **768 × 768**. Classic retains the native algorithm;
 hydrology corrections apply to Improved. DEV10 is a development checkpoint;
-RC/STABLE promotion remains ahead.
+final qualification stays on `dev` before direct STABLE publication, without a separate RC phase.
 
 Detailed history is in [CHANGELOG](CHANGELOG.md). Research references and
 qualification evidence remain in the source ZIP.

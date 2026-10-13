@@ -9,7 +9,7 @@ FR
 
 Cette candidate n'est pas signée numériquement : Windows SmartScreen peut demander
 une confirmation au premier lancement. L'updater pour l'exécutable est prévu
-pour une future RC/STABLE, après la correction du générateur.
+pour STABLE, après qualification sur la branche dev.
 
 EN
 1. Fully extract the ZIP to a normal folder.
@@ -20,4 +20,4 @@ EN
 
 This test candidate is not digitally signed, so Windows SmartScreen may ask for
 confirmation on first launch. The executable updater is planned for a future
-RC/STABLE after the generator correction.
+STABLE after qualification on the dev branch.

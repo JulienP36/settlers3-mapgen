@@ -64,10 +64,10 @@ The four files are stored in `docs/screenshots/` and recorded in `references/SET
 
 ## Release hygiene
 
-- DEV and RC checkpoints are not GitHub Releases.
+- DEV checkpoints are not GitHub Releases. Historical RC names remain historical.
 - STABLE receives an annotated tag, release notes, source package, portable Windows package and SHA-256 values.
 - Release artifacts must be built from the validated source state, not from an unrelated working directory.
-- The RC phase may fix defects, polish, optimize and improve documentation after feature freeze.
+- All qualification, fixes, polish, optimization and documentation happen on `dev` before direct STABLE publication; no separate RC phase (owner decision, 14 October 2026).
 - Community outreach is optional and never a prerequisite for development.
 
 

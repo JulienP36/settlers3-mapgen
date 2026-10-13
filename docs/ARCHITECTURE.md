@@ -227,7 +227,7 @@ Self-tests must not write user settings or modify map resources.
 - Do not infer unknown Terrain/Object IDs or unsupported binary structures.
 - Do not mutate protected engine/config/data files without an explicit engine task.
 - Do not use invented map imagery; previews and screenshots must come from actual generated or imported data.
-- Update the living snapshot after every explicitly validated DEV stage and every RC/STABLE release.
+- Update the living snapshot after every explicitly validated DEV stage and every STABLE release.
 
 Forced start bonuses share `generation/custom/bonus_placement.py`: centre bands
 are visited in order through D+34; object plans use temporary occupancy and

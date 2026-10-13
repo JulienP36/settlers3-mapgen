@@ -1,62 +1,42 @@
 # Convention de versionnage
 
-Convention validée pour les builds du projet :
+## Parcours actif — décision du 14 octobre 2026
 
-- `DEV` : build de travail intermédiaire ;
-- `RC` : Release Candidate destinée aux tests ;
-- `STABLE` : version finale validée.
+- `DEV` : développement, corrections, qualification et essais utilisateur sur `dev`.
+- `STABLE` : version finale validée et publiée sur `main`.
+- L'étape RC est abandonnée. Parcours direct `dev` → `main` / STABLE ; toutes
+  les validations nécessaires se font pendant le développement.
+- Publier sur `main`, créer un tag ou une GitHub Release exige toujours
+  l'autorisation explicite du propriétaire.
 
-## Nommage
+## Nommage et révisions
 
-Dossier : `mapgen_v<MAJEURE>_<MINEURE>_<ETAT>[_<NUMERO>]`
+Archive : `SETTLERS3_MAPGEN_V<MAJEURE>_<MINEURE>_<ETAT>[_<NUMERO>]_<DATE>.zip`.
+Exemples : `2.0 DEV_11_R1` (candidate locale), `2.0 DEV_11` (checkpoint complet),
+`2.0 STABLE` (release finale).
 
-Archive : `SETTLERS3_MAPGEN_V<MAJEURE>_<MINEURE>_<ETAT>[_<NUMERO>]_<DATE>.zip`
+- Chaque modification fonctionnelle d'une candidate locale incrémente `R`.
+- Les candidates `DEV_X_Rn` restent locales ; seuls les checkpoints DEV complets
+  validés sont publiés sur `dev`, sans suffixe R.
+- Le compteur DEV avance après publication du checkpoint précédent ; un push
+  DEV n'est pas une release.
+- Les corrections de maintenance d'un checkpoint publié gardent son nom DEV.
+- Seule STABLE reçoit un tag annoté `vX.Y` et une GitHub Release avec artefacts.
 
-Exemples :
+## État courant
 
-- `mapgen_v1_6_DEV_1`
-- `mapgen_v1_6_RC_7`
-- `mapgen_v1_6_STABLE`
-- `SETTLERS3_MAPGEN_V1_6_RC_7_20260820.zip`
+Checkpoint complet : **2.0 DEV_10**, issu de R66 validée. Build Windows validé :
+1306 tests, 4 subtests, smokes et auto-test figé PASS (run `38467559806`).
+Version Windows : `(2, 0, 10, 0)`. DEV11 est à cadrer ; aucune candidate
+fonctionnelle DEV11 n'est engagée par cette mise à jour documentaire.
 
-L'historique v1.6 est documenté rétroactivement avec `RC_n` afin d'éviter une rupture de nomenclature. Les anciennes archives déjà produites peuvent conserver leur ancien nom physique ; la documentation canonique utilise désormais `RC`.
+## Historique
 
-## Règle de révision du projet
+Les anciens noms `RC_n`, branches et archives gardent leur signification
+historique. v1.6 utilisait RC ; v1.7 STABLE a été promue depuis RC_1 validée.
+Cet historique ne définit plus le workflow actif.
 
-- Chaque modification apportée à la candidate locale incrémente son suffixe
-  `R` : `DEV_6_R41` devient donc `DEV_6_R42` pour cette tranche.
-- Tant qu’aucun push n’est effectué, le compteur `DEV` reste celui de la ligne
-  en cours ; les candidates `R` restent des états locaux de travail et de test.
-- Lorsqu’un checkpoint est poussé, la ligne de développement suivante incrémente
-  le compteur `DEV`. Un push n’est pas une release.
-- Une release n’existe qu’après la fin du périmètre, sa validation et le cycle
-  `RC`/`STABLE` prévu ; R49 n’est ni poussée ni publiée comme release.
+## Reprise
 
-
-## Références de workflow
-
-Le workflow projet global est défini dans `PROJECT_WORKFLOW.md`. Le routage
-des références et le point de reprise courant sont
-`references/REFERENCE_INDEX.md` et `references/SETTLERS3_CURRENT_SNAPSHOT.md`.
-Ces fichiers doivent être consultés avant une nouvelle session de développement.
-
-
-## v1.7 STABLE
-- RC_1 validated and promoted without feature changes.
-- GitHub Release policy: publish STABLE only.
-- v1.7 historical DEV/RC notes are archived under `references/release_notes/v1_7_history/`.
-
-## Current development
-
-- Latest published STABLE: `v1.7`.
-- Validated development checkpoint: `v2.0 DEV_9`, from local R25, on `dev`.
-- Current local candidate: `2.0 DEV_10_R56`, Windows tuple `(2, 0, 10, 56)`.
-- Published checkpoint remains `2.0 DEV_9`; DEV10 is not closed or published.
-- DEV9 closes the Large islands focus and the related improved river/profile work.
-- The small source-label rename is included in this checkpoint, with saved keys intact.
-- R25 qualification: 818 tests, seven complete maps, four exports and extracted ZIP PASS.
-- DEV10 remains a sequence of focused local candidates. R56 adapts land cover
-  to team-island count and places team starts near mountains and rivers; it is
-  awaiting Windows/editor/game validation and is not a published checkpoint.
-- DEV/RC are not Releases. Only complete unsuffixed DEV checkpoints are pushed.
-- Read PROJECT_WORKFLOW, TODO and the available recovery snapshot before next work.
+Lire `PROJECT_WORKFLOW.md`, `TODO_MAPGEN.md`, puis l'index et le snapshot des
+références lorsqu'ils sont disponibles dans le ZIP source.

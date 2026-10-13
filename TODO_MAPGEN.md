@@ -52,6 +52,25 @@ sans inventer une validation en jeu de chaque ancien fichier exact.
 - [x] Build Windows confirmé : 1306 tests et 4 subtests PASS, smokes PASS,
   portable construit et auto-test figé PASS. Run 38467559806 ; voir RELEASE_VALIDATION.
 
+## DEV11 — panier à prioriser, périmètre non engagé
+
+Décision du 14 octobre 2026 : aucune étape RC. Développement, corrections,
+qualification du portable et essais utilisateur restent sur `dev` avant STABLE.
+La liste suivante propose des sujets ; elle ne déplace pas les échéances 2.1
+ou Stats 2 et ne déclenche pas une implémentation.
+
+- [ ] Équipes aléatoires « ? » : reprendre le cadrage du tirage, du seed et des
+  îles par équipe avant implémentation ; « − » reste joueurs indépendants.
+- [ ] Réexaminer les reports de placement : expansion, équipes, placement manuel ;
+  choisir un objectif concret avant d'engager un nouveau lot.
+- [ ] Refaire le point sur les idées d'archétypes (deux continents, péninsules,
+  détroits, mers intérieures, quasi-atoll) ; propositions, pas engagements 2.0.
+- [ ] Préparer directement STABLE sur `dev` : portable, préférences, updater,
+  intégrité/rollback et documentation/captures réelles, sans branche RC.
+- [x] Reports bonus/minerais vérifiés contre le code : extension du forçage
+  configurable (`center_extension_limit`, défaut 34), bonus gemmes/soufre et
+  tooltips minéraux/bonus déjà présents ; ne pas les réimplémenter depuis un vieux TODO.
+
 ## Surveillance conditionnelle — ne bloque pas DEV10
 
 - Reprendre les rares îles pauvres en montagne seulement avec un nouveau seed
@@ -79,6 +98,12 @@ dans CHANGELOG. Natif protégé, mineraisv 7 no-gap, géographie d'abord et bonu
 hors quotas sont conservés. Maximum 768 ; Petites îles abandonné ; Archipel hors 2.0.
 
 ## v2.1 — ouverture
+
+- [ ] Report retrouvé dans le TODO DEV9 : auditer le placement des terrains et
+  objets selon les surfaces réellement disponibles dans chaque archétype,
+  plutôt qu'une calibration Continental Legacy. Échéance historique : DEV
+  ultérieure, au plus tard 2.1 ; état précis à qualifier avant correction.
+
 
 - [ ] Lire le todo personnel de Julien au débutDEV 1 ; le demander s'il manque.
 - [ ] Fiabiliser pose minérale Amélioré sur montagnes morcelées, quotas/supports
@@ -115,7 +140,7 @@ hors quotas sont conservés. Maximum 768 ; Petites îles abandonné ; Archipel h
 - Nombre de zones par minerai : déprogrammé indéfiniment ; reprendre seulement
   sur demande explicite. Pixel art manuel dédié à planifier.
 
-## Publication RC/STABLE — après DEV10
+## Préparation STABLE sur dev — sans étape RC
 
 - [ ] Geler fonctionnalités, qualifier ressources/exports/settings/updater,
   intégrité, rollback et installation propre ; ZIP source et Windows portable.

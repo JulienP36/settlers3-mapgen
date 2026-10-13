@@ -67,9 +67,12 @@ validation du placement réel dans les éditeurs et le jeu.
 ## Permanent branches
 - `main` = STABLE only.
 - `dev` = current development, avec publication des checkpoints **DEV complets uniquement** (`DEV_1`, `DEV_2`, etc.).
-- `rc` = Release Candidate currently under external validation.
+- `rc` = ancienne branche de qualification, hors du parcours actif.
 
-Normal promotion flow: `dev` → `rc` → `main`.
+Parcours actif (décision Julien du 14 octobre 2026) : `dev` → `main` / STABLE.
+Les tests, corrections, builds portables et validations externes restent sur
+`dev`. Aucune étape RC distincte. La publication STABLE exige toujours une
+autorisation explicite ; cette décision ne publie pas elle-même une STABLE.
 
 ## Checkpoint policy
 Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohérente est testable ou qu’une longue session a matériellement changé le projet. Une candidate suffixée (`DEV_X_R1`, `R2`, etc.) reste locale et peut être remplacée autant de fois que nécessaire.
@@ -86,11 +89,11 @@ Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après vali
 
 Le checkpoint final doit inclure le code concerné, les tests, TODO/changelog/références utiles et le snapshot vivant à jour. Ne jamais confondre une archive de test Windows avec un checkpoint Git publiable.
 
-DEV/RC builds do not need tags or GitHub Releases. STABLE receives an annotated `vX.Y` tag and GitHub Release.
+DEV builds do not need tags or GitHub Releases. STABLE receives an annotated `vX.Y` tag and GitHub Release.
 
 ### Mandatory living-snapshot refresh
 
-Update `references/SETTLERS3_CURRENT_SNAPSHOT.md` immediately after every explicitly validated DEV stage/checkpoint and every validated RC or STABLE release. This refresh is mandatory before the final commit, package or push for that stage; it must record the validation result, known limitations and the actual next work.
+Update `references/SETTLERS3_CURRENT_SNAPSHOT.md` immediately after every explicitly validated DEV stage/checkpoint and every validated STABLE release. This refresh is mandatory before the final commit, package or push for that stage; it must record the validation result, known limitations and the actual next work.
 
 When a suffixed local candidate such as `DEV_X_RY` is validated but its full DEV scope is not complete, update the snapshot locally without publishing that intermediate revision. Keep `TODO_MAPGEN.md`, `DEV_CANDIDATE_NOTES.md` and the changelog synchronized whenever the validation changes the known issues or next action. La validation d’une tranche ne clôt jamais implicitement la DEV entière.
 
@@ -154,7 +157,7 @@ the computed DEV_2 baseline.
 ## Validation discipline
 - Run automated regression tests before checkpointing a meaningful build.
 - Smoke-test real EDM/MAP/SAV data when the changed code parses or analyses those formats.
-- UI visual changes still need Windows/user validation before RC/STABLE.
+- UI visual changes still need Windows/user validation before STABLE.
 - Never use imaginary/generated map artwork; map previews must be deterministic renders from actual EDM/MAP/SAV data.
 
 ## Documentation roles
@@ -187,7 +190,7 @@ the computed DEV_2 baseline.
 6. Continue from the "Next work" section of the living snapshot unless the user gives a newer explicit direction.
 
 ## Release path
-See `VERSIONING.md` for the full release checklist. STABLE publication is intentionally conservative: validate RC, update docs/tests, package, verify source state, promote to `main`, tag, then publish GitHub Release.
+See `VERSIONING.md` for the full release checklist. STABLE publication is intentionally conservative: validate the completed development state on `dev`, update docs/tests, package, verify source state, then (with explicit publication authorization) promote to `main`, tag and publish the STABLE GitHub Release. No separate RC phase.
 
 ## Post-v1.7 GitHub discoverability / publication workflow
 
@@ -202,12 +205,12 @@ Les éléments suivants appartiennent aussi à la finition/publication après DE
 
 - conserver le README français et fournir une entrée anglaise clairement liée ;
 - ajouter des captures réelles et récentes de l’application ;
-- publier les versions STABLE comme vraies GitHub Releases avec tag, artefacts et notes lisibles ; DEV/RC restent hors Releases.
+- publier les versions STABLE comme vraies GitHub Releases avec tag, artefacts et notes lisibles ; DEV restent hors Releases.
 
 Le partage Discord/wiki/sites de maps reste optionnel et seulement sur décision ultérieure du propriétaire.
 ## v1.8 accessibility / public-facing rules
 - Public-facing README material must transparently mention the substantial use of ChatGPT/OpenAI in implementation assistance, especially backend, analysis and reverse-engineering tooling, while keeping project direction/validation accurately attributed to the project owner.
 - Keep daily DEV work source-first through `run_gui.bat` / `run_gui.py`; do not rebuild or carry PyInstaller output during ordinary feature revisions.
-- At v1.8 RC, freeze new features while still allowing fixes, polish, optimization and documentation, then produce two separate artifacts: a Python/source ZIP and an installation-free Windows x64 portable ZIP.
-- Rebuild and validate the standalone Windows `.exe` and evolve the GitHub-Releases updater during RC; preserve user settings, verify release integrity and never require an installer.
+- Before STABLE, finish tests, fixes, polish, optimization and documentation on `dev`, then produce source and installation-free Windows x64 portable ZIPs.
+- Rebuild and validate the standalone Windows `.exe` and evolve the GitHub-Releases updater on `dev` before STABLE; preserve user settings, verify release integrity and never require an installer.
 - **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.
