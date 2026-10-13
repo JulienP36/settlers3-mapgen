@@ -1,5 +1,15 @@
 ## Maintenance DEV10 — tests Windows du build
 
+### Suivi Windows — une racine Tk par processus
+
+Le run `38467081376` valide le bureau CI agrandi et le test desktop avec les
+minima normaux. Il échoue ensuite à l'initialisation d'une deuxième racine Tk
+pour le test des messages (`icons.tcl`). Le test desktop et celui des messages
+sont désormais exécutés dans deux processus distincts, chacun avec une racine
+Tk, comme l'application réelle. La régression générale garde ses 1245 tests,
+Custom/Tcl ses 57 et les groupes desktop/messages leurs 4. Aucun test masqué.
+La cause native des chargements multiples Tcl/Tk n'est pas annoncée décodée.
+
 ### Suivi Windows — préparation du bureau CI
 
 Le run `38466312292` confirme les 57 tests Custom/Tcl PASS (Tcl 8.6.15).

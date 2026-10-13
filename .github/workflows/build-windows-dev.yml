@@ -45,11 +45,10 @@ jobs:
         run: python -m pytest -q tests/test_custom_ui_updates.py
       - name: Prepare desktop for Tk tests
         run: python tools/prepare_windows_test_desktop.py
-      - name: Desktop Tk tests (isolated process)
-        run: >-
-          python -m pytest -q
-          tests/application/shell/test_desktop_startup.py
-          tests/application/test_messages.py
+      - name: Desktop startup Tk test (isolated process)
+        run: python -m pytest -q tests/application/shell/test_desktop_startup.py
+      - name: Message-window Tk tests (isolated process)
+        run: python -m pytest -q tests/application/test_messages.py
       - name: Regression tests
         run: >-
           python -m pytest -q

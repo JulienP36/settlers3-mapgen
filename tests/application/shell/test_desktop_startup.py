@@ -64,7 +64,7 @@ def test_desktop_generator_controls_and_departure_menu_are_reachable(tmp_path, m
         hit = app.winfo_containing(widget.winfo_rootx() + widget.winfo_width() // 2,
                                    widget.winfo_rooty() + widget.winfo_height() // 2)
         assert hit is widget, (
-            f'{widget} is covered by {hit}; widget=' 
+            f'{widget} is covered by {hit}; widget='
             f'{widget.winfo_rootx()},{widget.winfo_rooty()},'
             f'{widget.winfo_width()}x{widget.winfo_height()}; '
             f'window={app.geometry()}; desktop={desktop_width}x{desktop_height}; '
