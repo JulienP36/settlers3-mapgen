@@ -49,8 +49,8 @@ sans inventer une validation en jeu de chaque ancien fichier exact.
 
 - [x] Conditions du test desktop et cycle de vie Tcl corrigés ; CI isolée sans
   supprimer de tests. Contrôles locaux PASS, applications/natif inchangés.
-- [ ] Confirmer le build Windows après cette correction ; premier run bloqué
-  pendant les tests, avant le packaging. Voir RELEASE_VALIDATION.
+- [x] Build Windows confirmé : 1306 tests et 4 subtests PASS, smokes PASS,
+  portable construit et auto-test figé PASS. Run 38467559806 ; voir RELEASE_VALIDATION.
 
 ## Surveillance conditionnelle — ne bloque pas DEV10
 

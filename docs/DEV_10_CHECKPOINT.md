@@ -43,41 +43,28 @@ de la qualification RC/STABLE ; ils ne sont pas annoncés validés par ce push.
 
 Publication autorisée uniquement sur `dev`, sans suffixe R. Aucun tag ni Release.
 
-## Maintenance DEV10 — tests Windows du build
+## Maintenance DEV10 — build Windows validé (13 octobre 2026)
 
-### Suivi Windows — une racine Tk par processus
+Build : https://github.com/JulienP36/settlers3-mapgen/actions/runs/38467559806
+Code testé : `1ab194929af008d451d3be9623892361881ac08e`.
 
-Le run `38467081376` valide le bureau CI agrandi et le test desktop avec les
-minima normaux. Il échoue ensuite à l'initialisation d'une deuxième racine Tk
-pour le test des messages (`icons.tcl`). Le test desktop et celui des messages
-sont désormais exécutés dans deux processus distincts, chacun avec une racine
-Tk, comme l'application réelle. La régression générale garde ses 1245 tests,
-Custom/Tcl ses 57 et les groupes desktop/messages leurs 4. Aucun test masqué.
-La cause native des chargements multiples Tcl/Tk n'est pas annoncée décodée.
+Le runner était en 1024×768 alors que les tests demandent jusqu'à 1800×1000.
+Le bureau CI est désormais préparé en mode supporté 1920×1080 ; les tests
+conservent le minimum normal 1080×720, le défilement sur les deux axes et
+l'assertion de clic réelle. Les contrôles Custom partagent un interpréteur Tcl
+réel par module, avec callbacks nettoyés. Chaque test créant une racine Tk est
+exécuté dans son propre processus. La cause native des chargements successifs
+Tcl/Tk n'est pas annoncée décodée ; aucune suppression ou tolérance d'échec.
+Application, génération, presets, données et assets identiques au checkpoint.
 
-### Suivi Windows — préparation du bureau CI
+Résultat Windows : 1245 tests de régression + 57 Custom/Tcl + 1 desktop +
+3 messages = **1306 PASS**, **4 subtests PASS**, aucun échec ni skip.
+Smokes : 36 validations Upgraded, 21 Legacy et checksum binaire PASS.
+Portable construit ; auto-test de l'exécutable figé PASS (status et frozen
+contrôlés par le script de build). Artifact `11850938652` publié avec ZIP,
+SHA-256 et rapport SELFTEST.
 
-Le run `38466312292` confirme les 57 tests Custom/Tcl PASS (Tcl 8.6.15).
-Le clic desktop échoue encore sur le petit bureau du runner. La préparation CI
-sélectionne désormais un mode Windows supporté d'au moins 1920×1080 et vérifie
-la taille vue par Tk avant le test. Le minimum de production 1080×720 reste
-conservé dans le test ; aucune assertion de clic supprimée. Diagnostic détaillé
-fenêtre/canvas/vue ajouté. Les tests locaux précédents en 1024 utilisaient un
-minimum abaissé de test ; ils ne qualifient pas ce nouveau protocole.
-La préparation Windows et le build final restent à confirmer dans le prochain run.
-
-Le premier build du checkpoint échoue : 1304 PASS, un contrôle réel de widget
-hors hit-test et une erreur intermittente de création Tcl (`init.tcl`).
-Correction des conditions de test : fenêtre positionnée dans la zone de travail,
-tailles adaptées au bureau disponible, défilement du point de clic sur les deux
-axes ; assertion réelle `winfo_containing(...) is widget` conservée.
-Fixture Custom : un interpréteur Tcl réel par module, callbacks libérés par cas.
-CI : Tcl et Tk exécutés en processus isolés avant la régression générale ; aucun
-test retiré. Diagnostic du chemin/version Tcl ajouté. Aucun code applicatif,
-algorithme, preset ou ressource native modifié.
-
-Qualification locale : 65 PASS et 2 tests desktop SKIP sans affichage ; avec
-bureau réel virtuel, test desktop PASS en 1024×768 et 4 tests desktop/messages
-PASS en 1920×1080. Auto-test source PASS. L'ancien test passe aussi sous Linux :
-l'échec Windows exact et la cause native du chargement Tcl ne sont pas reproduits
-localement. Résultat du nouveau build Windows attendu avant annonce de succès.
+ZIP : `SETTLERS3_MAPGEN_V2_0_DEV_10_WINDOWS_X64.zip`
+SHA-256 : `377f311216bb2444358f3057edf7a5fe48293344de105ba2f8ddbb26ad4affd5`.
+Les logs des tentatives précédentes restent dans GitHub Actions et l'historique
+Git. DEV10 reste le checkpoint fonctionnel validé, sans nouvelle version Rx.
