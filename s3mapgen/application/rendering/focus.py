@@ -118,6 +118,7 @@ def _water_component_mask(terrain: np.ndarray, component: str) -> np.ndarray:
 
 def _component_mask(terrain: np.ndarray, family: str, component_id) -> np.ndarray:
     families = {
+        'island': ~np.isin(terrain, WATER_IDS),
         'mountain': np.isin(terrain, MOUNTAIN_FAMILY_IDS),
         'desert': np.isin(terrain, DESERT_IDS),
         'swamp': np.isin(terrain, SWAMP_IDS),
@@ -188,7 +189,8 @@ def focus_mask(state, focus) -> np.ndarray:
         return np.isin(source, _ids(focus.get('ids')))
     if kind == 'object_family':
         ids = _ids(focus.get('ids')) or _OBJECT_FAMILY_IDS.get(str(focus.get('family')), ())
-        return np.isin(objects, ids)
+        from ...map_data.object_context import object_family_mask
+        return object_family_mask(state, ids, str(focus.get('family')))
     if kind == 'resource_family':
         family = MINERAL_FAMILIES.get(str(focus.get('family')))
         if family is None:

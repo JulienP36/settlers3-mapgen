@@ -35,33 +35,33 @@ OBJECT_FAMILY_IDS = dict(DECORATIVE_OBJECT_FAMILIES)
 CHART_KEYS = (
     'terrain_families','mineral_stock','building_stones','forestry','decorative_objects','height','agriculture','nearest_starts',
     'player_trees_r30','player_stone_r30','player_fish_r30','player_mining_r40',
-    'mountain_components','lake_components','river_components','ab_summary'
+    'island_components','mountain_components','lake_components','river_components','ab_summary'
 )
 
 CHART_LABELS = {
     'fr': {
         'terrain_families':'Familles de terrain','mineral_stock':'Stock minier','building_stones':'Stock des pierres de construction',
-        'forestry':'Arbres et pousses','decorative_objects':'Familles d’objets','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distances au plus proche adversaire',
+        'forestry':'Arbres et pousses','decorative_objects':'Familles d’objets','height':'Distribution des hauteurs terrestres','agriculture':'Agriculture','nearest_starts':'Distance au joueur le plus proche',
         'player_trees_r30':'Arbres proches','player_stone_r30':'Pierres proches','player_fish_r30':'Poissons proches','player_mining_r40':'Stock minier proche',
-        'mountain_components':'Taille des massifs','lake_components':'Taille des lacs','river_components':'Taille des rivières','ab_summary':'Comparaison A/B',
+        'island_components':'Taille des îles','mountain_components':'Taille des massifs','lake_components':'Taille des lacs','river_components':'Taille des rivières','ab_summary':'Comparaison A/B',
     },
     'en': {
         'terrain_families':'Terrain families','mineral_stock':'Mining stock','building_stones':'Building stone stock',
-        'forestry':'Trees and saplings','decorative_objects':'Object families','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest opponent distance',
+        'forestry':'Trees and saplings','decorative_objects':'Object families','height':'Land height distribution','agriculture':'Agriculture','nearest_starts':'Nearest player distance',
         'player_trees_r30':'Nearby trees','player_stone_r30':'Nearby stone stock','player_fish_r30':'Nearby fish stock','player_mining_r40':'Nearby mining stock',
-        'mountain_components':'Mountain sizes','lake_components':'Lake sizes','river_components':'River sizes','ab_summary':'A/B comparison',
+        'island_components':'Island sizes','mountain_components':'Mountain sizes','lake_components':'Lake sizes','river_components':'River sizes','ab_summary':'A/B comparison',
     },
     'de': {
         'terrain_families':'Geländefamilien','mineral_stock':'Mineralvorrat','building_stones':'Bausteinvorrat',
-        'forestry':'Bäume und Setzlinge','decorative_objects':'Objektfamilien','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Gegner',
+        'forestry':'Bäume und Setzlinge','decorative_objects':'Objektfamilien','height':'Verteilung der Landhöhen','agriculture':'Landwirtschaft','nearest_starts':'Abstand zum nächsten Spieler',
         'player_trees_r30':'Bäume in der Nähe','player_stone_r30':'Steinvorrat in der Nähe','player_fish_r30':'Fischvorrat in der Nähe','player_mining_r40':'Mineralvorrat in der Nähe',
-        'mountain_components':'Gebirgsgrößen','lake_components':'Seegrößen','river_components':'Flussgrößen','ab_summary':'A/B-Vergleich',
+        'island_components':'Inselgrößen','mountain_components':'Gebirgsgrößen','lake_components':'Seegrößen','river_components':'Flussgrößen','ab_summary':'A/B-Vergleich',
     },
     'es': {
         'terrain_families':'Familias de terreno','mineral_stock':'Reservas minerales','building_stones':'Reservas de piedra de construcción',
-        'forestry':'Árboles y retoños','decorative_objects':'Familias de objetos','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al oponente más cercano',
+        'forestry':'Árboles y retoños','decorative_objects':'Familias de objetos','height':'Distribución de alturas terrestres','agriculture':'Agricultura','nearest_starts':'Distancia al jugador más cercano',
         'player_trees_r30':'Árboles cercanos','player_stone_r30':'Piedra cercana','player_fish_r30':'Peces cercanos','player_mining_r40':'Minerales cercanos',
-        'mountain_components':'Tamaño de macizos','lake_components':'Tamaño de lagos','river_components':'Tamaño de ríos','ab_summary':'Comparación A/B',
+        'island_components':'Tamaño de islas','mountain_components':'Tamaño de macizos','lake_components':'Tamaño de lagos','river_components':'Tamaño de ríos','ab_summary':'Comparación A/B',
     },
 }
 
@@ -525,13 +525,22 @@ def _forestry_segments(stats, lang='fr'):
     ]
 
 
+def _object_display_ids(stats, family, ids):
+    """Show actual SAV IDs, even when counts use the static chart projection."""
+    if stats.get('objects', {}).get('interpretation') == 'runtime':
+        if family == 'reefs':
+            return (13, 14, 15, 16)
+        return tuple(oid for oid in ids if oid not in (13, 14, 15, 16))
+    return tuple(ids)
+
+
 def _decorative_segments(stats, lang='fr'):
     """Build one chart segment per known object family in chart order."""
     lang = lang if lang in DECORATIVE_FAMILY_LABELS else 'en'
     counts = stats.get('objects', {}).get('decorative_families', {})
     segments = []
     for key in OBJECT_FAMILY_CHART_ORDER:
-        ids = OBJECT_FAMILY_IDS[key]
+        ids = _object_display_ids(stats, key, OBJECT_FAMILY_IDS[key])
         label = DECORATIVE_FAMILY_LABELS[lang][key]
         details = [_id_line('object', ids, lang == 'fr', lang)]
         focus = {'kind': 'object_family', 'family': key, 'ids': tuple(ids)}
@@ -550,7 +559,7 @@ def _decorative_groups(stats, lang='fr'):
     lang = lang if lang in DECORATIVE_FAMILY_LABELS else 'en'
     id_counts = {
         int(row['id']): int(row['count'])
-        for row in stats.get('objects', {}).get('ids', ())
+        for row in stats.get('objects', {}).get('decorative_ids', stats.get('objects', {}).get('ids', ()))
     }
     groups = []
     for key in OBJECT_FAMILY_CHART_ORDER:
@@ -566,6 +575,7 @@ def _decorative_groups(stats, lang='fr'):
         for index, (subkey, ids, names) in enumerate(subfamilies):
             label = names[{'fr': 0, 'en': 1, 'de': 2, 'es': 3}.get(lang, 1)]
             value = sum(id_counts.get(int(object_id), 0) for object_id in ids)
+            ids = _object_display_ids(stats, subkey, ids)
             color = _lerp(base, (255, 255, 255), 0.10 + 0.35 * (index / max(1, count - 1)))
             details = [_id_line('object', ids, lang == 'fr', lang)]
             focus = {'kind': 'object_family', 'family': subkey, 'ids': tuple(ids), 'parent_family': key}
@@ -771,14 +781,16 @@ def render_stats_chart(stats,chart_key='terrain_families',lang='fr',dark=True,wi
         legend=[(MINERAL_NAMES_I18N[lang][k],MINERAL_COLORS[k]) for k in ('coal','iron','gold','gems','sulfur')]
         note=tr('Barre gauche : 0–50 HEX · droite : 50–100 HEX','Left bar: 0–50 HEX · right: 50–100 HEX','Linker Balken: 0–50 HEX · rechter: 50–100 HEX','Barra izquierda: 0–50 HEX · derecha: 50–100 HEX')
         return _vertical_chart(groups,title,width,height,dark,tr('stock','stock','Vorrat','reserva'),footer_note=note,legend_override=legend,return_regions=return_regions)
-    if chart_key in ('mountain_components','lake_components','river_components'):
-        if chart_key=='mountain_components':
+    if chart_key in ('island_components','mountain_components','lake_components','river_components'):
+        if chart_key=='island_components':
+            rows=stats.get('spatial',{}).get('islands',{}).get('components',[])[:20];family='island'
+        elif chart_key=='mountain_components':
             rows=stats.get('spatial',{}).get('mountains',{}).get('components',[])[:20];family='mountain'
         elif chart_key=='lake_components':
             rows=stats.get('hydrology',{}).get('inland_water_details',[])[:20];family='water'
         else:
             rows=stats.get('hydrology',{}).get('river_details',[])[:20];family='river'
-        items=[(f'#{i+1}',int(row.get('cells',0))) for i,row in enumerate(rows)];base={'mountain_components':((75,75,72),(175,175,170)),'lake_components':((20,85,160),(125,205,245)),'river_components':((20,105,175),(115,210,235))}[chart_key]
+        items=[(f'#{i+1}',int(row.get('cells',0))) for i,row in enumerate(rows)];base={'island_components':((40,110,45),(135,205,90)),'mountain_components':((75,75,72),(175,175,170)),'lake_components':((20,85,160),(125,205,245)),'river_components':((20,105,175),(115,210,235))}[chart_key]
         groups=_simple_groups(items,_gradient_colors(len(items),base[0],base[1]))
         for i,g in enumerate(groups):
             if i<3:g['medal_rank']=i+1

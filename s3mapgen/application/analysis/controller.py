@@ -13,8 +13,6 @@ from ..rendering.focus import focus_signature
 from ..ui.i18n.common import _lang_text
 
 
-CHART_RESIZE_SETTLE_MS = 24
-
 
 class AnalysisController:
     """Host contract: current outputs, analysis widgets and export action."""
@@ -110,10 +108,8 @@ class AnalysisController:
 
     def _schedule_stats_chart_refresh(self,_event=None):
         pending=getattr(self,'_stats_chart_after',None)
-        if pending is not None:
-            try:self.after_cancel(pending)
-            except tk.TclError:pass
-        try:self._stats_chart_after=self.after(CHART_RESIZE_SETTLE_MS,self._finish_stats_chart_refresh)
+        if pending is not None:return
+        try:self._stats_chart_after=self.after_idle(self._finish_stats_chart_refresh)
         except tk.TclError:self._stats_chart_after=None
 
     def _finish_stats_chart_refresh(self):
@@ -133,11 +129,12 @@ class AnalysisController:
         try:
             w=max(420,int(c.winfo_width()));h=max(280,int(c.winfo_height()));lang=self.prefs.get('language','fr');dark=self.prefs.get('theme','dark')=='dark'
             im,self._stats_chart_regions=render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=dark,width=w,height=h,compare_stats=self._compare_stats_pair(),return_regions=True)
-            self._stats_chart_photo=ImageTk.PhotoImage(im);item=getattr(self,'_stats_chart_item',None)
-            if item is None:c.delete('all');item=c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
+            next_photo=ImageTk.PhotoImage(im);item=getattr(self,'_stats_chart_item',None)
+            if item is None:c.delete('all');item=c.create_image(0,0,image=next_photo,anchor='nw')
             else:
-                try:c.itemconfigure(item,image=self._stats_chart_photo)
-                except tk.TclError:item=c.create_image(0,0,image=self._stats_chart_photo,anchor='nw')
+                try:c.itemconfigure(item,image=next_photo)
+                except tk.TclError:item=c.create_image(0,0,image=next_photo,anchor='nw')
+            self._stats_chart_photo=next_photo
             self._stats_chart_item=item
         except Exception as exc:
             c.create_text(20,20,text=f'Chart error: {exc}',anchor='nw',fill=getattr(self,'_ui_theme_colors',{}).get('fg','#e8eaed'))

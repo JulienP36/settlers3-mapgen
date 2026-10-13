@@ -136,7 +136,7 @@ class ShortcutController:
             try:self.unbind_all(seq)
             except tk.TclError:pass
         self._bound_shortcuts=[]
-        actions={'generate':self.generate,'generate_batch':self._open_batch_window,'import':self.import_file,'export':self.export,'save_preview':self.save_preview,'manage_history':self._open_history_center,'reset_view':self._reset_view,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'clear_compare':self._clear_compare_slots,'toggle_theme':self._toggle_theme,'help':self._show_help}
+        actions={'generate':self.generate,'generate_batch':self._open_batch_window,'import':self.import_file,'export':self.export,'save_preview':self.save_preview,'manage_history':self._open_history_center,'reset_view':self._reset_view,'reset_workspace':self._reset_workspace,'copy_seed':self._copy_seed,'toggle_ab':self._toggle_compare,'clear_compare':self._clear_compare_slots,'toggle_theme':self._toggle_theme,'help':self._show_help}
         for cmd,shortcut in self.prefs.get('shortcuts',DEFAULT_SHORTCUTS).items():
             seq=self._tk_sequence(shortcut)
             if seq and cmd in actions:

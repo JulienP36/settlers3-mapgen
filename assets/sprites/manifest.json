@@ -1,0 +1,494 @@
+{
+  "ui/seed_dice.png": {
+    "origin": "s3mapgen/application/ui/widgets/assets/seed_dice.png",
+    "sha256": "1286fa3d5ce742924c1329011bec930373650013327e300a258650ef8059d619",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "ui/info.png": {
+    "origin": "s3mapgen/application/ui/widgets/assets/info.png",
+    "sha256": "76313a61179ca4f6665255cb44e19343fd39e61c10f0a392f9dcc70343dc1f19",
+    "size": [
+      48,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "players/start_markers.png": {
+    "origin": "data/SETTLERS3_PLAYER_START_MARKERS_J1_J20_REFERENCE_20260822.png",
+    "sha256": "57c694ae71ba0d29e82bcca8b96227bec8b1332ce7175d3760ed72a36572c6ee",
+    "size": [
+      844,
+      207
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "minerals/coal.png": {
+    "origin": "data/mineral_icons/coal.png",
+    "sha256": "5f88e880dd73ad72de55cc96dae83187521d80b6f3133f6d4220deff57db88a0",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "minerals/iron.png": {
+    "origin": "data/mineral_icons/iron.png",
+    "sha256": "14005df7a1521a4ccae2192185ccecac18c3bfaa176c909d142358626bf0ce4c",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "minerals/gold.png": {
+    "origin": "data/mineral_icons/gold.png",
+    "sha256": "43ca86700a068f57f2a471be769a8007e62e367722dd189d2475414ffa4f2125",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "minerals/gems.png": {
+    "origin": "data/mineral_icons/gems.png",
+    "sha256": "d0e9a15f57177ffc406f5ae517d3f88dea032a75c9981a2ccf0b71c31e1084fe",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "minerals/sulfur.png": {
+    "origin": "data/mineral_icons/sulfur.png",
+    "sha256": "6e23077e2e06cd4f6d480c642350c83ba0f8324251c2fa62b4aaa266a45f44eb",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Existing project asset, moved byte-for-byte"
+  },
+  "mask_editor/square.png": {
+    "origin": "carré-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "0e029ed95500b1f35ccf79c87758d6b6a6adba5d0c0fe4759cd3d7ab3693d4fa",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/round.png": {
+    "origin": "cercle-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "559944d4be770cb0ced5dec8376e374c5b608141fa7d4acdaa5a5da54af4f2f4",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/eraser.png": {
+    "origin": "gomme-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "15cc1b8c0c794ed83fa1bb32d33e0692763cd46865a2bcc3f2b06ff90e47c1cb",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/brush.png": {
+    "origin": "pinceau-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "2a1d6240bdb610c2a36de10851a44265959da726131482a4686fb1f6af65b556",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/picker.png": {
+    "origin": "pipette-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "1c351f37f870c44b2a9f3215de1aa2ac8a4d20aa964808bc75650ac37b020641",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/rotate_left.png": {
+    "origin": "90-degrés-gauche-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "0c27988bf92fc8c59a242ee96f66bc28beb898ab095c83174cb984f0f1f6edab",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/rotate_right.png": {
+    "origin": "90-degrés-droite-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "db563a87a53200bd6df375e180310f64c73ff03e0d25d1865c1edecba5d3d438",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/flip_x.png": {
+    "origin": "miroir-horizontal-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "efb75141a295a763a6076538c374313c57aa895537b34feaa7f93477e1d67b8b",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/flip_y.png": {
+    "origin": "miroir-vertical-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "390c05d0621066eae107a1d69040c5be2bbec94e503896caaffc0656c657717c",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/invert.png": {
+    "origin": "switch-contraste-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "9a1214f56a797be1afecd4738153054edd6b9e17f0af95977fcddc12ac6fb3ab",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/redo.png": {
+    "origin": "refaire-action-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "4ce157b244b36e56c62ffab6587fc5cfe17b9276489a4cd4379440cad793005e",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/undo.png": {
+    "origin": "annuler-action-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "4c90d12b47a503871dc914f808afca90e62d35b09a34fe09cb7d22e8e315f2bd",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/fill.png": {
+    "origin": "remplissage-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "ee91102525971c51c639505c69a34cd43ccbcee232d2e78f2569d0452e44df35",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/new.png": {
+    "origin": "nouveau-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "d784515089bae47874590314140d991f31b6a4082f38a08ba48ce8dc3b7cab1d",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/delete.png": {
+    "origin": "poubelle-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "40277b501eebb0d9a49bdff271e62ef6e9cfd24337dc06b0378af9442871fdf4",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/export.png": {
+    "origin": "exporter-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "790f324a308292e9064be173a358eff2594bfeb68f695972a1832b9b291500a9",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/import.png": {
+    "origin": "importer-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "cf7ca8022fcc9d57b0b5de4799e13c0ebea7126aa76b2fbf41a639f6bf1a7e50",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/refresh.png": {
+    "origin": "rafraichir-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "8985bb501b246bd024b92b41abcdca7ee1d94f8d6349a06e45491523cd3b84e2",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/folder.png": {
+    "origin": "ouvrir-dossier-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "15317bd70959ac50650a7b4a114b07407653fe789025d6f5786e88b0980d8b17",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/cancel.png": {
+    "origin": "annuler-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "019e2aeb49a2e371c81176bef7f9a28ab395baf048f7a0760b53bea896ea2fdf",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/apply.png": {
+    "origin": "valider-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "557ec635fe0ffc8de692f8ed8084bf0efb54c95cc45f89751aeb0004a07f10cc",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/save.png": {
+    "origin": "sauvegarde-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "709911e3f0bbacd2dc89e27cf506d723ee57841b752f821e984038a14a6d07e8",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/catalogue.png": {
+    "origin": "catalogue-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "1e4a4c7b920bce1bd1fa7de12ff7ff6795c1f06673bbd9b1be31a4661b48e046",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "mask_editor/clear.png": {
+    "origin": "balais-0001.png",
+    "upload_date": "2026-10-06",
+    "sha256": "07d2ad6ecd8880cb0e7d8e7ca9b37720f06dd2a9975f5645e3986af4b236ed89",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
+  },
+  "ui/recenter.png": {
+    "origin": "recentrer-carte-0001.png",
+    "sha256": "47ac3badadeb7f374ce8a34afb12b418a7afc7f022ac5370321671f832ee46f7",
+    "size": [
+      24,
+      24
+    ],
+    "provenance": "Drawn and provided by Julien on 2026-10-06; original PNG bytes unchanged"
+  },
+  "views/heightmap.png": {
+    "origin": "montagne-0002.png",
+    "sha256": "6147a8530d1905f6d6265f63627bcd47a3f900a55b1e823da1a034884c63d46e",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/global.png": {
+    "origin": "globe-0001(1).png",
+    "sha256": "f44809c6d4f2deb5b6b8cb4c5fac48e62e1171fed5ac3de09fa029ccdfd05f4c",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/paths.png": {
+    "origin": "chemin-0001.png",
+    "sha256": "e6ac11e6ce1198d0b76364e03ce010031bee7e9abc9708b95bfee6256be1d606",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/crops.png": {
+    "origin": "blé-0001.png",
+    "sha256": "8d7e2d0d1d7cca71327881b7270614949af7342243eca0ec94fa6373bf3a147d",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "variants/grapes.png": {
+    "origin": "raisin-0001.png",
+    "sha256": "da0e0f33b28d62de2ea79444e7d02ff5e5d7e02732c708286dd04214f086fa8b",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "heatmap/trees.png": {
+    "origin": "arbre-0001.png",
+    "sha256": "81a733ced949d590070c39bbca29a52011de9d11cab9fa8a2b9e984b2d8112df",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "heatmap/building_stones.png": {
+    "origin": "rocher-0001.png",
+    "sha256": "c8994cb37ed11fdfd589cbcdfa57520578dc17a927addb508be5a99c82ef56ff",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "heatmap/fish.png": {
+    "origin": "poisson-0001.png",
+    "sha256": "c1bded42709a04bec9f09397c8d37721a0faa38f4e50650b466d85757aad9144",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/resources.png": {
+    "origin": "Minerais-0002.png",
+    "sha256": "4075ea76ee1ef87ea1663b3cb18e7d3dbbd74637d01ba72fff1ff5b3d939bef7",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/heatmap.png": {
+    "origin": "vue-thermique-0001.png",
+    "sha256": "417afc8e9920336d9cbb76147adbfe99c07414b8b6be733fdb4e0cb4291f63d7",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/territories.png": {
+    "origin": "territoires-0001.png",
+    "sha256": "76a05e44c309b45afde6fac230280f4c3b17441a4b2801f3c826c743f2966eb1",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/initial_territory.png": {
+    "origin": "départ-0001.png",
+    "sha256": "6ec24cb15b31c0879a2e28a01f4a3050031266006a3651664cf394e037d17a1b",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "ui/lock_closed.png": {
+    "origin": "verrouillé-0001(1).png",
+    "sha256": "ebb6bbffbc9c8a89d0707ceb9ad89ec1744c1fb840e856baf0d42c32d4df4aa5",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "ui/lock_open.png": {
+    "origin": "déverrouillé-0001(1).png",
+    "sha256": "71994b80f352cecd6d8d1ada248dc529120c24c623f7e5270d19edabf6f2ef9f",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "views/valid_starts.png": {
+    "origin": "départ-valide-0001.png",
+    "sha256": "ce150ab0b589802d78138612bebe0954c266e33bcce294f8d08f7cf0eeea3112",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Julien Poitreau, original PNG copied byte-for-byte"
+  },
+  "civilizations/roman.png": {
+    "origin": "casque-romain-0001(1).png",
+    "sha256": "cce2d3927fee02b5584991cd4b356c7c8234dd7c3cc84d92897cdc076497021d",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Original sprite supplied by Julien; copied byte-for-byte, R41"
+  },
+  "civilizations/egyptian.png": {
+    "origin": "casque-égyptien-0001(1).png",
+    "sha256": "fd4d3806c6dad7c4aca9be259967f10c90f46db42dbc9c3708aaf7f3bb5036b5",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Original sprite supplied by Julien; copied byte-for-byte, R41"
+  },
+  "civilizations/chinese.png": {
+    "origin": "casque-chinois-0001(1).png",
+    "sha256": "851a988b6c899b481579c5f4a511c49a774ee229a21418a99311b6061b8a18ad",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Original sprite supplied by Julien; copied byte-for-byte, R41"
+  },
+  "civilizations/amazon.png": {
+    "origin": "armure-amazone-0001(1).png",
+    "sha256": "0ced1f6bb469241270c4031431f7528518b20f7a0afeb90768c7dbba3bdb62cd",
+    "size": [
+      16,
+      16
+    ],
+    "provenance": "Original sprite supplied by Julien; copied byte-for-byte, R41"
+  }
+}

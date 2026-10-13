@@ -78,3 +78,6 @@ _BATCH_RETENTION_TEXT={
 }
 
 for _lang,_values in _BATCH_RETENTION_TEXT.items():BATCH_TEXT[_lang].update(_values)
+
+for _language,_label in {"fr":"Départs","en":"Starts","de":"Startpositionen","es":"Inicios"}.items():
+    BATCH_TEXT[_language]["starts"]=_label

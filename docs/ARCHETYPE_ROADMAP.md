@@ -1,11 +1,17 @@
 # Roadmap des archétypes Custom
 
-## Cap actuel — DEV9 clôturée, 2026-10-04
+## Cap actuel — DEV_10_R55, 2026-10-10
 
 - Grandes îles R25, rivières améliorées et raccordements validés ; checkpoint DEV9.
 - Source alternative renommée « Grandes îles — relief ondulé ».
 - Anciens reports hors scope transférés à DEV10 pour priorisation après push.
-- Petites îles : DEV10 ou DEV11, fork de Grandes îles ; autres forks éventuels.
+- R45 : Petites îles abandonnée, Grandes îles devient Îles individuelles.
+- R52 : « Îles — par équipe » ; une île par équipe, surface au prorata, joueurs
+  « − » séparés. « ? » est différé.
+- R54 : relief continu à l’échelle de l’île, crêtes organiques à partir de quatre
+  joueurs, échelle plafonnée à huit. Îles individuelles identiques à R53.
+- R55 : lacs déclenchés par la surface réelle de l’île et gardés loin du rivage ;
+  validation Windows/éditeur/jeu attendue.
 - Finitions/publication : à répartir après bilan, aucun jalon DEV11 figé.
 - Archipel hors 2.0 ; aucun nouveau fork engagé dans ce checkpoint.
 
@@ -179,7 +185,7 @@ rester compatible avec la génération jouable.
 Le placement légal des joueurs reste qualifié avec chaque archétype. Comparer
 plusieurs algorithmes pour leur équilibrage est un chantier futur distinct.
 
-- [ ] Pour Grandes îles et Petites îles, comparer « une île principale par
+- [ ] Pour Îles individuelles et le futur Îles par équipe, comparer « une île principale par
   joueur », « un joueur par île » et « plusieurs joueurs sur une même île »
   selon le nombre de joueurs et la taille.
 - [ ] Définir par archétype la masse jouable, les distances, la connectivité,

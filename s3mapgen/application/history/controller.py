@@ -5,6 +5,8 @@ main viewer, cache, feedback, theme and export coordination APIs.
 """
 
 from __future__ import annotations
+
+from ..ui.sprites import sprite_photo
 import hashlib
 from pathlib import Path
 import tkinter as tk
@@ -180,9 +182,20 @@ class HistoryController:
         win=tk.Toplevel(widget);win.withdraw();win.overrideredirect(True);win.attributes('-topmost',True)
         label=tk.Label(win,text=text,justify='left',wraplength=360,padx=7,pady=5,bg=colors.get('surface','#303134'),fg=colors.get('text','#e8eaed'),bd=1,relief='solid',highlightthickness=0);label.pack()
         win.update_idletasks()
-        if x is None:x=widget.winfo_rootx()+12
-        if y is None:y=widget.winfo_rooty()+widget.winfo_height()+6
-        x=max(6,min(int(x),widget.winfo_screenwidth()-win.winfo_reqwidth()-6));y=max(6,min(int(y),widget.winfo_screenheight()-win.winfo_reqheight()-42))
+        if x is None or y is None:
+            # Native Windows menus may report their widget origin as (0, 0).
+            # The application's pointer coordinates are screen coordinates.
+            try:
+                px, py = self.winfo_pointerxy()
+            except (AttributeError, tk.TclError):
+                px, py = widget.winfo_pointerxy()
+            from ..ui.tooltip_position import tooltip_position
+            px, py = tooltip_position(px, py, win.winfo_reqwidth(), win.winfo_reqheight(),
+                                      widget.winfo_screenwidth(), widget.winfo_screenheight())
+            if x is None:x=px
+            if y is None:y=py
+        x=max(6,min(int(x),max(6,widget.winfo_screenwidth()-win.winfo_reqwidth()-6)))
+        y=max(6,min(int(y),max(6,widget.winfo_screenheight()-win.winfo_reqheight()-6)))
         win.geometry(f'+{x}+{y}');win.deiconify();win.lift();self._ui_tooltip_window=win;self._ui_tooltip_key=marker
 
     def _hide_ui_tooltip(self):
@@ -281,9 +294,12 @@ class HistoryController:
         buttons['lock']=ttk.Button(actions,text=text['lock'],image=self._lock_closed_icon,compound='left',command=self._history_center_toggle_manual_lock,state='disabled');buttons['lock'].grid(row=0,column=3,padx=(0,6))
         buttons['up']=ttk.Button(actions,text='↑',width=3,command=lambda:self._history_center_move(-1),state='disabled');buttons['up'].grid(row=0,column=4,padx=(0,3))
         buttons['down']=ttk.Button(actions,text='↓',width=3,command=lambda:self._history_center_move(1),state='disabled');buttons['down'].grid(row=0,column=5,padx=(0,6))
-        buttons['delete']=ttk.Button(actions,text=text['delete'],command=self._history_center_delete,state='disabled');buttons['delete'].grid(row=0,column=6,padx=(0,6))
-        buttons['clear']=ttk.Button(actions,text=text['clear'],command=self._history_center_clear);buttons['clear'].grid(row=0,column=8,padx=(6,6))
-        buttons['close']=ttk.Button(actions,text=text['close'],command=self._close_history_center);buttons['close'].grid(row=0,column=9)
+        buttons['delete']=ttk.Button(actions,text='',image=sprite_photo(self,'mask/delete'),width=0,padding=(0,0,0,1),command=self._history_center_delete,state='disabled');buttons['delete'].grid(row=0,column=6,padx=(0,6))
+        buttons['clear']=ttk.Button(actions,text='',image=sprite_photo(self,'mask/clear'),width=0,padding=(0,0,0,1),command=self._history_center_clear);buttons['clear'].grid(row=0,column=8,padx=(6,6))
+        buttons['close']=ttk.Button(actions,text='',image=sprite_photo(self,'mask/cancel'),width=0,padding=(0,0,0,1),command=self._close_history_center);buttons['close'].grid(row=0,column=9)
+        for key in ('delete','clear','close'):
+            buttons[key].bind('<Enter>',lambda e,k=key:self._show_ui_tooltip(buttons[k],HISTORY_TEXT[self.prefs.get('language','fr')][k],key=('history-action',k)),add='+')
+            buttons[key].bind('<Leave>',lambda e:self._hide_ui_tooltip(),add='+')
         buttons['up'].bind('<Enter>',lambda e:self._show_ui_tooltip(buttons['up'],HISTORY_TEXT[self.prefs.get('language','fr')]['move_up'],key='history-up'));buttons['up'].bind('<Leave>',lambda e:self._hide_ui_tooltip())
         buttons['down'].bind('<Enter>',lambda e:self._show_ui_tooltip(buttons['down'],HISTORY_TEXT[self.prefs.get('language','fr')]['move_down'],key='history-down'));buttons['down'].bind('<Leave>',lambda e:self._hide_ui_tooltip())
         self._history_window_widgets={'tree':tree,'info':info,'buttons':buttons,'preview_host':preview_host,'preview_image_host':preview_image_host};self._apply_history_window_theme();self._refresh_history_center()
@@ -583,7 +599,7 @@ class HistoryController:
         tree.heading('#0',text='',image=self._history_heading_lock_icon,anchor='center');tree.heading('rank',text='#');
         for key in ('origin','map','details'):tree.heading(key,text=text[key])
         self._history_window_widgets['preview_host'].configure(text=text['preview'])
-        for key,label in (('show','show'),('a','set_a'),('b','set_b'),('delete','delete'),('clear','clear'),('close','close')):self._history_window_widgets['buttons'][key].configure(text=text[label])
+        for key,label in (('show','show'),('a','set_a'),('b','set_b'),('delete','delete'),('clear','clear'),('close','close')):self._history_window_widgets['buttons'][key].configure(text='' if key in ('delete','clear','close') else text[label])
         self._refresh_history_center()
 
     def _apply_history_window_theme(self):

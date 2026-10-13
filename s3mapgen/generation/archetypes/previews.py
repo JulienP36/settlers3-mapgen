@@ -16,6 +16,7 @@ import numpy as np
 
 from .masses import MacroMassReport, analyze_macro_masses
 from .island_source import generate_island_source, uses_island_source
+from .island_amplitude import resolve_island_profile
 from .morphology import (
     NoiseLabReport,
     apply_archetype_morphology,
@@ -250,6 +251,7 @@ def generate_archetype_preview(
     progress=None,
     relax_macro: bool = True,
     players: int = 4,
+    player_teams=(),
 ) -> ArchetypePreview:
     """Generate the live preview for the selected archetype profile."""
 
@@ -261,29 +263,39 @@ def generate_archetype_preview(
         raise ValueError(
             f"Moteur de prévisualisation non disponible : {normalized.get('layout_engine')}"
         )
+    normalized = resolve_island_profile(
+        normalized, side, players, player_teams=player_teams,
+    )
     if uses_island_source(normalized):
         from ..generators.legacy.native_terrain import relax_large_island_height
-        if int(mirror_mode):
-            raise ValueError("Grandes îles utilise le mode sans miroir")
+        if int(mirror_mode) and normalized["morphology"]["relief_source"] != "continental_landmass":
+            raise ValueError("Les archétypes insulaires utilisent le mode sans miroir")
         water, mountain, snow = relief_thresholds(normalized)
         fields = generate_island_source(
             int(side), int(players), int(seed), normalized,
             native_relaxation=(lambda values: relax_large_island_height(
                 values, archetype_profile=normalized,
             )) if relax_macro else None,
+            player_teams=player_teams,
         )
         height, noise = fields.height, fields.noise
+        source_noise, island_mask = fields.source_noise, fields.source_labels
+        if int(mirror_mode):
+            from ..generators.legacy.native_terrain import finalize_relief_preview_fields, finalize_relief_preview_noise
+            noise, height = finalize_relief_preview_fields(noise, height, int(mirror_mode))
+            source_noise = finalize_relief_preview_noise(source_noise, int(mirror_mode))
+            island_mask = np.where(noise > water, 1, 0).astype(np.int16)
         macro = classify_macro(noise, normalized, final_height=height)
         if progress is not None:
             progress(1., noise)
         return ArchetypePreview(
-            side=int(side), seed=int(seed), mirror_mode=0, noise=noise,
+            side=int(side), seed=int(seed), mirror_mode=int(mirror_mode), noise=noise,
             macro=macro, thresholds=(water, mountain, snow),
             macro_relaxed=bool(relax_macro), mass=analyze_macro_masses(macro),
             # This complete source includes coast shaping, native relaxation
             # and plain detail, not just the intermediate interior hills.
-            source_noise=fields.source_noise, noise_lab=fields.noise_lab,
-            island_mask=fields.source_labels, local_relief=fields.local_relief,
+            source_noise=source_noise, noise_lab=fields.noise_lab,
+            island_mask=island_mask, local_relief=fields.local_relief,
             source_name=normalized["morphology"]["relief_source"],
         )
     # Keep the archetype catalogue importable without eagerly importing the
@@ -412,6 +424,7 @@ def generate_archetype_noise_preview(
     noise_cache: MutableMapping | None = None,
     lab_sink: MutableMapping[str, object] | None = None,
     players: int = 4,
+    player_teams=(),
 ) -> np.ndarray:
     """Return the completed signed noise preview without native relaxation.
 
@@ -428,14 +441,21 @@ def generate_archetype_noise_preview(
         raise ValueError(
             f"Moteur de prévisualisation non disponible : {normalized.get('layout_engine')}"
         )
+    normalized = resolve_island_profile(
+        normalized, side, players, player_teams=player_teams,
+    )
     if uses_island_source(normalized):
-        if int(mirror_mode):
-            raise ValueError("Grandes îles utilise le mode sans miroir")
+        if int(mirror_mode) and normalized["morphology"]["relief_source"] != "continental_landmass":
+            raise ValueError("Les archétypes insulaires utilisent le mode sans miroir")
         fields = generate_island_source(
             int(side), int(players), int(seed), normalized, native_relaxation=None,
+            player_teams=player_teams,
         )
         if lab_sink is not None:
             lab_sink["report"] = fields.noise_lab
+        if int(mirror_mode):
+            from ..generators.legacy.native_terrain import finalize_relief_preview_noise
+            return finalize_relief_preview_noise(fields.noise, int(mirror_mode))
         return fields.noise
     from ..generators.legacy.native_terrain import (
         finalize_relief_preview_noise,
@@ -486,6 +506,7 @@ def generate_archetype_indicative_preview(
     noise_cache: MutableMapping | None = None,
     lab_sink: MutableMapping[str, object] | None = None,
     players: int = 4,
+    player_teams=(),
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return fast noise and a clearly indicative pre-relax macro raster.
 
@@ -499,10 +520,14 @@ def generate_archetype_indicative_preview(
         profile,
         archetype_key=str((profile or {}).get("archetype_key", "continental")),
     )
+    normalized = resolve_island_profile(
+        normalized, side, players, player_teams=player_teams,
+    )
     if uses_island_source(normalized):
         noise = generate_archetype_noise_preview(
             normalized, side, seed, mirror_mode,
             noise_cache=noise_cache, lab_sink=lab_sink, players=players,
+            player_teams=player_teams,
         )
         return noise, classify_macro(noise, normalized)
     # Autonomous providers do not need the Legacy refinement merely to show
@@ -529,6 +554,8 @@ def generate_archetype_indicative_preview(
         mirror_mode,
         noise_cache=noise_cache,
         lab_sink=lab_sink,
+        players=players,
+        player_teams=player_teams,
     )
     return noise, classify_macro(noise, normalized)
 

@@ -9,11 +9,12 @@ VIEW_CHOICES = {
     "Chemins": "paths",
     "Cultures": "crops",
     "Carte thermique": "heatmap",
+    "Départs valides": "valid_starts",
 }
 
 VIEW_ICON_COLORS={
  'global':'#2698e8','initial_territory':'#b66e2d','heightmap':'#8f55d6','resources':'#ff9418','territories':'#31a354',
- 'paths':'#9a6438','crops':'#e4c83d','heatmap':'#d83737',
+ 'valid_starts':'#40e080','paths':'#9a6438','crops':'#e4c83d','heatmap':'#d83737',
 }
 
 HEATMAP_ICON_COLORS={

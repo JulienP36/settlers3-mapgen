@@ -22,13 +22,19 @@ class ThemeController:
         if dark:
             c=(245,195,55,255);d.ellipse((6,6,14,14),fill=c)
             for x1,y1,x2,y2 in ((10,1,10,4),(10,16,10,19),(1,10,4,10),(16,10,19,10),(3,3,5,5),(15,15,17,17),(15,3,17,5),(3,15,5,17)):d.line((x1,y1,x2,y2),fill=c,width=2)
-            tip=_lang_text(self.prefs.get('language','fr'),'Passer au thème clair','Switch to light theme','Zum hellen Design wechseln','Cambiar al tema claro')
         else:
             c=(75,95,145,255);d.ellipse((4,3,16,17),fill=c);d.ellipse((8,1,18,13),fill=(0,0,0,0))
-            tip=_lang_text(self.prefs.get('language','fr'),'Passer au thème sombre','Switch to dark theme','Zum dunklen Design wechseln','Cambiar al tema oscuro')
-        self._theme_button_icon=ImageTk.PhotoImage(im);self._theme_button.configure(image=self._theme_button_icon,text='',takefocus=False)
+        self._theme_button_icon=ImageTk.PhotoImage(im);self._theme_button.configure(image=self._theme_button_icon,text='',width=0,padding=(2,2,2,3))
         try:self._theme_button.configure(cursor='hand2')
         except tk.TclError:pass
+
+    def _theme_tooltip_text(self):
+        dark=self.prefs.get('theme','dark')=='dark'
+        lang=self.prefs.get('language','fr')
+        label=(_lang_text(lang,'Passer au thème clair','Switch to light theme','Zum hellen Design wechseln','Cambiar al tema claro')
+               if dark else _lang_text(lang,'Passer au thème sombre','Switch to dark theme','Zum dunklen Design wechseln','Cambiar al tema oscuro'))
+        shortcut=self.prefs.get('shortcuts',{}).get('toggle_theme','')
+        return label+(f' ({shortcut})' if shortcut else '')
 
     def _apply_theme(self):
         self._apply_base_theme();dark=self.prefs.get('theme')=='dark';style=ttk.Style(self);palette=dict(THEME_PALETTES['dark' if dark else 'light'])
@@ -77,9 +83,12 @@ class ThemeController:
         self._style_combobox_popdowns(field,fg,panel)
         for selector in (getattr(self,'_view_combo',None),getattr(self,'heatmap_combo',None),getattr(self,'lang_combo',None)):
             if isinstance(selector,ColorMenuSelect):selector.set_menu_theme(field,fg,panel,fg)
-        if hasattr(self,'modifier_menu'):
-            try:self.modifier_menu.configure(background=field,foreground=fg,activebackground=panel,activeforeground=fg,disabledforeground=muted)
+        if hasattr(self,'start_menu'):
+            try:self.start_menu.configure(background=field,foreground=fg,activebackground=panel,activeforeground=fg,disabledforeground=muted)
             except tk.TclError:pass
+        for window in tuple(getattr(self, '_themed_windows', ())):
+            if window.winfo_exists():
+                window.apply_palette(self._ui_theme_colors)
         self._apply_history_window_theme()
         self._apply_history_capacity_dialog_theme()
         self._apply_help_window_theme()

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import tkinter as tk
+import numpy as np
 from tkinter import ttk
+from ..ui.layout import content_width
 
 from PIL import Image, ImageTk
 
@@ -15,7 +17,7 @@ from ..ui.i18n.shell import (
     PROJECTION_LABELS,
     TEXTS,
 )
-from ..ui.i18n.viewer import HEATMAP_LABELS, VIEW_LABELS
+from ..ui.i18n.viewer import HEATMAP_LABELS, VIEW_LABELS, VALID_START_LABELS
 from ..ui.viewer import (
     localized_object_name,
     localized_resource_text,
@@ -24,8 +26,6 @@ from ..ui.viewer import (
 from ..ui.viewer.options import VIEW_CHOICES
 from ..ui.widgets import ColorMenuSelect, _selector_icon
 
-
-PREVIEW_RESIZE_SETTLE_MS = 24
 
 
 class ViewerController:
@@ -48,7 +48,7 @@ class ViewerController:
         self._view_combo=ColorMenuSelect(self.viewer_toolbar,self.view,width=16,command=self._view_changed)
         self._view_combo.grid(row=0,column=2,sticky='ew',padx=(0,6))
 
-        self.heatmap_title=ttk.Label(self.viewer_toolbar,text='Filtre carte thermique',compound='left')
+        self.heatmap_title=ttk.Label(self.viewer_toolbar,text='Filtre',compound='left')
         self.heatmap_title.grid(row=0,column=3,sticky='w',padx=(2,4))
         self.heatmap_combo=ColorMenuSelect(self.viewer_toolbar,self.heatmap_var,width=21,command=self._heatmap_changed)
         self.heatmap_combo.grid(row=0,column=4,padx=(0,6))
@@ -67,7 +67,10 @@ class ViewerController:
         if not hasattr(self,'viewer_toolbar'):return
         try:width=int(self.viewer_toolbar.winfo_width())
         except tk.TclError:return
-        compact=width<720
+        required=sum(w.winfo_reqwidth() for w in (self.viewer_view_label,self.history_residency_label,
+                     self._view_combo,self.heatmap_title,self.heatmap_combo,self.viewer_recenter_button,self.viewer_zoom_label,self.zoom_scale))+36
+        self._viewer_toolbar_required_width=required
+        compact=content_width(self.viewer_toolbar)<required
         mode='compact' if compact else 'wide'
         if getattr(self,'_viewer_toolbar_mode',None)==mode:return
         self._viewer_toolbar_mode=mode
@@ -98,7 +101,7 @@ class ViewerController:
             self.viewer_toolbar.columnconfigure(2,weight=0);self.viewer_toolbar.columnconfigure(7,weight=1,minsize=90)
 
     def _heatmap_locked_hint(self):
-        if self._view_key()!='heatmap':self._feedback('heatmap_locked','info')
+        if self._view_key() not in ('heatmap', 'valid_starts'):self._feedback('heatmap_locked','info')
 
     def _opacity_locked_hint(self,event=None):
         if self._view_key()=='global':self._feedback('opacity_locked','info');return 'break'
@@ -152,18 +155,92 @@ class ViewerController:
         view=self._view_key();lang=self.prefs.get('language','fr')
         if hasattr(self,'opacity_scale'):self.opacity_scale.configure(state='disabled' if view=='global' else 'normal')
         if hasattr(self,'heatmap_combo'):
-            locked=view!='heatmap';self.heatmap_combo.set_enabled(not locked)
-            if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text='Filtre carte thermique' if lang=='fr' else TEXTS['Filtre carte thermique'].get(lang,TEXTS['Filtre carte thermique']['en']),image=self._lock_closed_icon if locked else self._lock_open_icon)
+            locked=view not in ('heatmap','valid_starts');self.heatmap_combo.set_enabled(not locked)
+            if hasattr(self,'heatmap_title'):self.heatmap_title.configure(text=_lang_text(lang, 'Filtre', 'Filter', 'Filter', 'Filtro'),image=self._lock_closed_icon if locked else self._lock_open_icon)
+
+        if view == 'valid_starts':
+            policy = self.prefs.get('valid_start_filter', 'valid_all')
+            if policy not in VALID_START_LABELS[lang]:
+                policy = 'valid_all'
+            self.prefs['valid_start_filter'] = policy
+            labels = VALID_START_LABELS[lang]
+            from ..ui.sprites import NATION_SPRITES
+            self.heatmap_combo.set_items([(key, value, '#40e080',
+                'sprite:'+NATION_SPRITES[int(key.split(':')[0][-1])] if key.split(':')[0] in ('valid_0','valid_1','valid_2','valid_3')
+                else 'sprite:views/valid_starts') for key, value in labels.items()])
+            self.heatmap_var.set(labels.get(policy, labels['valid_all']))
+            self.heatmap_combo._sync_icon()
+            if self.current and hasattr(self, 'inspector_var'):
+                report = self._departure_report()
+                self.inspector_var.set(self._departure_summary(report))
+        else:
+            hk = self.prefs.get('heatmap_filter', 'trees')
+            labels = HEATMAP_LABELS[lang]
+            from ..ui.viewer.options import HEATMAP_ICON_COLORS
+            self.heatmap_combo.set_items([(key, value, HEATMAP_ICON_COLORS[key], 'sprite:minerals/'+key if key in ('coal','iron','gold','gems','sulfur') else 'sprite:heatmap/'+key) for key, value in labels.items()])
+            self.heatmap_var.set(labels.get(hk, labels['trees']))
 
     def _view_changed(self):self._update_view_controls();self._refresh_preview(False)
 
-    def _heatmap_changed(self):self._refresh_preview(False)
+    def _heatmap_changed(self):
+        if self._view_key() == 'valid_starts':
+            labels = VALID_START_LABELS[self.prefs.get('language','fr')]
+            self.prefs['valid_start_filter'] = next((key for key, value in labels.items() if value == self.heatmap_var.get()), 'valid_all')
+            if self.current and hasattr(self, 'inspector_var'):
+                self.inspector_var.set(self._departure_summary(self._departure_report()))
+        else:
+            self.prefs['heatmap_filter'] = self._heatmap_key()
+        self._refresh_preview(False)
+
+    def _departure_report(self):
+        policy = self.prefs.get('valid_start_filter','valid_all')
+        if policy not in VALID_START_LABELS['en']:
+            policy = 'valid_all'
+        key = (id(self.current.state), policy)
+        if getattr(self, '_departure_report_key', None) != key:
+            from ...generation.start_diagnostics import departure_diagnostics
+            self._departure_report_cache = departure_diagnostics(self.current.state, key[1], context='before_objects')
+            self._departure_report_key = key
+        return self._departure_report_cache
+
+
+    def _departure_summary(self, report, island=0):
+        lang = self.prefs.get('language', 'fr')
+        phase = {
+            'before_objects': ('Avant objets', 'Before objects', 'Vor Objekten', 'Antes de objetos'),
+            'after_objects': ('Après objets', 'After objects', 'Nach Objekten', 'Después de objetos'),
+            'selection': ('Au placement', 'At placement', 'Bei der Platzierung', 'Al colocar'),
+            'final_before_objects': ('Terrain final — avant objets', 'Final terrain — before objects', 'Endgültiges Gelände — vor Objekten', 'Terreno final — antes de objetos'),
+            'final_selection': ('Terrain final — objets au placement', 'Final terrain — objects at placement', 'Endgültiges Gelände — Objekte bei Platzierung', 'Terreno final — objetos al colocar'),
+            'final_after_objects': ('Terrain final — après objets', 'Final terrain — after objects', 'Endgültiges Gelände — nach Objekten', 'Terreno final — después de objetos'),
+            'export_before_objects': ('Terrain exporté — avant objets', 'Export terrain — before objects', 'Exportgelände — vor Objekten', 'Terreno exportado — antes de objetos'),
+            'export_current': ('Carte exportée — avec objets', 'Export map — with objects', 'Exportkarte — mit Objekten', 'Mapa exportado — con objetos'),
+            'current': ('Carte actuelle', 'Current map', 'Aktuelle Karte', 'Mapa actual'),
+        }[report['phase']]
+        stage_label = _lang_text(lang, 'Jeu — position exacte : Terrain → Libre → Nivelable', 'Game — exact position: Terrain → Clear → Levelable',
+                                'Spiel — genaue Position: Gelände → Frei → Einebnbar', 'Juego — posición exacta: Terreno → Libre → Nivelable')
+        counts = ' → '.join(map(str, report['stages']))
+        summary = f"{_lang_text(lang, *phase)} — {stage_label} : {counts}"
+        if island:
+            label = _lang_text(lang, 'Île', 'Island', 'Insel', 'Isla')
+            counts = ' → '.join(map(str, report['island_stages'][island-1]))
+            summary += f" — {label} {island} : {counts}"
+        colors = report['island_colors'][island-1] if island else (report['green_count'],report['yellow_count'])
+        summary += ' — ' + _lang_text(lang,'Vert / jaune','Green / yellow','Grün / gelb','Verde / amarillo') + f' : {colors[0]} / {colors[1]}'
+        relocation = int(np.count_nonzero(report['relocation'] & (report['labels'] == island))) if island else report['relocation_count']
+        summary += ' — ' + _lang_text(lang,'Recherche voisine possible','Nearby search possible','Nachbarsuche möglich','Búsqueda cercana posible') + f' : {relocation}'
+        if not report['editor']['available']:
+            summary += ' — ' + _lang_text(lang,'Contrôle éditeur indisponible','Editor check unavailable','Editorprüfung nicht verfügbar','Control del editor no disponible')
+        if report['unavailable']:
+            summary += ' — ' + _lang_text(lang, 'Contrôle natif indisponible', 'Native check unavailable',
+                                         'Native Prüfung nicht verfügbar', 'Control nativo no disponible')
+        return summary
 
     def _reset_view(self):self.zoom_var.set(1.0);self.zoom=1.0;self._refresh_preview(True);self._feedback('view_reset','info')
 
     def _render_options(self):
         view=self._view_key();marker_mode=self.prefs.get('preview_start_markers','small')
-        return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self._heatmap_key(),'start_markers':bool(marker_mode!='hidden'),'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),'start_circles':bool(self.prefs.get('preview_start_circles',False))}
+        return {'view':view,'overlay_alpha':100 if view=='global' else int(self.opacity_var.get()),'projection':self.prefs['projection'],'heatmap_resource':self.prefs.get('valid_start_filter','valid_all') if view=='valid_starts' else self._heatmap_key(),'start_markers':bool(marker_mode!='hidden'),'start_marker_scale':START_MARKER_SCALES.get(marker_mode,START_MARKER_SCALES['small']),'start_circles':bool(self.prefs.get('preview_start_circles',False))}
 
     def _chart_focus_options(self, options):
         """Temporarily route the preview through the hovered chart semantic."""
@@ -243,10 +320,11 @@ class ViewerController:
         except (tk.TclError,TypeError,ValueError):pass
 
     def _preview_canvas_configured(self,_event=None):
-        self._reposition_preview_image()
         if not getattr(self,'current',None):return
-        self._cancel_preview_resize()
-        try:self._preview_resize_after=self.after(PREVIEW_RESIZE_SETTLE_MS,self._finish_preview_resize)
+        if getattr(self,'_preview_resize_after',None) is not None:return
+        # Coalesce geometry events, without restarting a timer for every
+        # pointer motion or moving an old-sized image before replacing it.
+        try:self._preview_resize_after=self.after_idle(self._finish_preview_resize)
         except tk.TclError:self._preview_resize_after=None
 
     def _finish_preview_resize(self):
@@ -281,12 +359,13 @@ class ViewerController:
                 self._preview_projection_cache[composite_key]=compose_rendered_map(focused_base,state,labels=True,view=opts['view'],overlay_alpha=opts['overlay_alpha'],projection=opts['projection'],start_markers=opts.get('start_markers'),start_marker_scale=opts.get('start_marker_scale',1),start_circles=opts.get('start_circles',False),focus=focus)
         self._preview_base=self._preview_projection_cache[composite_key];self._preview_key=(layer_key,composite_key)
         im=self._preview_base;cw=max(100,self.canvas.winfo_width());ch=max(100,self.canvas.winfo_height());factor=max(.05,min((cw-10)/im.width,(ch-10)/im.height)*self.zoom);new=(max(1,int(im.width*factor)),max(1,int(im.height*factor)))
-        shown=im.resize(new,Image.Resampling.NEAREST);self.photo=ImageTk.PhotoImage(shown);sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2)
+        shown=im.resize(new,Image.Resampling.NEAREST);next_photo=ImageTk.PhotoImage(shown);sw=max(cw,new[0]);sh=max(ch,new[1]);x=max(0,(cw-new[0])//2);y=max(0,(ch-new[1])//2)
         item=getattr(self,'_preview_canvas_item',None)
-        if item is None:item=self.canvas.create_image(x,y,image=self.photo,anchor='nw')
+        if item is None:item=self.canvas.create_image(x,y,image=next_photo,anchor='nw')
         else:
-            try:self.canvas.coords(item,x,y);self.canvas.itemconfigure(item,image=self.photo)
-            except tk.TclError:item=self.canvas.create_image(x,y,image=self.photo,anchor='nw')
+            try:self.canvas.coords(item,x,y);self.canvas.itemconfigure(item,image=next_photo)
+            except tk.TclError:item=self.canvas.create_image(x,y,image=next_photo,anchor='nw')
+        self.photo=next_photo
         self._preview_canvas_item=item;self.canvas.configure(scrollregion=(0,0,sw,sh));self._restore_view_anchor(anchor,im.size,(x,y),new[0]/im.width,cw,ch,sw,sh)
         self._display_shown_size=new;self._display_origin=(x,y);self._display_factor=new[0]/im.width;self._display_base_size=im.size
 
@@ -311,6 +390,49 @@ class ViewerController:
         tname=localized_terrain_name(t, lang)
         oname=localized_object_name(o, lang)
         labels={'fr':('Terrain','Objet','Ressource','Hauteur','Accès','Territoire'),'en':('Terrain','Object','Resource','Height','Access','Claim'),'de':('Gelände','Objekt','Ressource','Höhe','Zugang','Territorium'),'es':('Terreno','Objeto','Recurso','Altura','Acceso','Territorio')}.get(lang,('Terrain','Object','Resource','Height','Access','Claim'))
+        if self._view_key() == 'valid_starts':
+            report = self._departure_report()
+            if report['unavailable']:
+                reason = _lang_text(lang, 'Contrôle natif : carte neuve 64–768 requise', 'Native check: fresh map 64–768 required', 'Native Prüfung: neue Karte 64–768 erforderlich', 'Control nativo: mapa nuevo 64–768 requerido')
+            elif report['visible'][y,x]:
+                if not report['editor']['available']:
+                    reason = _lang_text(lang,'Jeu : position exacte admissible — éditeur indisponible','Game: exact position admissible — editor unavailable','Spiel: genaue Position zulässig — Editor nicht verfügbar','Juego: posición exacta admisible — editor no disponible')
+                elif report['yellow'][y,x]:
+                    why = _lang_text(lang,'emprise terrain incompatible','incompatible terrain footprint','unzulässige Geländegrundfläche','huella de terreno incompatible') if not report['editor']['terrain'][y,x] else _lang_text(lang,'occupation, accès ou territoire incompatible','incompatible occupancy, access or claim','unzulässige Belegung, Zugang oder Besitz','ocupación, acceso o territorio incompatible')
+                    reason = _lang_text(lang,'Jeu : position exacte admissible — éditeur : refusé','Game: exact position admissible — editor: rejected','Spiel: genaue Position zulässig — Editor: abgelehnt','Juego: posición exacta admisible — editor: rechazado') + ' (' + why + ')'
+                elif report['relocation'][y,x]:
+                    reason = _lang_text(lang,'Éditeur : admissible — jeu : recherche voisine possible, position exacte refusée','Editor: admissible — game: nearby search possible, exact position rejected','Editor: zulässig — Spiel: Nachbarsuche möglich, genaue Position abgelehnt','Editor: admisible — juego: búsqueda cercana posible, posición exacta rechazada')
+                else:
+                    reason = _lang_text(lang,'Jeu et éditeur : admissible localement','Game and editor: locally admissible','Spiel und Editor: lokal zulässig','Juego y editor: admisible localmente')
+                reason += ' — ' + _lang_text(lang,'séparation non évaluée ici','spacing not evaluated here','Abstand hier nicht geprüft','separación no evaluada aquí')
+            elif not report['terrain'][y,x]:
+                reason = _lang_text(lang, 'Terrain ou bord incompatible', 'Incompatible terrain or border', 'Unvereinbares Gelände oder Kartenrand', 'Terreno o borde incompatible')
+            elif not report['clearance'][y,x]:
+                reason = _lang_text(lang, 'Occupation ou accessibilité incompatible', 'Incompatible occupancy or access', 'Unvereinbare Belegung oder Zugang', 'Ocupación o acceso incompatible')
+            else:
+                reason = _lang_text(lang, 'Nivellement refusé', 'Leveling rejected', 'Einebnung abgelehnt', 'Nivelación rechazada')
+            from ...generation.editor_starts import placed_start_checks
+            if (x,y) in st.starts:
+                placed = placed_start_checks(st)[st.starts.index((x,y))]
+                status = _lang_text(lang,'Départ posé :','Placed start:','Gesetzter Start:','Inicio colocado:') + ' ' + str(placed['player'])
+                if placed['game'] is None or placed['editor'] is None:
+                    status += ' — ' + _lang_text(lang,'contrôle indisponible','check unavailable','Prüfung nicht verfügbar','control no disponible')
+                else:
+                    yes = _lang_text(lang,'admissible','admissible','zulässig','admisible')
+                    no = _lang_text(lang,'refusé','rejected','abgelehnt','rechazado')
+                    status += ' — ' + _lang_text(lang,'Jeu — position exacte','Game — exact position','Spiel — genaue Position','Juego — posición exacta') + ': ' + (yes if placed['game'] else no)
+                    status += ' — ' + _lang_text(lang,'Éditeur','Editor','Editor','Editor') + ': ' + (yes if placed['editor'] else no)
+                    if placed['relocation_possible']:
+                        status += ' — ' + _lang_text(lang,'recherche voisine possible','nearby search possible','Nachbarsuche möglich','búsqueda cercana posible')
+                    if placed['editor_reason'] == 'spacing':
+                        status += ' (' + _lang_text(lang,'départs trop proches','starts too close','Starts zu nah','inicios demasiado cercanos') + ')'
+                    elif placed['editor_reason'] != 'valid':
+                        status += ' (' + _lang_text(lang,'terrain incompatible','incompatible terrain','unzulässiges Gelände','terreno incompatible') if placed['editor_reason'] == 'terrain' else ' (' + _lang_text(lang,'occupation ou accès incompatible','incompatible occupancy or access','unzulässige Belegung oder Zugang','ocupación o acceso incompatible')
+                        status += ')'
+                reason = status + ' — ' + _lang_text(lang,'Carte finale','Final map','Endgültige Karte','Mapa final')
+            island = int(report['labels'][y,x])
+            self.inspector_var.set(f"x={x} y={y} — {reason} — {self._departure_summary(report, island)}")
+            return
         self.inspector_var.set(f'x={x}  y={y}  {labels[0]}={t} ({tname})  {labels[1]}={o} ({oname})  {labels[2]}={self._resource_text(t,r)}  {labels[3]}={h}  {labels[4]}={a}  {labels[5]}={claim}')
 
     def _clear_inspector(self):

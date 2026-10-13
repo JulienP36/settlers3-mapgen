@@ -27,7 +27,7 @@ FEEDBACK_TEXT={
   'generating':'Génération de {archetype} — {mode} — {side}×{side} — {players} joueurs — seed {seed}…',
   'generated':'Carte générée — {archetype} / {mode} / {side}×{side} / {players} joueurs / seed {seed}.',
   'cache_hit':'Résultat réutilisé depuis le cache — seed {seed}.',
-  'heatmap_locked':'Le filtre est disponible lorsque la vue « Carte thermique » est sélectionnée.',
+  'heatmap_locked':'Le filtre est disponible dans les vues « Carte thermique » et « Départs valides ».',
   'history_loaded':'Carte chargée depuis l’historique.',
   'history_cleared':'Caches de session vidés.',
   'shortcut_applied':'Raccourcis appliqués.',
@@ -55,7 +55,7 @@ FEEDBACK_TEXT={
   'generating':'Generating {archetype} — {mode} — {side}×{side} — {players} players — seed {seed}…',
   'generated':'Map generated — {archetype} / {mode} / {side}×{side} / {players} players / seed {seed}.',
   'cache_hit':'Result reused from cache — seed {seed}.',
-  'heatmap_locked':'The filter is available when the “Heatmap” view is selected.',
+  'heatmap_locked':'The filter is available in the “Heatmap” and “Valid starts” views.',
   'history_loaded':'Map loaded from session history.',
   'history_cleared':'Session caches cleared.',
   'shortcut_applied':'Shortcuts applied.',
@@ -81,8 +81,8 @@ MODE_LABELS={
 }
 
 ARCHETYPE_LABELS={
- 'fr':{'continental':'Continental','large_islands':'Grandes îles','small_islands':'Petites îles'},
- 'en':{'continental':'Continental','large_islands':'Large Islands','small_islands':'Small Islands'},
+ 'fr':{'continental':'Continental','large_islands':'Îles individuelles','team_islands':'Îles par équipe','small_islands':'Petites îles'},
+ 'en':{'continental':'Continental','large_islands':'Individual Islands','team_islands':'Islands by team','small_islands':'Small Islands'},
 }
 
 MIRROR_LABELS={
@@ -127,18 +127,16 @@ MODE_LABELS.update({
 })
 
 ARCHETYPE_LABELS.update({
- 'de':{'continental':'Kontinental','large_islands':'Große Inseln','small_islands':'Kleine Inseln'},
- 'es':{'continental':'Continental','large_islands':'Islas grandes','small_islands':'Islas pequeñas'},
+ 'de':{'continental':'Kontinental','large_islands':'Individuelle Inseln','team_islands':'Inseln nach Team','small_islands':'Kleine Inseln'},
+ 'es':{'continental':'Continental','large_islands':'Islas individuales','team_islands':'Islas por equipo','small_islands':'Islas pequeñas'},
 })
 
-# The main Archetype selector exposes the named Continental relief profiles
-# while the internal archetype key continues to represent geography. The two
-# island entries remain reserved until their generation profiles are ready.
+# The main Archetype selector exposes the named, implemented geography profiles.
 ARCHETYPE_INPUT_LABELS={
- 'fr':{'classic':'Classique','continental':'Continental','large_islands':'Grandes îles','small_islands':'Petites îles','edited':'Profil personnalisé','edited_option':'Personnalisé'},
- 'en':{'classic':'Classic','continental':'Continental','large_islands':'Large Islands','small_islands':'Small Islands','edited':'Custom profile','edited_option':'Custom'},
- 'de':{'classic':'Klassisch','continental':'Kontinental','large_islands':'Große Inseln','small_islands':'Kleine Inseln','edited':'Benutzerprofil','edited_option':'Benutzerdefiniert'},
- 'es':{'classic':'Clásico','continental':'Continental','large_islands':'Islas grandes','small_islands':'Islas pequeñas','edited':'Perfil personalizado','edited_option':'Personalizado'},
+ 'fr':{'classic':'Classique','continental':'Continental','large_islands':'Îles individuelles','team_islands':'Îles par équipe','small_islands':'Petites îles','edited':'Profil personnalisé','edited_option':'Personnalisé'},
+ 'en':{'classic':'Classic','continental':'Continental','large_islands':'Individual Islands','team_islands':'Islands by team','small_islands':'Small Islands','edited':'Custom profile','edited_option':'Custom'},
+ 'de':{'classic':'Klassisch','continental':'Kontinental','large_islands':'Individuelle Inseln','team_islands':'Inseln nach Team','small_islands':'Kleine Inseln','edited':'Benutzerprofil','edited_option':'Benutzerdefiniert'},
+ 'es':{'classic':'Clásico','continental':'Continental','large_islands':'Islas individuales','team_islands':'Islas por equipo','small_islands':'Islas pequeñas','edited':'Perfil personalizado','edited_option':'Personalizado'},
 }
 
 COMMAND_LABELS.update({
@@ -176,10 +174,10 @@ for _source,(_de,_es) in _TEXTS_DE_ES.items():
 
 FEEDBACK_TEXT.update({
  'de':{
-  'ready':'Bereit — {mode} / {archetype} / {side}×{side} / {players} Spieler.','size_reserved':'{side}×{side}: max. {max_players} Spieler. Legacy- und Upgraded-Generierung verfügbar.','size_viability_warning':'{side}×{side}: editorgültig, aber kleiner als 384×384. Die native Generierung kann wenig praktikabel sein und liegt unter dem Spielminimum (max. {max_players} Spieler).','mode_reserved':'Modus „{mode}“ ist reserviert und nicht implementiert.','arch_reserved':'Archetyp „{archetype}“ ist reserviert und nicht implementiert.','generating':'Generiere {archetype} — {mode} — {side}×{side} — {players} Spieler — Seed {seed}…','generated':'Karte generiert — {archetype} / {mode} / {side}×{side} / {players} Spieler / Seed {seed}.','cache_hit':'Ergebnis aus dem Cache wiederverwendet — Seed {seed}.','heatmap_locked':'Der Filter ist in der Ansicht „Heatmap“ verfügbar.','history_loaded':'Karte aus dem Sitzungsverlauf geladen.','history_cleared':'Sitzungs-Caches geleert.','shortcut_applied':'Tastenkürzel übernommen.','shortcut_restored':'Tastenkürzel auf Standardwerte zurückgesetzt.','seed_copied':'Seed kopiert: {seed}','export_done':'Export abgeschlossen.','history_empty':'Keine Karte im Sitzungs-Cache verfügbar.','compare_toggled':'Karte zu {map} gewechselt.','theme_changed':'Design geändert: {theme}.','view_reset':'Ansicht zentriert.','seed_randomized':'Neuer zufälliger Seed: {seed}','graph_exported':'Diagrammexport abgeschlossen: {format} — {file}','opacity_locked':'Die Deckkraft ist in der globalen Ansicht nicht verfügbar.','batch_opened':'Stapelgenerierung bereit — 1 bis 4 Karten konfigurieren.','batch_done':'Stapel abgeschlossen — {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.','history_not_retained':'Karte angezeigt, aber nicht behalten: Alle Cache-Plätze sind geschützt.',
+  'ready':'Bereit — {mode} / {archetype} / {side}×{side} / {players} Spieler.','size_reserved':'{side}×{side}: max. {max_players} Spieler. Legacy- und Upgraded-Generierung verfügbar.','size_viability_warning':'{side}×{side}: editorgültig, aber kleiner als 384×384. Die native Generierung kann wenig praktikabel sein und liegt unter dem Spielminimum (max. {max_players} Spieler).','mode_reserved':'Modus „{mode}“ ist reserviert und nicht implementiert.','arch_reserved':'Archetyp „{archetype}“ ist reserviert und nicht implementiert.','generating':'Generiere {archetype} — {mode} — {side}×{side} — {players} Spieler — Seed {seed}…','generated':'Karte generiert — {archetype} / {mode} / {side}×{side} / {players} Spieler / Seed {seed}.','cache_hit':'Ergebnis aus dem Cache wiederverwendet — Seed {seed}.','heatmap_locked':'Der Filter ist in den Ansichten „Heatmap“ und „Gültige Starts“ verfügbar.','history_loaded':'Karte aus dem Sitzungsverlauf geladen.','history_cleared':'Sitzungs-Caches geleert.','shortcut_applied':'Tastenkürzel übernommen.','shortcut_restored':'Tastenkürzel auf Standardwerte zurückgesetzt.','seed_copied':'Seed kopiert: {seed}','export_done':'Export abgeschlossen.','history_empty':'Keine Karte im Sitzungs-Cache verfügbar.','compare_toggled':'Karte zu {map} gewechselt.','theme_changed':'Design geändert: {theme}.','view_reset':'Ansicht zentriert.','seed_randomized':'Neuer zufälliger Seed: {seed}','graph_exported':'Diagrammexport abgeschlossen: {format} — {file}','opacity_locked':'Die Deckkraft ist in der globalen Ansicht nicht verfügbar.','batch_opened':'Stapelgenerierung bereit — 1 bis 4 Karten konfigurieren.','batch_done':'Stapel abgeschlossen — {success} erfolgreich, {failed} fehlgeschlagen, {cancelled} abgebrochen.','history_not_retained':'Karte angezeigt, aber nicht behalten: Alle Cache-Plätze sind geschützt.',
  },
  'es':{
-  'ready':'Listo — {mode} / {archetype} / {side}×{side} / {players} jugadores.','size_reserved':'{side}×{side}: máx. {max_players} jugadores. Generación Legacy y Upgraded disponible.','size_viability_warning':'{side}×{side} es válido para el editor, pero menor que 384×384: la generación nativa puede ser poco viable y queda por debajo del mínimo del juego (máx. {max_players} jugadores).','mode_reserved':'El modo «{mode}» está reservado y no implementado.','arch_reserved':'El arquetipo «{archetype}» está reservado y no implementado.','generating':'Generando {archetype} — {mode} — {side}×{side} — {players} jugadores — seed {seed}…','generated':'Mapa generado — {archetype} / {mode} / {side}×{side} / {players} jugadores / seed {seed}.','cache_hit':'Resultado reutilizado desde la caché — seed {seed}.','heatmap_locked':'El filtro está disponible en la vista «Mapa de calor».','history_loaded':'Mapa cargado desde el historial de sesión.','history_cleared':'Cachés de sesión vaciadas.','shortcut_applied':'Atajos aplicados.','shortcut_restored':'Atajos restablecidos a sus valores predeterminados.','seed_copied':'Seed copiada: {seed}','export_done':'Exportación terminada.','history_empty':'No hay mapas disponibles en la caché de sesión.','compare_toggled':'Mapa cambiado a {map}.','theme_changed':'Tema cambiado: {theme}.','view_reset':'Vista centrada.','seed_randomized':'Nueva seed aleatoria: {seed}','graph_exported':'Exportación del gráfico terminada: {format} — {file}','opacity_locked':'La opacidad no está disponible en la vista Global.','batch_opened':'Generación por lotes lista — configura de 1 a 4 mapas.','batch_done':'Lote terminado — {success} correctos, {failed} fallidos, {cancelled} cancelados.','history_not_retained':'Mapa mostrado pero no conservado: todas las plazas de la caché están protegidas.',
+  'ready':'Listo — {mode} / {archetype} / {side}×{side} / {players} jugadores.','size_reserved':'{side}×{side}: máx. {max_players} jugadores. Generación Legacy y Upgraded disponible.','size_viability_warning':'{side}×{side} es válido para el editor, pero menor que 384×384: la generación nativa puede ser poco viable y queda por debajo del mínimo del juego (máx. {max_players} jugadores).','mode_reserved':'El modo «{mode}» está reservado y no implementado.','arch_reserved':'El arquetipo «{archetype}» está reservado y no implementado.','generating':'Generando {archetype} — {mode} — {side}×{side} — {players} jugadores — seed {seed}…','generated':'Mapa generado — {archetype} / {mode} / {side}×{side} / {players} jugadores / seed {seed}.','cache_hit':'Resultado reutilizado desde la caché — seed {seed}.','heatmap_locked':'El filtro está disponible en las vistas «Mapa de calor» e «Inicios válidos».','history_loaded':'Mapa cargado desde el historial de sesión.','history_cleared':'Cachés de sesión vaciadas.','shortcut_applied':'Atajos aplicados.','shortcut_restored':'Atajos restablecidos a sus valores predeterminados.','seed_copied':'Seed copiada: {seed}','export_done':'Exportación terminada.','history_empty':'No hay mapas disponibles en la caché de sesión.','compare_toggled':'Mapa cambiado a {map}.','theme_changed':'Tema cambiado: {theme}.','view_reset':'Vista centrada.','seed_randomized':'Nueva seed aleatoria: {seed}','graph_exported':'Exportación del gráfico terminada: {format} — {file}','opacity_locked':'La opacidad no está disponible en la vista Global.','batch_opened':'Generación por lotes lista — configura de 1 a 4 mapas.','batch_done':'Lote terminado — {success} correctos, {failed} fallidos, {cancelled} cancelados.','history_not_retained':'Mapa mostrado pero no conservado: todas las plazas de la caché están protegidas.',
  },
 })
 
@@ -190,4 +188,12 @@ FEEDBACK_TEXT['es']['size_viability_warning']='{side}×{side}: válido para el e
 FEEDBACK_TEXT['de']['size_extended_warning']='{side}×{side}: vom Settlers-United-Editor unterstützt, aber größer als das native Maximum von 768×768. Die Spieltauglichkeit ist nicht garantiert (max. {max_players} Spieler).'
 FEEDBACK_TEXT['es']['size_extended_warning']='{side}×{side}: compatible con el editor Settlers United, pero supera el máximo nativo de 768×768. La viabilidad en el juego no está garantizada (máx. {max_players} jugadores).'
 
+TEXTS['Départs']={'en':'Starts','de':'Startpositionen','es':'Inicios'}
+
 NONE_LABELS={'fr':'Aucun','en':'None','de':'Keine','es':'Ninguno'}
+
+for _language, _label in {'fr': 'Remettre en place l’espace de travail',
+                           'en': 'Restore workspace layout',
+                           'de': 'Arbeitsbereich zurücksetzen',
+                           'es': 'Restablecer espacio de trabajo'}.items():
+    COMMAND_LABELS[_language]['reset_workspace'] = _label

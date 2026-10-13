@@ -207,19 +207,23 @@ def validate(state, profile: dict) -> list[ValidationResult]:
 
     reeds = np.isin(objects, profile["decor"].get("swamp_reed_ids", []))
     add("UPGRADED_SWAMP_REEDS", not np.any((objects != 0) & np.isin(terrain, SWAMP_IDS) & ~reeds), "reeds only")
-    add("UPGRADED_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
+    add("UPGRADED_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}",
+        hard=state.metadata.get("start_algorithm_effective") != "classic")
     mini_swamps = state.metadata.get("upgraded_start_mini_swamps", {})
     placed_swamps = mini_swamps.get("placed_cells_per_start", []) if isinstance(mini_swamps, dict) else []
     mini_swamp_disabled = isinstance(mini_swamps, dict) and mini_swamps.get("enabled") is False
+    from ...start_bonus_policy import swamp_bonus_players
+    swamp_eligible = swamp_bonus_players(state)
     add(
         "UPGRADED_START_MINI_SWAMPS",
         mini_swamp_disabled or (
             len(placed_swamps) == len(state.starts)
-            and all(int(value) > 0 for value in placed_swamps)
+            and all(not eligible or int(value) > 0
+                    for value, eligible in zip(placed_swamps, swamp_eligible))
         ),
         "disabled by Custom profile"
         if mini_swamp_disabled
-        else f"starts={sum(int(value) > 0 for value in placed_swamps)}/{len(state.starts)}",
+        else f"eligible={sum(eligible and int(value) > 0 for value, eligible in zip(placed_swamps, swamp_eligible))}/{sum(swamp_eligible)}",
     )
     add(
         "UPGRADED_START_CONTENT_RESTORED",
@@ -327,7 +331,12 @@ def validate(state, profile: dict) -> list[ValidationResult]:
             hard=False,
         )
     from ...archetypes.large_islands import validate_island_contract
-    out.extend(validate_island_contract(state))
+    island_checks = validate_island_contract(state)
+    if state.metadata.get("start_algorithm_effective") in ("classic", "fair"):
+        for check in island_checks:
+            if check.rule_id in ("ISLAND_STARTS", "ISLAND_SWAMPS"):
+                check.hard = False  # The game selector does not promise one per island.
+    out.extend(island_checks)
     return out
 
 

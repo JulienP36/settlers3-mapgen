@@ -19,3 +19,16 @@ HEATMAP_LABELS.update({
  'de':{'trees':'Bäume','building_stones':'Bausteine','fish':'Fische','coal':'Kohle','iron':'Eisen','gold':'Gold','gems':'Edelsteine','sulfur':'Schwefel'},
  'es':{'trees':'Árboles','building_stones':'Piedras de construcción','fish':'Peces','coal':'Carbón','iron':'Hierro','gold':'Oro','gems':'Gemas','sulfur':'Azufre'},
 })
+
+VALID_START_LABELS = {}
+for lang, names, before, current in (
+    ('fr', ('Toutes les civilisations','Romains','Égyptiens','Asiatiques','Amazones'), 'avant objets', 'carte actuelle'),
+    ('en', ('All civilizations','Romans','Egyptians','Asians','Amazons'), 'before objects', 'current map'),
+    ('de', ('Alle Völker','Römer','Ägypter','Asiaten','Amazonen'), 'vor Objekten', 'aktuelle Karte'),
+    ('es', ('Todas las civilizaciones','Romanos','Egipcios','Asiáticos','Amazonas'), 'antes de objetos', 'mapa actual'),
+):
+    keys=('valid_all','valid_0','valid_1','valid_2','valid_3')
+    VALID_START_LABELS[lang] = {key: name+' — '+before for key,name in zip(keys,names)}
+    VALID_START_LABELS[lang].update({key+':current': name+' — '+current for key,name in zip(keys,names)})
+for lang, title in zip(('fr','en','de','es'), ('Départs valides','Valid starts','Gültige Starts','Inicios válidos')):
+    VIEW_LABELS[lang]['valid_starts'] = title

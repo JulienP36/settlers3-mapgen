@@ -14,11 +14,14 @@ DEFAULTS = {
     'projection': 'square',
     'preview_start_markers': 'small',
     'preview_start_circles': False,
+    'valid_start_filter': 'valid_all',
     'history_capacity': 8,
     'wheel_zoom': 1.10,
     'language': 'fr',
     'custom_sections_expanded': {},
-    'vertical_split_ratio': 0.32,
+    'archetype_preview_placement': 'top',
+    'vertical_split_ratio': 0.32,  # Historical preference, no longer drives the sash.
+    'vertical_split_height': None,
     'shortcuts': DEFAULT_SHORTCUTS,
 }
 
@@ -50,6 +53,8 @@ def load_settings() -> dict:
                     cfg[key] = raw[key]
     except (OSError, ValueError, TypeError):
         pass
+    if cfg.get('valid_start_filter') not in tuple(k+s for k in ('valid_all','valid_0','valid_1','valid_2','valid_3') for s in ('', ':current')):
+        cfg['valid_start_filter'] = 'valid_all'
     cfg['theme'] = 'dark' if cfg.get('theme') == 'dark' else 'light'
     cfg['projection'] = 'parallelogram' if cfg.get('projection') == 'parallelogram' else 'square'
     cfg['preview_start_markers'] = cfg.get('preview_start_markers') if cfg.get('preview_start_markers') in ('hidden', 'tiny', 'small', 'normal') else 'small'
@@ -72,7 +77,13 @@ def load_settings() -> dict:
         if math.isfinite(split_ratio)
         else 0.32
     )
+    try:
+        height = cfg.get('vertical_split_height')
+        cfg['vertical_split_height'] = None if height is None else max(0, int(height))
+    except (TypeError, ValueError, OverflowError):
+        cfg['vertical_split_height'] = None
     cfg['shortcuts'] = _clean_shortcuts(cfg.get('shortcuts'))
+    cfg['archetype_preview_placement'] = (cfg.get('archetype_preview_placement') if cfg.get('archetype_preview_placement') in ('free', 'top', 'right', 'auto') else 'top')
     cfg['settings_version'] = SETTINGS_SCHEMA_VERSION
     return cfg
 

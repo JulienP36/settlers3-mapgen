@@ -8,6 +8,7 @@ the validated engine implementation.
 
 from __future__ import annotations
 import tkinter as tk
+from .ui.i18n.starts import START_LABELS
 from tkinter import ttk
 
 from .shell import NATIVE_LIMITS, ShellWindow
@@ -16,6 +17,10 @@ from .batch import BatchController
 from .history import HistoryController
 from .analysis.controller import AnalysisController
 from .exports.controller import ExportController
+from .ui.sprites import sprite_photo
+from .ui.layout import natural_width, content_width
+from .ui.i18n.common import _lang_text
+from .ui.i18n.shell import COMMAND_LABELS
 from .shortcuts.controller import ShortcutController
 from .viewer.controller import ViewerController
 from .imports import ImportController
@@ -87,6 +92,17 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.bind_class('Toplevel','<Map>',self._native_titlebar_mapped,add='+')
         self._apply_initial_window_geometry();self._apply_language();self._bind_shortcuts();self.bind('<Configure>',self._schedule_responsive_layout,add='+');self.bind('<Escape>',self._close_large_preview_escape,add='+');self.after_idle(self._apply_responsive_layout);self._schedule_native_titlebar_refresh()
 
+    def report_callback_exception(self, exception_type, exception, trace):
+        """Keep callback failures visible and copyable instead of console-only."""
+        import traceback
+        from .ui.messages import show_message
+        try:
+            show_message(self, 'ui', exception=exception,
+                         details=''.join(traceback.format_exception(exception_type, exception, trace)))
+        except Exception:
+            # A failure while creating the report must not recursively open dialogs.
+            super().report_callback_exception(exception_type, exception, trace)
+
     def _native_titlebar_mapped(self,event):
         self._schedule_native_titlebar_refresh()
 
@@ -120,6 +136,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
 
         self._header_shell=ttk.Frame(top)
         self._header_shell.grid(row=0,column=0,sticky='new')
+        self._header_shell.bind('<Configure>',self._vertical_split_configure,add='+')
+        self._header_shell.bind('<Configure>',lambda e:self._schedule_responsive_layout(),add='+')
         top.columnconfigure(0,weight=1)
         self.generation_panel=ttk.Frame(self._header_shell)
         self.global_panel=ttk.Frame(self._header_shell)
@@ -136,15 +154,22 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.mode_combo=ttk.Combobox(mode_group,textvariable=self.mode,values=[MODE_LABELS[selector_language][k] for k in MODE_ORDER],state='readonly',width=20)
         self.mode_combo.pack();self.mode_combo.bind('<<ComboboxSelected>>',lambda e:self._selection_changed())
         arch_group=selector_group(primary_row,'Archétype');arch_group.pack(side='left',padx=(0,5))
-        self.arch_combo=ttk.Combobox(arch_group,textvariable=self.arch_input,values=[ARCHETYPE_INPUT_LABELS[selector_language][key] for key in ('classic','continental','large_islands','small_islands')],state='readonly',width=21)
+        self.arch_combo=ttk.Combobox(arch_group,textvariable=self.arch_input,values=[ARCHETYPE_INPUT_LABELS[selector_language][key] for key in ('classic','continental','large_islands','team_islands')],state='readonly',width=21)
         self.arch_combo.pack();self.arch_combo.bind('<<ComboboxSelected>>',lambda e:self._custom_main_archetype_input_changed())
-        modifier_group=selector_group(primary_row,'Modificateurs');modifier_group.pack(side='left',padx=(0,7))
-        self.modifier_label=modifier_group.winfo_children()[0]
-        self.modifier_none=tk.BooleanVar(value=True);self.modifier_text=tk.StringVar(value='Aucun')
-        self.modifier_button=ttk.Menubutton(modifier_group,textvariable=self.modifier_text,width=14,style='ImageSelect.TMenubutton',state='disabled')
-        self.modifier_menu=tk.Menu(self.modifier_button,tearoff=False);self.modifier_button.configure(menu=self.modifier_menu)
-        self.modifier_menu.add_checkbutton(label='Aucun',variable=self.modifier_none,command=self._modifier_none_selected,state='disabled')
-        self.modifier_button.pack()
+        start_group=selector_group(primary_row,'Départs');start_group.pack(side='left',padx=(0,7))
+        self.start_algorithm=tk.StringVar(value='auto');self.start_text=tk.StringVar(value=START_LABELS[selector_language]['auto'])
+        self.start_button=ttk.Menubutton(start_group,textvariable=self.start_text,width=23,style='ImageSelect.TMenubutton')
+        self.start_menu=tk.Menu(self.start_button,tearoff=False);self.start_button.configure(menu=self.start_menu)
+        for key in ('auto','balanced','fair','islands'):
+            self.start_menu.add_radiobutton(label=START_LABELS[selector_language][key],variable=self.start_algorithm,value=key,command=self._start_algorithm_selected)
+        self.start_menu.add_separator()
+        self.start_menu.add_radiobutton(label=START_LABELS[selector_language]['classic'],variable=self.start_algorithm,value='classic',command=self._start_algorithm_selected)
+        self.start_menu.add_command(label=START_LABELS[selector_language]['nations'],command=self._configure_classic_starts)
+        self.start_button.pack()
+        self._bind_action_tooltip(self.start_button, self._start_tooltip_text)
+        self.start_menu.bind('<<MenuSelect>>', self._start_menu_tooltip, add='+')
+        self.start_menu.bind('<Leave>', lambda e: self._hide_ui_tooltip(), add='+')
+        self.start_menu.bind('<Unmap>', lambda e: self._hide_ui_tooltip(), add='+')
         mirror_group=selector_group(primary_row,'Miroir');mirror_group.pack(side='left',padx=(0,5))
         mirror_language=self.prefs.get('language','fr')
         self.mirror_combo=ttk.Combobox(mirror_group,textvariable=self.mirror,values=list(MIRROR_LABELS[mirror_language].values()),state='readonly',width=_mirror_combo_width(mirror_language))
@@ -165,8 +190,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.players_spin=ttk.Spinbox(players_group,from_=2,to=20,textvariable=self.players,width=8);self.players_spin.pack()
         seed_group=selector_group(secondary_row,'Seed');seed_group.pack(side='left',padx=(0,7))
         self.seed_entry=ttk.Entry(seed_group,textvariable=self.seed,width=14);self.seed_entry.pack()
-        seed_actions=ttk.Frame(secondary_row);seed_actions.pack(side='left',fill='y',padx=(0,7))
-        self.random_seed_button=ttk.Button(seed_actions,image=self._seed_dice_icon,padding=0,command=self.random_seed)
+        seed_actions=ttk.Frame(secondary_row);seed_actions.pack(side='left',fill='y',padx=(0,4))
+        self.random_seed_button=ttk.Button(seed_actions,image=self._seed_dice_icon,padding=(0,0,0,1),width=0,command=self.random_seed)
         self.random_seed_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
         self.copy_seed_button=ttk.Button(seed_actions,text='Copier seed',command=self._copy_seed)
         self.copy_seed_button.pack(side='left',anchor='s',pady=(19,0))
@@ -175,7 +200,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.import_button.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
         self.export_btn=ttk.Button(self.file_actions,text='Exporter…',command=self.export,state='disabled')
         self.export_btn.pack(side='left',anchor='s',padx=(0,4),pady=(19,0))
-        self.preview_button=ttk.Button(self.file_actions,text='Aperçu PNG',command=self.save_preview)
+        self.preview_button=ttk.Button(self.file_actions,text='Aperçu PNG',command=self.save_preview,state='disabled')
         self.preview_button.pack(side='left',anchor='s',pady=(19,0))
 
         # Global controls have their own layout and never occupy generation columns.
@@ -218,8 +243,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
 
         # Raster selector resources used by the independent viewer toolbar.
         self.heatmap_var=tk.StringVar(value='Arbres')
-        self._lock_closed_icon=_selector_icon(self,'#d84a3a','lock_closed',18)
-        self._lock_open_icon=_selector_icon(self,'#2ca85a','lock_open',18)
+        self._lock_closed_icon=sprite_photo(self,'ui/lock_closed')
+        self._lock_open_icon=sprite_photo(self,'ui/lock_open')
         self._history_heading_lock_icon=_history_heading_lock_icon(self)
         self.canvas.bind('<Motion>',self._inspect_motion,add='+');self.canvas.bind('<Leave>',lambda e:self._clear_inspector(),add='+')
         self._build_stats_charts_tab()
@@ -278,7 +303,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         if self._layout_after:
             try:self.after_cancel(self._layout_after)
             except tk.TclError:pass
-        self._layout_after=self.after(RESPONSIVE_LAYOUT_SETTLE_MS,self._apply_responsive_layout)
+        self._layout_after=self.after_idle(self._apply_responsive_layout)
 
     def _apply_responsive_layout(self):
         """Reflow whole functional regions without mixing their internal controls."""
@@ -286,32 +311,33 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self._layout_after=None
         try:width=int(self.winfo_width())
         except tk.TclError:return
-        # At 1600 px the rightmost theme action can clip for a few frames before
-        # reflow. Keep the 1920 target wide, but switch earlier.
-        compact=width<1750
-        mode='compact' if compact else 'wide'
+        # Stable selector requests in both layouts avoid feedback at the breakpoint.
+        self.mode_combo.configure(width=15)
+        self.arch_combo.configure(width=21)
+        self.start_button.configure(width=23)
+        self.lang_combo.configure(width=9)
+        required = (self.generation_panel.winfo_reqwidth()+self._session_natural_width()
+                    +max(self.language_label.winfo_reqwidth(),
+                         self.lang_combo.winfo_reqwidth()+self.help_button.winfo_reqwidth()+self._theme_button.winfo_reqwidth()+8)+20)
+        self._header_required_width = required
+        compact=content_width(self._header_shell)<required
+        global_compact=max(self.language_label.winfo_reqwidth(),self.lang_combo.winfo_reqwidth()+4,
+                           self.help_button.winfo_reqwidth()+self._theme_button.winfo_reqwidth()+4)
+        narrow=compact and content_width(self._header_shell)<self.generation_panel.winfo_reqwidth()+global_compact+10
+        mode='narrow' if narrow else 'compact' if compact else 'wide'
         if mode==self._responsive_mode:return
         self._responsive_mode=mode;shell=self._header_shell
 
-        # Only selector widths adapt.  Text buttons retain their natural requested
-        # width so translations are never clipped.
-        try:
-            self.mode_combo.configure(width=15 if compact else 20)
-            self.arch_combo.configure(width=21 if compact else 22)
-            self.modifier_button.configure(width=9 if compact else 14)
-            self.lang_combo.configure(width=9 if compact else 11)
-        except tk.TclError:pass
-
         for w in (self.generation_panel,self.session_box,self.global_panel):w.grid_forget()
         for c in range(5):shell.columnconfigure(c,weight=0,minsize=0)
-        for r in range(2):shell.rowconfigure(r,weight=0,minsize=0)
+        for r in range(3):shell.rowconfigure(r,weight=0,minsize=0)
 
         if compact:
             # Generation and global controls remain visibly separate at the 900 px
             # minimum; Session moves as a complete block below them.
             self.generation_panel.grid(row=0,column=0,sticky='nw')
-            self.global_panel.grid(row=0,column=1,sticky='ne',padx=(10,0))
-            self.session_box.grid(row=1,column=0,columnspan=2,sticky='ew',pady=(5,0))
+            self.global_panel.grid(row=1 if narrow else 0,column=0 if narrow else 1,sticky='nw' if narrow else 'ne',padx=(0 if narrow else 10,0),pady=(5 if narrow else 0,0))
+            self.session_box.grid(row=2 if narrow else 1,column=0,columnspan=2,sticky='ew',pady=(5,0))
             shell.columnconfigure(0,weight=1)
         else:
             # Fixed functional regions with elastic gutters keep Session genuinely
@@ -322,6 +348,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
             shell.columnconfigure(1,weight=1);shell.columnconfigure(3,weight=1)
 
         self._layout_global_controls(compact)
+        self._vertical_split_configure()
         self._session_layout_mode=None
         try:self.after_idle(self._apply_session_layout)
         except tk.TclError:self._apply_session_layout()
@@ -339,12 +366,70 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
             self.help_button.grid(row=1,column=1,padx=(0,4))
             self._theme_button.grid(row=1,column=2)
 
+    def _compact_command_tooltip(self, widget, command):
+        lang = self.prefs.get('language', 'fr')
+        label = COMMAND_LABELS[lang][command]
+        shortcut = self.prefs.get('shortcuts', {}).get(command, '')
+        self._show_ui_tooltip(widget, label + (f' ({shortcut})' if shortcut else ''),
+                              key=('compact-action', command, lang, shortcut))
+
+    def _apply_compact_action_icons(self):
+        for name, key, command in (('import_button', 'mask/import', 'import'),
+                                  ('export_btn', 'mask/export', 'export'),
+                                  ('preview_button', 'mask/save', 'save_preview'),
+                                  ('viewer_recenter_button', 'ui/recenter', 'reset_view')):
+            widget = getattr(self, name, None)
+            if widget is None:
+                continue
+            widget.configure(text='', image=sprite_photo(self, key), compound='none', width=0, padding=(0,0,0,1))
+            if not getattr(widget, '_sprite_tooltip_bound', False):
+                widget.bind('<Enter>', lambda e, w=widget, c=command: self._compact_command_tooltip(w, c), add='+')
+                widget.bind('<Leave>', lambda e: self._hide_ui_tooltip(), add='+')
+                widget.bind('<FocusIn>', lambda e, w=widget, c=command: self._compact_command_tooltip(w, c), add='+')
+                widget.bind('<FocusOut>', lambda e: self._hide_ui_tooltip(), add='+')
+                widget._sprite_tooltip_bound = True
+
+        self._bind_action_tooltip(self.random_seed_button, lambda: self._seed_tooltip_text())
+        self._bind_action_tooltip(self._theme_button, lambda: self._theme_tooltip_text())
+        for slot, button in (('A', self.clear_a_button), ('B', self.clear_b_button)):
+            self._bind_action_tooltip(button, lambda slot=slot: _lang_text(
+                self.prefs.get('language','fr'), f'Vider {slot}', f'Clear {slot}',
+                f'{slot} leeren', f'Vaciar {slot}'))
+
+    def _bind_action_tooltip(self, widget, text):
+        if getattr(widget, '_action_tooltip_bound', False):
+            return
+        widget.bind('<Enter>', lambda e: self._show_ui_tooltip(widget, text()), add='+')
+        widget.bind('<Leave>', lambda e: self._hide_ui_tooltip(), add='+')
+        widget.bind('<FocusIn>', lambda e: self._show_ui_tooltip(widget, text()), add='+')
+        widget.bind('<FocusOut>', lambda e: self._hide_ui_tooltip(), add='+')
+        widget._action_tooltip_bound = True
+
+    def _seed_tooltip_text(self):
+        return {'fr':'Nouveau seed aléatoire','en':'New random seed',
+                'de':'Neuer zufälliger Seed','es':'Nueva seed aleatoria'}[self.prefs.get('language','fr')]
+
+    def _session_natural_width(self):
+        # Match the actual grid constraints, including the history column's minimum.
+        history=max(self.history_combo.winfo_reqwidth()+12,
+                    max(210,natural_width(self.history_clear_button)+8)
+                    +natural_width(self.history_load_button)+4
+                    +self.history_manage_button.winfo_reqwidth()+4)
+        a=max(natural_width(self.compare_a_button)+4,
+              natural_width(self.compare_toggle_button)+4)
+        middle=max(self.clear_a_button.winfo_reqwidth()+5
+                   +natural_width(self.compare_b_button)+4,
+                   natural_width(self.clear_ab_button)+5)
+        return (self.session_history_label.winfo_reqwidth()+history+a+middle
+                +self.clear_b_button.winfo_reqwidth()+1+16)
+
     def _apply_session_layout(self,event=None):
         """Keep full A/B identities when space allows and compact only near minimum."""
         if not hasattr(self,'session_box'):return
         try:width=int(event.width) if event is not None else int(self.session_box.winfo_width())
         except (AttributeError,tk.TclError,TypeError,ValueError):width=1
-        compact=self._responsive_mode=='compact' and width<900
+        self._session_required_width=self._session_natural_width()-16
+        compact=self._responsive_mode!='wide' and content_width(self.session_box)<self._session_required_width
         mode='compact_ab' if compact else 'natural_ab'
         if getattr(self,'_session_layout_mode',None)==mode:return
         self._session_layout_mode=mode

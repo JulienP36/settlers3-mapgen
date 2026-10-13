@@ -15,7 +15,6 @@ from ..ui.i18n.shell import PREVIEW_START_MARKER_LABELS, PROJECTION_LABELS, THEM
 
 
 SCROLLBAR_DRAG_FRAME_MS = 16
-SCROLLABLE_TAB_LAYOUT_SETTLE_MS = 24
 SCROLLABLE_INPUT_WIDGET_CLASSES = frozenset(
     {"Spinbox", "TSpinbox", "Combobox", "TCombobox", "Listbox", "TListbox"}
 )
@@ -220,10 +219,15 @@ class SettingsController:
             self._scroll_tab_active_surface = None
             return None
 
-    def _scroll_notebook_tab(self,title):
+    def _scroll_notebook_tab(self,title, *, preview_dock=False):
         """Create a tab whose content remains reachable at compact dimensions."""
         self._ensure_scrollable_tab_wheel_bindings()
         host=ttk.Frame(self.nb);self.nb.add(host,text=title);host.rowconfigure(0,weight=1);host.columnconfigure(0,weight=1)
+        notebook_host = host
+        if preview_dock:
+            host = ttk.Frame(notebook_host)
+            host.grid(row=0, column=0, sticky='nsew')
+            host.rowconfigure(0, weight=1); host.columnconfigure(0, weight=1)
         canvas=tk.Canvas(host,highlightthickness=0,borderwidth=0)
         scroll_state={'after':None,'pending':None}
 
@@ -260,9 +264,11 @@ class SettingsController:
         inner=ttk.Frame(canvas,padding=14);item=canvas.create_window((0,0),window=inner,anchor='nw')
         # The editor can restore a generator scroll position without knowing
         # about the notebook implementation details.
-        canvas._scroll_host = host
+        canvas._scroll_host = notebook_host
         inner._scroll_canvas = canvas
-        inner._scroll_host = host
+        inner._scroll_host = notebook_host
+        if preview_dock:
+            inner._preview_viewport = host
 
         host.bind(
             "<Enter>",
@@ -289,7 +295,10 @@ class SettingsController:
                 if scrollregion and tuple(scrollregion)!=layout_state['scrollregion']:
                     canvas.configure(scrollregion=scrollregion);layout_state['scrollregion']=tuple(scrollregion)
                 show_hbar=required_w>available_w+1;show_vbar=required_h>available_h+1
-                hbar_visible=bool(hbar.winfo_ismapped());vbar_visible=bool(vbar.winfo_ismapped());changed=False
+                # An inactive notebook page is unmapped even when its bars
+                # are already gridded. Comparing mapping here would enqueue
+                # refresh forever and starve update_idletasks during startup.
+                hbar_visible=hbar.winfo_manager()=='grid';vbar_visible=vbar.winfo_manager()=='grid';changed=False
                 if show_hbar!=hbar_visible:
                     changed=True
                     if show_hbar:hbar.grid(row=1,column=0,sticky='ew')
@@ -303,7 +312,7 @@ class SettingsController:
 
         def schedule_refresh(_event=None):
             if layout_state['after'] is not None:return
-            try:layout_state['after']=canvas.after(SCROLLABLE_TAB_LAYOUT_SETTLE_MS,refresh)
+            try:layout_state['after']=canvas.after_idle(refresh)
             except tk.TclError:layout_state['after']=None
 
         inner.bind('<Configure>',schedule_refresh,add='+');canvas.bind('<Configure>',schedule_refresh,add='+')
@@ -366,7 +375,7 @@ class SettingsController:
         return self.prefs.get('theme','dark')
 
     def _save_prefs(self):
-        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'custom_sections_expanded':self.prefs.get('custom_sections_expanded',{}),'vertical_split_ratio':float(self.prefs.get('vertical_split_ratio',0.32)),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
+        save_settings({'theme':self.prefs['theme'],'overlay_alpha':int(self.opacity_var.get()),'projection':self.prefs['projection'],'preview_start_markers':self.prefs.get('preview_start_markers','small'),'preview_start_circles':bool(self.prefs.get('preview_start_circles',False)),'history_capacity':int(self.prefs.get('history_capacity',8)),'wheel_zoom':float(self.wheel_var.get()),'language':self.prefs.get('language','fr'),'custom_sections_expanded':self.prefs.get('custom_sections_expanded',{}),'archetype_preview_placement':self.prefs.get('archetype_preview_placement','top'),'vertical_split_ratio':float(self.prefs.get('vertical_split_ratio',0.32)),'vertical_split_height':self.prefs.get('vertical_split_height'),'shortcuts':self.prefs.get('shortcuts',dict(DEFAULT_SHORTCUTS))})
 
     def _schedule_prefs_save(self):
         if self._prefs_save_after is not None:

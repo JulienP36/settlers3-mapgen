@@ -16,7 +16,7 @@ Its three long-term generation modes are:
 - **Upgraded**, the validated gameplay and safety rules accumulated by the project;
 - **Custom**, a user-configurable laboratory mode that retains critical safeguards.
 
-Map archetypes describe macro geography independently from generation modes. Continental is currently implemented; Large Islands and Small Islands are reserved for later development.
+Map archetypes describe macro geography independently from generation modes. Continental, Individual Islands and Team Islands are implemented. Team Islands scales island area by group size; Small Islands is withdrawn.
 
 Every map preview is a deterministic rendering of actual generated or imported map data. The project does not use invented map artwork.
 
@@ -46,17 +46,18 @@ Every map preview is a deterministic rendering of actual generated or imported m
 
 *Four sequential tasks with real previews; the blue status deliberately demonstrates cache reuse for an identical configuration.*
 
-## Current state — v2.0 DEV_9
+## Current state — v2.0 DEV10
 
-DEV9 completes the **Large islands** focus from validated R25: one island and
-start per player, independent relief, shared composition controls and adaptive
-improved rivers. The alternative source is named “Large islands — rolling
-relief”. See [the DEV9 checkpoint](docs/DEV_9_CHECKPOINT.md).
+**DEV10 is complete and accepted**, based on R66. See [the DEV10 checkpoint](docs/DEV_10_CHECKPOINT.md)
+and [future work](TODO_MAPGEN.md). Custom **Formula** V1 is accepted for 2.0;
+a dedicated editor is deferred beyond 2.0.
 
-R25 qualification: 818 tests, seven complete maps and four exports PASS.
-Full recovery references remain in the source ZIP and outside the Git push.
-Earlier DEV9 work outside this scope moves to DEV10 for prioritization.
-Small islands is planned for DEV10 or DEV11; see `TODO_MAPGEN.md`.
+The maximum size is **768 × 768**. Classic retains the native algorithm;
+hydrology corrections apply to Improved. DEV10 is a development checkpoint;
+RC/STABLE promotion remains ahead.
+
+Detailed history is in [CHANGELOG](CHANGELOG.md). Research references and
+qualification evidence remain in the source ZIP.
 
 ### R55 — previews and providers for Continental Custom
 
@@ -428,7 +429,7 @@ carried forward as rules. The reproducible comparison is recorded in
 `references/history/minerals/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
 The native reference port is present in DEV_2 for sizes 256, 320, 384, 448, 512,
-576, 640, 704, 768, 832, 896, 960 and 1024. Mirror modes are Long axis,
+576, 640, 704 and 768. Mirror modes are Long axis,
 Short axis and Both. The generator audit remains the source of truth; extended
 exports still require validation in the community editor/game.
 
@@ -497,9 +498,9 @@ French and English are the reviewed reference languages. German and Spanish were
 - [Reference index](references/REFERENCE_INDEX.md)
 - [Mandatory pre-generation reference](references/SETTLERS3_PREGEN_READ_FIRST.md)
 - [Current generation matrix](references/SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md)
-- [Historical long-play rules](references/SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md)
-- [EDM/MAP format reference](references/SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md)
-- [SAV format reference](references/SETTLERS3_SAV_FORMAT_REFERENCE_v1.md)
+- [Historical long-play rules](references/history/SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md)
+- [EDM/MAP format reference](references/SETTLERS3_EDM_MAP_FORMAT_REFERENCE.md)
+- [SAV format reference](references/SETTLERS3_SAV_FORMAT_REFERENCE.md)
 - [Roadmap](TODO_MAPGEN.md)
 
 ## Validation model

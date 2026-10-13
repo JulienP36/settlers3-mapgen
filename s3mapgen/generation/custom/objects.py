@@ -13,7 +13,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
-from .bonus_placement import FORCED_CENTER_EXTENSION, ordered_centers, plan_objects
+from .bonus_placement import center_extension_limit, ordered_centers, plan_objects
 from .sections import (
     DECORATION_FAMILY_KEYS,
     DECORATION_FAMILY_SPECS,
@@ -572,7 +572,7 @@ def apply_custom_legacy_start_forest(
         "distance_from_border": int(normalized["start_bonus"].get("distance_from_border", 0)),
         "support_terrains": [int(value) for value in support_ids],
         "force_extended_radius": bool(force_extended),
-        **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+        **({"center_extension_limit": center_extension_limit(normalized)} if force_extended else {}),
         "extended_radius_used": False,
         "global_quota_excludes_start_bonus": True,
         "outside_technical_zone": True,
@@ -674,6 +674,7 @@ def apply_custom_legacy_start_forest(
             return list(ordered_centers(
                 np.isin(terrain, support_ids) & ~technical & (objects == 0),
                 sx, sy, center_radius, rng.shuffle,
+                extension_limit=center_extension_limit(normalized),
             ))
         centres: list[tuple[int, int]] = []
         for ring in range(max(1, center_radius - 2), center_radius + 3):
@@ -881,7 +882,7 @@ def apply_custom_legacy_start_stones(
         "distance_from_border": int(normalized["start_bonus"].get("distance_from_border", 0)),
         "support_terrains": [int(value) for value in support_ids],
         "force_extended_radius": bool(force_extended),
-        **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+        **({"center_extension_limit": center_extension_limit(normalized)} if force_extended else {}),
         "extended_radius_used": False,
         "global_quota_excludes_start_bonus": True,
         "outside_technical_zone": True,
@@ -924,6 +925,7 @@ def apply_custom_legacy_start_stones(
             return list(ordered_centers(
                 np.isin(terrain, support_ids) & ~technical & (objects == 0),
                 sx, sy, center_radius, rng.shuffle,
+                extension_limit=center_extension_limit(normalized),
             ))
         centres: list[tuple[int, int]] = []
         for ring in range(max(1, center_radius - 2), center_radius + 3):

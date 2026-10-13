@@ -123,7 +123,7 @@ ARCHETYPE_TARGETS: tuple[ArchetypeTargetSpec, ...] = (
     ),
     ArchetypeTargetSpec(
         key="large_islands",
-        label="Grandes îles",
+        label="Îles individuelles",
         topology_goal="Plusieurs grandes masses insulaires séparées et jouables.",
         implemented=True,
         land_share_min_percent=25.0,

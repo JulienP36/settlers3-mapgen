@@ -10,7 +10,7 @@ def test_french_view_terms_are_localized():
     assert 'starts' not in VIEW_LABELS['en']
     assert VIEW_LABELS['fr']['heightmap']=='Élévation'
     assert VIEW_LABELS['fr']['heatmap']=='Carte thermique'
-    assert ARCHETYPE_LABELS['fr']['large_islands']=='Grandes îles'
+    assert ARCHETYPE_LABELS['fr']['large_islands']=='Îles individuelles'
     assert ARCHETYPE_LABELS['fr']['small_islands']=='Petites îles'
 
 
@@ -28,7 +28,7 @@ def test_main_archetype_selector_names_both_continental_profiles():
     assert ARCHETYPE_INPUT_LABELS['en']['edited_option']=='Custom'
     assert ARCHETYPE_INPUT_LABELS['de']['edited_option']=='Benutzerdefiniert'
     assert ARCHETYPE_INPUT_LABELS['es']['edited_option']=='Personalizado'
-    assert ARCHETYPE_INPUT_LABELS['fr']['large_islands']=='Grandes îles'
+    assert ARCHETYPE_INPUT_LABELS['fr']['large_islands']=='Îles individuelles'
     assert ARCHETYPE_INPUT_LABELS['fr']['small_islands']=='Petites îles'
 
 

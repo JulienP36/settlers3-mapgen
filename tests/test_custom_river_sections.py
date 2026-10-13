@@ -226,7 +226,8 @@ def test_custom_profile_rivers_do_not_start_in_open_water_and_reach_water():
 
     profile = continental_legacy_blocks_profile()
     for generate in (generate_legacy_terrain, generate_upgraded_terrain):
-        result = generate(256, 20260921, archetype_profile=profile)
+        result = generate(256, 20260921, archetype_profile=profile,
+                          surface_rates={"rivers": {"algorithm": "improved", "rate_percent": 100}})
         terrain = result.terrain
         river = np.isin(terrain, (96, 97, 98, 99))
         water = terrain <= 7

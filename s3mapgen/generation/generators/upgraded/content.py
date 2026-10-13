@@ -39,9 +39,9 @@ from ....map_data.constants import (
     WATER_IDS,
     SWAMP_IDS,
 )
-from ....map_data.hexgrid import dilate, distance_from, hex_distance, neighbor_count
+from ....map_data.hexgrid import component_labels, dilate, distance_from, hex_distance, neighbor_count
 from ...custom.bonus_placement import (
-    FORCED_CENTER_EXTENSION, ordered_centers, radius_center_pairs, plan_objects,
+    center_extension_limit, ordered_centers, radius_center_pairs, plan_objects,
 )
 from ...custom.bonus_minerals import (
     compact_hex_offsets,
@@ -63,6 +63,7 @@ from ...custom.content import (
 from ...custom.sections import (
     DEFAULT_FISH_BAND_THICKNESS,
     MINERAL_SPECS,
+    START_ROCKY_DEFAULT_MINERAL_KEYS,
     STONE_QUANTITY_MAXIMUM,
     STONE_QUANTITY_MINIMUM,
     RESOURCE_MAXIMUM,
@@ -408,6 +409,8 @@ class UpgradedContent:
             if isinstance(runtime, dict) and "start_packages" in runtime
             else None
         )
+        if profile.get("_classic_start_route"):
+            self._custom_start_packages = set()
         self._custom_sections = (
             runtime.get("sections")
             if isinstance(runtime, dict) and isinstance(runtime.get("sections"), dict) and runtime.get("sections")
@@ -748,6 +751,12 @@ class UpgradedContent:
             START_BONUS_DISTANCE_MAX,
             0,
         ))
+        from ...start_bonus_policy import swamp_bonus_players, start_player_slots
+        eligible = swamp_bonus_players(state)
+        slots = start_player_slots(state)
+        land_labels, _ = component_labels(~np.isin(terrain, WATER_IDS))
+        own_mass = np.zeros_like(terrain, dtype=bool)
+        records = []
         placed_by_start: list[int] = []
         shortfalls: list[int] = []
         extended_radius_used = False
@@ -762,7 +771,8 @@ class UpgradedContent:
                     if (xx, yy) in point_set:
                         continue
                     if (
-                        not grass_support[yy, xx]
+                        not own_mass[yy, xx]
+                        or not grass_support[yy, xx]
                         or technical[yy, xx]
                         or reservation[yy, xx]
                         or objects[yy, xx] != 0
@@ -775,6 +785,7 @@ class UpgradedContent:
             return (
                 0 <= x < self.side
                 and 0 <= y < self.side
+                and own_mass[y, x]
                 and grass_support[y, x]
                 and not technical[y, x]
                 and not reservation[y, x]
@@ -783,16 +794,7 @@ class UpgradedContent:
             )
 
         def legal_patch(points: list[tuple[int, int]]) -> bool:
-            return bool(points) and all(
-                0 <= x < self.side
-                and 0 <= y < self.side
-                and grass_support[y, x]
-                and not technical[y, x]
-                and not reservation[y, x]
-                and objects[y, x] == 0
-                and resources[y, x] == 0
-                for x, y in points
-            )
+            return bool(points) and all(point_legal(x, y) for x, y in points)
 
         def partial_patch(points: list[tuple[int, int]]) -> list[tuple[int, int]]:
             """Keep the largest native-shaped part with a legal transition rim."""
@@ -866,6 +868,16 @@ class UpgradedContent:
 
         for start_index, (sx, sy) in enumerate(state.starts):
             sx, sy = int(sx), int(sy)
+            mass = int(land_labels[sy, sx])
+            own_mass = (land_labels == mass) if mass else np.zeros_like(terrain, dtype=bool)
+            if not eligible[start_index]:
+                placed_by_start.append(0)
+                requested_cells_by_start.append(0)
+                if shape == "native":
+                    native_shape_cells_per_start.append(0)
+                records.append({"player_slot": slots[start_index], "eligible": False,
+                                "cells": 0, "center": None, "reason": "civilization"})
+                continue
             start_native_offsets = (
                 _native_swamp_offsets(requested_radius, pr)
                 if shape == "native" and requested_radius > 0
@@ -888,7 +900,8 @@ class UpgradedContent:
                     (x, y)
                     for x, y in _hex_points(self.side, sx, sy, radius, exact=radius)
                     if (
-                        grass_support[y, x]
+                        own_mass[y, x]
+                        and grass_support[y, x]
                         and not technical[y, x]
                         and not reservation[y, x]
                         and objects[y, x] == 0
@@ -898,9 +911,10 @@ class UpgradedContent:
             pr.shuffle(centers)
             if force_extended:
                 centers = list(ordered_centers(
-                    grass_support & ~technical & ~reservation
+                    own_mass & grass_support & ~technical & ~reservation
                     & (objects == 0) & (resources == 0),
                     sx, sy, center_radius, pr.shuffle,
+                    extension_limit=center_extension_limit(self._custom_sections),
                 ))
             patch: list[tuple[int, int]] = []
             chosen_center: tuple[int, int] | None = None
@@ -966,6 +980,9 @@ class UpgradedContent:
                 if self._start_bonus_swamp_mask is not None:
                     self._start_bonus_swamp_mask[y, x] = True
             placed_by_start.append(len(patch))
+            records.append({"player_slot": slots[start_index], "eligible": True,
+                            "land_mass": mass, "center": chosen_center, "cells": len(patch),
+                            "reason": None if patch else "no_legal_patch_on_own_land"})
             if len(patch) < start_requested_cells:
                 shortfalls.append(start_requested_cells - len(patch))
 
@@ -982,12 +999,16 @@ class UpgradedContent:
             "native_shape_cells": len(native_offsets),
             "native_shape_cells_per_start": native_shape_cells_per_start,
             "center_hex": center_radius,
+            "eligible_by_start": eligible,
+            "eligible_players": sum(eligible),
+            "same_land_mass": True,
+            "placements": records,
             "placed_cells_per_start": placed_by_start,
             "placed_cells": int(sum(placed_by_start)),
             "starts_with_bonus": sum(value > 0 for value in placed_by_start),
             "shortfalls": shortfalls,
             "force_extended_radius": bool(force_extended),
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION, "tower_clear_hex": int(self.profile["starts"].get("editor_object_clear_hex", 14))} if force_extended else {}),
+            **({"center_extension_limit": center_extension_limit(self._custom_sections), "tower_clear_hex": int(self.profile["starts"].get("editor_object_clear_hex", 14))} if force_extended else {}),
             "extended_radius_used": bool(extended_radius_used),
             "outside_technical_zone": True,
         }
@@ -1017,7 +1038,10 @@ class UpgradedContent:
             else terrain == GRASS
         )
         if force_extended:
-            return list(ordered_centers(support & ~blocked, sx, sy, desired, pr.shuffle))
+            return list(ordered_centers(
+                support & ~blocked, sx, sy, desired, pr.shuffle,
+                extension_limit=center_extension_limit(self._custom_sections),
+            ))
         for ring in range(max(1, desired - 2), desired + 3):
             centres.extend(
                 (x, y)
@@ -1115,8 +1139,8 @@ class UpgradedContent:
                 shares = {name: 1.0 for name in enabled}
             weight_total = sum(shares.values())
             # Allocate with a per-mineral cap.  The public total scales with
-            # the active families (up to 2,460), while no individual
-            # coal/iron/gold core may exceed the rounded 820-cell ceiling.
+            # the active families (up to 4,100), while no individual
+            # mineral core may exceed the rounded 820-cell ceiling.
             targets = rocky_proportional_targets(total, enabled, shares)
             shares = {
                 name: (shares[name] / weight_total * 100.0 if weight_total else 0.0)
@@ -1218,14 +1242,14 @@ class UpgradedContent:
         zones_cfg = cfg.get("zones", {}) if isinstance(cfg, dict) else {}
         zones_cfg = zones_cfg if isinstance(zones_cfg, Mapping) else {}
         zone_specs = []
-        for name, default_family in (("coal", 0x10), ("iron", 0x20), ("gold", 0x30)):
+        for name, default_family in MINERAL_SPECS:
             entry = zones_cfg.get(name, {})
             entry = dict(entry) if isinstance(entry, Mapping) else {}
             semantic_entry = cfg.get(name, {})
             if isinstance(semantic_entry, Mapping) and "enabled" in semantic_entry:
                 entry["enabled"] = semantic_entry["enabled"]
             family = int(entry.get("family", default_family)) & 0xF0
-            enabled = bonus_enabled and bool(entry.get("enabled", True)) and radius_max > 0
+            enabled = bonus_enabled and bool(entry.get("enabled", name in START_ROCKY_DEFAULT_MINERAL_KEYS)) and radius_max > 0
             zone_specs.append((name, family, enabled))
         shape = str(cfg.get("shape", "hexagon")).lower()
         if shape not in {"hexagon", "organic"}:
@@ -1253,7 +1277,7 @@ class UpgradedContent:
             "per_player": True,
             "distance_from_border": int(cfg.get("distance_from_border", 0)),
             "force_extended_radius": bool(force_extended),
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION, "tower_clear_hex": int(self.profile["starts"].get("editor_object_clear_hex", 14))} if force_extended else {}),
+            **({"center_extension_limit": center_extension_limit(self._custom_sections), "tower_clear_hex": int(self.profile["starts"].get("editor_object_clear_hex", 14))} if force_extended else {}),
             "extended_radius_used": False,
             "center_hex": int(cfg.get("center_hex", self.profile["starts"].get("initial_territory_hex_radius", 34))),
             "radius_min": radius_min,
@@ -1276,7 +1300,7 @@ class UpgradedContent:
             "quantity_mean_target": int(UPGRADED_RESOURCE_MEAN),
             "quantity_mean_targets": {
                 name: quantity_targets[name]
-                for name in ("coal", "iron", "gold")
+                for name, _family in MINERAL_SPECS
             },
             "outside_global_quota": bool(self.profile.get("start_bonus", {}).get("outside_global_quota", True)),
             "height_unchanged": True,
@@ -1674,7 +1698,7 @@ class UpgradedContent:
             "distance_from_border": distance_from_border,
             "force_extended_radius": bool(force_extended),
             "tower_clear_hex": tower_clear_hex,
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+            **({"center_extension_limit": center_extension_limit(self._custom_sections)} if force_extended else {}),
             "extended_radius_used": False,
             "center_hex": territory_radius,
             "radius_min": radius_min,
@@ -1941,6 +1965,21 @@ class UpgradedContent:
                     add_rejection(player_record, "shore_transition_invalid")
                     continue
 
+                # Validate the complete proposed river boundary before writing.
+                # Routing through grass does not make adjacent mud transitions
+                # compatible with River96.
+                proposed = {point: int(depths.get(point, 0)) for point in core}
+                proposed.update((point, SHORE) for point in painted_shore)
+                proposed.update((point, RIVER_IDS[0]) for point in path_set)
+                river_neighbours = {*WATER_IDS, *RIVER_IDS, GRASS, SHORE}
+                if any(
+                    not (0 <= x+dx < self.side and 0 <= y+dy < self.side)
+                    or proposed.get((x+dx,y+dy), int(terrain[y+dy,x+dx])) not in river_neighbours
+                    for x,y in path_set for dx,dy in HEX6
+                ):
+                    add_rejection(player_record, "river_trace_failed")
+                    continue
+
                 for x, y in core:
                     terrain[y, x] = int(depths.get((x, y), 0))
                     state.height[y, x] = 0
@@ -2065,7 +2104,7 @@ class UpgradedContent:
         state.metadata["upgraded_fish_target"] = global_target + total_cells
         self.log("resources.upgraded_start_lake_fish", f"cells={total_cells}")
 
-    def generate(self, state, rng: np.random.Generator, pr: random.Random) -> dict[str, object]:
+    def generate(self, state, rng: np.random.Generator, pr: random.Random, *, before_objects=None) -> dict[str, object]:
         self.side = state.side
         self._stage_log.clear()
         self._start_bonus_reservation = np.zeros((state.side, state.side), dtype=bool)
@@ -2084,6 +2123,9 @@ class UpgradedContent:
         self._place_start_rocky_resources(state, rng)
         self._generate_fish(state, rng)
         self._place_start_lake_fish(state, rng)
+        if before_objects is not None:
+            self._final_accessibility(state)
+            before_objects()
         self._place_trees(state, rng, pr)
         self._place_decorations(state, rng, pr)
         self._place_building_stones(state, rng, pr)
@@ -2146,6 +2188,53 @@ class UpgradedContent:
             "occupied_cells": int(bonus_occupied.sum()),
         }
 
+    def generate_late_start_bonuses(self, state, rng, pr):
+        """Fair route: preserve global content, then add selected start packages."""
+        from ...start_safety import start_object_reservation
+        global_stones = dict(state.metadata.get("upgraded_stones", {}))
+        global_targets = dict(state.metadata.get("upgraded_stone_targets", {}))
+        # Existing global objects/resources and departure footprints cannot be
+        # repainted as bonus terrain. Empty bonus searches remain preferences.
+        protected = start_object_reservation(state) | dilate(state.objects != 0, 2) | (state.resources != 0)
+        result = self.generate_start_bonuses(state, rng, pr, occupied=protected)
+        self._object_hitbox_enforced = True
+        self._refresh_object_collision_mask(state)
+        self._place_building_stones(state, rng, pr, phase="start")
+        bonus_stones = dict(state.metadata.get("upgraded_stones", {}))
+        bonus_targets = state.metadata.get("upgraded_stone_targets", {})
+        combined_stones = dict(global_stones)
+        combined_stones.update({key: value for key, value in bonus_stones.items()
+                               if key.startswith("start_") or key == "shortfalls"})
+        combined_targets = {key: int(global_targets.get(key, 0)) + int(bonus_targets.get(key, 0))
+                            for key in ("anchors", "stock")}
+        combined_stones.update(combined_targets, start_bonus_deferred=False)
+        state.metadata["upgraded_stones"] = combined_stones
+        state.metadata["upgraded_stone_targets"] = combined_targets
+        # Keep the global ID distribution and registered footprints alongside
+        # the late bonus records; the validator must count both phases.
+        bonus_records = self._prioritized_start_stone_state or {}
+        id_counts = dict(combined_stones.get("id_counts", {}))
+        for record in bonus_records.get("records", ()):
+            quantity = int(bonus_records["quantity_by_record"].get(id(record), 0))
+            object_id = int(self.profile["building_stones"]["exhausted_id"]) - quantity
+            key = str(object_id)
+            id_counts[key] = int(id_counts.get(key, 0)) + 1
+            state.metadata.setdefault("building_stone_anchors", []).append(
+                (int(record["x"]), int(record["y"]), quantity, str(record["tag"])))
+            if quantity > 0:
+                state.metadata.setdefault("building_stone_footprint_cells", []).extend(
+                    (int(record["x"]) + dx, int(record["y"]) + dy)
+                    for dx, dy in self.profile["building_stones"]["footprint"])
+        combined_stones["id_counts"] = id_counts
+        self._place_trees(state, rng, pr, phase="start")
+        stones = self._prioritized_start_stone_state or {}
+        result["building_stones"] = {"anchors": len(stones.get("records", ())), "stock": int(stones.get("stock", 0))}
+        result["forest"] = state.metadata.get("upgraded_trees", {}).get("start_forests", [])
+        self._final_accessibility(state)
+        state.height[np.isin(state.terrain, WATER_IDS)] = 0
+        state.metadata["fair_start_bonuses"] = result
+        return result
+
     def begin_prioritized_terrain_bonuses(
         self,
         state,
@@ -2177,7 +2266,11 @@ class UpgradedContent:
             "mini_swamp": state.metadata.get("upgraded_start_mini_swamps", {}),
             "rocky_minerals": state.metadata.get("upgraded_start_rocky_minerals", {}),
             "lake_fish_river": state.metadata.get("upgraded_start_lake_fish_river", {}),
-            "protected_mask": self._start_bonus_reservation.copy(),
+            # Native brushes may otherwise paint an incompatible micro-terrain
+            # directly beside a protected bonus river. Reserve its six neighbours.
+            "protected_mask": self._start_bonus_reservation | dilate(
+                self._start_bonus_reservation & np.isin(state.terrain, RIVER_IDS), 1,
+            ),
         }
 
     def apply_prioritized_start_resources(
@@ -2553,7 +2646,9 @@ class UpgradedContent:
             self._refresh_object_collision_mask(state)
         self.log("objects.upgraded_decorations", str(metadata))
 
-    def _place_trees(self, state, rng: np.random.Generator, pr: random.Random) -> None:
+    def _place_trees(self, state, rng: np.random.Generator, pr: random.Random, *, phase="all") -> None:
+        if phase not in {"all", "start"}:
+            raise ValueError(f"Phase d’arbres inconnue : {phase}")
         terrain, objects, access = state.terrain, state.objects, state.accessibility
         cfg = self.profile["trees"]
         core = self._content_core(state)
@@ -2760,7 +2855,10 @@ class UpgradedContent:
                 if self._start_bonus_object_clearance is not None:
                     collision |= self._start_bonus_object_clearance
                 forced_plan = plan_objects(
-                    ordered_centers(legal_cells, sx, sy, desired, pr.shuffle),
+                    ordered_centers(
+                        legal_cells, sx, sy, desired, pr.shuffle,
+                        extension_limit=center_extension_limit(self._custom_sections),
+                    ),
                     legal_cells, collision,
                     (start_adult_target, start_small_target), tree_spacing, ((0, 0),), minimum_tree_forest_radius, minimum_adult_forest_radius, rng,
                 )
@@ -2876,6 +2974,19 @@ class UpgradedContent:
         # rule; no empty forest envelope is reserved.
         if start_forest_enabled:
             self._start_bonus_reservation |= start_forest_mask
+
+        if phase == "start":
+            metadata = state.metadata.setdefault("upgraded_trees", {})
+            metadata.update(start_forests=start_forest_records,
+                start_forest_enabled=start_forest_enabled,
+                adult_start_bonus_requested=start_adult_target * len(state.starts),
+                adult_start_bonus_placed=int(start_adults),
+                small_start_bonus_requested=start_small_target * len(state.starts),
+                small_start_bonus_placed=int(start_small))
+            for key, count in (("adult_trees", start_adults), ("small_trees", start_small)):
+                metadata[key] = int(metadata.get(key, 0)) + int(count)
+            self._refresh_start_bonus_object_clearance(state)
+            return
 
         # Build a set of explicit global forest regions.  Adults use a smaller
         # cluster region for the 30% quota; saplings can use the whole forest
@@ -3041,7 +3152,7 @@ class UpgradedContent:
             "start_forest_radius_mode": "derived_from_tree_count_and_spacing",
             "start_forest_minimum_required_radius": int(minimum_tree_forest_radius),
             "start_bonus_force_extended_radius": bool(force_extended),
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+            **({"center_extension_limit": center_extension_limit(self._custom_sections)} if force_extended else {}),
             "start_bonus_extended_radius_used": bool(start_forest_extended_used),
             "grass_object_support_terrains": [
                 int(value) for value in (GRASS_IDS if self._grass_object_support_enabled() else (GRASS,))
@@ -3283,7 +3394,10 @@ class UpgradedContent:
                         collision |= self._start_bonus_object_clearance
                     legal_cells &= ~collision
                     forced_plan = plan_objects(
-                        ordered_centers(legal_cells, sx, sy, desired, pr.shuffle),
+                        ordered_centers(
+                            legal_cells, sx, sy, desired, pr.shuffle,
+                            extension_limit=center_extension_limit(self._custom_sections),
+                        ),
                         legal_cells, collision,
                         (start_anchor_target, 0), int(cfg["anchor_min_hex_distance"]), footprint, minimum_stone_radius, minimum_stone_radius, rng,
                     )
@@ -3405,7 +3519,7 @@ class UpgradedContent:
                 "start_bonus_minimum_required_radius": int(minimum_stone_radius),
                 "start_bonus_radius_mode": "derived_from_anchor_count_and_spacing",
                 "start_bonus_force_extended_radius": bool(force_extended),
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+                **({"center_extension_limit": center_extension_limit(self._custom_sections)} if force_extended else {}),
                 "start_bonus_extended_radius_used": bool(start_stone_extended_used),
                 "global_quota_excludes_start_bonus": True,
                 **({"shortfalls": [
@@ -3656,7 +3770,7 @@ class UpgradedContent:
             "start_bonus_minimum_required_radius": int(minimum_stone_radius),
             "start_bonus_radius_mode": "derived_from_anchor_count_and_spacing",
             "start_bonus_force_extended_radius": bool(force_extended),
-            **({"center_extension_limit": FORCED_CENTER_EXTENSION} if force_extended else {}),
+            **({"center_extension_limit": center_extension_limit(self._custom_sections)} if force_extended else {}),
             "start_bonus_extended_radius_used": bool(start_stone_extended_used),
             "global_quota_excludes_start_bonus": True,
             **({"shortfalls": [

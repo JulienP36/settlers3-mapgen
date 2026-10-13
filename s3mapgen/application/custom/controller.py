@@ -11,8 +11,15 @@ from tkinter import filedialog, ttk
 
 import numpy as np
 from PIL import Image, ImageTk
+from ..ui.layout import content_width, grid_independent_rows
 
+from .preview_dock import PreviewDockController
+from .source_selector import SourceSelect
+from .formula_editor import FormulaPanel, ensure_applied_formula_inputs
+from ...generation.archetypes.formula import DEFAULT_FORMULA
+from ...generation.archetypes.profiles import remap_mask_targets
 from ...generation.archetypes.island_source import uses_island_source
+from ...generation.archetypes.island_amplitude import resolve_island_profile
 
 from ...generation.archetypes import (
     ARCHETYPES,
@@ -48,14 +55,15 @@ from ...generation.archetypes import (
     SHAPE_TEMPLATE_INCREMENTS,
     SHAPE_TEMPLATE_TYPE_OPTIONS,
     RELIEF_SOURCE_DEFAULT,
-    RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_CUSTOM_LEGACY, RELIEF_SOURCE_CONTINENTAL,
     RELIEF_SOURCE_LARGE_ISLANDS,
     RELIEF_SOURCE_LARGE_ISLANDS_R21,
+    RELIEF_SOURCE_TEAM_ISLANDS,
     ISLAND_RELIEF_SOURCES,
     thresholds_on_relief_source_change,
     RELIEF_SOURCE_OPTIONS,
     ArchetypePreview,
-    continental_legacy_blocks_profile,
+    continental_landmass_profile,
     default_archetype_profile,
     duplicate_mask_layer,
     duplicate_noise_layer,
@@ -98,6 +106,9 @@ from ...generation.custom import (
     SIZE_VARIATIONS,
     START_BONUS_DISTANCE_MAX,
     START_BONUS_DISTANCE_MIN,
+    START_BONUS_CENTER_EXTENSION_MIN,
+    START_BONUS_CENTER_EXTENSION_MAX,
+    START_BONUS_CENTER_EXTENSION_DEFAULT,
     START_BONUS_FISH_FILL_MAX,
     START_BONUS_FISH_FILL_MIN,
     START_BONUS_RADIUS_MAX,
@@ -296,7 +307,7 @@ class _ArchetypePreviewSuperseded(Exception):
     """Internal signal used to stop a preview request that is no longer current."""
 
 
-class CustomGeneratorController:
+class CustomGeneratorController(PreviewDockController):
     """Build and maintain the DEV6 generator/archetype parameter tabs.
 
     The controller is deliberately a UI adapter.  The immutable configuration
@@ -429,7 +440,7 @@ class CustomGeneratorController:
         # otherwise the canvas keeps a horizontal natural width and the grid
         # never receives the narrow width that should trigger its reflow.
         self._custom_generator_tab._scroll_fit_width = True
-        self._custom_archetype_tab = self._scroll_notebook_tab("Archétype")
+        self._custom_archetype_tab = self._scroll_notebook_tab("Archétype", preview_dock=True)
         self.nb.bind(
             "<<NotebookTabChanged>>",
             self._custom_archetype_notebook_tab_changed,
@@ -485,6 +496,7 @@ class CustomGeneratorController:
         config = getattr(self, "_custom_config", None)
         if config is None or config.base_archetype != archetype:
             return None
+        ensure_applied_formula_inputs(self, config)
         if mode == "custom":
             return config
         if mode not in {"legacy", "upgraded"} or config.base_mode != mode:
@@ -540,7 +552,7 @@ class CustomGeneratorController:
 
     def _custom_preset_config(self, mode: str, archetype: str) -> CustomGenerationConfig:
         # Named archetypes share the same defaults in the UI and both engines.
-        # Large islands activates the visible mini-swamp package by default.
+        # Individual islands activates the visible mini-swamp package by default.
         return build_custom_config(mode, archetype)
 
     def _custom_ensure_config(
@@ -614,6 +626,80 @@ class CustomGeneratorController:
             # The complete parameter tab may be between two renders.  The new
             # widget will receive its initial state when that render completes.
             pass
+
+    def _custom_sync_generator_editor_values(self) -> bool:
+        """Load a profile into the existing controls as one trace-safe transaction."""
+
+        variables = getattr(self, "_custom_section_vars", {})
+        config = getattr(self, "_custom_config", None)
+        if not variables or config is None:
+            return False
+        sections = config.semantic_sections()
+        formatters = getattr(self, "_custom_generator_value_formatters", {})
+        self._custom_syncing_generator = True
+        try:
+            for path, variable in variables.items():
+                value = get_path(sections, tuple(path.split(".")))
+                formatter = formatters.get(path)
+                if formatter is not None:
+                    value = formatter(value)
+                elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                    value = self._custom_archetype_display_number(value)
+                if variable.get() != value:
+                    variable.set(value)
+            for key, variable in getattr(self, "_custom_package_vars", {}).items():
+                value = key in config.start_packages
+                if variable.get() != value:
+                    variable.set(value)
+        except tk.TclError:
+            # Only an editor whose Tcl controls really disappeared needs rebuilding.
+            return False
+        finally:
+            self._custom_syncing_generator = False
+        self._custom_section_baseline = build_custom_config(
+            config.base_mode, config.base_archetype, profile=config.profile,
+            archetype_profile=config.archetype_profile,
+        ).semantic_sections()
+        for refresh in getattr(self, "_custom_generator_refreshers", ()):
+            refresh()
+        self._custom_refresh_fish_controls()
+        self._custom_refresh_start_bonus_controls()
+        self._custom_refresh_section_headers()
+        self._custom_refresh_generator_provenance()
+        return True
+
+    def _custom_refresh_generator_provenance(self) -> None:
+        config = self._custom_config
+        language = self._custom_language()
+        mode = self._custom_current_mode()
+        archetype = self._custom_current_archetype()
+        if mode == "custom":
+            self._custom_render_custom_mode(config)
+        else:
+            self._custom_provenance_var.set(_lang_text(
+                language,
+                f"Lecture du preset {MODE_LABELS['fr'][mode]} / {ARCHETYPE_LABELS['fr'][archetype]} · modifiez un champ pour créer Custom.",
+                f"Viewing preset {MODE_LABELS['en'][mode]} / {ARCHETYPE_LABELS['en'][archetype]} · edit a field to create Custom.",
+                f"Preset {MODE_LABELS['de'][mode]} / {ARCHETYPE_LABELS['de'][archetype]} · ändern Sie ein Feld, um Custom zu erstellen.",
+                f"Viendo preset {MODE_LABELS['es'][mode]} / {ARCHETYPE_LABELS['es'][archetype]} · edite un campo para crear Custom.",
+            ))
+
+    def _custom_clear_generator_layout_callbacks(self) -> None:
+        """Retire callbacks attached to the persistent host before a real rebuild."""
+
+        for widget, binding in getattr(self, "_custom_generator_layout_bindings", ()):
+            try:
+                widget.unbind("<Configure>", binding)
+            except tk.TclError:
+                pass
+        self._custom_generator_layout_bindings = []
+        root = getattr(self, "_custom_generator_tab", None)
+        for job in getattr(self, "_custom_generator_layout_jobs", {}).values():
+            try:
+                root.after_cancel(job)
+            except tk.TclError:
+                pass
+        self._custom_generator_layout_jobs = {}
 
     def _custom_clear_preview_size_trace(self) -> None:
         """Remove the previous live preview listener before rebuilding the tab."""
@@ -730,6 +816,7 @@ class CustomGeneratorController:
             "value": _lang_text(language, "Bruit de valeur", "Value noise", "Value Noise", "Ruido de valor"),
             "perlin": "Perlin",
             "simplex": "Simplex",
+            "formula": _lang_text(language, "Formule", "Formula", "Formel", "Fórmula"),
             "fbm": "fBm",
             "hybrid_fbm": _lang_text(language, "Hybrid fBm / multifractal", "Hybrid fBm / multifractal", "Hybrides fBm / Multifraktal", "fBm híbrido / multifractal"),
             "heterogeneous_fbm": _lang_text(language, "fBm hétérogène / relief", "Heterogeneous fBm / relief", "Heterogenes fBm / Relief", "fBm heterogéneo / relieve"),
@@ -777,6 +864,41 @@ class CustomGeneratorController:
             if key in labels
         }
 
+    def _custom_mask_target_options(self, language, target=None):
+        options = {
+            "result": _lang_text(language, "Défaut (résultat)", "Default (result)", "Standard (Ergebnis)", "Predeterminado (resultado)"),
+            "source": _lang_text(language, "Source principale", "Principal source", "Hauptquelle", "Fuente principal"),
+            **{f"fusion:{i}": f"Fusion {i + 1}" for i in range(NOISE_LAYER_COUNT)},
+        }
+        if target and str(target).startswith("missing:"):
+            number = int(str(target).split(":")[1]) + 1
+            options[target] = _lang_text(language, f"Fusion {number} supprimée", f"Fusion {number} deleted", f"Fusion {number} gelöscht", f"Fusión {number} eliminada")
+        return options
+
+    def _custom_refresh_mask_target_states(self):
+        config = getattr(self, "_custom_config", None)
+        if config is None:
+            return
+        morphology = config.archetype_profile["morphology"]
+        language = self._custom_language()
+        for index, variables in getattr(self, "_custom_archetype_mask_layer_vars", {}).items():
+            if "target" not in variables:
+                continue
+            layer = morphology["mask_layers"][int(index)]
+            target = layer.get("target", "result")
+            options = self._custom_mask_target_options(language, target)
+            variables["target"].set(options[target])
+            widget = getattr(self, "_custom_mask_target_widgets", {}).get(index)
+            if widget is not None:
+                widget.configure(values=list(options.values()))
+            unavailable = target.startswith("missing:")
+            if target.startswith("fusion:"):
+                slot = int(target.split(":")[1])
+                fusion = morphology["noise_layers"][slot]
+                unavailable = (slot >= morphology["noise_layer_count"] or not fusion["enabled"] or fusion["strength_percent"] <= 0)
+            hint = _lang_text(language, "Noir bloque · blanc conserve (force 100%)", "Black blocks · white preserves (100% strength)", "Schwarz sperrt · Weiß erhält (100% Stärke)", "Negro bloquea · blanco conserva (fuerza 100%)") if layer["operation"] == "mask" else ""
+            variables["target_status"].set(_lang_text(language, "Cible inactive — masque sans effet", "Inactive target — mask has no effect", "Inaktives Ziel — Maske ohne Wirkung", "Destino inactivo — máscara sin efecto") if unavailable else hint)
+
     def _custom_archetype_mask_type_options(self, language: str) -> dict[str, str]:
         """Return the available mask providers without provider-only settings."""
 
@@ -794,8 +916,41 @@ class CustomGeneratorController:
             if key in shape_options
         }
 
+    def _custom_mask_layer_label(self, layer, options):
+        label = options[str(layer['type'])]
+        name = layer.get('provider_settings', {}).get('mask_name', '')
+        return f"{label} · {name}" if layer['type'] == 'manual' and name else label
+
+    def _custom_apply_mask_grid(self, index, grid, name=''):
+        """Embed a portable copy in the latest config, preserving layer settings."""
+        current_config = self._custom_config
+        layers = deepcopy(current_config.archetype_profile['morphology']['mask_layers'])
+        current = layers[int(index)]
+        current['type'] = 'manual'
+        current['provider_settings'] = {
+            'grid': grid.reshape(-1).astype(np.uint8).tolist(),
+            'grid_side': int(grid.shape[0]),
+            'mask_name': name,
+        }
+        count = int(current_config.archetype_profile['morphology'].get('mask_layer_count', 0))
+        self._custom_commit_archetype_mask_layer_stack(current_config, layers, count)
+
+    def _custom_select_user_mask(self, index, path):
+        from .mask_library import MaskCatalogue
+        from .mask_editor import TEXT, LANG_INDEX
+        catalogue = getattr(self, '_custom_user_mask_catalogue', None)
+        if catalogue is None:
+            catalogue = self._custom_user_mask_catalogue = MaskCatalogue()
+        entry = catalogue.entry(path)
+        if entry.grid is None:
+            self._custom_status_var.set(TEXT.get(entry.issue, TEXT['unreadable'])[LANG_INDEX.get(self._custom_language(), 0)])
+            self._custom_sync_archetype_mask_layer_variables()
+            return
+        self._custom_apply_mask_grid(index, entry.grid, path.stem)
+
     def _custom_archetype_mask_operation_options(self, language: str) -> dict[str, str]:
         labels = {
+            "mask": _lang_text(language, "Masquer", "Mask", "Maskieren", "Enmascarar"),
             "blend": _lang_text(language, "Mélanger", "Blend", "Mischen", "Mezclar"),
             "add": custom_section_text("archetype_noise_add", language),
             "subtract": custom_section_text("archetype_noise_subtract", language),
@@ -815,9 +970,10 @@ class CustomGeneratorController:
         noise = _lang_text(language, "Bruit", "Noise", "Rauschen", "Ruido")
         labels = {
             RELIEF_SOURCE_DEFAULT: custom_section_text("archetype_profile_classic", language),
-            RELIEF_SOURCE_CUSTOM_LEGACY: custom_section_text("archetype_relief_source_custom_legacy", language),
-            RELIEF_SOURCE_LARGE_ISLANDS: _lang_text(language, "Grandes îles", "Large islands", "Große Inseln", "Islas grandes"),
-            RELIEF_SOURCE_LARGE_ISLANDS_R21: _lang_text(language, "Grandes îles — relief ondulé", "Large islands — rolling relief", "Große Inseln — welliges Relief", "Islas grandes — relieve ondulado"),
+            RELIEF_SOURCE_CONTINENTAL: _lang_text(language, "Continental", "Continental", "Kontinental", "Continental"),
+            RELIEF_SOURCE_LARGE_ISLANDS: _lang_text(language, "Îles individuelles", "Individual islands", "Individuelle Inseln", "Islas individuales"),
+            RELIEF_SOURCE_LARGE_ISLANDS_R21: _lang_text(language, "Îles individuelles — relief ondulé", "Individual islands — rolling relief", "Individuelle Inseln — welliges Relief", "Islas individuales — relieve ondulado"),
+            RELIEF_SOURCE_TEAM_ISLANDS: _lang_text(language, "Îles par équipe", "Islands by team", "Inseln nach Team", "Islas por equipo"),
         }
         return {
             **{key: f"{composition} · {label}" for key, label in labels.items()},
@@ -829,7 +985,8 @@ class CustomGeneratorController:
         options = {
             "native": custom_section_text("archetype_profile_classic", language),
             CONTINENTAL_CUSTOM_PROFILE_KEY: custom_section_text("archetype_profile_continental", language),
-            "large_islands": _lang_text(language, "Grandes îles", "Large islands", "Große Inseln", "Islas grandes"),
+            "large_islands": _lang_text(language, "Îles individuelles", "Individual islands", "Individuelle Inseln", "Islas individuales"),
+            "team_islands": _lang_text(language, "Îles par équipe", "Islands by team", "Inseln nach Team", "Islas por equipo"),
         }
         config = getattr(self, "_custom_config", None)
         if config is not None and self._custom_archetype_profile_selection_key(config.archetype_profile) == "edited":
@@ -839,8 +996,9 @@ class CustomGeneratorController:
     def _custom_archetype_profile_presets(self) -> dict[str, dict]:
         return {
             "native": default_archetype_profile("continental"),
-            CONTINENTAL_CUSTOM_PROFILE_KEY: continental_legacy_blocks_profile(),
+            CONTINENTAL_CUSTOM_PROFILE_KEY: continental_landmass_profile(),
             "large_islands": default_archetype_profile("large_islands"),
+            "team_islands": default_archetype_profile("team_islands"),
         }
 
     def _custom_archetype_profile_selection_key(self, profile: dict) -> str:
@@ -855,7 +1013,7 @@ class CustomGeneratorController:
         """Map the displayed profile choice to the current macro profile."""
 
         archetype = self._custom_current_archetype()
-        if archetype not in {"continental", "large_islands"}:
+        if archetype not in {"continental", "large_islands", "team_islands"}:
             return archetype
         config = self._custom_profile_for_display()
         profile_key = self._custom_archetype_profile_selection_key(
@@ -865,6 +1023,7 @@ class CustomGeneratorController:
             "native": "classic",
             CONTINENTAL_CUSTOM_PROFILE_KEY: "continental",
             "large_islands": "large_islands",
+            "team_islands": "team_islands",
         }.get(profile_key, "edited")
 
     def _custom_main_archetype_input_options(self, language: str) -> dict[str, str]:
@@ -872,7 +1031,7 @@ class CustomGeneratorController:
 
         labels = ARCHETYPE_INPUT_LABELS.get(language, ARCHETYPE_INPUT_LABELS["en"])
         selected = self._custom_main_archetype_input_key()
-        keys = ["classic", "continental", "large_islands", "small_islands"]
+        keys = ["classic", "continental", "large_islands", "team_islands"]
         options = {key: labels[key] for key in keys}
         if selected == "edited":
             # The selector uses the same concise term as Mode; feedback and
@@ -912,7 +1071,8 @@ class CustomGeneratorController:
             self._custom_refresh_main_archetype_input()
             return
         preset_key = {"classic": "native", "continental": CONTINENTAL_CUSTOM_PROFILE_KEY,
-                      "large_islands": "large_islands"}.get(selected)
+                      "large_islands": "large_islands",
+                      "team_islands": "team_islands"}.get(selected)
         if preset_key is not None:
             self._custom_apply_archetype_preset(preset_key)
         else:
@@ -933,7 +1093,7 @@ class CustomGeneratorController:
         sections["rivers"]["algorithm"] = algorithm
         packages = set(config.start_packages)
         packages.discard("start_mini_swamp")
-        packages.update(default_archetype_start_packages(archetype))
+        packages.update(default_archetype_start_packages(archetype, preset))
         config = config.with_sections(sections).with_start_packages(packages)
         variable = getattr(self, "_custom_river_algorithm_var", None)
         if variable is not None:
@@ -964,7 +1124,7 @@ class CustomGeneratorController:
         self._custom_activate_archetype(next_config)
         if (mode in ("legacy", "upgraded")
                 and (next_config.semantic_sections() != build_custom_config(mode, archetype, archetype_profile=preset).semantic_sections()
-                     or next_config.start_packages != default_archetype_start_packages(archetype))):
+                     or next_config.start_packages != default_archetype_start_packages(archetype, preset))):
             # Unrelated Generator edits survive a named-profile selection.
             self._custom_enter_custom_mode_without_render(next_config)
         self._custom_sync_archetype_editor_values()
@@ -1040,24 +1200,20 @@ class CustomGeneratorController:
                 480,
                 max(160, (self._custom_archetype_preview_available_width() - 16) // 3),
             )
+        base = self._custom_fixed_preview_size(base)
         if self._custom_archetype_preview_projection_key == "parallelogram":
-            return base, max(140, round(base * 2 / 3))
+            return base, max(32 if getattr(self, "_custom_preview_effective_placement", "free") != "free" else 140, round(base * 2 / 3))
         return base, base
 
     def _custom_archetype_preview_surface_changed(self, *_args) -> None:
-        """Resize an adaptive preview after the scroll surface settles."""
+        """Coalesce adaptive geometry updates without a drag-settle delay."""
 
-        if self._custom_archetype_preview_size_key != "adaptive":
+        if self._custom_archetype_preview_size_key != "adaptive" and getattr(self, "_custom_preview_effective_placement", "free") == "free":
             return
-        previous = self._custom_archetype_preview_layout_after
-        if previous is not None:
-            try:
-                self._custom_archetype_tab.after_cancel(previous)
-            except tk.TclError:
-                pass
+        if self._custom_archetype_preview_layout_after is not None:
+            return
         try:
-            self._custom_archetype_preview_layout_after = self._custom_archetype_tab.after(
-                100,
+            self._custom_archetype_preview_layout_after = self._custom_archetype_tab.after_idle(
                 self._custom_resize_archetype_preview_canvases,
             )
         except tk.TclError:
@@ -1112,6 +1268,8 @@ class CustomGeneratorController:
 
     def _custom_resize_archetype_preview_canvases(self) -> None:
         self._custom_archetype_preview_layout_after = None
+        if self._custom_update_auto_preview_placement():
+            return
         width, height = self._custom_archetype_preview_dimensions()
         dimensions = (width, height)
         if dimensions == self._custom_archetype_preview_last_dimensions:
@@ -1224,6 +1382,7 @@ class CustomGeneratorController:
     ) -> None:
         """Queue a fast component refresh and, when needed, a full map pass."""
 
+        self._custom_refresh_island_relief_controls()
         refresh_main = bool(refresh_main) or (
             getattr(self, "_custom_archetype_preview_last_result", None) is None
         )
@@ -1341,6 +1500,9 @@ class CustomGeneratorController:
                 players_var = getattr(self, "players", None)
                 players = int(players_var.get()) if players_var is not None else 4
                 self._custom_archetype_preview_request += (players,)
+                if profile.get("morphology", {}).get("relief_source") == RELIEF_SOURCE_TEAM_ISLANDS:
+                    teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
+                    self._custom_archetype_preview_request += (teams,)
             self._custom_archetype_preview_completed = None
             self._custom_archetype_preview_noise_completed = None
             self._custom_archetype_components_completed = None
@@ -1376,7 +1538,8 @@ class CustomGeneratorController:
                 if request is None:
                     self._custom_archetype_preview_worker = None
                     return
-            players = request[7] if len(request) == 8 else 4
+            players = request[7] if len(request) >= 8 else 4
+            player_teams = request[8] if len(request) >= 9 else ()
             request = request[:7]
             if len(request) == 6:
                 request_id, profile, side, seed, mirror_mode, relax_macro = request
@@ -1414,6 +1577,8 @@ class CustomGeneratorController:
                         seed,
                         mirror_mode=mirror_mode,
                         include_principal=False,
+                        players=players,
+                        player_teams=player_teams,
                         domain_side=side,
                         component_cache=getattr(
                             self, "_custom_archetype_component_cache", None
@@ -1471,6 +1636,7 @@ class CustomGeneratorController:
                     progress=report_progress,
                     relax_macro=relax_macro,
                     players=players,
+                    player_teams=player_teams,
                 )
                 error = None
             except Exception as exc:  # pragma: no cover - surfaced in the UI
@@ -2107,7 +2273,7 @@ class CustomGeneratorController:
             ).semantic_sections()
         current = config.semantic_sections()
         if key == "start_bonus":
-            return config.start_packages != default_archetype_start_packages(config.base_archetype) or current.get(key, {}) != baseline.get(key, {})
+            return config.start_packages != default_archetype_start_packages(config.base_archetype, config.archetype_profile) or current.get(key, {}) != baseline.get(key, {})
         if key == "decorations":
             return (
                 current.get("decorations", {}) != baseline.get("decorations", {})
@@ -2242,6 +2408,9 @@ class CustomGeneratorController:
             return (
                 ("morphology", "shape_scale_percent"),
                 ("morphology", "relief_contrast_percent"),
+                ("morphology", "island_amplitude_percent"),
+                ("morphology", "island_amplitude_auto"),
+                ("morphology", "island_thresholds_auto"),
                 ("morphology", "native_coarse_variation_percent"),
                 ("morphology", "native_refinement_percent"),
                 ("morphology", "native_large_scale_refinement_percent"),
@@ -2259,7 +2428,7 @@ class CustomGeneratorController:
             )
         if key == "primary_source":
             return tuple(("morphology", name) for name in (
-                "relief_source", "relief_source_settings", "relief_source_mask",
+                "relief_source_settings", "relief_source_mask",
             ))
         if key == "noise_editor":
             return (
@@ -2348,9 +2517,12 @@ class CustomGeneratorController:
             for key, variable in getattr(
                 self, "_custom_archetype_relief_source_vars", {}
             ).items():
+                if key == "expression":
+                    variable.set(settings.get(key, DEFAULT_FORMULA))
+                    continue
                 variable.set(
                     self._custom_archetype_display_number(
-                        settings.get(key, NOISE_SOURCE_SETTING_DEFAULTS[key])
+                        settings.get(key, DEFAULT_FORMULA if key == "expression" else NOISE_SOURCE_SETTING_DEFAULTS[key])
                     )
                 )
             shape_options = self._custom_archetype_shape_options(language)
@@ -2405,6 +2577,7 @@ class CustomGeneratorController:
         self._custom_refresh_archetype_ranges()
         self._custom_refresh_archetype_header()
         self._custom_refresh_archetype_section_reset_buttons()
+        self._custom_refresh_island_relief_controls()
 
     def _custom_reset_archetype_section(self, key: str) -> None:
         """Restore one archetype block while preserving every other block."""
@@ -2417,13 +2590,6 @@ class CustomGeneratorController:
         profile = deepcopy(config.archetype_profile)
         for path in paths:
             profile = set_path(profile, path, deepcopy(get_path(baseline, path)))
-        if key == "primary_source":
-            mountain, snow = thresholds_on_relief_source_change(
-                config.archetype_profile["morphology"]["relief_source"],
-                profile["morphology"]["relief_source"],
-                profile["relief"]["mountain_threshold"], profile["relief"]["snow_threshold"],
-            )
-            profile["relief"].update(mountain_threshold=mountain, snow_threshold=snow)
         if key == "noise_editor":
             # Solo is preview-only state, but it belongs to the editor stack's
             # reset semantics rather than surviving a reset by accident.
@@ -2444,7 +2610,17 @@ class CustomGeneratorController:
             return
         defaults = NOISE_LAYER_DEFAULTS if kind == "noise" else MASK_LAYER_DEFAULTS
         profile = deepcopy(config.archetype_profile)
-        profile["morphology"][f"{kind}_layers"][index] = deepcopy(defaults[index])
+        reset = deepcopy(defaults[index])
+        current = morphology[f"{kind}_layers"][index]
+        if kind == "noise":
+            reset["source"] = current["source"]
+            reset["family"] = current["source"]
+        else:
+            reset["type"] = current["type"]
+            # Keep the selected manual drawing/provider, reset its controls.
+            if current["type"] == "manual":
+                reset["provider_settings"] = deepcopy(current.get("provider_settings", {}))
+        profile["morphology"][f"{kind}_layers"][index] = reset
         if kind == "noise" and getattr(self, "_custom_archetype_noise_layer_solo", None) == index:
             self._custom_archetype_noise_layer_solo = None
         self._custom_activate_archetype(config.with_archetype_profile(profile))
@@ -2486,15 +2662,19 @@ class CustomGeneratorController:
             try:
                 layer = layers[int(index)]
                 variables["enabled"].set(bool(layer["enabled"]))
-                variables["type"].set(type_options[str(layer["type"])])
+                variables["type"].set(self._custom_mask_layer_label(layer, type_options))
                 variables["operation"].set(operation_options[str(layer["operation"])])
                 variables["strength"].set(str(layer["strength_percent"]))
+                if "inverted" in variables:
+                    variables["inverted"].set(bool(layer.get("inverted", False)))
                 settings = layer.get("settings", {})
                 for key, default in MASK_LAYER_COMMON_DEFAULTS.items():
                     value = settings.get(key, default)
                     variables[key].set(self._custom_archetype_display_number(value))
             except (KeyError, IndexError, TypeError, ValueError, tk.TclError):
                 continue
+
+        self._custom_refresh_mask_target_states()
 
     def _custom_commit_archetype_mask_layer_stack(
         self,
@@ -2523,12 +2703,6 @@ class CustomGeneratorController:
             count = 0
         count = max(MASK_LAYER_COUNT_BOUNDS[0], min(MASK_LAYER_COUNT, count))
         editable = bool(getattr(self, "_custom_archetype_editor_editable", True))
-        try:
-            configured_layers = self._custom_config.archetype_profile["morphology"].get(
-                "mask_layers", ()
-            )
-        except (AttributeError, KeyError, TypeError):
-            configured_layers = ()
         for index, widgets in getattr(
             self, "_custom_archetype_mask_layer_action_widgets", {}
         ).items():
@@ -2543,13 +2717,6 @@ class CustomGeneratorController:
                     enabled = enabled and count < MASK_LAYER_COUNT
                 elif action == "delete":
                     enabled = enabled and count > 0
-                elif action == "edit":
-                    try:
-                        enabled = enabled and str(
-                            configured_layers[int(index)].get("type", "")
-                        ) == "manual"
-                    except (IndexError, AttributeError, TypeError):
-                        enabled = False
                 try:
                     widget.configure(state="normal" if enabled else "disabled")
                 except tk.TclError:
@@ -2559,6 +2726,13 @@ class CustomGeneratorController:
         """Enable the provider-independent controls for every mask row."""
 
         editable = bool(getattr(self, "_custom_archetype_editor_editable", True))
+        for widget in getattr(self, "_custom_mask_target_widgets", {}).values():
+            widget.configure(state="readonly" if editable else "disabled")
+        config = getattr(self, "_custom_config", None)
+        if config is not None:
+            for index, widget in getattr(self, "_custom_mask_strength_widgets", {}).items():
+                operation = config.archetype_profile["morphology"]["mask_layers"][index]["operation"]
+                widget.configure(to=100 if operation == "mask" else MASK_LAYER_STRENGTH_BOUNDS[1])
         widgets_by_index = getattr(
             self, "_custom_archetype_mask_layer_setting_widgets", {}
         )
@@ -2635,22 +2809,29 @@ class CustomGeneratorController:
             layers = deepcopy(profile["morphology"].get("mask_layers", ()))
             type_options = self._custom_archetype_mask_type_options(language)
             operation_options = self._custom_archetype_mask_operation_options(language)
-            mask_type = next(
-                key for key, label in type_options.items()
-                if label == variables["type"].get()
-            )
+            current_layer = layers[int(index)]
+            selected = variables["type"].get()
+            mask_type = next((key for key, label in type_options.items() if label == selected), None)
+            if mask_type is None and selected == self._custom_mask_layer_label(current_layer, type_options):
+                mask_type = str(current_layer["type"])
+            if mask_type is None:
+                raise ValueError("mask type")
             operation = next(
                 key for key, label in operation_options.items()
                 if label == variables["operation"].get()
             )
             current_layer = layers[int(index)]
+            if operation == "mask":
+                variables["strength"].set("100" if current_layer["operation"] != "mask" else str(min(100, int(round(float(variables["strength"].get()))))))
             settings = {}
             for key in MASK_LAYER_COMMON_DEFAULTS:
                 settings[key] = int(round(float(variables[key].get())))
             layers[int(index)] = {
                 "enabled": bool(variables["enabled"].get()),
+                "target": next((key for key, label in self._custom_mask_target_options(language, current_layer.get("target")).items() if "target" in variables and label == variables["target"].get()), current_layer.get("target", "result")),
                 "type": mask_type,
                 "operation": operation,
+                "inverted": bool(variables["inverted"].get()) if "inverted" in variables else bool(current_layer.get("inverted", False)),
                 "strength_percent": int(round(float(variables["strength"].get()))),
                 "order": int(current_layer.get("order", index)),
                 "settings": settings,
@@ -2674,261 +2855,34 @@ class CustomGeneratorController:
                 self._custom_sync_archetype_mask_layer_variables()
 
     def _custom_archetype_mask_layer_edit(self, index: int) -> None:
-        """Open the small deterministic editor for one freehand mask."""
-
+        """Open a portable raster copy without changing the profile until Apply."""
+        from .mask_editor import MaskEditor
+        from ...generation.archetypes.morphology import mask_template_grid
         config = getattr(self, "_custom_config", None)
         if config is None:
             return
         try:
-            profile = config.archetype_profile
-            layers = profile["morphology"].get("mask_layers", ())
-            layer = layers[int(index)]
-            if str(layer.get("type", "")) != "manual":
-                return
+            layer = config.archetype_profile["morphology"]["mask_layers"][int(index)]
         except (AttributeError, KeyError, IndexError, TypeError):
             return
-
-        side = MASK_LAYER_MANUAL_GRID_SIDE
-        provider_settings = layer.get("provider_settings", {})
-        raw_grid = (
-            provider_settings.get("grid")
-            if isinstance(provider_settings, dict)
-            else None
-        )
-        if isinstance(raw_grid, (list, tuple)) and len(raw_grid) == side * side:
-            try:
-                grid = np.asarray(raw_grid, dtype=np.uint8).reshape(side, side).copy()
-            except (TypeError, ValueError):
-                grid = np.zeros((side, side), dtype=np.uint8)
+        provider = layer.get("provider_settings", {})
+        if layer["type"] == "manual":
+            side = int(provider.get("grid_side", MASK_LAYER_MANUAL_GRID_SIDE))
+            raw = provider.get("grid")
+            grid = (np.asarray(raw, dtype=np.uint8).reshape(side, side).copy()
+                    if raw is not None else np.zeros((side, side), dtype=np.uint8))
         else:
-            grid = np.zeros((side, side), dtype=np.uint8)
-
+            grid = mask_template_grid(str(layer["type"]), 64, provider)
+        def apply_grid(grid, name=''):
+            # Read the latest configuration, retaining unrelated profile settings.
+            CustomGeneratorController._custom_apply_mask_grid(self, index, grid, name)
         language = self._custom_language()
-        window = tk.Toplevel(self)
-        window.title(
-            _lang_text(
-                language,
-                f"Masque {int(index) + 1} — dessin libre",
-                f"Mask {int(index) + 1} — freehand",
-                f"Maske {int(index) + 1} — Freihand",
-                f"Máscara {int(index) + 1} — dibujo libre",
-            )
-        )
-        window.transient(self)
-        window.resizable(False, False)
-        theme_name = "dark" if self.prefs.get("theme", "dark") == "dark" else "light"
-        theme_colors = getattr(
-            self,
-            "_ui_theme_colors",
-            THEME_PALETTES.get(theme_name, THEME_PALETTES["dark"]),
-        )
-        window.configure(background=theme_colors.get("window", "#202124"))
-        canvas_size = 384
-        canvas = tk.Canvas(
-            window,
-            width=canvas_size,
-            height=canvas_size,
-            background=theme_colors.get("canvas", "#111214"),
-            highlightthickness=1,
-            highlightbackground=theme_colors.get("border", "#5f6368"),
-            borderwidth=0,
-        )
-        canvas.grid(row=0, column=0, columnspan=2, padx=8, pady=(8, 4))
-        image_state: dict[str, object] = {"photo": None, "item": None}
-        brush_var = tk.StringVar(value="4")
-
-        def redraw() -> None:
-            image = Image.fromarray(grid, mode="L").resize(
-                (canvas_size, canvas_size),
-                Image.Resampling.NEAREST,
-            ).convert("RGB")
-            photo = ImageTk.PhotoImage(image, master=window)
-            image_state["photo"] = photo
-            item = image_state.get("item")
-            if item is None:
-                image_state["item"] = canvas.create_image(
-                    0, 0, anchor="nw", image=photo
-                )
-            else:
-                canvas.itemconfigure(item, image=photo)
-
-        def brush_radius() -> int:
-            try:
-                return max(1, min(16, int(round(float(brush_var.get())))))
-            except (TypeError, ValueError):
-                return 4
-
-        def paint(event: tk.Event, value: int) -> None:
-            x = max(0, min(side - 1, int(round(event.x / canvas_size * (side - 1)))))
-            y = max(0, min(side - 1, int(round(event.y / canvas_size * (side - 1)))))
-            radius = brush_radius()
-            rows, columns = np.ogrid[:side, :side]
-            mask = (rows - y) ** 2 + (columns - x) ** 2 <= radius * radius
-            grid[mask] = int(value)
-            redraw()
-
-        canvas.bind("<Button-1>", lambda event: paint(event, 255))
-        canvas.bind("<B1-Motion>", lambda event: paint(event, 255))
-        canvas.bind("<Button-3>", lambda event: paint(event, 0))
-        canvas.bind("<B3-Motion>", lambda event: paint(event, 0))
-
-        controls = ttk.Frame(window)
-        controls.grid(row=1, column=0, columnspan=2, sticky="w", padx=8, pady=4)
-        ttk.Label(
-            controls,
-            text=_lang_text(language, "Pinceau", "Brush", "Pinsel", "Pincel"),
-        ).grid(row=0, column=0, sticky="w", padx=(0, 4))
-        ttk.Spinbox(
-            controls,
-            from_=1,
-            to=16,
-            increment=1,
-            textvariable=brush_var,
-            width=4,
-        ).grid(row=0, column=1, sticky="w", padx=(0, 8))
-
-        def clear_grid() -> None:
-            grid.fill(0)
-            redraw()
-
-        ttk.Button(
-            controls,
-            text=_lang_text(language, "Effacer", "Clear", "Leeren", "Borrar"),
-            command=clear_grid,
-            padding=(4, 1),
-        ).grid(row=0, column=2, sticky="w", padx=(0, 4))
-
-        def import_grid() -> None:
-            path = filedialog.askopenfilename(
-                parent=window,
-                title=_lang_text(
-                    language,
-                    "Importer un masque en niveaux de gris",
-                    "Import grayscale mask",
-                    "Graustufenmaske importieren",
-                    "Importar máscara en escala de grises",
-                ),
-                filetypes=(
-                    (_lang_text(language, "Images", "Images", "Bilder", "Imágenes"), "*.png *.jpg *.jpeg *.bmp"),
-                    (_lang_text(language, "Tous les fichiers", "All files", "Alle Dateien", "Todos los archivos"), "*.*"),
-                ),
-            )
-            if not path:
-                return
-            try:
-                imported = Image.open(path).convert("L").resize(
-                    (side, side),
-                    Image.Resampling.LANCZOS,
-                )
-                grid[:, :] = np.asarray(imported, dtype=np.uint8)
-                redraw()
-                self._custom_status_var.set(
-                    _lang_text(
-                        language,
-                        "Masque importé dans l’éditeur ; cliquez sur Enregistrer pour l’appliquer.",
-                        "Mask imported into the editor; click Save to apply it.",
-                        "Maske importiert; zum Anwenden Speichern klicken.",
-                        "Máscara importada; pulse Guardar para aplicarla.",
-                    )
-                )
-            except (OSError, ValueError) as exc:
-                self._custom_status_var.set(str(exc))
-
-        ttk.Button(
-            controls,
-            text=_lang_text(language, "Importer", "Import", "Importieren", "Importar"),
-            command=import_grid,
-            padding=(4, 1),
-        ).grid(row=0, column=3, sticky="w", padx=(0, 4))
-
-        def export_grid() -> None:
-            path = filedialog.asksaveasfilename(
-                parent=window,
-                defaultextension=".png",
-                filetypes=(("PNG", "*.png"),),
-                title=_lang_text(
-                    language,
-                    "Exporter le masque",
-                    "Export mask",
-                    "Maske exportieren",
-                    "Exportar máscara",
-                ),
-            )
-            if not path:
-                return
-            try:
-                Image.fromarray(grid, mode="L").save(path)
-                self._custom_status_var.set(
-                    _lang_text(
-                        language,
-                        "Masque exporté.",
-                        "Mask exported.",
-                        "Maske exportiert.",
-                        "Máscara exportada.",
-                    )
-                )
-            except (OSError, ValueError) as exc:
-                self._custom_status_var.set(str(exc))
-
-        ttk.Button(
-            controls,
-            text=_lang_text(language, "Exporter", "Export", "Exportieren", "Exportar"),
-            command=export_grid,
-            padding=(4, 1),
-        ).grid(row=0, column=4, sticky="w")
-        ttk.Label(
-            window,
-            text=_lang_text(
-                language,
-                "Clic gauche : peindre · clic droit : effacer · gris = influence du masque",
-                "Left click: paint · right click: erase · gray = mask influence",
-                "Linksklick: malen · Rechtsklick: löschen · Grau = Maskeneinfluss",
-                "Clic izquierdo: pintar · clic derecho: borrar · gris = influencia",
-            ),
-            style="Hint.TLabel",
-        ).grid(row=2, column=0, columnspan=2, sticky="w", padx=8, pady=(0, 4))
-
-        buttons = ttk.Frame(window)
-        buttons.grid(row=3, column=0, columnspan=2, sticky="e", padx=8, pady=(4, 8))
-
-        def save_grid() -> None:
-            try:
-                profile = deepcopy(config.archetype_profile)
-                layers = deepcopy(profile["morphology"].get("mask_layers", ()))
-                current = deepcopy(layers[int(index)])
-                current_provider = current.get("provider_settings", {})
-                provider = (
-                    deepcopy(dict(current_provider))
-                    if isinstance(current_provider, dict)
-                    else {}
-                )
-                provider["grid"] = grid.reshape(-1).astype(np.uint8).tolist()
-                provider["grid_side"] = side
-                current["type"] = "manual"
-                current["provider_settings"] = provider
-                layers[int(index)] = current
-                count = int(profile["morphology"].get("mask_layer_count", 0))
-                self._custom_commit_archetype_mask_layer_stack(config, layers, count)
-                window.destroy()
-            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as exc:
-                self._custom_status_var.set(str(exc))
-
-        ttk.Button(
-            buttons,
-            text=_lang_text(language, "Annuler", "Cancel", "Abbrechen", "Cancelar"),
-            command=window.destroy,
-            padding=(6, 1),
-        ).grid(row=0, column=0, padx=(0, 4))
-        ttk.Button(
-            buttons,
-            text=_lang_text(language, "Enregistrer", "Save", "Speichern", "Guardar"),
-            command=save_grid,
-            padding=(6, 1),
-        ).grid(row=0, column=1)
-        window.protocol("WM_DELETE_WINDOW", window.destroy)
-        redraw()
-        window.grab_set()
-        window.focus_set()
+        theme = "dark" if self.prefs.get("theme", "dark") == "dark" else "light"
+        templates = {key: value for key, value in self._custom_archetype_mask_type_options(language).items()
+                     if key != "manual"}
+        MaskEditor(self, grid, language=language,
+                   colors=getattr(self, "_ui_theme_colors", THEME_PALETTES[theme]),
+                   templates=templates, apply=apply_grid, name=provider.get("mask_name", ""))
 
     def _custom_archetype_mask_layer_reorder(self, index: int, direction: int) -> None:
         config = getattr(self, "_custom_config", None)
@@ -2992,6 +2946,7 @@ class CustomGeneratorController:
             != _archetype_effective_preview_profile(config.archetype_profile)
         )
         self._custom_config = config
+        self._custom_editor_archetype_profile = config.archetype_profile
         self._custom_last_concrete_archetype = config.base_archetype
         self._custom_last_render_digest = config.digest
         if self._custom_current_mode() == "custom" and hasattr(
@@ -3014,11 +2969,76 @@ class CustomGeneratorController:
             refresh_main=refresh_main
         )
 
+    def _custom_refresh_island_relief_controls(self) -> None:
+        frame = getattr(self, "_custom_island_relief_frame", None)
+        config = getattr(self, "_custom_config", None)
+        if frame is None or config is None:
+            return
+        try:
+            profile = config.archetype_profile
+            island = uses_island_source(profile)
+            if island:
+                frame.grid()
+            else:
+                frame.grid_remove()
+            players = int(self.players.get())
+            teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
+            effective = resolve_island_profile(
+                profile, int(self.size.get()), players, player_teams=teams,
+            )
+            m = profile["morphology"]
+            editable = bool(getattr(self, "_custom_archetype_editor_editable", True))
+            for name, flag in (("island_amplitude_auto", m["island_amplitude_auto"]), ("island_thresholds_auto", m["island_thresholds_auto"])):
+                getattr(self, "_custom_" + name + "_var").set(flag)
+            controls = [("morphology.island_amplitude_percent", island and m["island_amplitude_auto"]),
+                        ("relief.mountain_threshold", island and m["island_thresholds_auto"]),
+                        ("relief.snow_threshold", island and m["island_thresholds_auto"])]
+            for key, automatic in controls:
+                widget = self._custom_archetype_spinboxes.get(key)
+                if widget is not None:
+                    widget.configure(state="disabled" if automatic or not editable else "normal")
+                variable = self._custom_archetype_vars.get(key)
+                if variable is not None:
+                    variable.set(str(get_path(effective if automatic else profile, tuple(key.split('.')))))
+            if island:
+                self._custom_island_effective_var.set(custom_section_text(
+                    "archetype_island_effective", self._custom_language(),
+                    amplitude=effective["morphology"]["island_amplitude_percent"],
+                    mountain=effective["relief"]["mountain_threshold"],
+                    snow=effective["relief"]["snow_threshold"]))
+        except (AttributeError, KeyError, TypeError, ValueError, tk.TclError):
+            return
+
+    def _custom_island_automatic_changed(self, name) -> None:
+        config = getattr(self, "_custom_config", None)
+        if config is None:
+            return
+        profile = deepcopy(config.archetype_profile)
+        players = int(self.players.get())
+        teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
+        effective = resolve_island_profile(
+            profile, int(self.size.get()), players, player_teams=teams,
+        )
+        enabled = bool(getattr(self, "_custom_" + name + "_var").get())
+        if not enabled:
+            if name == "island_amplitude_auto":
+                profile["morphology"]["island_amplitude_percent"] = effective["morphology"]["island_amplitude_percent"]
+            else:
+                profile["relief"].update(mountain_threshold=effective["relief"]["mountain_threshold"], snow_threshold=effective["relief"]["snow_threshold"])
+        profile["morphology"][name] = enabled
+        self._custom_activate_archetype(config.with_archetype_profile(profile))
+        self._custom_sync_archetype_editor_values()
+
     def _custom_archetype_changed(self, path, raw) -> None:
         """Apply one macro-layout parameter and enter Custom in place."""
 
         language = self._custom_language()
         config = None
+        active = getattr(self, "_custom_config", None)
+        if active is not None and uses_island_source(active.archetype_profile):
+            m = active.archetype_profile["morphology"]
+            if (path == ("morphology", "island_amplitude_percent") and m["island_amplitude_auto"]) or (path in (("relief", "mountain_threshold"), ("relief", "snow_threshold")) and m["island_thresholds_auto"]):
+                return
         variable = self._custom_archetype_vars.get(".".join(path))
         try:
             value = int(round(float(str(raw).strip())))
@@ -3144,6 +3164,8 @@ class CustomGeneratorController:
                 variables["operation"].set(operation_options[str(layer["operation"])] )
                 variables["strength"].set(str(layer["strength_percent"]))
                 settings = layer.get("settings", {})
+                if "expression" in variables:
+                    variables["expression"].set(settings.get("expression", DEFAULT_FORMULA))
                 for key, default in NOISE_SOURCE_SETTING_DEFAULTS.items():
                     value = settings.get(key, default)
                     number = float(value)
@@ -3189,6 +3211,10 @@ class CustomGeneratorController:
 
     def _custom_refresh_archetype_noise_layer_action_states(self) -> None:
         """Keep stack actions bounded to visible, editable fusion slots."""
+
+        refresh_targets = getattr(self, "_custom_refresh_mask_target_states", None)
+        if refresh_targets is not None:
+            refresh_targets()
 
         try:
             count = int(self._custom_archetype_noise_layer_count_var.get())
@@ -3297,7 +3323,9 @@ class CustomGeneratorController:
                 self._custom_archetype_noise_layer_solo = target
             elif solo == target:
                 self._custom_archetype_noise_layer_solo = int(index)
-            self._custom_commit_archetype_noise_layer_stack(config, layers, count)
+            profile = deepcopy(config.archetype_profile)
+            profile["morphology"]["mask_layers"] = remap_mask_targets(profile["morphology"]["mask_layers"], {int(index): target, target: int(index)} if 0 <= int(index) < count and 0 <= target < count else {})
+            self._custom_commit_archetype_noise_layer_stack(config.with_archetype_profile(profile), layers, count)
         except (KeyError, TypeError, ValueError, IndexError) as exc:
             self._custom_status_var.set(
                 _lang_text(
@@ -3328,7 +3356,9 @@ class CustomGeneratorController:
             )
             if solo is not None and solo > int(index):
                 self._custom_archetype_noise_layer_solo = int(solo) + 1
-            self._custom_commit_archetype_noise_layer_stack(config, layers, new_count)
+            profile = deepcopy(config.archetype_profile)
+            profile["morphology"]["mask_layers"] = remap_mask_targets(profile["morphology"]["mask_layers"], {count: None, **{slot: slot + 1 for slot in range(int(index) + 1, count)}} if new_count > count else {})
+            self._custom_commit_archetype_noise_layer_stack(config.with_archetype_profile(profile), layers, new_count)
         except (KeyError, TypeError, ValueError, IndexError) as exc:
             self._custom_status_var.set(
                 _lang_text(
@@ -3361,7 +3391,9 @@ class CustomGeneratorController:
                 self._custom_archetype_noise_layer_solo = None
             elif solo is not None and solo > int(index):
                 self._custom_archetype_noise_layer_solo = int(solo) - 1
-            self._custom_commit_archetype_noise_layer_stack(config, layers, new_count)
+            profile = deepcopy(config.archetype_profile)
+            profile["morphology"]["mask_layers"] = remap_mask_targets(profile["morphology"]["mask_layers"], {int(index): None, **{slot: slot - 1 for slot in range(int(index) + 1, count)}} if new_count < count else {})
+            self._custom_commit_archetype_noise_layer_stack(config.with_archetype_profile(profile), layers, new_count)
         except (KeyError, TypeError, ValueError, IndexError) as exc:
             self._custom_status_var.set(
                 _lang_text(
@@ -3479,11 +3511,15 @@ class CustomGeneratorController:
                 if label == variables["operation"].get()
             )
             current_layer = layers[int(index)]
+            if family != current_layer["source"] and "expression" in variables:
+                variables["expression"].set(current_layer["settings"].get("expression", DEFAULT_FORMULA))
             settings = {}
             for key, default in NOISE_SOURCE_SETTING_DEFAULTS.items():
                 raw_value = variables[key].get()
                 numeric = float(raw_value)
                 settings[key] = int(round(numeric)) if isinstance(default, int) else numeric
+            if "expression" in variables and (family == "formula" or "expression" in current_layer.get("settings", {})):
+                settings["expression"] = variables["expression"].get()
             mask_options = self._custom_archetype_noise_mask_options(language)
             mask_source_options = self._custom_archetype_noise_family_options(language)
             mask_settings = {}
@@ -3582,6 +3618,15 @@ class CustomGeneratorController:
             else:
                 primary_source = RELIEF_SOURCE_DEFAULT
         primary_source = str(primary_source)
+        for key, panel in getattr(self, "_custom_formula_panels", {}).items():
+            if key == "primary":
+                selected = primary_source == "formula"
+            else:
+                variables = getattr(self, "_custom_archetype_noise_layer_vars", {}).get(int(key.split(':')[1]), {})
+                family = variables.get("family")
+                label = self._custom_archetype_noise_family_options(self._custom_language()).get("formula")
+                selected = family is not None and family.get() == label
+            panel.set_active(selected and editable)
         is_legacy_source = primary_source in {
             RELIEF_SOURCE_DEFAULT,
             RELIEF_SOURCE_CUSTOM_LEGACY,
@@ -3625,7 +3670,7 @@ class CustomGeneratorController:
             else:
                 applies = (
                     uses_complete_noise_source
-                    and noise_source_setting_applies(primary_source, setting_key)
+                    and noise_source_setting_applies(primary_source, setting_key, {"expression": getattr(self, "_custom_archetype_relief_source_vars", {}).get("expression").get()} if getattr(self, "_custom_archetype_relief_source_vars", {}).get("expression") is not None else None)
                 )
             try:
                 widget.configure(state="normal" if editable and applies else "disabled")
@@ -3709,7 +3754,7 @@ class CustomGeneratorController:
                     elif mask_key == "angle_degrees":
                         applies = mask_type == "direction"
                 else:
-                    applies = noise_source_setting_applies(source, setting_key)
+                    applies = noise_source_setting_applies(source, setting_key, {"expression": variables["expression"].get()} if "expression" in variables else None)
                 try:
                     widget.configure(
                         state="normal" if editable and applies else "disabled"
@@ -3748,7 +3793,7 @@ class CustomGeneratorController:
                 and (key in common or key in specific.get(shape_type, set()))
             )
             try:
-                if isinstance(widget, ttk.Combobox):
+                if isinstance(widget, (ttk.Combobox, SourceSelect)):
                     widget.configure(
                         state="readonly" if editable and applies else "disabled"
                     )
@@ -3847,6 +3892,8 @@ class CustomGeneratorController:
             for key, default in NOISE_SOURCE_SETTING_DEFAULTS.items():
                 numeric = float(variables[key].get())
                 settings[key] = int(round(numeric)) if isinstance(default, int) else numeric
+            if "expression" in variables and (source == "formula" or "expression" in profile["morphology"].get("relief_source_settings", {})):
+                settings["expression"] = variables["expression"].get()
             mask_options = self._custom_archetype_noise_mask_options(language)
             mask_source_options = self._custom_archetype_noise_family_options(language)
             mask_settings = {}
@@ -3932,7 +3979,7 @@ class CustomGeneratorController:
             sections["objects"] = deepcopy(baseline.get("objects", {}))
         elif key in sections:
             sections[key] = deepcopy(baseline.get(key, {}))
-        packages = default_archetype_start_packages(config.base_archetype) if key == "start_bonus" else config.start_packages
+        packages = default_archetype_start_packages(config.base_archetype, config.archetype_profile) if key == "start_bonus" else config.start_packages
         self._custom_config = config.with_sections(sections).with_start_packages(packages)
         language = self._custom_language()
         if self._custom_current_mode() != "custom":
@@ -3944,6 +3991,7 @@ class CustomGeneratorController:
             return
         self._custom_layout_generation = getattr(self, "_custom_layout_generation", 0) + 1
         layout_generation = self._custom_layout_generation
+        self._custom_clear_generator_layout_callbacks()
         self._custom_clear_preview_size_trace()
         config = self._custom_profile_for_display()
         generator_scroll_position = self._custom_generator_scroll_position()
@@ -4011,8 +4059,9 @@ class CustomGeneratorController:
         )
         section_layout_frames = {}
         section_layout_job = None
+        last_section_layout = None
         section_layout_gap = 16
-        section_layout_safety_margin = 32
+        section_row_hosts = {}
 
         def section_full_width_keys(column_count):
             """Keep the two densest sections alone at every width."""
@@ -4038,7 +4087,7 @@ class CustomGeneratorController:
 
         def section_pair_fits(keys, available_width):
             return (
-                section_pair_required_width(keys) + section_layout_safety_margin
+                section_pair_required_width(keys)
                 <= available_width
             )
 
@@ -4065,8 +4114,9 @@ class CustomGeneratorController:
             )
 
         def relayout_sections():
-            nonlocal section_layout_job
+            nonlocal section_layout_job, last_section_layout
             section_layout_job = None
+            self._custom_generator_layout_jobs.pop("sections", None)
             # A parameter/language/mode refresh can destroy these widgets
             # before Tk delivers the queued idle callback from the previous
             # render.  Never let that stale callback inspect old Tcl paths.
@@ -4077,7 +4127,7 @@ class CustomGeneratorController:
                 # wider than the viewport.  The inner tab width is the real
                 # responsive constraint; use it so a narrow window can force
                 # pairs back to one column.
-                available_width = max(0, root.winfo_width() - 28)
+                available_width = content_width(root)
             except tk.TclError:
                 return
             if available_width <= 1 or len(section_layout_frames) != len(section_order):
@@ -4097,43 +4147,37 @@ class CustomGeneratorController:
                     column_count = candidate
                     break
 
+            rows, full_width = section_rows(column_count, available_width)
+            signature = (column_count, tuple(tuple(row) for row in rows))
+            if signature == last_section_layout:
+                return
+            last_section_layout = signature
             for column in range(3):
                 sections_frame.columnconfigure(column, weight=0)
-            rows, full_width = section_rows(column_count, available_width)
-            for row_index, row in enumerate(rows):
-                if len(row) == 1 and row[0] in full_width:
-                    shell = section_layout_frames[row[0]][0]
-                    shell.grid_configure(
-                        row=row_index,
-                        column=0,
-                        columnspan=column_count,
-                        sticky="nw",
-                        padx=0,
-                    )
-                    continue
-                for column, key in enumerate(row):
-                    section_layout_frames[key][0].grid_configure(
-                        row=row_index,
-                        column=column,
-                        columnspan=1,
-                        sticky="nw",
-                        padx=(
-                            0,
-                            section_layout_gap if column < len(row) - 1 else 0,
-                        ),
-                    )
+            grid_independent_rows(sections_frame, rows,
+                                  {key: value[0] for key,value in section_layout_frames.items()},
+                                  section_row_hosts, gap=section_layout_gap)
 
         def schedule_section_relayout(_event=None):
             nonlocal section_layout_job
             if section_layout_job is not None:
                 return
             try:
-                section_layout_job = sections_frame.after_idle(relayout_sections)
+                section_layout_job = root.after_idle(relayout_sections)
+                self._custom_generator_layout_jobs["sections"] = section_layout_job
             except tk.TclError:
                 section_layout_job = None
 
         sections = config.semantic_sections()
         self._custom_section_vars = {}
+        self._custom_generator_value_formatters = {}
+
+        def register_value(path, variable, labels=None):
+            key = ".".join(path)
+            self._custom_section_vars[key] = variable
+            if labels is not None:
+                self._custom_generator_value_formatters[key] = labels.__getitem__
+
         self._custom_mineral_icon_widgets: dict[str, list[tk.Widget]] = {
             key: [] for key, _family in MINERAL_SPECS
         }
@@ -4513,6 +4557,7 @@ class CustomGeneratorController:
             "random": custom_section_text("random_algorithm", language),
         }
         algorithm_var = tk.StringVar(value=algorithm_labels[mineral_values["algorithm"]])
+        register_value(("minerals", "algorithm"), algorithm_var, algorithm_labels)
         algorithm_combo = ttk.Combobox(
             algorithm_line,
             textvariable=algorithm_var,
@@ -4549,10 +4594,10 @@ class CustomGeneratorController:
             0.1,
             custom_section_text("percent_unit", language),
             tooltip=tip(
-                "Part de la carte occupée par les cases minéralisées.",
-                "Share of the map occupied by mineral-bearing cells.",
-                "Anteil der Karte mit mineralhaltigen Zellen.",
-                "Parte del mapa ocupada por casillas mineralizadas.",
+                "Part des cases de montagne compatibles qui reçoivent un minerai, hors bonus de départ.",
+                "Share of compatible mountain cells receiving minerals, excluding start bonuses.",
+                "Anteil geeigneter Bergzellen mit Mineralien, ohne Startboni.",
+                "Parte de las casillas de montaña compatibles con minerales, sin bonos iniciales.",
             ),
         )
 
@@ -4570,6 +4615,7 @@ class CustomGeneratorController:
         add_info(variation_frame, 0, variation_tooltip, column=1, pady=2)
         variation_labels = {key: custom_section_text(key, language) for key in SIZE_VARIATIONS}
         variation_var = tk.StringVar(value=variation_labels[mineral_values["size_variation"]])
+        register_value(("minerals", "size_variation"), variation_var, variation_labels)
         variation_combo = ttk.Combobox(
             variation_frame,
             textvariable=variation_var,
@@ -4600,6 +4646,7 @@ class CustomGeneratorController:
             # control stays short and ergonomic for users.
             variable = tk.StringVar(value=f"{float(mineral_values['shares'].get(key, 0.0)):.1f}")
             share_vars[key] = variable
+            self._custom_generator_value_formatters[f"minerals.shares.{key}"] = lambda value: f"{float(value):.1f}"
             add_aligned_spin(
                 shares_frame,
                 row,
@@ -4613,12 +4660,15 @@ class CustomGeneratorController:
                 variable=variable,
                 icon=self._custom_mineral_icons[key],
                 icon_key=key,
+                tooltip=custom_section_text("mineral_shares_hint", language),
             )
         self._custom_mineral_share_vars = share_vars
         share_total_var = tk.StringVar(value="")
         self._custom_section_share_total_var = share_total_var
 
         def refresh_share_total(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             total = 0.0
             for variable in share_vars.values():
                 try:
@@ -4698,6 +4748,7 @@ class CustomGeneratorController:
             column=0,
         )
         near_shore_var = tk.BooleanVar(value=bool(fish_values["near_shore"]))
+        register_value(("fish", "near_shore"), near_shore_var)
         near_shore_line = ttk.Frame(fish_grid)
         near_shore_line.grid(row=2, column=0, sticky="w", pady=(5, 2))
         near_shore = ttk.Checkbutton(
@@ -4752,6 +4803,7 @@ class CustomGeneratorController:
             for key in RIVER_ALGORITHMS
         }
         river_algorithm_var = tk.StringVar(value=river_algorithm_labels[river_values["algorithm"]])
+        register_value(("rivers", "algorithm"), river_algorithm_var, river_algorithm_labels)
         self._custom_river_algorithm_var = river_algorithm_var
         river_algorithm_combo = ttk.Combobox(
             river_algorithm_line, textvariable=river_algorithm_var,
@@ -4791,6 +4843,7 @@ class CustomGeneratorController:
             line = ttk.Frame(terrains)
             line.grid(row=row, column=0, sticky="w", pady=2)
             enabled_var = tk.BooleanVar(value=bool(entry["enabled"]))
+            register_value(("terrains", terrain_key, "enabled"), enabled_var)
             rate_var = tk.StringVar(
                 value=_display_number(entry["rate_percent"] if entry["enabled"] else 0)
             )
@@ -4868,6 +4921,7 @@ class CustomGeneratorController:
         saplings.grid(row=1, column=0, sticky="nw", pady=(6, 6))
         saplings.columnconfigure(0, weight=0)
         saplings_enabled_var = tk.BooleanVar(value=bool(sapling_values["enabled"]))
+        register_value(("trees", "saplings", "enabled"), saplings_enabled_var)
         saplings_enabled = ttk.Checkbutton(
             saplings,
             text=custom_section_text("tree_saplings_enabled", language),
@@ -4876,6 +4930,7 @@ class CustomGeneratorController:
         )
         saplings_enabled.grid(row=0, column=0, sticky="w", pady=1)
         in_global_var = tk.BooleanVar(value=bool(sapling_values["in_global_pool"]))
+        register_value(("trees", "saplings", "in_global_pool"), in_global_var)
         in_global = ttk.Checkbutton(
             saplings,
             text=custom_section_text("tree_saplings_global_pool", language),
@@ -4909,6 +4964,7 @@ class CustomGeneratorController:
         )
         placement_labels = {key: custom_section_text(f"tree_placement_{key}", language) for key in TREE_PLACEMENTS}
         placement_var = tk.StringVar(value=placement_labels.get(sapling_values["placement"], placement_labels["everywhere"]))
+        register_value(("trees", "saplings", "placement"), placement_var, placement_labels)
         placement_line = ttk.Frame(saplings)
         placement_line.grid(row=4, column=0, sticky="w", pady=1)
         placement_combo = ttk.Combobox(
@@ -4933,6 +4989,8 @@ class CustomGeneratorController:
         sapling_reason_var = tk.StringVar(value="")
 
         def refresh_sapling_controls(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             enabled = bool(saplings_enabled_var.get())
             in_global_pool = bool(in_global_var.get())
             in_global.configure(state="normal" if enabled else "disabled")
@@ -4974,6 +5032,7 @@ class CustomGeneratorController:
         forests.grid(row=2, column=0, sticky="nw", pady=(0, 6))
         forests.columnconfigure(0, weight=0)
         forests_enabled_var = tk.BooleanVar(value=bool(forest_values["enabled"]))
+        register_value(("trees", "forests", "enabled"), forests_enabled_var)
         forests_enabled = ttk.Checkbutton(
             forests,
             text=custom_section_text("tree_forests_enabled", language),
@@ -5018,6 +5077,8 @@ class CustomGeneratorController:
             column=0,
         )
         def refresh_forest_controls(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             enabled = bool(forests_enabled_var.get())
             state = "normal" if enabled else "disabled"
             forest_share_widget.configure(state=state)
@@ -5067,6 +5128,7 @@ class CustomGeneratorController:
         groups.grid(row=1, column=0, sticky="nw", pady=(6, 0))
         groups.columnconfigure(0, weight=0)
         stone_groups_var = tk.BooleanVar(value=bool(stone_group_values["enabled"]))
+        register_value(("building_stones", "groups", "enabled"), stone_groups_var)
         ttk.Checkbutton(
             groups,
             text=custom_section_text("building_stone_groups_enabled", language),
@@ -5112,6 +5174,8 @@ class CustomGeneratorController:
             column=0,
         )
         def refresh_stone_controls(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             enabled = bool(stone_groups_var.get())
             state = "normal" if enabled else "disabled"
             stone_share_widget.configure(state=state)
@@ -5150,6 +5214,8 @@ class CustomGeneratorController:
                 style="Hint.TLabel",
             ).grid(row=row, column=0, sticky="w")
         def refresh_stone_preview(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             profile = (
                 self._custom_config.profile
                 if self._custom_config is not None
@@ -5258,6 +5324,8 @@ class CustomGeneratorController:
         refresh_stone_preview()
 
         def refresh_custom_previews_for_size(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             refresh_stone_preview()
 
         if hasattr(self, "size"):
@@ -5283,6 +5351,7 @@ class CustomGeneratorController:
             object_values.get("grass_compatible_on_dry_and_details", False)
             if isinstance(object_values, dict) else False
         ))
+        register_value(("objects", "grass_compatible_on_dry_and_details"), grass_object_var)
         objects_line = ttk.Frame(decorations)
         objects_line.grid(row=0, column=0, sticky="w", pady=(0, 4))
         ttk.Checkbutton(
@@ -5334,6 +5403,8 @@ class CustomGeneratorController:
         )
 
         def refresh_terrain_dependencies(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             current = self._custom_config.semantic_sections() if self._custom_config is not None else sections
             current_terrain_values = current.get("terrains", {})
             for key in TERRAIN_FAMILY_KEYS:
@@ -5404,7 +5475,9 @@ class CustomGeneratorController:
         start_values = sections["start_bonus"]
         bonus_panel_layout_gap = 16
         bonus_panel_layout_job = None
+        last_bonus_layout = None
         bonus_panel_frames = {}
+        bonus_row_hosts = {}
 
         def bonus_panel_natural_width(key):
             try:
@@ -5419,31 +5492,21 @@ class CustomGeneratorController:
             return required <= available_width
 
         def layout_bonus_group(keys, column_count, start_row=0):
-            for index, key in enumerate(keys):
-                row = start_row + index // column_count
-                column = index % column_count
-                bonus_panel_frames[key].grid_configure(
-                    row=row,
-                    column=column,
-                    columnspan=1,
-                    sticky="nw",
-                    padx=(
-                        0,
-                        bonus_panel_layout_gap
-                        if column < min(column_count, len(keys)) - 1
-                        else 0,
-                    ),
-                )
+            rows=[list(keys[index:index+column_count]) for index in range(0,len(keys),column_count)]
+            parent=bonus_panel_frames[keys[0]].master
+            grid_independent_rows(parent, rows, bonus_panel_frames, bonus_row_hosts,
+                                  gap=bonus_panel_layout_gap, start_row=start_row)
 
         def relayout_bonus_panels():
-            nonlocal bonus_panel_layout_job
+            nonlocal bonus_panel_layout_job, last_bonus_layout
             bonus_panel_layout_job = None
+            self._custom_generator_layout_jobs.pop("bonus", None)
             if layout_generation != getattr(self, "_custom_layout_generation", None):
                 return
             if len(bonus_panel_frames) != 5:
                 return
             try:
-                available_width = max(0, root.winfo_width() - 28)
+                available_width = content_width(root)
             except tk.TclError:
                 return
             if available_width <= 1:
@@ -5455,12 +5518,19 @@ class CustomGeneratorController:
                 return
 
             object_columns = 2 if bonus_group_fits(("forest", "stones"), available_width) else 1
+            resource_columns = (
+                3 if bonus_group_fits(("lake", "rocky", "swamp"), available_width)
+                else 2 if bonus_group_fits(("lake", "rocky"), available_width) else 1
+            )
+            signature = (object_columns, resource_columns)
+            if signature == last_bonus_layout:
+                return
+            last_bonus_layout = signature
             layout_bonus_group(("forest", "stones"), object_columns)
-            if bonus_group_fits(("lake", "rocky", "swamp"), available_width):
+            if resource_columns == 3:
                 layout_bonus_group(("lake", "rocky", "swamp"), 3)
-            elif bonus_group_fits(("lake", "rocky"), available_width):
-                layout_bonus_group(("lake", "rocky"), 2)
-                layout_bonus_group(("swamp",), 1, start_row=1)
+            elif resource_columns == 2:
+                layout_bonus_group(("lake", "rocky", "swamp"), 2)
             else:
                 layout_bonus_group(("lake", "rocky", "swamp"), 1)
 
@@ -5469,7 +5539,8 @@ class CustomGeneratorController:
             if bonus_panel_layout_job is not None:
                 return
             try:
-                bonus_panel_layout_job = sections_frame.after_idle(relayout_bonus_panels)
+                bonus_panel_layout_job = root.after_idle(relayout_bonus_panels)
+                self._custom_generator_layout_jobs["bonus"] = bonus_panel_layout_job
             except tk.TclError:
                 bonus_panel_layout_job = None
 
@@ -5535,6 +5606,7 @@ class CustomGeneratorController:
         force_extended_var = tk.BooleanVar(
             value=bool(start_values.get("force_extended_radius", False))
         )
+        register_value(("start_bonus", "force_extended_radius"), force_extended_var)
         force_extended_line = ttk.Frame(common_bonus)
         force_extended_line.grid(row=1, column=0, sticky="w", pady=(0, 3))
         ttk.Checkbutton(
@@ -5558,6 +5630,26 @@ class CustomGeneratorController:
             column=1,
             pady=0,
         )
+        extension_widget = add_spin(
+            common_bonus,
+            2,
+            custom_section_text("start_bonus_center_extension", language),
+            ("start_bonus", "center_extension_limit"),
+            start_values.get("center_extension_limit", START_BONUS_CENTER_EXTENSION_DEFAULT),
+            START_BONUS_CENTER_EXTENSION_MIN,
+            START_BONUS_CENTER_EXTENSION_MAX,
+            1,
+            "HEX6",
+            tooltip=custom_section_text("start_bonus_center_extension_hint", language),
+        )
+
+        def refresh_extension_control(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
+            extension_widget.configure(state="normal" if force_extended_var.get() else "disabled")
+
+        force_extended_var.trace_add("write", refresh_extension_control)
+        refresh_extension_control()
         # Distance is common to all five packages, so it stays editable even
         # when a particular package is disabled.
 
@@ -5601,6 +5693,7 @@ class CustomGeneratorController:
             custom_section_text("trees_unit", language),
             package_key="start_forest",
             variable=forest_adult_var,
+            tooltip=custom_section_text("start_bonus_adults_hint", language),
         )
         add_start_spin(
             forest_bonus,
@@ -5614,6 +5707,7 @@ class CustomGeneratorController:
             custom_section_text("trees_unit", language),
             package_key="start_forest",
             variable=forest_sapling_var,
+            tooltip=custom_section_text("start_bonus_saplings_hint", language),
         )
         stone_bonus = add_start_panel(
             bonus_objects_grid,
@@ -5638,6 +5732,7 @@ class CustomGeneratorController:
             custom_section_text("stones_unit", language),
             package_key="start_building_stones",
             variable=stone_anchor_var,
+            tooltip=custom_section_text("start_bonus_anchors_hint", language),
         )
         add_start_spin(
             stone_bonus,
@@ -5651,6 +5746,7 @@ class CustomGeneratorController:
             custom_section_text("stone_unit", language),
             package_key="start_building_stones",
             variable=stone_average_var,
+            tooltip=custom_section_text("start_bonus_stone_quantity_hint", language),
         )
         ttk.Separator(start_bonus, orient="horizontal").grid(
             row=4, column=0, sticky="ew", pady=(1, 4)
@@ -5684,6 +5780,7 @@ class CustomGeneratorController:
                 swamp_shape_labels["native"],
             )
         )
+        register_value(("start_bonus", "mini_swamp", "shape"), swamp_shape_var, swamp_shape_labels)
         swamp_shape_line = ttk.Frame(swamp_bonus)
         swamp_shape_line.grid(row=1, column=0, columnspan=3, sticky="w", pady=1)
         swamp_shape_combo = ttk.Combobox(
@@ -5736,6 +5833,7 @@ class CustomGeneratorController:
             "HEX6",
             package_key="start_mini_swamp",
             variable=swamp_radius_var,
+            tooltip=custom_section_text("start_bonus_swamp_radius_hint", language),
         )
         rocky_bonus = add_start_panel(
             bonus_resources_grid,
@@ -5753,6 +5851,7 @@ class CustomGeneratorController:
         shape_var = tk.StringVar(
             value=shape_labels.get(rocky_values.get("shape", "hexagon"), shape_labels["hexagon"])
         )
+        register_value(("start_bonus", "rocky_minerals", "shape"), shape_var, shape_labels)
         shape_line = ttk.Frame(rocky_bonus)
         shape_line.grid(row=1, column=0, sticky="w", pady=1)
         ttk.Label(
@@ -5794,6 +5893,7 @@ class CustomGeneratorController:
         mode_var = tk.StringVar(
             value=mode_labels.get(rocky_values.get("surface_mode", "equal"), mode_labels["equal"])
         )
+        register_value(("start_bonus", "rocky_minerals", "surface_mode"), mode_var, mode_labels)
         mode_line = ttk.Frame(rocky_bonus)
         mode_line.grid(row=2, column=0, sticky="w", pady=1)
         ttk.Label(
@@ -5900,9 +6000,13 @@ class CustomGeneratorController:
             unit="HEX6",
             package_key="start_rocky_minerals",
             variable=rocky_radius_var,
+            tooltip=custom_section_text("start_bonus_rocky_radius_hint", language),
         )
 
-        total_max_var = tk.StringVar(value=rocky_max_text(rocky_total_cells_max(3), rocky_cells_unit))
+        initial_rocky_count = sum(
+            bool(rocky_values[key]["enabled"]) for key, _family in MINERAL_SPECS
+        )
+        total_max_var = tk.StringVar(value=rocky_max_text(rocky_total_cells_max(initial_rocky_count), rocky_cells_unit))
         rocky_total_var = tk.StringVar(
             value=_display_number(rocky_values.get("total_core_cells", 183))
         )
@@ -5913,7 +6017,7 @@ class CustomGeneratorController:
             ("start_bonus", "rocky_minerals", "total_core_cells"),
             rocky_values.get("total_core_cells", 183),
             START_ROCKY_CORE_CELLS_MIN,
-            rocky_total_cells_max(3),
+            rocky_total_cells_max(initial_rocky_count),
             unit=rocky_cells_unit,
             package_key="start_rocky_minerals",
             variable=rocky_total_var,
@@ -5961,14 +6065,15 @@ class CustomGeneratorController:
         rocky_quantity_widgets = {}
         rocky_core_vars = {}
         family_icon_widgets = {}
-        for index, family in enumerate(("coal", "iron", "gold")):
+        for index, (family, _family_id) in enumerate(MINERAL_SPECS):
             row = 6 + index
             family_values = rocky_values[family]
             family_var = tk.BooleanVar(value=bool(family_values["enabled"]))
+            register_value(("start_bonus", "rocky_minerals", family, "enabled"), family_var)
             family_vars[family] = family_var
             family_check = ttk.Checkbutton(
                 rocky_matrix,
-                text=custom_section_text(f"start_bonus_{family}", language),
+                text=mineral_label(family, language),
                 image=self._custom_mineral_icons[family],
                 compound="left",
                 variable=family_var,
@@ -5988,6 +6093,10 @@ class CustomGeneratorController:
                 START_ROCKY_CORE_CELLS_MIN,
                 START_ROCKY_CORE_CELLS_MAX,
                 unit=rocky_cells_unit,
+            )
+            add_tooltip(
+                rocky_core_widgets[family],
+                custom_section_text("start_bonus_core_hint", language),
             )
             rocky_core_vars[family] = self._custom_section_vars[
                 f"start_bonus.rocky_minerals.{family}.core_cells"
@@ -6074,6 +6183,8 @@ class CustomGeneratorController:
             return sections
 
         def refresh_mineral_icon_states(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             package_var = self._custom_package_vars.get("start_rocky_minerals")
             package_enabled = bool(package_var.get()) if package_var is not None else True
             for key, widgets in self._custom_mineral_icon_widgets.items():
@@ -6102,6 +6213,8 @@ class CustomGeneratorController:
                     pass
 
         def refresh_rocky_controls(*_args):
+            if getattr(self, "_custom_syncing_generator", False):
+                return
             nonlocal last_rocky_mode, refreshing_rocky
             if refreshing_rocky:
                 return
@@ -6239,6 +6352,7 @@ class CustomGeneratorController:
                 lake_shape_labels["native"],
             )
         )
+        register_value(("start_bonus", "lake_fish_river", "shape"), lake_shape_var, lake_shape_labels)
         lake_shape_line = ttk.Frame(lake_bonus)
         lake_shape_line.grid(row=2, column=0, columnspan=3, sticky="w", pady=1)
         lake_shape_combo = ttk.Combobox(
@@ -6292,6 +6406,7 @@ class CustomGeneratorController:
             package_key="start_lake_fish_river",
             column=0,
             variable=lake_radius_min_var,
+            tooltip=custom_section_text("start_bonus_lake_radius_hint", language),
         )
         lake_radius_max_var = tk.StringVar(
             value=_display_number(lake_values["radius_max"])
@@ -6309,6 +6424,7 @@ class CustomGeneratorController:
             package_key="start_lake_fish_river",
             column=0,
             variable=lake_radius_max_var,
+            tooltip=custom_section_text("start_bonus_lake_radius_hint", language),
         )
         add_start_spin(
             lake_bonus,
@@ -6386,11 +6502,17 @@ class CustomGeneratorController:
             variable=lake_fish_fill_var,
             tooltip=custom_section_text("start_bonus_fish_fill_hint", language),
         )
+        self._custom_generator_refreshers = (
+            refresh_share_total, refresh_sapling_controls, refresh_forest_controls,
+            refresh_stone_controls, refresh_stone_preview, refresh_terrain_dependencies,
+            refresh_extension_control,
+        )
         self._custom_refresh_start_bonus_controls()
         sections_frame.bind("<Configure>", schedule_section_relayout, add="+")
         sections_frame.bind("<Configure>", schedule_bonus_panel_relayout, add="+")
-        root.bind("<Configure>", schedule_section_relayout, add="+")
-        root.bind("<Configure>", schedule_bonus_panel_relayout, add="+")
+        for callback in (schedule_section_relayout, schedule_bonus_panel_relayout):
+            binding = root.bind("<Configure>", callback, add="+")
+            self._custom_generator_layout_bindings.append((root, binding))
         schedule_section_relayout()
         schedule_bonus_panel_relayout()
 
@@ -6404,6 +6526,7 @@ class CustomGeneratorController:
             )
         )
         self._render_custom_archetype_tab()
+        self._custom_editor_archetype_profile = config.archetype_profile
         self._custom_last_render_digest=config.digest
         self._custom_restore_generator_scroll_position(generator_scroll_position)
 
@@ -6434,7 +6557,6 @@ class CustomGeneratorController:
         self._custom_refresh_section_headers()
         self._custom_refresh_archetype_header()
         self._custom_refresh_archetype_ranges()
-        self._custom_schedule_archetype_preview_refresh()
 
     def _custom_enter_custom_mode_without_render(
         self, config: CustomGenerationConfig
@@ -6476,6 +6598,8 @@ class CustomGeneratorController:
     def _custom_section_changed(self, path, raw):
         """Apply one curated user-facing value and switch to Custom."""
 
+        if getattr(self, "_custom_syncing_generator", False):
+            return
         language = self._custom_language()
         try:
             key = str(path[-1])
@@ -6524,6 +6648,10 @@ class CustomGeneratorController:
             )
             fallback = default_sections(config.profile, config.base_mode)
             sections = config.semantic_sections()
+            # FocusOut after a mode/reset update must not enter Custom or
+            # materialize unrelated derived bonus values when nothing changed.
+            if normalize_sections(set_path(sections, path, value), fallback=fallback) == sections:
+                return
             materialize_rocky = getattr(self, "_custom_materialize_rocky_state", None)
             if callable(materialize_rocky):
                 sections = materialize_rocky(sections)
@@ -6538,7 +6666,10 @@ class CustomGeneratorController:
                     value,
                 )
             sections = normalize_sections(sections, fallback=fallback)
-            self._custom_activate(config.with_sections(sections))
+            next_config = config.with_sections(sections)
+            if next_config.digest == config.digest:
+                return
+            self._custom_activate(next_config)
         except (TypeError, ValueError) as exc:
             self._custom_status_var.set(
                 _lang_text(language, f"Valeur invalide : {exc}", f"Invalid value: {exc}", f"Ungültiger Wert: {exc}", f"Valor no válido: {exc}")
@@ -6598,15 +6729,214 @@ class CustomGeneratorController:
             except tk.TclError:
                 pass
         if mode_changed or archetype_changed or self._custom_last_render_digest!=self._custom_config.digest:
-            self._render_custom_parameter_tabs()
+            if self._custom_sync_generator_editor_values():
+                profile = self._custom_config.archetype_profile
+                if ARCHETYPES[arch].implemented != getattr(self, "_custom_editor_archetype_implemented", True):
+                    self._render_custom_archetype_tab()
+                    self._custom_editor_archetype_profile = profile
+                elif profile != getattr(self, "_custom_editor_archetype_profile", None):
+                    self._custom_archetype_baseline = default_archetype_profile(arch)
+                    self._custom_sync_archetype_editor_values()
+                    self._custom_editor_archetype_profile = profile
+                    self._custom_schedule_archetype_preview_refresh()
+                self._custom_refresh_archetype_header()
+                self._custom_last_render_digest = self._custom_config.digest
+            else:
+                self._render_custom_parameter_tabs()
 
     def _custom_refresh_after_language(self):
         if hasattr(self, "_custom_generator_tab"):
+            preview = getattr(self, "_custom_archetype_preview_last_result", None)
             self._render_custom_parameter_tabs()
+            if preview is not None:
+                # Labels need rebuilding, but the already computed map is
+                # still valid. Keep it visible while the new controls settle.
+                self._custom_apply_archetype_preview(preview)
+
+    def _custom_build_archetype_preview_panel(self, parent, placement):
+        language = self._custom_language()
+        editable = bool(getattr(self, "_custom_archetype_editor_editable", True))
+        root = ttk.Frame(parent, padding=4)
+        self._custom_preview_panel = root
+        preview_controls = ttk.Frame(root)
+        preview_controls.grid(row=0, column=0, sticky="w", pady=(0, 6))
+        projection_options = self._custom_archetype_preview_projection_options(language)
+        size_options = self._custom_archetype_preview_size_options(language)
+        if self._custom_archetype_preview_projection_var.get() != projection_options[self._custom_archetype_preview_projection_key]:
+            self._custom_archetype_preview_projection_var.set(projection_options[self._custom_archetype_preview_projection_key])
+        if self._custom_archetype_preview_size_var.get() != size_options[self._custom_archetype_preview_size_key]:
+            self._custom_archetype_preview_size_var.set(size_options[self._custom_archetype_preview_size_key])
+        ttk.Label(
+            preview_controls,
+            text=custom_section_text("archetype_preview_projection", language),
+        ).grid(row=0, column=0, sticky="w", padx=(0, 5))
+        projection_combo = ttk.Combobox(
+            preview_controls,
+            textvariable=self._custom_archetype_preview_projection_var,
+            values=list(projection_options.values()),
+            state="readonly",
+            width=max(map(len, projection_options.values())) + 2,
+        )
+        projection_combo.grid(row=0, column=1, sticky="w", padx=(0, 14))
+        ttk.Label(
+            preview_controls,
+            text=custom_section_text("archetype_preview_size", language),
+        ).grid(row=0, column=2, sticky="w", padx=(0, 5))
+        size_combo = ttk.Combobox(
+            preview_controls,
+            textvariable=self._custom_archetype_preview_size_var,
+            values=list(size_options.values()),
+            state="readonly",
+            width=max(map(len, size_options.values())) + 2,
+        )
+        size_combo.grid(row=0, column=3, sticky="w")
+        relaxation_check = ttk.Checkbutton(
+            preview_controls,
+            text=custom_section_text("archetype_preview_macro_relaxation", language),
+            variable=self._custom_archetype_preview_relaxation_var,
+            state="normal" if editable else "disabled",
+            command=self._custom_archetype_preview_relaxation_changed,
+        )
+        relaxation_check.grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 0))
+        hint = ttk.Label(
+            preview_controls,
+            text=custom_section_text("archetype_preview_macro_relaxation_hint", language),
+            style="Hint.TLabel",
+            wraplength=560,
+            justify="left",
+        )
+        if placement == "free":
+            hint.grid(row=1, column=2, columnspan=2, sticky="w", padx=(14, 0), pady=(5, 0))
+        if placement == "right":
+            for widget in preview_controls.grid_slaves():
+                widget.grid_remove()
+            projection_combo.grid(row=1, column=0, sticky="w")
+            size_combo.grid(row=2, column=0, sticky="w")
+            relaxation_check.grid(row=3, column=0, sticky="w")
+
+
+        options = self._custom_preview_placement_options(language)
+        self._custom_preview_placement_var = tk.StringVar(value=options[self.prefs.get("archetype_preview_placement", "free")])
+        position = ttk.Combobox(preview_controls, textvariable=self._custom_preview_placement_var,
+            values=list(options.values()), state="readonly", width=max(map(len, options.values())) + 1)
+        position.grid(row=0 if placement == "right" else 2, column=0, columnspan=4 if placement == "right" else 2, sticky="w", pady=(4, 0))
+        position.bind("<<ComboboxSelected>>", self._custom_preview_placement_changed)
+        if placement != "free":
+            ttk.Button(preview_controls, text=_lang_text(language, "Détails / agrandir", "Details / enlarge", "Details / vergrößern", "Detalles / ampliar"), command=lambda: self._custom_enlarge_preview("macro")).grid(row=4 if placement == "right" else 2, column=0 if placement == "right" else 2, columnspan=4 if placement == "right" else 2, sticky="w", padx=(8, 0))
+
+        preview_grid = ttk.Frame(root)
+        preview_grid.grid(row=1, column=0, sticky="w", pady=(0, 8))
+        preview_grid.columnconfigure(0, weight=0)
+        preview_grid.columnconfigure(1, weight=0)
+        preview_grid.columnconfigure(2, weight=0)
+        self._custom_archetype_preview_canvases = {}
+        self._custom_archetype_preview_image_items = {}
+        self._custom_archetype_preview_panels = []
+        canvas_width, canvas_height = self._custom_archetype_preview_dimensions()
+        self._custom_archetype_preview_last_dimensions = (canvas_width, canvas_height)
+        preview_specs = (
+            (
+                "noise",
+                custom_section_text("archetype_preview_noise", language),
+            ),
+            (
+                "macro",
+                custom_section_text("archetype_preview_macro", language),
+            ),
+            (
+                "contribution",
+                custom_section_text("archetype_noise_contribution_short", language),
+            ),
+        )
+        for column, (preview_key, title) in enumerate(preview_specs):
+            panel = ttk.LabelFrame(preview_grid, text=title, padding=6)
+            self._custom_archetype_preview_panels.append(panel)
+            panel.grid(
+                row=column if placement == "right" else 0,
+                column=0 if placement == "right" else column,
+                sticky="nw",
+                padx=(0, 8 if column < 2 else 0),
+            )
+            canvas = tk.Canvas(
+                panel,
+                width=canvas_width,
+                height=canvas_height,
+                background="#202328",
+                highlightthickness=0,
+                borderwidth=0,
+            )
+            canvas.grid(row=0, column=0, sticky="nw")
+            canvas.bind("<Button-1>", lambda _event, key=preview_key: self._custom_enlarge_preview(key))
+            self._custom_archetype_preview_canvases[preview_key] = canvas
+            if preview_key == "macro" and placement != "right":
+                legend = ttk.Frame(panel)
+                legend.grid(row=1, column=0, sticky="w", pady=(6, 0))
+                for legend_column, legend_key in enumerate(
+                    ("water", "beach", "grass", "mountain", "snow")
+                ):
+                    colour = "#%02x%02x%02x" % MACRO_PALETTE[legend_column]
+                    swatch = tk.Canvas(
+                        legend,
+                        width=12,
+                        height=12,
+                        background=colour,
+                        highlightthickness=0,
+                        borderwidth=0,
+                    )
+                    legend_row = legend_column // 3
+                    legend_pair = legend_column % 3
+                    swatch.grid(
+                        row=legend_row,
+                        column=legend_pair * 2,
+                        sticky="w",
+                        padx=(0, 2),
+                    )
+                    ttk.Label(
+                        legend,
+                        text=custom_section_text(
+                            f"archetype_preview_{legend_key}",
+                            language,
+                        ),
+                    ).grid(
+                        row=legend_row,
+                        column=legend_pair * 2 + 1,
+                        sticky="w",
+                        padx=(0, 6 if legend_column < 4 else 0),
+                    )
+
+        progress_row = ttk.Frame(root)
+        progress_row.grid(row=2, column=0, sticky="w", pady=(0, 3))
+        self._custom_archetype_preview_progress_bar = ttk.Progressbar(
+            progress_row,
+            orient="horizontal",
+            mode="determinate",
+            maximum=100,
+            value=0,
+            length=220,
+        )
+        self._custom_archetype_preview_progress_bar.grid(row=0, column=0, sticky="w")
+        ttk.Label(
+            root,
+            textvariable=self._custom_archetype_preview_status_var,
+            style="Hint.TLabel",
+            wraplength=280 if placement == "right" else 760,
+        ).grid(row=3, column=0, sticky="w", pady=(0, 8))
+        stats = ttk.Label(
+            root,
+            textvariable=self._custom_archetype_preview_stats_var,
+            style="Hint.TLabel",
+            wraplength=760,
+            justify="left",
+        )
+        if placement == "free":
+            stats.grid(row=4, column=0, sticky="w", pady=(0, 8))
+
+        return root
 
     def _render_custom_archetype_tab(self):
         root = self._custom_archetype_tab
         self._custom_clear_archetype_preview_traces()
+        self._custom_destroy_preview_panel()
         for child in root.winfo_children():
             child.destroy()
         root.columnconfigure(0, weight=0)
@@ -6619,6 +6949,7 @@ class CustomGeneratorController:
 
         key = self._custom_current_archetype()
         spec = ARCHETYPES[key]
+        self._custom_editor_archetype_implemented = spec.implemented
         config = self._custom_profile_for_display()
         archetype_profile = config.archetype_profile
         self._custom_archetype_baseline = default_archetype_profile(key)
@@ -6642,6 +6973,7 @@ class CustomGeneratorController:
         self._custom_archetype_mask_layer_cards = {}
         self._custom_archetype_mask_layer_action_widgets = {}
         self._custom_archetype_noise_group_widgets = {}
+        self._custom_formula_panels = {}
         self._custom_archetype_noise_layer_solo = None
         self._custom_archetype_component_canvases = {}
         self._custom_archetype_component_photos = {}
@@ -6878,10 +7210,10 @@ class CustomGeneratorController:
             source_line,
             text=custom_section_text("archetype_relief_source", language),
         ).grid(row=0, column=0, sticky="w")
-        relief_source_combo = ttk.Combobox(
+        relief_source_combo = SourceSelect(
             source_line,
             textvariable=relief_source_var,
-            values=list(relief_source_options.values()),
+            options=relief_source_options,
             state="readonly",
             width=max(map(len, relief_source_options.values())) + 2,
         )
@@ -6992,6 +7324,34 @@ class CustomGeneratorController:
             row = parameter_rows.get(descriptor.group, 0)
             add_archetype_spin(parent, row, descriptor)
             parameter_rows[descriptor.group] = row + 1
+
+        island_frame = ttk.Frame(morphology_controls)
+        island_frame.grid(row=parameter_rows["morphology"], column=0, sticky="w", pady=(4, 0))
+        self._custom_island_relief_frame = island_frame
+        for row, name, label_key in ((0, "island_amplitude_auto", "archetype_island_auto"), (2, "island_thresholds_auto", "archetype_island_thresholds_auto")):
+            variable = tk.BooleanVar(value=archetype_profile["morphology"][name])
+            setattr(self, "_custom_" + name + "_var", variable)
+            button = ttk.Checkbutton(island_frame, text=custom_section_text(label_key, language), variable=variable,
+                                     command=lambda n=name: self._custom_island_automatic_changed(n))
+            button.grid(row=row, column=0, sticky="w")
+            if not editable:
+                button.configure(state="disabled")
+        line = ttk.Frame(island_frame)
+        line.grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Label(line, text=custom_section_text("archetype_island_amplitude", language)).grid(row=0, column=0, sticky="w")
+        amplitude_var = tk.StringVar(value=str(archetype_profile["morphology"]["island_amplitude_percent"]))
+        self._custom_archetype_vars["morphology.island_amplitude_percent"] = amplitude_var
+        amplitude_spin = ttk.Spinbox(line, from_=25, to=100, increment=1, width=5, textvariable=amplitude_var,
+                                    command=lambda: self._custom_archetype_changed(("morphology", "island_amplitude_percent"), amplitude_var.get()))
+        amplitude_spin.grid(row=0, column=1, padx=(6, 0))
+        ttk.Label(line, text="%").grid(row=0, column=2, padx=(4, 0))
+        add_compact_info(line, 0, 3, custom_section_text("archetype_island_amplitude_hint", language))
+        self._custom_archetype_spinboxes["morphology.island_amplitude_percent"] = amplitude_spin
+        for event in ("<Return>", "<FocusOut>"):
+            amplitude_spin.bind(event, lambda _e: self._custom_archetype_changed(("morphology", "island_amplitude_percent"), amplitude_var.get()))
+        self._custom_island_effective_var = tk.StringVar()
+        ttk.Label(island_frame, textvariable=self._custom_island_effective_var, style="Hint.TLabel", wraplength=440).grid(row=3, column=0, sticky="w")
+        self._custom_refresh_island_relief_controls()
 
         if not editable:
             ttk.Label(
@@ -7278,10 +7638,10 @@ class CustomGeneratorController:
                             width=max(map(len, mask_options.values())) + 1,
                         )
                     elif setting_key == "mask_source":
-                        widget = ttk.Combobox(
+                        widget = SourceSelect(
                             content,
                             textvariable=variables[setting_key],
-                            values=list(mask_source_options.values()),
+                            options=mask_source_options,
                             state="readonly",
                             width=max(map(len, mask_source_options.values())) + 1,
                         )
@@ -7327,21 +7687,24 @@ class CustomGeneratorController:
                             high,
                             callback,
                         )
-                    if not editable and isinstance(widget, ttk.Combobox):
+                    if not editable and isinstance(widget, (ttk.Combobox, SourceSelect)):
                         widget.configure(state="disabled")
                     widget.grid(row=row, column=column + 1, sticky="w", pady=2)
                     widgets[setting_key] = widget
-                    if isinstance(widget, ttk.Combobox):
+                    if isinstance(widget, (ttk.Combobox, SourceSelect)):
                         widget.bind(
                             "<<ComboboxSelected>>",
                             lambda _event, action=callback: action(),
                         )
-                    for event_name in ("<Return>", "<FocusOut>"):
+                    for event_name in (() if isinstance(widget, SourceSelect) else ("<Return>", "<FocusOut>")):
                         widget.bind(
                             event_name,
                             lambda _event, action=callback: action(),
                         )
                 refresh_noise_group(source_key, group_key)
+            panel = FormulaPanel(parent, self, variables["expression"], source_key, callback, language)
+            panel.grid(row=start_row + len(noise_setting_groups), column=0, sticky="ew", pady=(4,0))
+            self._custom_formula_panels[source_key] = panel
             return widgets
 
         base_card = ttk.LabelFrame(
@@ -7392,6 +7755,7 @@ class CustomGeneratorController:
             setting_key: tk.StringVar(value=display_setting(base_settings[setting_key]))
             for setting_key in NOISE_SOURCE_SETTING_DEFAULTS
         }
+        self._custom_archetype_relief_source_vars["expression"] = tk.StringVar(value=base_settings.get("expression", DEFAULT_FORMULA))
         base_mask = archetype_profile["morphology"].get(
             "relief_source_mask", NOISE_MASK_DEFAULTS
         )
@@ -7469,6 +7833,7 @@ class CustomGeneratorController:
                     for setting_key in NOISE_SOURCE_SETTING_DEFAULTS
                 },
             }
+            variables["expression"] = tk.StringVar(value=layer["settings"].get("expression", DEFAULT_FORMULA))
             variables.update(
                 {
                     "mask_type": tk.StringVar(
@@ -7497,10 +7862,10 @@ class CustomGeneratorController:
                 state="normal" if editable else "disabled",
                 command=callback,
             ).grid(row=0, column=0, sticky="w", padx=(0, 8))
-            family_combo = ttk.Combobox(
+            family_combo = SourceSelect(
                 fusion_header,
                 textvariable=family_var,
-                values=list(family_options.values()),
+                options=family_options,
                 state="readonly",
                 width=max(map(len, family_options.values())) + 1,
             )
@@ -7726,6 +8091,9 @@ class CustomGeneratorController:
                 lambda _event: self._custom_archetype_mask_layer_count_changed(),
             )
 
+        from .mask_library import MaskCatalogue
+        if not hasattr(self, '_custom_user_mask_catalogue'):
+            self._custom_user_mask_catalogue = MaskCatalogue()
         mask_type_options = self._custom_archetype_mask_type_options(language)
         mask_operation_options = self._custom_archetype_mask_operation_options(language)
         mask_common_labels = {
@@ -7744,6 +8112,8 @@ class CustomGeneratorController:
             ("rotation_degrees", 2, 0),
             ("softness_percent", 2, 2),
         )
+        self._custom_mask_target_widgets = {}
+        self._custom_mask_strength_widgets = {}
         mask_layer_values = archetype_profile["morphology"].get("mask_layers", ())
         for index, layer in enumerate(mask_layer_values):
             card = ttk.LabelFrame(
@@ -7758,13 +8128,16 @@ class CustomGeneratorController:
             enabled_var = tk.BooleanVar(value=bool(layer.get("enabled", False)))
             mask_type = str(layer.get("type", "star"))
             operation = str(layer.get("operation", "blend"))
-            type_var = tk.StringVar(value=mask_type_options.get(mask_type, mask_type))
+            type_var = tk.StringVar(value=self._custom_mask_layer_label(layer, mask_type_options))
             operation_var = tk.StringVar(
                 value=mask_operation_options.get(operation, operation)
             )
             strength_var = tk.StringVar(value=str(layer.get("strength_percent", 45)))
             settings = layer.get("settings", {})
             variables = {
+                "target": tk.StringVar(value=self._custom_mask_target_options(language, layer.get("target"))[layer.get("target", "result")]),
+                "target_status": tk.StringVar(),
+                "inverted": tk.BooleanVar(value=bool(layer.get("inverted", False))),
                 "enabled": enabled_var,
                 "type": type_var,
                 "operation": operation_var,
@@ -7791,15 +8164,19 @@ class CustomGeneratorController:
                 state="normal" if editable else "disabled",
                 command=callback,
             ).grid(row=0, column=0, sticky="w", padx=(0, 8))
-            type_combo = ttk.Combobox(
-                header,
-                textvariable=type_var,
-                values=list(mask_type_options.values()),
-                state="readonly" if editable else "disabled",
-                width=max(map(len, mask_type_options.values())) + 1,
+            from .mask_selector import MaskSelect
+            def choose_type(kind, var=type_var, action=callback):
+                var.set(mask_type_options[kind])
+                action()
+            type_combo = MaskSelect(
+                header, variable=type_var, options=mask_type_options,
+                users_label=_lang_text(language, 'Mes masques', 'My masks', 'Meine Masken', 'Mis máscaras'),
+                select_type=choose_type,
+                select_file=lambda path, layer_index=index: self._custom_select_user_mask(layer_index, path),
+                enabled=editable, catalogue=self._custom_user_mask_catalogue,
+                preview=lambda layer_index=index: self._custom_config.archetype_profile["morphology"]["mask_layers"][layer_index],
             )
             type_combo.grid(row=0, column=1, sticky="w", padx=(0, 8))
-            type_combo.bind("<<ComboboxSelected>>", lambda _event, action=callback: action())
             ttk.Label(
                 header,
                 text=custom_section_text("archetype_mask_operation", language),
@@ -7837,6 +8214,7 @@ class CustomGeneratorController:
                 MASK_LAYER_STRENGTH_BOUNDS[1],
                 callback,
             )
+            self._custom_mask_strength_widgets[index] = strength_widget
             strength_widget.grid(row=0, column=5, sticky="w")
             for event_name in ("<Return>", "<FocusOut>"):
                 strength_widget.bind(
@@ -7844,8 +8222,22 @@ class CustomGeneratorController:
                     lambda _event, action=callback: action(),
                 )
 
+            target_line = ttk.Frame(card)
+            target_line.grid(row=1, column=0, sticky="w", pady=(4, 0))
+            ttk.Label(target_line, text=_lang_text(language, "Cible", "Target", "Ziel", "Destino")).grid(row=0, column=0, padx=(0, 4))
+            target_combo = ttk.Combobox(target_line, textvariable=variables["target"],
+                values=list(self._custom_mask_target_options(language, layer.get("target")).values()),
+                state="readonly" if editable else "disabled", width=25)
+            target_combo.grid(row=0, column=1, sticky="w", padx=(0, 8))
+            target_combo.bind("<<ComboboxSelected>>", lambda _event, action=callback: action())
+            ttk.Label(target_line, textvariable=variables["target_status"], style="Hint.TLabel").grid(row=0, column=2, sticky="w")
+            self._custom_mask_target_widgets[index] = target_combo
+            ttk.Checkbutton(target_line, text=_lang_text(language, "Inverser", "Invert", "Invertieren", "Invertir"),
+                variable=variables["inverted"], command=callback,
+                state="normal" if editable else "disabled").grid(row=0, column=3, padx=(8, 0))
+
             setting_frame = ttk.Frame(card)
-            setting_frame.grid(row=1, column=0, sticky="w", pady=(4, 0))
+            setting_frame.grid(row=2, column=0, sticky="w", pady=(4, 0))
             setting_widgets = {}
             for setting_key, row, column in mask_shape_layout:
                 ttk.Label(
@@ -7888,7 +8280,7 @@ class CustomGeneratorController:
             self._custom_archetype_mask_layer_setting_widgets[index] = setting_widgets
 
             action_line = ttk.Frame(card)
-            action_line.grid(row=2, column=0, sticky="w", pady=(4, 0))
+            action_line.grid(row=3, column=0, sticky="w", pady=(4, 0))
             action_widgets = {
                 "reset": ttk.Button(
                     action_line,
@@ -7927,7 +8319,7 @@ class CustomGeneratorController:
                 ),
                 "edit": ttk.Button(
                     action_line,
-                    text=_lang_text(language, "Éditer", "Edit", "Bearbeiten", "Editar"),
+                    text=_lang_text(language, "Éditeur / catalogue", "Editor / catalogue", "Editor / Katalog", "Editor / catálogo"),
                     command=lambda layer_index=index: self._custom_archetype_mask_layer_edit(
                         layer_index
                     ),
@@ -7948,7 +8340,7 @@ class CustomGeneratorController:
             preview_canvas.grid(
                 row=0,
                 column=1,
-                rowspan=3,
+                rowspan=4,
                 sticky="ne",
                 padx=(12, 0),
             )
@@ -7956,156 +8348,9 @@ class CustomGeneratorController:
         self._custom_refresh_archetype_mask_layer_states()
         self._custom_refresh_archetype_mask_layer_action_states()
 
-        preview_controls = ttk.Frame(root)
-        preview_controls.grid(row=4, column=0, sticky="w", pady=(0, 6))
-        projection_options = self._custom_archetype_preview_projection_options(language)
-        size_options = self._custom_archetype_preview_size_options(language)
-        self._custom_archetype_preview_projection_var.set(
-            projection_options[self._custom_archetype_preview_projection_key]
-        )
-        self._custom_archetype_preview_size_var.set(
-            size_options[self._custom_archetype_preview_size_key]
-        )
-        ttk.Label(
-            preview_controls,
-            text=custom_section_text("archetype_preview_projection", language),
-        ).grid(row=0, column=0, sticky="w", padx=(0, 5))
-        projection_combo = ttk.Combobox(
-            preview_controls,
-            textvariable=self._custom_archetype_preview_projection_var,
-            values=list(projection_options.values()),
-            state="readonly",
-            width=max(map(len, projection_options.values())) + 2,
-        )
-        projection_combo.grid(row=0, column=1, sticky="w", padx=(0, 14))
-        ttk.Label(
-            preview_controls,
-            text=custom_section_text("archetype_preview_size", language),
-        ).grid(row=0, column=2, sticky="w", padx=(0, 5))
-        size_combo = ttk.Combobox(
-            preview_controls,
-            textvariable=self._custom_archetype_preview_size_var,
-            values=list(size_options.values()),
-            state="readonly",
-            width=max(map(len, size_options.values())) + 2,
-        )
-        size_combo.grid(row=0, column=3, sticky="w")
-        relaxation_check = ttk.Checkbutton(
-            preview_controls,
-            text=custom_section_text("archetype_preview_macro_relaxation", language),
-            variable=self._custom_archetype_preview_relaxation_var,
-            state="normal" if editable else "disabled",
-            command=self._custom_archetype_preview_relaxation_changed,
-        )
-        relaxation_check.grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 0))
-        ttk.Label(
-            preview_controls,
-            text=custom_section_text("archetype_preview_macro_relaxation_hint", language),
-            style="Hint.TLabel",
-            wraplength=560,
-            justify="left",
-        ).grid(row=1, column=2, columnspan=2, sticky="w", padx=(14, 0), pady=(5, 0))
+        self._custom_refresh_mask_target_states()
 
-        preview_grid = ttk.Frame(root)
-        preview_grid.grid(row=5, column=0, sticky="w", pady=(0, 8))
-        preview_grid.columnconfigure(0, weight=0)
-        preview_grid.columnconfigure(1, weight=0)
-        preview_grid.columnconfigure(2, weight=0)
-        self._custom_archetype_preview_canvases = {}
-        self._custom_archetype_preview_image_items = {}
-        canvas_width, canvas_height = self._custom_archetype_preview_dimensions()
-        self._custom_archetype_preview_last_dimensions = (canvas_width, canvas_height)
-        preview_specs = (
-            (
-                "noise",
-                custom_section_text("archetype_preview_noise", language),
-            ),
-            (
-                "macro",
-                custom_section_text("archetype_preview_macro", language),
-            ),
-            (
-                "contribution",
-                custom_section_text("archetype_noise_contribution_short", language),
-            ),
-        )
-        for column, (preview_key, title) in enumerate(preview_specs):
-            panel = ttk.LabelFrame(preview_grid, text=title, padding=6)
-            panel.grid(
-                row=0,
-                column=column,
-                sticky="nw",
-                padx=(0, 8 if column < 2 else 0),
-            )
-            canvas = tk.Canvas(
-                panel,
-                width=canvas_width,
-                height=canvas_height,
-                background="#202328",
-                highlightthickness=0,
-                borderwidth=0,
-            )
-            canvas.grid(row=0, column=0, sticky="nw")
-            self._custom_archetype_preview_canvases[preview_key] = canvas
-            if preview_key == "macro":
-                legend = ttk.Frame(panel)
-                legend.grid(row=1, column=0, sticky="w", pady=(6, 0))
-                for legend_column, legend_key in enumerate(
-                    ("water", "beach", "grass", "mountain", "snow")
-                ):
-                    colour = "#%02x%02x%02x" % MACRO_PALETTE[legend_column]
-                    swatch = tk.Canvas(
-                        legend,
-                        width=12,
-                        height=12,
-                        background=colour,
-                        highlightthickness=0,
-                        borderwidth=0,
-                    )
-                    legend_row = legend_column // 3
-                    legend_pair = legend_column % 3
-                    swatch.grid(
-                        row=legend_row,
-                        column=legend_pair * 2,
-                        sticky="w",
-                        padx=(0, 2),
-                    )
-                    ttk.Label(
-                        legend,
-                        text=custom_section_text(
-                            f"archetype_preview_{legend_key}",
-                            language,
-                        ),
-                    ).grid(
-                        row=legend_row,
-                        column=legend_pair * 2 + 1,
-                        sticky="w",
-                        padx=(0, 6 if legend_column < 4 else 0),
-                    )
-
-        progress_row = ttk.Frame(root)
-        progress_row.grid(row=6, column=0, sticky="w", pady=(0, 3))
-        self._custom_archetype_preview_progress_bar = ttk.Progressbar(
-            progress_row,
-            orient="horizontal",
-            mode="determinate",
-            maximum=100,
-            value=0,
-            length=220,
-        )
-        self._custom_archetype_preview_progress_bar.grid(row=0, column=0, sticky="w")
-        ttk.Label(
-            root,
-            textvariable=self._custom_archetype_preview_status_var,
-            style="Hint.TLabel",
-        ).grid(row=7, column=0, sticky="w", pady=(0, 8))
-        ttk.Label(
-            root,
-            textvariable=self._custom_archetype_preview_stats_var,
-            style="Hint.TLabel",
-            wraplength=760,
-            justify="left",
-        ).grid(row=8, column=0, sticky="w", pady=(0, 8))
+        self._custom_rebuild_preview_panel()
 
         contract = (
             _lang_text(
@@ -8115,7 +8360,7 @@ class CustomGeneratorController:
                 "Der Archetyp erzeugt eine autonome rohe Noisemap. Der gewählte Generatormodus bleibt unverändert und wandelt dieses Feld anschließend in eine spielbare Karte um.",
                 "El arquetipo construye un noisemap bruto autónomo. El modo Generador seleccionado no cambia y después transforma este campo en un mapa jugable.",
             )
-            if key in ("continental", "large_islands")
+            if key in ("continental", "large_islands", "team_islands")
             else _lang_text(
                 language,
                 "Contrat de distribution réservé : cet archétype n’est pas encore implémenté.",

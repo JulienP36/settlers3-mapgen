@@ -50,7 +50,7 @@ from .profiles import (
     CONTINENTAL_ARCHETYPE_PROFILE,
     CONTINENTAL_CUSTOM_PROFILE_KEY,
     CONTINENTAL_CUSTOM_PROFILE_NAME,
-    continental_legacy_blocks_profile,
+    continental_legacy_blocks_profile, continental_landmass_profile,
     continental_noise_calibration_profile,
     CONTINENTAL_PARAMETER_DESCRIPTORS,
     FINITE_DOMAIN_MODE_NATIVE_CALIBRATED,
@@ -92,6 +92,7 @@ from .profiles import (
     MASK_LAYER_DEFAULT_COUNT,
     MASK_LAYER_DEFAULTS,
     MASK_LAYER_MANUAL_GRID_SIDE,
+    MASK_LAYER_MANUAL_GRID_SIDES,
     MASK_LAYER_OPERATION_OPTIONS,
     MASK_LAYER_ORDER_BOUNDS,
     MASK_LAYER_STRENGTH_BOUNDS,
@@ -104,6 +105,7 @@ from .profiles import (
     RELIEF_SOURCE_CUSTOM_LEGACY,
     RELIEF_SOURCE_LARGE_ISLANDS,
     RELIEF_SOURCE_LARGE_ISLANDS_R21,
+    RELIEF_SOURCE_TEAM_ISLANDS, RELIEF_SOURCE_CONTINENTAL,
     ISLAND_RELIEF_SOURCES,
     CUSTOM_LEGACY_MOUNTAIN_THRESHOLD,
     CUSTOM_LEGACY_SNOW_THRESHOLD,
@@ -184,8 +186,12 @@ ARCHETYPES = {
         'Macro-topologie : une masse terrestre principale avec océan périphérique.'
     ),
     'large_islands': Archetype(
-        'large_islands', 'Large Islands', True,
-        'Macro-topologie : plusieurs grandes masses insulaires.'
+        'large_islands', 'Individual Islands', True,
+        'Macro-topologie : une île par joueur.'
+    ),
+    'team_islands': Archetype(
+        'team_islands', 'Islands by Team', True,
+        'Macro-topologie : une île par équipe, proportionnée à ses joueurs.'
     ),
     'small_islands': Archetype(
         'small_islands', 'Small Islands', False,
@@ -193,7 +199,7 @@ ARCHETYPES = {
     ),
 }
 
-ARCHETYPE_ORDER = ('continental', 'large_islands', 'small_islands')
+ARCHETYPE_ORDER = ('continental', 'large_islands', 'team_islands')
 
 def get_archetype(key: str) -> Archetype:
     try:
@@ -221,7 +227,7 @@ __all__ = [
     "CONTINENTAL_CUSTOM_PROFILE_KEY",
     "CONTINENTAL_CUSTOM_PROFILE_NAME",
     "CLASSIC_PROFILE_NAME",
-    "continental_legacy_blocks_profile",
+    "continental_legacy_blocks_profile", "continental_landmass_profile",
     "continental_noise_calibration_profile",
     "CONTINENTAL_PARAMETER_DESCRIPTORS",
     "FINITE_DOMAIN_MODE_NATIVE_CALIBRATED",
@@ -266,6 +272,7 @@ __all__ = [
     "MASK_LAYER_DEFAULT_COUNT",
     "MASK_LAYER_DEFAULTS",
     "MASK_LAYER_MANUAL_GRID_SIDE",
+    "MASK_LAYER_MANUAL_GRID_SIDES",
     "MASK_LAYER_OPERATION_OPTIONS",
     "MASK_LAYER_ORDER_BOUNDS",
     "MASK_LAYER_STRENGTH_BOUNDS",
@@ -287,6 +294,7 @@ __all__ = [
     "RELIEF_SOURCE_CUSTOM_LEGACY",
     "RELIEF_SOURCE_LARGE_ISLANDS",
     "RELIEF_SOURCE_LARGE_ISLANDS_R21",
+    "RELIEF_SOURCE_TEAM_ISLANDS", "RELIEF_SOURCE_CONTINENTAL",
     "ISLAND_RELIEF_SOURCES",
     "CUSTOM_LEGACY_MOUNTAIN_THRESHOLD",
     "CUSTOM_LEGACY_SNOW_THRESHOLD",

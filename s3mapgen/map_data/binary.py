@@ -9,6 +9,8 @@ from __future__ import annotations
 from pathlib import Path
 import struct
 from .model import MapState
+from .editor_height import prepare_editor_export
+from .preview import editor_minimap_payload
 
 
 GOODS_DEFAULT_LOW=1
@@ -41,8 +43,8 @@ def parse_parts(path:Path|str, *, allow_terminal_padding:bool=False):
     Some editor-written EDM files append one to three opaque bytes after the
     terminal ``type=0, total_size=8`` part so the complete file ends on a
     DWORD boundary.  Import readers may accept that confirmed file-level
-    padding.  Writers keep the historical strict default so an unknown tail is
-    never discarded while rebuilding a scaffold.
+    padding. Import and scaffold export explicitly accept this known padding;
+    the default remains strict for other callers.
     """
     b=Path(path).read_bytes(); version=struct.unpack_from('<I',b,4)[0]
     off=8; parts=[]
@@ -59,6 +61,24 @@ def parse_parts(path:Path|str, *, allow_terminal_padding:bool=False):
             raise ValueError('Part scan did not end at EOF')
     return version,parts
 
+def encode_player_teams(teams: list[int] | tuple[int, ...]) -> list[int]:
+    """Translate UI alliances to contiguous native groups, beginning with J1.
+
+    UI zero is no alliance: give each such player a separate group. Positive
+    labels identify alliances, without requiring consecutive labels in the UI.
+    """
+    groups = {}
+    encoded = []
+    for player, team in enumerate(teams):
+        if isinstance(team, bool) or not isinstance(team, int) or not 0 <= team <= 20:
+            raise ValueError("Invalid player teams: expected 0..20 for every player")
+        key = ("independent", player) if team == 0 else ("alliance", team)
+        if key not in groups:
+            groups[key] = len(groups)
+        encoded.append(groups[key])
+    return encoded
+
+
 def _goods_default_for_state(state:MapState)->int:
     """Map Info start-goods enum: 1=Low, 2=Medium, 3=High.
 
@@ -66,11 +86,16 @@ def _goods_default_for_state(state:MapState)->int:
     Imported/unknown modes fall back to Medium so the editor never receives the
     invalid/unselected value that previously caused Default-start crashes.
     """
+    if 'classic_start_goods' in state.metadata:
+        return int(state.metadata['classic_start_goods'])
     mode=str(state.metadata.get('mode_key','')).strip().lower()
     return GOODS_DEFAULT_HIGH if mode=='upgraded' else GOODS_DEFAULT_MEDIUM
 
-def _set_players(parts, starts:list[tuple[int,int]], goods_default:int):
+def _set_players(parts, starts:list[tuple[int,int]], goods_default:int, nations=None, teams=None):
     count=len(starts)
+    teams = tuple(teams) if teams is not None else (0,)*count
+    if len(teams) != count or any(type(t) is not int or not 0 <= t <= 20 for t in teams):
+        raise ValueError("Invalid player teams: expected 0..20 for every player")
     if goods_default not in (GOODS_DEFAULT_LOW,GOODS_DEFAULT_MEDIUM,GOODS_DEFAULT_HIGH):
         raise ValueError(f'Invalid Goods Default value: {goods_default}')
     done={1:False,2:False,3:False}
@@ -85,36 +110,77 @@ def _set_players(parts, starts:list[tuple[int,int]], goods_default:int):
             parts[i][1]=bytearray(struct.pack('<6I',*vals)); done[1]=True
         elif t==2 and not done[2]:
             out=bytearray()
-            for x,y in starts:
-                rec=bytearray(45); struct.pack_into('<III',rec,0,255,int(x),int(y)); out+=rec
+            if nations is not None and (len(nations)!=count or any(n not in (0,1,2,3,255) for n in nations)):
+                raise ValueError("Invalid PlayerInfo nations")
+            for player,(x,y) in enumerate(starts):
+                nation=255 if nations is None else nations[player]
+                rec=bytearray(45); struct.pack_into('<III',rec,0,nation,int(x),int(y)); out+=rec
             parts[i][1]=out; done[2]=True
         elif t==3 and len(p)>=33 and not done[3]:
             out=bytearray(p[:33])
-            for pid in range(count): out += bytes([pid&255,(pid%4)+1])
+            # One setup: name then (Team, Played by). Native teams start at 0
+            # and form a contiguous prefix; UI zero means an independent player.
+            for team in encode_player_teams(teams): out += bytes([team,0])
             parts[i][1]=out; done[3]=True
     if not all(done.values()): raise ValueError(f'Player metadata parts missing: {done}')
 
-def export_with_scaffold(state:MapState, scaffold:Path|str, output:Path|str):
+def export_with_scaffold(state:MapState, scaffold:Path|str, output:Path|str, *, test_edm=False, empty=False):
     """Write an EDM/MAP with a validated scaffold as its format shell.
 
-    The supplied 768 scaffold is also usable for the other native sizes: the
-    size-bearing Area payload is replaced with the requested grid while the
-    remaining opaque parts are retained. Those non-768 files are deliberately
-    exportable test candidates; validation by the community editor/game is
-    still required before treating them as a fully native format.
+    Apply the complete United editor save pre-pass to a copy, update player
+    metadata and an existing RGB555 minimap, then align and checksum the file.
+    Area carries the actual dimension, with a maximum of 768 cells.
+    Opaque scaffold parts are retained; game/editor validation is separate.
     """
-    version,parts=parse_parts(scaffold)
+    if state.side > 768:
+        raise ValueError("Taille non prise en charge pour l’export MAP/EDM : maximum 768")
+    if (test_edm or empty) and Path(output).suffix.lower() != ".edm":
+        raise ValueError("L’export de test est réservé aux EDM")
+    if (state.metadata.get("classic_disabled_slots") or state.metadata.get("start_disabled_slots")) and not (test_edm or empty):
+        raise ValueError("Carte conservée avec des joueurs sans départ ; export des joueurs incomplets à traiter séparément")
+    from .sav_conversion import sav_to_map_state
+    state=sav_to_map_state(state, include_players=not empty)
+    if state.metadata.get('sav_terrain_export') and Path(output).suffix.lower()=='.map' and not state.starts:
+        raise ValueError('SAV : aucun départ récupérable pour un MAP ; utilisez un EDM vide')
+    version,parts=parse_parts(scaffold,allow_terminal_padding=True)
+    if state.metadata.get('sav_terrain_export'):
+        parts=[part for part in parts if part[0] not in (7,8,9)]
+    prepared=MapState(state.side,state.area.copy(),list(state.starts))
+    prepare_editor_export(prepared.area)
     area_done=False
     for i,(t,p) in enumerate(parts):
         if t==6 and len(p)>=4:
             scaffold_side=struct.unpack_from('<I',p,0)[0]
             if len(p)==4+scaffold_side*scaffold_side*6:
-                parts[i][1]=bytearray(struct.pack('<I',state.side)+state.area.tobytes())
+                parts[i][1]=bytearray(struct.pack('<I',state.side)+prepared.area.tobytes())
                 area_done=True; break
     if not area_done: raise ValueError('Compatible Area part not found in scaffold')
-    _set_players(parts,state.starts,_goods_default_for_state(state))
+    starts = [] if empty else state.starts
+    indices = state.metadata.get("start_slot_indices")
+    if indices is None:
+        disabled = set(state.metadata.get("classic_disabled_slots", ()))
+        indices = [i for i in range(int(state.metadata.get("players", len(starts)))) if i not in disabled][:len(starts)]
+    nations = state.metadata.get("classic_start_nations")
+    if nations is None and state.metadata.get("player_nations") is not None:
+        nations = [state.metadata["player_nations"][i] for i in indices]
+    teams = state.metadata.get("player_teams")
+    if teams is not None:
+        teams = [teams[i] for i in indices]
+    _set_players(parts, starts, _goods_default_for_state(state),
+                 [] if empty else nations, [] if empty else teams)
+    for i,(t,p) in enumerate(parts):
+        if t==4:
+            parts[i][1]=editor_minimap_payload(prepared)
+        elif t==2:
+            if any(2<struct.unpack_from('<I',p,off)[0]<255 for off in range(0,len(p),45)):
+                version=max(version,11)
+        elif t==9 and len(p)>=4 and len(p)==4+8*struct.unpack_from('<I',p,0)[0]:
+            if any(p[off+4]>33 for off in range(4,len(p),8)):
+                version=max(version,11)
     b=bytearray(8); struct.pack_into('<I',b,4,version)
     for t,p in parts: b += struct.pack('<II',t,8+len(p))+encrypt(p,t)
+    remainder=len(b)%4
+    if remainder: b+=struct.pack('<I',remainder)[:4-remainder]
     struct.pack_into('<I',b,0,checksum(b))
     Path(output).write_bytes(b)
     return checksum(b),len(b)
@@ -142,6 +208,26 @@ def read_starts(path:Path|str)->list[tuple[int,int]]:
     except Exception:
         pass
     return []
+def read_start_context(path:Path|str)->dict:
+    """Read PlayerInfo nations without using private placements as map geometry.
+
+    Departure masks ask whether a start fits on the terrain before placed
+    objects. Settlers, hand-placed buildings and part-9 resource piles are
+    separate records and do not define that empty-map mask.
+    """
+    context = {"start_nations_unavailable": True, "native_start_context_unavailable": False}
+    try:
+        _,parts=parse_parts(path,allow_terminal_padding=True)
+        for kind,payload in parts:
+            if kind == 2 and len(payload) % 45 == 0:
+                nations=[struct.unpack_from('<I',payload,off)[0] for off in range(0,len(payload),45)]
+                if all(n in (0,1,2,3,255) for n in nations):
+                    context['player_nations']=nations
+                    context['start_nations_unavailable']=False
+    except (OSError,ValueError,struct.error):
+        pass
+    return context
+
 SAV_PLAYER_BLOCK_NATIVE_PREFIX = 84
 SAV_PLAYER_BLOCK_LEGACY_PREFIX = 96
 SAV_PLAYER_RECORD_STRIDE = 328
@@ -225,6 +311,7 @@ def _extract_sav_player_records(payload:bytes|bytearray, side:int, max_players:i
             'start_x':int(x) if active and valid else None,
             'start_y':int(y) if active and valid else None,
             'tribe_code_candidate':int(tribe_code) if tribe_code<=255 else None,
+            'team_code':int(struct.unpack_from('<I',payload,off+12)[0]),
             'layout':'native_v11','record_offset':off,
         })
     return records
@@ -304,6 +391,8 @@ def read_sav_state(path:Path|str)->MapState:
     side=max(cols)+1
     if len(cols)!=side: raise ValueError(f'Colonnes SAV incomplètes: {len(cols)}/{side}')
     area=np.zeros((side,side,6),np.uint8); area[:,:,3]=255
+    original_objects=np.zeros((side,side),np.uint8)
+    runtime_flags=np.zeros((side,side),np.uint8)
     for x in range(side):
         p=cols[x]
         if len(p)!=side*24: raise ValueError(f'Payload colonne {x}: {len(p)} != {side*24}')
@@ -315,6 +404,8 @@ def read_sav_state(path:Path|str)->MapState:
         # gameplay (harvested trees/stones, crops, buildings, etc.). Importing a
         # SAV must therefore expose byte 7 as MapState.objects.
         area[:,x,2]=a[:,7]
+        original_objects[:,x]=a[:,14]
+        runtime_flags[:,x]=a[:,10]
         area[:,x,3]=a[:,8]
         area[:,x,5]=a[:,17]
     starts=[]
@@ -328,10 +419,16 @@ def read_sav_state(path:Path|str)->MapState:
             best_player_records=records
             best_player_layout=_sav_player_block_prefix(block)
     st=MapState(side,area); st.starts=starts
+    original_objects.flags.writeable=False
+    st.original_objects=original_objects
+    runtime_flags.flags.writeable=False
+    st.runtime_flags=runtime_flags
     direct_initial_mask = _extract_sav_initial_territory_direct_cells(area[:,:,3], best_player_records)
     st.metadata.update({
         'source_format':'SAV','source_path':str(path),'sav_version':version,
         'territories_available':True,'runtime_terrain_preserved':True,'runtime_objects_preserved':True,
+        'original_objects_source':'sav_type3_byte14',
+        'runtime_flags_source':'sav_type3_byte10',
         'sav_original_starts_available':bool(starts),
         'start_territory_source':'sav_player_block_type6' if starts else 'unavailable',
         # Byte 8 is the exact current runtime claim raster for every SAV.  A

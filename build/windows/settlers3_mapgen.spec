@@ -9,6 +9,9 @@ optional_icon=str(icon_path) if icon_path.is_file() else None
 datas=[
     (str(project_root/'config'),'config'),
     (str(project_root/'data'),'data'),
+    (str(project_root/'assets'/'sprites'),'assets/sprites'),
+    (str(project_root/'assets'/'Settlers3MapGen.png'),'assets'),
+    (str(icon_path),'assets'),
 ]
 
 a=Analysis(

@@ -50,11 +50,13 @@ Ces fichiers doivent être consultés avant une nouvelle session de développeme
 
 - Latest published STABLE: `v1.7`.
 - Validated development checkpoint: `v2.0 DEV_9`, from local R25, on `dev`.
-- Runtime version `2.0 DEV_9`, Windows tuple `(2, 0, 9, 0)` ; no R suffix.
+- Current local candidate: `2.0 DEV_10_R56`, Windows tuple `(2, 0, 10, 56)`.
+- Published checkpoint remains `2.0 DEV_9`; DEV10 is not closed or published.
 - DEV9 closes the Large islands focus and the related improved river/profile work.
 - The small source-label rename is included in this checkpoint, with saved keys intact.
 - R25 qualification: 818 tests, seven complete maps, four exports and extracted ZIP PASS.
-- Next line: DEV10, prioritizing previous DEV9 work outside the completed scope.
-  Small islands is DEV10 or DEV11; further derived archetypes are undecided.
+- DEV10 remains a sequence of focused local candidates. R56 adapts land cover
+  to team-island count and places team starts near mountains and rivers; it is
+  awaiting Windows/editor/game validation and is not a published checkpoint.
 - DEV/RC are not Releases. Only complete unsuffixed DEV checkpoints are pushed.
 - Read PROJECT_WORKFLOW, TODO and the available recovery snapshot before next work.

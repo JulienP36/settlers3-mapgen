@@ -58,7 +58,7 @@ def test_island_bonus_uses_only_visible_configured_path(mode, bonus, monkeypatch
             config = config.with_sections(sections)
     result = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
         4, 2026093004, mode=mode if config is None else 'custom',
-        archetype='large_islands', side=384, custom_config=config,
+        archetype='large_islands', side=512, custom_config=config,
     )
     assert all(v.passed for v in result.validations if v.hard), result.validations
     assert 'large_island_swamp_spawns' not in result.state.metadata

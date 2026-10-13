@@ -1,0 +1,104 @@
+{
+  "seed": 20261005,
+  "reference_side": 384,
+  "players": 4,
+  "image_side": 64,
+  "settings": "Default archetype source settings; no fusions or masks",
+  "generator": "tools/generate_source_thumbnails.py",
+  "images": {
+    "native_legacy": {
+      "file": "native_legacy.png",
+      "sha256": "6b73cd70eda3321918b2fe9b087b1b15245b9efa467c25c70fd1b1a88a5b0daf"
+    },
+    "large_islands": {
+      "file": "large_islands.png",
+      "sha256": "580db0a6c0034ff8c7a4a3d984b6c194ed20b7231e41f9f3eb9aa57828ea71ec"
+    },
+    "large_islands_r21": {
+      "file": "large_islands_r21.png",
+      "sha256": "375f314d8071f9601d9fb2a19bf23a9622ee3a81ffe2c8c5c6efb02c87e71bc9"
+    },
+    "team_islands": {
+      "file": "team_islands.png",
+      "sha256": "8fa9908422c020bc5a47b573f05a28e39ea6e5eced0c817f5fb0764a9e4d15bd",
+      "player_teams": [
+        1,
+        1,
+        2,
+        2
+      ]
+    },
+    "continental_landmass": {
+      "file": "continental_landmass.png",
+      "sha256": "1ffb3819312ca71fd4048a43ba6fa8de9d49a111b463d637b8e4b329facf4f63"
+    },
+    "white": {
+      "file": "white.png",
+      "sha256": "a4eafde4cda73b016a1ae8d016f2f0366df1f3c29a4fa4c8720d5bc253bafee9"
+    },
+    "value": {
+      "file": "value.png",
+      "sha256": "7bb057f91d598fbc5b8b52522948cfba6b8c5f6f6c032e977ac12d3ffb1dd99a"
+    },
+    "perlin": {
+      "file": "perlin.png",
+      "sha256": "50e0d273319f15fc142ebbd7caefa830bc226094cf6bdc4f3c709b3c68609558"
+    },
+    "simplex": {
+      "file": "simplex.png",
+      "sha256": "467c86d7c583bcde9965c12cb30a4bde5c6203137d1395f0f83cb45f635e57ab"
+    },
+    "fbm": {
+      "file": "fbm.png",
+      "sha256": "f8f05e0cf78bdbfaf182f2f8019084d11da4321dfe7c52498469fe16ed8086d3"
+    },
+    "hybrid_fbm": {
+      "file": "hybrid_fbm.png",
+      "sha256": "620ac779b2760593330c9a14dc7fa73b5e7d1b433b5f82f3b311067fa99bb650"
+    },
+    "heterogeneous_fbm": {
+      "file": "heterogeneous_fbm.png",
+      "sha256": "f3f721e5d1ba0ef1ff2a5b0fa6f3b05f560e86ef3c0a4099785ab9b9b96737e8"
+    },
+    "billow": {
+      "file": "billow.png",
+      "sha256": "6c4b2a5f735cc71f1c652797a0116d125d4a6cbdeb002f8fcb881ec7829cdb45"
+    },
+    "turbulence": {
+      "file": "turbulence.png",
+      "sha256": "958517c8eafeaef8c0a9ed57346b65d3e43a13a24b95c2db7da079e2d747af19"
+    },
+    "ridged": {
+      "file": "ridged.png",
+      "sha256": "942d8417628c19a2b1bf6f67921518c10cb01660ee797473be1932581ade7a58"
+    },
+    "ridged_multifractal": {
+      "file": "ridged_multifractal.png",
+      "sha256": "22a872aa6b4ca7efa5d9b15e7a3aadff57ede115b7028dbd7a07d27616ed2fef"
+    },
+    "worley": {
+      "file": "worley.png",
+      "sha256": "9104bc069caf1b6d5a83705831f463d9f96ca704fe8654f92f8e015c70e27175"
+    },
+    "worley_f1": {
+      "file": "worley_f1.png",
+      "sha256": "c6a21a703b99bc947acc6b7235fa917dbeb92ad078f5bf136dd0b5170490dca3"
+    },
+    "worley_f2": {
+      "file": "worley_f2.png",
+      "sha256": "c9fc42465e34089899cadf49e1af30794190c1f4431836c21863af8e5a2e35b7"
+    },
+    "worley_f2_minus_f1": {
+      "file": "worley_f2_minus_f1.png",
+      "sha256": "c6b7fc89ea387b4f601764588fe5c5bd2d8013d8ca4c9fe1df062a6050515722"
+    },
+    "domain_warp": {
+      "file": "domain_warp.png",
+      "sha256": "e95d2179cd3db1dc8f2a83510cc69ec8ae09f93d27ff8bb02c05b142d36e10ef"
+    },
+    "formula": {
+      "file": "formula.png",
+      "sha256": "2c4e40a54f5091eeb88ea1d269fb87f137870193942e07bf964353c7fb56929c"
+    }
+  }
+}

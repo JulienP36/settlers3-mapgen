@@ -23,6 +23,7 @@ from .noise_sources import (
 from .profiles import (
     FINITE_DOMAIN_MODE_NATIVE_CALIBRATED,
     MASK_LAYER_MANUAL_GRID_SIDE,
+    MASK_LAYER_MANUAL_GRID_SIDES,
     NATIVE_NOISE_MAXIMUM,
     NATIVE_NOISE_MINIMUM,
     RELIEF_SOURCE_CUSTOM_LEGACY,
@@ -1095,6 +1096,8 @@ def _mask_layer_signal(
         # Keep the cone/crater profile visible, but retain a non-zero shoulder
         # inside the silhouette so the mask does not behave like a hard cut.
         occupancy = occupancy * (0.45 + 0.55 * relief_profile)
+    if bool(layer.get("inverted", False)):
+        occupancy = 1.0 - occupancy
     occupancy = occupancy * (
         envelope
         if envelope is not None
@@ -1112,13 +1115,11 @@ def _manual_mask_field(
 
     provider = provider_settings if isinstance(provider_settings, Mapping) else {}
     raw_grid = provider.get("grid")
-    expected = MASK_LAYER_MANUAL_GRID_SIDE * MASK_LAYER_MANUAL_GRID_SIDE
-    if not isinstance(raw_grid, (list, tuple)) or len(raw_grid) != expected:
+    source_side = int(provider.get("grid_side", MASK_LAYER_MANUAL_GRID_SIDE))
+    expected = source_side * source_side
+    if source_side not in MASK_LAYER_MANUAL_GRID_SIDES or not isinstance(raw_grid, (list, tuple)) or len(raw_grid) != expected:
         return np.zeros((int(side), int(side)), dtype=np.float32)
-    grid = np.asarray(raw_grid, dtype=np.float32).reshape(
-        MASK_LAYER_MANUAL_GRID_SIDE,
-        MASK_LAYER_MANUAL_GRID_SIDE,
-    ) / 255.0
+    grid = np.asarray(raw_grid, dtype=np.float32).reshape(source_side, source_side) / 255.0
 
     coordinates = np.linspace(-1.0, 1.0, int(side), dtype=np.float32)
     x = np.broadcast_to(coordinates[None, :], (int(side), int(side))).copy()
@@ -1139,8 +1140,8 @@ def _manual_mask_field(
 
     source_x = (np.clip(u, -1.0, 1.0) + 1.0) * 0.5
     source_y = (np.clip(v, -1.0, 1.0) + 1.0) * 0.5
-    source_x *= float(MASK_LAYER_MANUAL_GRID_SIDE - 1)
-    source_y *= float(MASK_LAYER_MANUAL_GRID_SIDE - 1)
+    source_x *= float(source_side - 1)
+    source_y *= float(source_side - 1)
     occupancy = _bilinear_sample(grid, source_y, source_x)
     occupancy = np.where(valid, occupancy, 0.0)
 
@@ -1169,7 +1170,9 @@ def _apply_mask_operation(
     amount = np.clip(float(strength_percent) / 100.0, 0.0, 2.0)
     blend_amount = min(1.0, amount)
     influence = signal * blend_amount
-    if operation in {"blend", "replace"}:
+    if operation == "mask":
+        changed = before * (1.0 - blend_amount + signal * blend_amount)
+    elif operation in {"blend", "replace"}:
         # Zero is the neutral value outside the shape.  Weighting the target
         # by the mask signal keeps the source field alive around and beyond
         # the silhouette instead of turning the exterior into a flat floor.
@@ -1190,23 +1193,43 @@ def _apply_mask_operation(
     return np.clip(changed, 0.0, 1.0).astype(np.float32, copy=False)
 
 
+def _mask_permission_factor(side, layer, profile, *, envelope, reference_side=None):
+    """White is identity, including outside the target's finite active domain."""
+    signal = _mask_layer_signal(side, layer, profile, reference_side=reference_side,
+                               envelope=np.ones((side, side), dtype=np.float32))
+    amount = min(1.0, layer["strength_percent"] / 100.0)
+    return 1.0 - amount * envelope * (1.0 - signal)
+
+
 def _apply_mask_layers_to_field(
     current: np.ndarray,
     profile: Mapping[str, object] | None,
     seed: int,
+    *, target: str = "result", layers=None, reference_side=None, exclude_permissions=False,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Apply the independent mask stack after source/fusion composition."""
+    """Apply masks in list order to one source, fusion or result field."""
 
     values = np.clip(np.asarray(current, dtype=np.float32), 0.0, 1.0)
     total_delta = np.zeros(values.shape, dtype=np.float32)
-    for index, layer in enumerate(mask_layer_parameters(profile)):
+    selected = mask_layer_parameters(profile) if layers is None else layers
+    selected = [layer for layer in selected if layer.get('target', 'result') == target
+                and bool(layer.get('enabled', False)) and int(layer.get('strength_percent', 0)) > 0]
+    envelope = (_native_calibrated_envelope(values.shape[0], profile, reference_side=reference_side)
+                if selected else None)
+    permission = None
+    for layer in selected:
+        if layer["operation"] == "mask":
+            if not exclude_permissions:
+                opacity = _mask_permission_factor(values.shape[0], layer, profile, reference_side=reference_side, envelope=envelope)
+                permission = opacity if permission is None else permission * opacity
+            continue
         enabled = bool(layer.get("enabled", False)) and int(
             layer.get("strength_percent", 0)
         ) > 0
         if not enabled:
             continue
         before = values.copy()
-        signal = _mask_layer_signal(values.shape[0], layer, profile)
+        signal = _mask_layer_signal(values.shape[0], layer, profile, reference_side=reference_side, envelope=envelope)
         values = _apply_mask_operation(
             values,
             signal,
@@ -1214,7 +1237,24 @@ def _apply_mask_layers_to_field(
             int(layer["strength_percent"]),
         )
         total_delta += values - before
+    if permission is not None:
+        before = values
+        values = values * permission
+        total_delta += values - before
     return values, total_delta
+
+
+def _mask_permission(side, profile, target, layers):
+    """Permissions gate a fusion delta; zero means identity for every operator."""
+    selected = [m for m in layers if m.get("target", "result") == target
+                and m["operation"] == "mask" and m["enabled"] and m["strength_percent"] > 0]
+    if not selected:
+        return None
+    permission = np.ones((side, side), dtype=np.float32)
+    envelope = _native_calibrated_envelope(side, profile)
+    for layer in selected:
+        permission *= _mask_permission_factor(side, layer, profile, envelope=envelope)
+    return permission
 
 
 def _compose_noise_layers(
@@ -1223,8 +1263,10 @@ def _compose_noise_layers(
     seed: int,
 ) -> tuple[np.ndarray, tuple[NoiseLayerDiagnostic, ...], np.ndarray]:
     current = np.asarray(source_height, dtype=np.uint8).astype(np.float32) / 255.0
+    masks = mask_layer_parameters(profile)
+    current, _source_mask_delta = _apply_mask_layers_to_field(current, profile, seed, target="source", layers=masks)
     reports: list[NoiseLayerDiagnostic] = []
-    total_delta = np.zeros(current.shape, dtype=np.float32)
+    total_delta = _source_mask_delta * 255.0
     for index, layer in _ordered_noise_layers(noise_layer_parameters(profile)):
         enabled = bool(layer.get("enabled", False)) and int(
             layer.get("strength_percent", 0)
@@ -1239,6 +1281,9 @@ def _compose_noise_layers(
                 profile,
                 layer.get("mask_settings"),
             )
+            component, _mask_delta = _apply_mask_layers_to_field(
+                component, profile, seed, target=f'fusion:{index}', layers=masks, exclude_permissions=True)
+            component = np.where(domain, component, 0.0).astype(np.float32, copy=False)
             current = _fuse_source(
                 current,
                 component,
@@ -1246,6 +1291,10 @@ def _compose_noise_layers(
                 str(layer["operation"]),
                 int(layer["strength_percent"]),
             )
+            permission = _mask_permission(current.shape[0], profile, f"fusion:{index}", masks)
+            if permission is not None:
+                current = before + (current - before) * permission
+                component = component * permission
         else:
             component = np.zeros(current.shape, dtype=np.float32)
             domain = np.zeros(current.shape, dtype=bool)
@@ -1285,7 +1334,7 @@ def _compose_noise_layers(
     current, mask_delta = _apply_mask_layers_to_field(
         current,
         profile,
-        int(seed),
+        int(seed), layers=masks,
     )
     total_delta += mask_delta
     composed = np.rint(np.clip(current, 0.0, 1.0) * 255.0).astype(np.uint8)
@@ -1461,6 +1510,13 @@ def build_noise_lab(
         source_height, profile, int(seed)
     )
     total_delta = source_delta + layer_delta
+    source_field, _mask_delta = _apply_mask_layers_to_field(source_height.astype(np.float32) / 255.0, profile, int(seed), target="source")
+    displayed_source = np.rint(source_field * 255.0).astype(np.uint8)
+    source_mask_delta = displayed_source.astype(np.float32) - source_height.astype(np.float32)
+    source_delta += source_mask_delta
+    layer_delta -= source_mask_delta
+    source_height = displayed_source
+    land_mask = source_height >= NATIVE_RAW_WATER_FLOOR
     return NoiseLabReport(
         raw_height=raw,
         source_height=source_height,
@@ -1484,6 +1540,7 @@ def generate_noise_component_previews(
     include_principal: bool = True,
     source_height: np.ndarray | None = None,
     players: int = 4,
+    player_teams=(),
     domain_side: int | None = None,
     component_cache: MutableMapping | None = None,
 ) -> tuple[np.ndarray, tuple[np.ndarray, ...]]:
@@ -1521,6 +1578,7 @@ def generate_noise_component_previews(
             )
             preview = generate_archetype_preview(
                 source_profile, native_side, seed, mirror_mode, players=players,
+                player_teams=player_teams,
             )
             values = np.clip(preview.source_noise - NATIVE_NOISE_MINIMUM, 0, 255)
             indices = np.rint(np.linspace(0, native_side - 1, side)).astype(np.intp)
@@ -1609,6 +1667,11 @@ def generate_noise_component_previews(
             copy=False,
         )
 
+    masks = morphology['mask_layers'][:int(morphology['mask_layer_count'])]
+    if include_principal:
+        field, _delta = _apply_mask_layers_to_field(principal.astype(np.float32) / 255.0,
+            normalized, seed, target='source', layers=masks, reference_side=domain_side)
+        principal = np.rint(field * 255.0).astype(np.uint8)
     components: list[np.ndarray] = []
     active_layers = morphology["noise_layers"][: int(morphology["noise_layer_count"])]
     for index, layer in enumerate(active_layers):
@@ -1625,6 +1688,8 @@ def generate_noise_component_previews(
             str(layer["source"]),
             _component_cache_key(layer["settings"]),
             _component_cache_key(layer.get("mask_settings")),
+            bool(layer["enabled"] and layer["strength_percent"] > 0),
+            _component_cache_key([m for m in masks if m.get("target", "result") == f"fusion:{index}"]),
         ) if component_cache is not None else None
         if cache_key is not None:
             try:
@@ -1648,6 +1713,10 @@ def generate_noise_component_previews(
             reference_side=domain_side,
             domain_parameters=domain_parameters,
         )
+        if bool(layer.get('enabled', False)) and int(layer.get('strength_percent', 0)) > 0:
+            component, _delta = _apply_mask_layers_to_field(component, normalized, seed,
+                target=f'fusion:{index}', layers=masks, reference_side=domain_side)
+            component = np.where(_domain, component, 0.0).astype(np.float32, copy=False)
         thumbnail = np.rint(np.clip(component, 0.0, 1.0) * 255.0).astype(np.uint8)
         if cache_key is not None:
             _component_cache_put(component_cache, cache_key, thumbnail)
@@ -1940,3 +2009,13 @@ __all__ = (
     "NoiseLabReport",
     "NoiseLayerDiagnostic",
 )
+
+
+def mask_template_grid(mask_type: str, side: int, provider_settings=None) -> np.ndarray:
+    """Rasterize a supplied mask in local coordinates, without the ocean frame."""
+    layer = {"type": mask_type, "provider_settings": provider_settings or {},
+             "settings": {"width_percent": 100, "height_percent": 100,
+                          "offset_x_percent": 0, "offset_y_percent": 0,
+                          "rotation_degrees": 0, "softness_percent": 0}}
+    field = _mask_layer_signal(side, layer, envelope=np.ones((side, side), dtype=np.float32))
+    return np.rint(field * 255.0).astype(np.uint8)

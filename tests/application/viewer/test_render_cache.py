@@ -93,7 +93,7 @@ def test_scrollbar_drag_is_coalesced_without_delaying_wheel_scrolling():
     assert "vbar.bind('<ButtonRelease-1>',flush_view,add='+')" in SETTINGS_SRC
     assert 'canvas.xview_scroll(amount, "units")' in SETTINGS_SRC
     assert 'canvas.yview_scroll(amount, "units")' in SETTINGS_SRC
-    assert 'canvas.after(SCROLLABLE_TAB_LAYOUT_SETTLE_MS,refresh)' in SETTINGS_SRC
+    assert 'canvas.after_idle(refresh)' in SETTINGS_SRC
     assert 'SCROLLABLE_INPUT_WIDGET_CLASSES' in SETTINGS_SRC
     assert 'def _scrollable_tab_wheel_is_over_input(self, event):' in SETTINGS_SRC
     assert 'if self._scrollable_tab_wheel_is_over_input(event):' in SETTINGS_SRC
@@ -111,8 +111,8 @@ def test_combobox_popdown_wheel_lookup_is_treated_as_input():
 
 
 def test_resize_redraw_settles_at_one_frame_without_rebuilding_every_event():
-    assert 'PREVIEW_RESIZE_SETTLE_MS = 24' in VIEWER_SRC
-    assert 'self.after(PREVIEW_RESIZE_SETTLE_MS,self._finish_preview_resize)' in VIEWER_SRC
+    assert 'PREVIEW_RESIZE_SETTLE_MS' not in VIEWER_SRC
+    assert 'self.after_idle(self._finish_preview_resize)' in VIEWER_SRC
     analysis=Path('s3mapgen/application/analysis/controller.py').read_text(encoding='utf-8')
-    assert 'CHART_RESIZE_SETTLE_MS = 24' in analysis
-    assert 'self.after(CHART_RESIZE_SETTLE_MS,self._finish_stats_chart_refresh)' in analysis
+    assert 'CHART_RESIZE_SETTLE_MS' not in analysis
+    assert 'self.after_idle(self._finish_stats_chart_refresh)' in analysis

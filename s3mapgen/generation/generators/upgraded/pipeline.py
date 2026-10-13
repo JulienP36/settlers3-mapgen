@@ -23,6 +23,7 @@ from ....map_data.constants import WATER_IDS
 from .content import UpgradedContent
 from .native_terrain import generate_primary_terrain, resume_deferred_terrain
 from .starts import place_starts
+from ...start_safety import start_terrain_reservation, start_object_reservation, require_start_safety
 from .profile import load_profile
 from .validators import validate
 
@@ -55,7 +56,7 @@ def generate(
     arch_spec = get_archetype(archetype)
     if not arch_spec.implemented:
         raise NotImplementedError(f"L'archétype {arch_spec.label} n'est pas implémenté")
-    if arch_spec.key not in {"continental", "large_islands"}:
+    if arch_spec.key not in {"continental", "large_islands", "team_islands"}:
         raise NotImplementedError("Le pipeline Upgraded natif ne porte pour l'instant que Continental")
     ContinentalV1().prepare(request.side, request.players)
     if int(mirror_mode) not in (0, 1, 2, 3):
@@ -96,11 +97,25 @@ def generate(
         and (is_custom or custom_runtime.get("base_archetype") != "continental")
         else None
     )
+    if (
+        (arch_spec.key == "team_islands" or (
+            archetype_profile is not None
+            and archetype_profile.get("morphology", {}).get("relief_source") == "team_islands"
+        ))
+        and request.start_algorithm in ("classic", "fair")
+    ):
+        raise ValueError(
+            "Îles par équipe exige un placement insulaire pour garantir que "
+            "les coéquipiers commencent sur la même île. Choisissez Auto, "
+            "Éloignement ou Îles."
+        )
     active_start_packages = (
         tuple(str(value) for value in custom_runtime.get("start_packages", ()))
         if isinstance(custom_runtime, dict) and isinstance(custom_runtime.get("start_packages", ()), (list, tuple))
         else ()
     )
+    if request.start_algorithm in ("classic", "fair"):
+        active_start_packages = ()
     priority_bonus_route = bool(active_start_packages)
 
     events: list[str] = []
@@ -118,6 +133,7 @@ def generate(
             defer_non_archetype=priority_bonus_route,
             archetype_profile=archetype_profile,
             players=request.players,
+            player_teams=request.player_teams,
         ),
     )
 
@@ -128,6 +144,8 @@ def generate(
         metadata={
             "seed": int(request.seed),
             "players": int(request.players),
+            "player_teams": list(request.player_teams or (0,)*request.players),
+            "player_nations": list(request.start_nations or (255,)*request.players),
             "mode": mode_label,
             "mode_key": mode_key,
             "archetype": arch_spec.label,
@@ -174,12 +192,13 @@ def generate(
         events,
         "continental_upgraded.starts_bridge",
         "positionnement provisoire, à recalibrer séparément",
-        lambda: place_starts(
+        lambda: np.zeros(state.height.shape, bool) if request.start_algorithm in ("classic", "fair") else place_starts(
             state,
             request.players,
             SeedStreams(request.seed).rng("upgraded_starts_bridge"),
             technical_clear=max(12, request.side // 52),
             island_labels=result.topology_labels,
+            start_algorithm=request.start_algorithm,
         ),
     )
     state.metadata.update(
@@ -189,6 +208,8 @@ def generate(
         start_placement_deferred=True,
     )
 
+    if request.start_algorithm in ("classic", "fair"):
+        profile["_classic_start_route"] = True
     content = UpgradedContent(
         profile,
         progress=lambda name, detail: _stage(progress, events, f"continental_upgraded.{name}", detail, lambda: None),
@@ -203,7 +224,7 @@ def generate(
             terrain=state.terrain,
             objects=state.objects,
             resources=state.resources,
-            protected_mask=terrain_bonus_meta["protected_mask"],
+            protected_mask=(terrain_bonus_meta["protected_mask"] | start_terrain_reservation(state)),
             progress=(lambda name: progress(f"continental_upgraded.native.{name}", "") if progress else None),
         )
         state.height[:] = resumed.height
@@ -214,7 +235,11 @@ def generate(
         state.metadata["upgraded_start_bonus_terrain_before_global"] = True
         content_meta = content.generate_prioritized(state, rng, pr)
     else:
-        content_meta = content.generate(state, rng, pr)
+        def before_fair_objects():
+            from ...fair_starts import place_fair_starts
+            place_fair_starts(state, request.players, SeedStreams(request.seed).rng("fair_starts"))
+        content_meta = content.generate(state, rng, pr,
+            before_objects=before_fair_objects if request.start_algorithm == "fair" else None)
     state.metadata.update(content_meta)
 
     if is_custom:
@@ -236,7 +261,7 @@ def generate(
             "base_mode": custom_runtime.get("base_mode", "upgraded"),
             "base_archetype": custom_runtime.get("base_archetype", archetype),
             "configuration_digest": custom_runtime.get("configuration_digest"),
-            "active_start_packages": list(custom_runtime.get("start_packages", [])),
+            "active_start_packages": list(active_start_packages),
             "custom_controls": custom_runtime.get("sections", {}),
             "effective_start_bonus_controls": (
                 custom_runtime.get("sections", {}).get("start_bonus", {})
@@ -274,7 +299,21 @@ def generate(
     # A user water threshold can submerge positive source elevations. The
     # exported sea is flat at zero, just as in the native Legacy finalization.
     state.height[np.isin(state.terrain, WATER_IDS)] = 0
+    if request.start_algorithm == "classic":
+        from ...classic_starts import place_classic_starts
+        _stage(progress,events,"continental_upgraded.starts_classic",
+            "sélection native après le contenu global",
+            lambda: place_classic_starts(state,request.players,request.seed,
+                nations=request.start_nations,goods=3,mirror_mode=mirror_mode,slot_types=request.start_slot_types))
+    if request.start_algorithm == "fair":
+        from ...fair_starts import place_fair_starts
+        _stage(progress, events, "continental_upgraded.starts_fair", "départs sélectionnés avant les objets", lambda: None)
+        bonus_profile = dict(profile)
+        bonus_profile.pop("_classic_start_route", None)
+        late_content = UpgradedContent(bonus_profile)
+        late_content.generate_late_start_bonuses(state, rng, pr)
     validations = validate(state, profile)
+    validations.extend(require_start_safety(state))
     state.metadata["pipeline"] = (
         [
             "archetype.macro_layout",
@@ -322,6 +361,20 @@ def generate(
         "mud": "native parameter 0; configurable in Custom",
         "starts": "provisional bridge coordinates retained; five start bonuses restored with separate reservations",
     }
+    if request.start_algorithm == "fair":
+        state.metadata["upgraded_provenance"]["starts"] = "resource balance before global objects, then configured start bonuses"
+        state.metadata["pipeline"] = [stage for stage in state.metadata.get("pipeline", ())
+            if "starts_bridge" not in stage and "upgraded_start_" not in stage]
+        index = max(0, len(state.metadata["pipeline"])-1)
+        state.metadata["pipeline"][index:index] = ["starts.fair_before_objects", "bonuses.after_fair_starts"]
+        state.metadata["starts_placed_early"] = False
+        state.metadata["start_placement_deferred"] = True
+    if request.start_algorithm == "classic":
+        state.metadata["pipeline"] = [stage for stage in state.metadata.get("pipeline", ()) if "starts_bridge" not in stage]
+        state.metadata["pipeline"].insert(max(0,len(state.metadata["pipeline"])-1),"starts.native_classic")
+        state.metadata["native_deferred_layers"] = ("settlers", "sav_writer")
+        if "upgraded_provenance" in state.metadata:
+            state.metadata["upgraded_provenance"]["starts"] = "native Classic selection; nations fixed in PlayerInfo; game creates towns on MAP load"
     return state, validations
 
 

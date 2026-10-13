@@ -16,11 +16,7 @@
     "576": {"max_players": 19, "water_fraction": {"mean": 0.2539, "min": 0.2395, "max": 0.2693}, "river_practical_max_cells": 49},
     "640": {"max_players": 20, "water_fraction": {"mean": 0.2292, "min": 0.2223, "max": 0.2332}, "river_practical_max_cells": 47},
     "704": {"max_players": 20, "water_fraction": {"mean": 0.2149, "min": 0.2075, "max": 0.2286}, "river_practical_max_cells": 53},
-    "768": {"max_players": 20, "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 55},
-    "832": {"max_players": 20, "calibration_status": "settlers-united-editor-extension", "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 59},
-    "896": {"max_players": 20, "calibration_status": "settlers-united-editor-extension", "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 64},
-    "960": {"max_players": 20, "calibration_status": "settlers-united-editor-extension", "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 69},
-    "1024": {"max_players": 20, "calibration_status": "settlers-united-editor-extension", "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 73}
+    "768": {"max_players": 20, "water_fraction": {"mean": 0.2022, "min": 0.1848, "max": 0.2137}, "river_practical_max_cells": 55}
   },
   "macro": {
     "shore_edge_distance": {"min": 24, "max": 29},

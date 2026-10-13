@@ -12,6 +12,12 @@ from copy import deepcopy
 import math
 from typing import Any, Mapping
 
+from .bonus_placement import (
+    FORCED_CENTER_EXTENSION as START_BONUS_CENTER_EXTENSION_DEFAULT,
+    FORCED_CENTER_EXTENSION_MIN as START_BONUS_CENTER_EXTENSION_MIN,
+    FORCED_CENTER_EXTENSION_MAX as START_BONUS_CENTER_EXTENSION_MAX,
+    normalize_center_extension,
+)
 from .terrain import (
     TERRAIN_ENABLED_RATE_MIN,
     TERRAIN_FAMILY_KEYS,
@@ -30,6 +36,7 @@ MINERAL_SPECS = (
 MINERAL_KEYS = tuple(key for key, _ in MINERAL_SPECS)
 MINERAL_IDS = {key: family for key, family in MINERAL_SPECS}
 MINERAL_KEYS_BY_ID = {family: key for key, family in MINERAL_SPECS}
+START_ROCKY_DEFAULT_MINERAL_KEYS = ("coal", "iron", "gold")
 MINERAL_ALGORITHMS = ("legacy", "upgraded", "random")
 SIZE_VARIATIONS = ("low", "normal", "high")
 RESOURCE_MINIMUM = 1
@@ -120,7 +127,7 @@ START_BONUS_RIVER_TARGET_MAX = 6
 def rocky_total_cells_max(active_count: int) -> int:
     """Return the total-core ceiling for the currently active minerals."""
 
-    count = max(0, min(3, int(active_count)))
+    count = max(0, min(len(MINERAL_KEYS), int(active_count)))
     return START_ROCKY_CORE_CELLS_MAX * count
 
 
@@ -144,7 +151,7 @@ def rocky_equivalent_radius(
     radius instead of restoring an unrelated stale value.
     """
 
-    count = max(0, min(3, int(active_count)))
+    count = max(0, min(len(MINERAL_KEYS), int(active_count)))
     if count <= 0:
         return max(START_BONUS_RADIUS_MIN, min(START_ROCKY_RADIUS_MAX, int(fallback)))
     bounded_total = max(
@@ -456,13 +463,9 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
     rocky_families = {
         key: bool(
             isinstance(value, Mapping)
-            and value.get("enabled", True)
+            and value.get("enabled", key in START_ROCKY_DEFAULT_MINERAL_KEYS)
         )
-        for key, value in (
-            ("coal", rocky_zones.get("coal", {})),
-            ("iron", rocky_zones.get("iron", {})),
-            ("gold", rocky_zones.get("gold", {})),
-        )
+        for key, value in ((key, rocky_zones.get(key, {})) for key in MINERAL_KEYS)
     }
     start_rocky_radius_min = _integer(
         start_rocky_cfg.get("radius_min", 3),
@@ -603,6 +606,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
         "start_bonus": {
             "distance_from_border": start_distance,
             "force_extended_radius": False,
+            "center_extension_limit": START_BONUS_CENTER_EXTENSION_DEFAULT,
             "forest": {
                 "enabled": bool(start_forest_cfg.get("per_player", True)),
                 "adult_trees_per_player": start_forest_adults,
@@ -644,38 +648,19 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
                         ),
                     ),
                 ),
-                "coal": {
-                    "enabled": rocky_families["coal"],
-                    "core_cells": _integer(
-                        rocky_core_defaults.get("coal", default_core_cells),
-                        START_ROCKY_CORE_CELLS_MIN,
-                        START_ROCKY_CORE_CELLS_MAX,
-                        default_core_cells,
-                    ),
-                    "average_quantity": resource_mean,
-                    "quantity_mode": "custom",
-                },
-                "iron": {
-                    "enabled": rocky_families["iron"],
-                    "core_cells": _integer(
-                        rocky_core_defaults.get("iron", default_core_cells),
-                        START_ROCKY_CORE_CELLS_MIN,
-                        START_ROCKY_CORE_CELLS_MAX,
-                        default_core_cells,
-                    ),
-                    "average_quantity": resource_mean,
-                    "quantity_mode": "custom",
-                },
-                "gold": {
-                    "enabled": rocky_families["gold"],
-                    "core_cells": _integer(
-                        rocky_core_defaults.get("gold", default_core_cells),
-                        START_ROCKY_CORE_CELLS_MIN,
-                        START_ROCKY_CORE_CELLS_MAX,
-                        default_core_cells,
-                    ),
-                    "average_quantity": resource_mean,
-                    "quantity_mode": "custom",
+                **{
+                    key: {
+                        "enabled": rocky_families[key],
+                        "core_cells": _integer(
+                            rocky_core_defaults.get(key, default_core_cells),
+                            START_ROCKY_CORE_CELLS_MIN,
+                            START_ROCKY_CORE_CELLS_MAX,
+                            default_core_cells,
+                        ),
+                        "average_quantity": resource_mean,
+                        "quantity_mode": "custom",
+                    }
+                    for key in MINERAL_KEYS
                 },
             },
             "lake_fish_river": {
@@ -964,6 +949,13 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
         )
     )
 
+    fallback_start["center_extension_limit"] = normalize_center_extension(
+        raw_start.get(
+            "center_extension_limit",
+            fallback_start.get("center_extension_limit", START_BONUS_CENTER_EXTENSION_DEFAULT),
+        ),
+    )
+
     def start_entry(key: str) -> tuple[dict[str, Any], Mapping[str, Any]]:
         default_entry = fallback_start.setdefault(key, {})
         if not isinstance(default_entry, dict):
@@ -1114,19 +1106,20 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
     rocky["total_core_cells"] = _integer(
         raw_total,
         START_ROCKY_CORE_CELLS_MIN,
-        START_ROCKY_CORE_CELLS_MAX * 3,
+        START_ROCKY_CORE_CELLS_MAX * len(MINERAL_KEYS),
         default_core * 3,
     )
     raw_top_areas = raw_rocky.get("core_cells", {})
     raw_top_areas = raw_top_areas if isinstance(raw_top_areas, Mapping) else {}
-    for family in ("coal", "iron", "gold"):
-        default_family = rocky.setdefault(family, {"enabled": True})
+    for family in MINERAL_KEYS:
+        enabled_default = family in START_ROCKY_DEFAULT_MINERAL_KEYS
+        default_family = rocky.setdefault(family, {"enabled": enabled_default})
         if not isinstance(default_family, dict):
-            default_family = {"enabled": True}
+            default_family = {"enabled": enabled_default}
             rocky[family] = default_family
         raw_family = raw_rocky.get(family, {})
         raw_family = raw_family if isinstance(raw_family, Mapping) else {}
-        default_family["enabled"] = bool(raw_family.get("enabled", default_family.get("enabled", True)))
+        default_family["enabled"] = bool(raw_family.get("enabled", default_family.get("enabled", enabled_default)))
         raw_area = raw_family.get(
             "core_cells",
             raw_family.get("surface", raw_top_areas.get(family, default_family.get("core_cells", 61))),
@@ -1156,7 +1149,7 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
 
     active_rocky_count = sum(
         bool(rocky[family].get("enabled", True))
-        for family in ("coal", "iron", "gold")
+        for family in MINERAL_KEYS
     )
     rocky["total_core_cells"] = _integer(
         raw_total,
@@ -1255,7 +1248,7 @@ def rocky_proportional_targets(
 ) -> dict[str, int]:
     """Resolve the prorata counts shown by the editor and written by the engine."""
 
-    names = tuple(name for name in enabled if name in {"coal", "iron", "gold"})
+    names = tuple(name for name in enabled if name in MINERAL_KEYS)
     if not names:
         return {}
     total = max(

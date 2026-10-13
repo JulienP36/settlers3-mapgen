@@ -298,7 +298,7 @@ def test_all_start_bonus_packages_work_on_both_public_base_routes():
         else:
             assert metadata["upgraded_trees"]["adult_start_bonus_placed"] == 8
             assert metadata["upgraded_stones"]["start_bonus_anchors"] == 4
-        assert all(value.passed for value in result.validations if value.hard)
+        assert all(value.passed for value in result.validations if value.hard), [(v.rule_id,v.message) for v in result.validations if v.hard and not v.passed]
 
 
 def test_custom_legacy_preserves_native_output_and_reports_deferred_overrides():

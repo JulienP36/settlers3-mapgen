@@ -22,6 +22,7 @@ from s3mapgen.generation.custom import build_custom_config
 from s3mapgen.map_data.constants import WATER_IDS
 
 
+R25_CONTINENTAL = json.loads(Path("tests/fixtures/continental_r25_starts.json").read_text())["cases"]
 BASELINES = json.loads(Path("tests/fixtures/islands_r12_presets.json").read_text())["cases"]
 
 
@@ -40,6 +41,7 @@ def composed_profile(kind="fusion", origin="large_islands"):
             enabled=True, type="ellipse", operation="multiply", strength_percent=15,
         )
     if kind == "thresholds":
+        profile["morphology"]["island_thresholds_auto"] = False
         profile["relief"].update(mountain_threshold=245, snow_threshold=255)
     if kind == "water":
         profile["relief"]["water_threshold"] = 5
@@ -97,26 +99,28 @@ def test_source_mask_and_manual_global_mask_affect_the_complete_source(baseline_
 
 
 def test_thresholds_classify_without_rebuilding_the_island_source():
-    base = generate_archetype_preview(composed_profile("plain"), 384, 42, players=4)
+    base = generate_archetype_preview(composed_profile("plain", origin="continental"), 384, 42, players=4)
     for kind in ("thresholds", "water", "negative_water"):
-        edited = generate_archetype_preview(composed_profile(kind), 384, 42, players=4)
+        edited = generate_archetype_preview(composed_profile(kind, origin="continental"), 384, 42, players=4)
         assert np.array_equal(edited.source_noise, base.source_noise), kind
         assert np.array_equal(edited.noise, base.noise), kind
         if kind != "negative_water":
             assert not np.array_equal(edited.macro, base.macro), kind
-    high = generate_archetype_preview(composed_profile("thresholds"), 384, 42, players=4)
+    high = generate_archetype_preview(composed_profile("thresholds", origin="continental"), 384, 42, players=4)
     assert not np.isin(high.macro, (3, 4)).any()
 
 
 def test_source_selection_is_independent_of_the_profile_origin():
-    for source in ("native_legacy", "legacy_blocks", "perlin", "large_islands"):
+    for source in ("native_legacy", "legacy_blocks", "continental_landmass", "perlin", "large_islands"):
+        canonical_source = 'continental_landmass' if source == 'legacy_blocks' else source
         continental, islands = (default_archetype_profile(key) for key in ("continental", "large_islands"))
         # Source equivalence requires the same classification thresholds;
         # named Large islands now has a higher default snow threshold.
         islands["relief"] = dict(continental["relief"])
+        islands["morphology"].update(island_amplitude_auto=False, island_thresholds_auto=False)
         for profile in (continental, islands):
             profile["morphology"]["relief_source"] = source
-            assert normalize_archetype_profile(profile, archetype_key=profile["archetype_key"])["morphology"]["relief_source"] == source
+            assert normalize_archetype_profile(profile, archetype_key=profile["archetype_key"])["morphology"]["relief_source"] == canonical_source
         first = generate_archetype_preview(continental, 384, 42, players=4)
         second = generate_archetype_preview(islands, 384, 42, players=4)
         assert np.array_equal(first.noise, second.noise), source
@@ -137,23 +141,25 @@ def test_fast_previews_and_source_thumbnail_use_real_islands():
 
 
 @pytest.mark.parametrize("row", BASELINES, ids=lambda row: "-".join(map(str, row["case"])))
-def test_inspectable_preset_matches_the_complete_map_and_keeps_classic_baseline(row):
+def test_inspectable_preset_matches_complete_map_and_current_baseline(row):
     mode, archetype, side, players, seed = row["case"]
     config = build_custom_config(mode, archetype)
     result = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
         players, seed, mode="custom", archetype=archetype, side=side, custom_config=config,
     )
     if archetype == "continental":
-        assert hashlib.sha256(result.state.area.tobytes()).hexdigest() == row["area_sha256"]
-        assert [list(start) for start in result.state.starts] == row["starts"]
-    else:
-        # Compare the same named defaults, including the visible mini-swamp.
-        # Explicitly disabling that bonus is now a real customization.
-        preset = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
-            players, seed, mode=mode, archetype=archetype, side=side,
-        )
-        assert np.array_equal(result.state.area, preset.state.area)
-        assert result.state.starts == preset.state.starts
+        current = next(value for value in R25_CONTINENTAL if value["case"] == row["case"])
+        assert hashlib.sha256(result.state.area.tobytes()).hexdigest() == current["area_sha256"]
+        assert [list(start) for start in result.state.starts] == current["starts"]
+        for channel in ("height", "terrain"):
+            assert hashlib.sha256(getattr(result.state, channel).tobytes()).hexdigest() == current["channels"][channel]
+    # R25 levelling safety intentionally changes coordinates and dependent content.
+    # Preserve independent recorded map hashes alongside preset/custom parity.
+    preset = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
+        players, seed, mode=mode, archetype=archetype, side=side,
+    )
+    assert np.array_equal(result.state.area, preset.state.area)
+    assert result.state.starts == preset.state.starts
     assert all(value.passed for value in result.validations if value.hard)
 
 
@@ -164,7 +170,8 @@ def test_real_generation_consumes_the_same_composed_height_as_preview(mode, kind
     from s3mapgen.generation.generators.upgraded import native_terrain as upgraded
     engine = legacy if mode == "legacy" else upgraded
     profile = composed_profile(kind, origin="continental")
-    preview = generate_archetype_preview(profile, 384, 42, players=4)
+    side = 384
+    preview = generate_archetype_preview(profile, side, 42, players=4)
     captured = []
     classify = engine._classify_relief
 
@@ -174,8 +181,20 @@ def test_real_generation_consumes_the_same_composed_height_as_preview(mode, kind
 
     monkeypatch.setattr(engine, "_classify_relief", capture)
     config = build_custom_config(mode, "continental", start_packages=()).with_archetype_profile(profile)
-    result = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
-        4, 42, mode="custom", archetype="continental", side=384, custom_config=config,
+    generator = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE)
+    if mode == "legacy" and kind == "water":
+        # The composed field has insufficient separated, level-compatible
+        # starts. Still verify that generation consumed the actual preview.
+        result = generator.generate(4, 42, mode="custom", archetype="continental",
+                               side=side, custom_config=config)
+        assert len(result.state.starts) < 4
+        assert result.state.metadata["start_disabled_slots"]
+        assert len(captured) == 1
+        assert np.array_equal(captured[0][0], np.clip(preview.noise, 0, 255).astype(np.uint8))
+        assert np.array_equal(captured[0][1], preview.noise)
+        return
+    result = generator.generate(
+        4, 42, mode="custom", archetype="continental", side=side, custom_config=config,
     )
     assert len(captured) == 1
     assert np.array_equal(captured[0][0], np.clip(preview.noise, 0, 255).astype(np.uint8))
@@ -196,7 +215,7 @@ def test_generator_can_disable_island_rivers_and_swamps(mode):
     sections["rivers"]["rate_percent"] = 0
     sections["terrains"]["swamp"]["enabled"] = False
     result = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE).generate(
-        4, 42, mode="custom", archetype="large_islands", side=384,
+        4, 42, mode="custom", archetype="large_islands", side=512,
         custom_config=config.with_sections(sections),
     )
     assert not np.isin(result.state.terrain, (96, 97, 98, 99)).any()

@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import random
 import tkinter as tk
-from tkinter import messagebox
+from ..ui.i18n.starts import START_LABELS, START_TOOLTIPS
+from ..ui.messages import make_report, show_report
 
 from ...generation.archetypes import ARCHETYPES
 from ...generation.core import (
@@ -19,7 +20,7 @@ from ...generation.core import (
 from ...generation.modes import MODES, cache_engine_revision
 from ..session.cache import GenerationCacheKey
 from ..ui.i18n.common import _lang_text
-from ..ui.i18n.shell import ARCHETYPE_INPUT_LABELS, ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS, NONE_LABELS
+from ..ui.i18n.shell import ARCHETYPE_INPUT_LABELS, ARCHETYPE_LABELS, FEEDBACK_TEXT, MIRROR_LABELS, MODE_LABELS
 
 
 class GenerationWorkflowController:
@@ -76,10 +77,52 @@ class GenerationWorkflowController:
         """Return the empty value for the reserved, disabled modifier slot."""
         return ()
 
-    def _modifier_none_selected(self):
-        """Keep the reserved placeholder callback safe if invoked indirectly."""
-        self.modifier_none.set(True)
-        self.modifier_text.set(NONE_LABELS.get(self.prefs.get('language','fr'),NONE_LABELS['en']))
+    def _start_algorithm_key(self):
+        variable=getattr(self,'start_algorithm',None)
+        return variable.get() if variable is not None else 'auto'
+
+    def _start_tooltip_text(self, algorithm=None):
+        language = self.prefs.get('language', 'fr')
+        texts = START_TOOLTIPS.get(language, START_TOOLTIPS['en'])
+        return texts.get(algorithm or self._start_algorithm_key(), texts['auto'])
+
+    def _start_menu_tooltip(self, event=None):
+        menu = self.start_menu
+        try:
+            index = menu.index('active')
+            key = {0:'auto', 1:'balanced', 2:'fair', 3:'islands',
+                   5:'classic', 6:'nations'}.get(index)
+            if key is None:
+                self._hide_ui_tooltip()
+                return
+            self._show_ui_tooltip(
+                menu, self._start_tooltip_text(key),
+                key=('start-menu', key, self.prefs.get('language', 'fr')),
+            )
+        except tk.TclError:
+            self._hide_ui_tooltip()
+
+    def _start_nations(self, players):
+        nations=getattr(self,'classic_start_nations',(255,)*20)
+        return tuple(nations[:players])
+
+    def _configure_classic_starts(self):
+        from .classic_starts import choose_classic_nations
+        result=choose_classic_nations(self,getattr(self,'classic_start_nations',(255,)*20),int(self.players.get()),self.prefs.get('language','fr'),teams=getattr(self,'player_teams',(0,)*20))
+        if result is None:return False
+        self.classic_start_nations,self.player_teams=result
+        if self._arch_key() == "team_islands" and hasattr(self, "_custom_schedule_archetype_preview_refresh"):
+            self._custom_schedule_archetype_preview_refresh()
+        return True
+
+    def _start_algorithm_selected(self):
+        if hasattr(self, '_hide_ui_tooltip'):
+            self._hide_ui_tooltip()
+        if self._start_algorithm_key() == 'classic' and not self._configure_classic_starts():
+            self.start_algorithm.set(getattr(self,'_previous_start_algorithm','auto'))
+        self._previous_start_algorithm=self._start_algorithm_key()
+        self.start_text.set(START_LABELS[self.prefs.get('language','fr')][self._start_algorithm_key()])
+        self._refresh_selection_feedback()
 
     def random_seed(self):
         self.seed.set(str(random.randint(1,2_147_483_647)));self._feedback('seed_randomized','info',seed=str(self.seed.get()))
@@ -121,22 +164,25 @@ class GenerationWorkflowController:
         mode = self._mode_key()
         archetype = self._arch_key()
         digest = self._custom_config_digest() if hasattr(self, '_custom_config_digest') else ''
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest)
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest,start_algorithm=self._start_algorithm_key(),start_nations=self._start_nations(int(self.players.get())),player_teams=tuple(getattr(self,'player_teams',(0,)*20)[:int(self.players.get())]))
 
     def generate(self):
+        phase = 'input'
         try:
             side=int(self.size.get())
             key=self._cache_key();cached=self.session_cache.get(key);self.import_source=None;lang=self.prefs.get('language','fr')
             mode=MODE_LABELS[lang][key.mode];arch=self._arch_display_label(lang)
             warning_key=self._legacy_size_warning_key(key.mode,key.archetype,key.side)
             if cached is not None:
-                self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(False);self._refresh_history()
+                phase='preview';self.current=cached;self.session_cache.set_metadata(key,{'origin':'generated'});self._populate_current();self._invalidate_preview();self._refresh_preview(False);self._refresh_history()
                 if warning_key:self._feedback(warning_key,'warning',side=key.side,max_players=NATIVE_LIMITS[key.side])
                 else:self._feedback('cache_hit','success',seed=key.seed)
                 return
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
+            phase='generation'
             custom_config = self._custom_config_for_generation(key.mode, key.archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self, '_custom_config', None) if key.mode == 'custom' else None)
-            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config)
+            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams)
+            phase='preview'
             retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(False)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)
             if warning_key:
@@ -146,4 +192,12 @@ class GenerationWorkflowController:
             elif hasattr(self,'_set_generated_status'):
                 self._set_generated_status()
         except Exception as e:
-            import traceback;self._task_error(_lang_text(self.prefs.get('language','fr'),'Erreur de génération','Generation error','Generierungsfehler','Error de generación'));messagebox.showerror('MapGen',f'{e}\n\n{traceback.format_exc()}')
+            report = make_report(phase, exception=e,
+                language=self.prefs.get('language', 'fr'), context={
+                    'Seed': self.seed.get(), 'Taille / Size': self.size.get(),
+                    'Joueurs / Players': self.players.get(), 'Mode': self.mode.get(),
+                    'Archétype / Archetype': self.arch.get(),
+                    'Départs / Starts': self._start_algorithm_key(),
+                })
+            self._task_error(report.message)
+            show_report(self, report)

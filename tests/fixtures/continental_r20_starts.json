@@ -1,0 +1,77 @@
+{
+  "reason": "R20 departure safety changes coordinates and dependent content clearance",
+  "cases": [
+    {
+      "case": [
+        "legacy",
+        "continental",
+        384,
+        4,
+        42
+      ],
+      "area_sha256": "f117844b2b598b685d4396a82ee7b62dd14d6a1f69a15fb70ffc513660915e22",
+      "starts": [
+        [
+          144,
+          273
+        ],
+        [
+          337,
+          42
+        ],
+        [
+          101,
+          54
+        ],
+        [
+          297,
+          186
+        ]
+      ],
+      "channels": {
+        "height": "9f552c81fb450ddee8528ea0e3ec69633c1ff16a052e9a991959153b121a0635",
+        "terrain": "869320fbc856b5a14b7ffdeb4913864a50adfd80f0a647f54f88781b13905cb3",
+        "objects": "18bfb7bd1c73e1218d7f884b9d1bd11a690e8285b6d1b5142f275ae8ed40dcca",
+        "claim": "4ae2e6e6e32dace013ba173d69a66ac11951b0d718d68aaf31816a8b69264794",
+        "accessibility": "42238c7189f39fb4736f7876f456c169a7e65ec329424e02e9e9791ddc15b384",
+        "resources": "6dba5afc9eb739aaee41f293ffeb7b0f9c4886b975b91975253a39dbacbaa62d"
+      }
+    },
+    {
+      "case": [
+        "upgraded",
+        "continental",
+        384,
+        4,
+        42
+      ],
+      "area_sha256": "8737f2c2a861b671bdf363cdaa26ed0ab00f6a6b143517ae3aff74515f35ffde",
+      "starts": [
+        [
+          278,
+          73
+        ],
+        [
+          43,
+          316
+        ],
+        [
+          181,
+          215
+        ],
+        [
+          82,
+          33
+        ]
+      ],
+      "channels": {
+        "height": "9f552c81fb450ddee8528ea0e3ec69633c1ff16a052e9a991959153b121a0635",
+        "terrain": "0597ec89a9eed637a9a44f67a9d52b0f6ea49454ada9610736a8f4093327dc41",
+        "objects": "db75720d0ed8f457a680639ba1af2b22a20de28d43f254dacafd99ab4c28b277",
+        "claim": "4ae2e6e6e32dace013ba173d69a66ac11951b0d718d68aaf31816a8b69264794",
+        "accessibility": "1012b4c20675d64540f480216eddb99adc479043f72f02c7c11e7f523c47e349",
+        "resources": "8bd060d02da8d041b2ace1fa7693dfb7e8f981de599bed2d9aef0952633176b2"
+      }
+    }
+  ]
+}

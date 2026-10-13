@@ -1,8 +1,9 @@
 # Settlers III MapGen — Project Workflow
 
-> **CANONICAL PROJECT WORKFLOW — READ THIS AT THE START OF EVERY WORK SESSION.**
-
-This file defines how the project is resumed, developed, validated, checkpointed and released. It complements the technical generation references.
+État courant : **2.0 DEV_10**, checkpoint complet validé par Julien le
+13 octobre 2026, issu de R66. Parcours éditeur→réexport→jeu confirmé testé et
+publication sur `dev` explicitement autorisée. Voir `docs/DEV_10_CHECKPOINT.md`.
+Le TODO conserve les reports hors DEV10. Maximum 768 ; Classique natif inchangé.
 
 ## Session start
 1. Read `PROJECT_WORKFLOW.md`.
@@ -53,6 +54,16 @@ Recommended minimal ChatGPT Project instruction:
 > workflow et le snapshot vivant qu'il désigne. La dernière instruction ou
 > validation explicite de l'utilisateur reste prioritaire.
 
+## Recherche versus fonctionnalité — décision du 6 octobre 2026
+
+Une recherche seule n’ajoute pas de modules ou tests au programme et ne produit
+pas une nouvelle candidate à faire télécharger. Garder les expériences hors de
+l’application ; conserver seulement les conclusions utiles et vérifiées dans
+les références. Un port doit avoir une utilisation active concrète avant d’être
+livré. La demande Classique exact reste impérative : aucune approximation ne
+doit recevoir ce nom. Les suites de qualification isolée ne remplacent pas la
+validation du placement réel dans les éditeurs et le jeu.
+
 ## Permanent branches
 - `main` = STABLE only.
 - `dev` = current development, avec publication des checkpoints **DEV complets uniquement** (`DEV_1`, `DEV_2`, etc.).
@@ -66,15 +77,10 @@ Créer fréquemment des **points de reprise locaux** lorsqu’une unité cohére
 La règle de version suivie par le projet est stricte : chaque modification de
 la candidate incrémente `R`; le compteur `DEV` n’avance qu’après un push d’un
 checkpoint; une release n’est créée qu’une fois le périmètre terminé et validé.
-Le checkpoint courant validé est `v2.0 DEV_9`, issu de R25 et du renommage
-de la source alternative. DEV9 est clôturée sur le focus Grandes îles,
-avec les rivières améliorées et raccordements associés. Le 2026-10-04,
-l’utilisateur autorise explicitement sa publication sur `dev`.
-Tous les anciens reports DEV9 hors périmètre passent à DEV10, à trier après
-le push. Petites îles est prévue DEV10 ou DEV11 ; d’autres forks éventuels
-et la répartition des finitions seront décidés après bilan.
-Le bilan public est `docs/DEV_9_CHECKPOINT.md` ; l’index et le snapshot local
-conservent les références complètes et le SHA effectivement publié.
+Checkpoint DEV10 complet, issu de R66, autorisé à la publication le 13 octobre.
+Le bilan et les références sont synchronisés avant publication. Les preuves et
+la confirmation du SHA publié sont conservées avec le checkpoint source.
+Stats2 reste après 2.1 ; Petites îles et tailles >768 abandonnées.
 
 Ne pousser sur `dev` que le checkpoint **DEV complet sans suffixe**, après validation utilisateur explicite de l’ensemble de son périmètre. Une correction minuscule demandée après validation peut être intégrée avant ce push final ; elle ne justifie pas la publication d’une révision intermédiaire.
 

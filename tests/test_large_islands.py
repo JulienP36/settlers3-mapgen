@@ -8,7 +8,7 @@ from s3mapgen.map_data.hexgrid import component_labels
 @pytest.mark.parametrize('mode,side,players,seed', [
  ('legacy',384,4,2026093003), ('upgraded',384,4,2026093004),
  ('legacy',512,4,2026093005), ('legacy',768,4,2026093006),
- ('legacy',384,8,2026093007), ('legacy',768,20,2026093008),
+ ('legacy',512,8,2026093007), ('legacy',768,20,2026093008),
  ('upgraded',768,20,42),
 ])
 def test_islands_have_independent_starts_and_native_features(mode,side,players,seed,monkeypatch):
@@ -22,6 +22,8 @@ def test_islands_have_independent_starts_and_native_features(mode,side,players,s
  monkeypatch.setattr(legacy,'_build_native_relief',forbidden)
  result=MapGenerator(LEGACY_PROFILE,LIBRARY,UPGRADED_REFERENCE).generate(players,seed,mode=mode,archetype='large_islands',side=side)
  state=result.state
+ assert state.metadata['archetype_key']=='large_islands'
+ assert state.metadata['archetype']=='Individual Islands'
  labels,n=component_labels(~np.isin(state.terrain,WATER_IDS))
  assert n==players
  assert len({int(labels[y,x]) for x,y in state.starts})==players

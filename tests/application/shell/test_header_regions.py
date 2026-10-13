@@ -13,8 +13,8 @@ def test_wide_header_has_generation_session_and_global_regions():
 
 def test_compact_header_moves_whole_session_block_below():
     assert "self.generation_panel.grid(row=0,column=0" in SRC
-    assert "self.global_panel.grid(row=0,column=1" in SRC
-    assert "self.session_box.grid(row=1,column=0,columnspan=2" in SRC
+    assert "self.global_panel.grid(row=1 if narrow else 0,column=0 if narrow else 1" in SRC
+    assert "self.session_box.grid(row=2 if narrow else 1,column=0,columnspan=2" in SRC
 
 
 def test_generation_actions_use_independent_local_button_bars():
@@ -36,10 +36,10 @@ def test_file_action_buttons_keep_natural_text_width():
 def test_main_content_has_a_second_vertical_sash():
     foundation = (Path(__file__).resolve().parents[3] / "s3mapgen" / "application" / "shell" / "foundation.py").read_text(encoding="utf-8")
     assert "vertical=ttk.Panedwindow(self,orient='vertical')" in foundation
-    assert "vertical.add(header_host,weight=1)" in foundation
+    assert "vertical.add(header_host,weight=0)" in foundation
     assert "vertical.add(body_host,weight=1)" in foundation
     assert "self._vertical_paned.sashpos(0" in foundation
-    assert "vertical_split_ratio" in foundation
+    assert "vertical_split_height" in foundation
 
 
 def test_vertical_sash_keeps_header_controls_at_the_top():

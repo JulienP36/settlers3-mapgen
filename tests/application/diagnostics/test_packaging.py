@@ -1,20 +1,23 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from s3mapgen.application import paths as app_paths
 from s3mapgen.application.diagnostics.package_runtime import inspect_package
-from s3mapgen.version import APP_VERSION, ENGINE_VERSION, WINDOWS_FILE_VERSION
+from s3mapgen.version import APP_VERSION, ENGINE_VERSION, WINDOWS_FILE_VERSION, SOURCE_CANDIDATE_LABEL
 
 
 ROOT=Path(__file__).resolve().parents[3]
 
 
 def test_current_version_metadata():
-    assert APP_VERSION=='2.0 DEV_9'
+    match = re.fullmatch(r'2\.0 DEV_(\d+)(?:_R(\d+))?', APP_VERSION)
+    assert match is not None
     assert ENGINE_VERSION=='2.0'
-    assert WINDOWS_FILE_VERSION==(2,0,9,0)
+    assert WINDOWS_FILE_VERSION==(2,0,int(match[1]),int(match[2] or 0))
+    assert SOURCE_CANDIDATE_LABEL == APP_VERSION.split(' ',1)[1]
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):
@@ -31,9 +34,9 @@ def test_source_package_self_test_reads_all_required_resources():
     assert report['status']=='PASS',report
     assert report['frozen'] is False
     assert set(report['checks'])=={
-        'gui_runtime_import',
+        'gui_runtime_import','application_icon',
         'legacy_profile','native_library','upgraded_reference',
-        'edm_scaffold','map_scaffold','start_markers',
+        'edm_scaffold','map_scaffold','start_markers','sprites',
     }
     assert all(check['ok'] for check in report['checks'].values())
     for key in ('legacy_profile','native_library'):

@@ -33,3 +33,6 @@ build/windows/work/
 
 # Local candidate map examples retained only in recovery archives.
 examples/dev9_r*/
+
+# Generated start-placement examples stay in recovery ZIPs.
+examples/r*_starts/

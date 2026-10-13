@@ -15,6 +15,7 @@ def _write_sav(tmp_path, cells):
             arr[y,7]=cells[y][x][0]
             arr[y,14]=cells[y][x][1]
             arr[y,8]=255
+            arr[y,10]=0x4d if cells[y][x][0] else 0x40
         t=(x<<16)|3
         payload=arr.tobytes()
         out += struct.pack('<II',t,8+len(payload)) + encrypt(payload,t)
@@ -29,3 +30,11 @@ def test_played_sav_uses_runtime_object_byte_7_not_static_byte_14(tmp_path):
     assert int(state.objects[1,1])==88
     assert int(state.objects[2,2])==0
     assert state.metadata['runtime_objects_preserved'] is True
+    assert int(state.original_objects[1,1]) == 0
+    assert int(state.original_objects[2,2]) == 70
+    assert state.original_objects.flags.writeable is False
+
+    assert state.runtime_flags.flags.writeable is False
+    assert state.runtime_flags[1,1] == 0x4d
+    assert state.runtime_flags[2,2] == 0x40
+    assert np.all(state.accessibility == 0)

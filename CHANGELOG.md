@@ -1,4 +1,1240 @@
+# DEV10 — checkpoint validé, issu de R66
+
+Le 13 octobre 2026, Julien valide Formule pour la 2.0, confirme avoir déjà testé
+le parcours export EDM→éditeur→réexport MAP→jeu, et autorise explicitement le
+push de R66 en tant que DEV10 complète. Aucun blocage fonctionnel restant.
+Les fichiers/seeds exacts du parcours manuel ne sont pas précisés.
+
+## Périmètre livré
+
+- Finitions UI, masques et sprites utilisateur ; tooltips corrigés.
+- Relief adaptatif insulaire, Îles individuelles et Îles par équipe au prorata
+  des effectifs ; lacs intérieurs, montagnes réparties et espacement des alliés.
+- Nouveau Continental issu de la grande île, calibration terre/océan et
+  départage des directions de rivières Amélioré. Classique reste natif.
+- Audit des placements et filtres jeu/éditeur (vert/jaune), terrain seul ou
+  terrain+objets ; import/export cohérents, équipes indépendantes par défaut.
+- Préparation native des exports EDM/MAP, maximum 768 ; import SAV contextuel
+  et conversion SAV→nouvelle carte sans restaurer le setup de partie.
+- Source Custom Formule V1 : expressions bornées, exemples, erreurs locales,
+  source principale/fusions et sauvegarde du profil.
+
+## Validation
+
+Les étapes géographiques, filtres, tooltips/SAV et Formule ont été acceptées
+par Julien ; jeu fonctionnel confirmé et parcours éditeur confirmé testé.
+Qualification R66 : 1304 PASS distincts consolidés, 2 skips, aucun échec restant
+sur les contrôles exécutés ; suite générale et finitions ciblées séparées.
+Huit générations des exemples livrés et roundtrip EDM/MAP contrôlés.
+Contrôle final : 16 tests de métadonnées/packaging/maintenance PASS ; auto-test
+source PASS, 52 sprites présents et hashes protégés exacts.
+Les preuves détaillées restent dans les références du ZIP source.
+
+Seules la version du checkpoint, ses métadonnées Windows, le test correspondant
+et la documentation changent depuis R66. Aucun algorithme, asset ou preset modifié.
+
+## Reports
+
+Éditeur Formule dédié avec visualiseur et explications : hors 2.0, sans échéance.
+Stats 2 : après 2.1. Recherches binaires/runtime et seeds rares : surveillance ou
+lots futurs. Tailles >768 et Petites îles abandonnées. Archipel hors 2.0.
+Build portable, installation propre, updater et préparation de Release relèvent
+de la qualification RC/STABLE ; ils ne sont pas annoncés validés par ce push.
+
+Publication autorisée uniquement sur `dev`, sans suffixe R. Aucun tag ni Release.
+
+---
+
+## Validation utilisateur R66 — 13 octobre 2026
+
+Julien valide l'implémentation Formule pour la 2.0 après essai : elle lui semble
+fonctionner correctement. Aucun défaut signalé. Ce retour accepte cette V1 ;
+il n'atteste pas individuellement chaque scénario du protocole automatique.
+
+Une interface dédiée, inspirée de l'éditeur de masques, avec visualiseur et
+meilleures explications, est reportée hors 2.0, bien plus tard, sans échéance.
+Pas de nouvelle fonctionnalité Formule à ajouter à DEV10.
+
+Suite : bilan de clôture DEV10 et consolidation des livrables. Le parcours
+éditeur→réexport→jeu reste à documenter séparément ; les validations de R65 et
+R66 ne sont pas une attestation de ce parcours exact. Aucun push, tag ni Release.
+
+# 2.0 DEV_10_R66 — source Formule
+
+V1 approuvée : équations bornées utilisant bruits existants et coordonnées, saisie/exemples/erreurs dans source principale et fusions, sauvegarde Custom schema23. Test hydrologique hérité recadré sur Amélioré, algorithmes natifs inchangés. Qualification DEV10_R66_QUALIFICATION ; V1 validée pour la 2.0 par Julien après essai le 13 octobre 2026.
+
+## Hydrologie — décision et contrôle du 13 octobre 2026
+
+Julien demande de conserver Classique strictement natif, sans correction de son
+comportement. Seul Amélioré doit éviter le souci observé. Point clôturé sans
+modifier les algorithmes ni les tests de l’application.
+
+Profil `continental_landmass_profile()` via alias `continental_legacy_blocks_profile`,
+256, seed20260921 : les deux moteurs natifs produisent19 composantes dont1 sans
+contact eau ; Amélioré produit16 composantes, toutes reliées à l’eau, sans case
+rivière en mer ouverte (au moins5 voisins eauHEX6). Trois autres seeds
+20260920/42/2026101010 passent également dans les deux moteurs Amélioré :
+8 générations Amélioré conformes au total. Les28 tests dédiés rivières Amélioré
+et départage des ex æquo passent, ainsi que2 subtests. Hashes protégés exacts.
+
+Preuves : `hydrology_comparison.json` et `hydrology_tests.txt` dans
+`references/dev_notes/DEV10_R65_QUALIFICATION/`. Ces contrôles ciblés suffisent
+à clôturer le cas signalé ; pas une preuve universelle pour tous seeds.
+L’échec général historique applique une contrainte de connectivité au défaut
+Classique ; son périmètre doit être recadré à la prochaine maintenance des tests,
+sans altérer l’algorithme natif pour satisfaire cette assertion. Les logs des
+anciennes suites restent inchangés, pas de suite générale annoncée verte ici.
+
+## Validation utilisateur — 13 octobre 2026
+
+Julien valide le point R65 et indique : « je suis actuellement sur une partie
+générée par notre programme et tout fonctionne correctement ». Lot accepté.
+Le retour confirme la partie en cours ; il ne précise pas lesquels des quatre
+exports SAV de test ont été ouverts ni le parcours éditeur→réexport exact.
+DEV10 reste ouverte. Aucun code fonctionnel changé après validation.
+Prochain travail : vérifier le cas hydrologique hérité Classique/Continental
+et son équivalent Amélioré, avant de décider si une correction est nécessaire.
+
+# 2.0 DEV_10_R65 — SAV vers nouvelle carte (13 octobre 2026)
+
+Conversion contextuelle, civilisations/alliances conservées et refus avant écriture des IDs incertains. R64 validée par Julien ; validation Windows R65 attendue. Preuves : references/dev_notes/DEV10_R65_QUALIFICATION/.
+
+## Validation utilisateur — 13 octobre 2026
+
+Julien valide R64 : tooltips aux bons endroits et absence de faux récifs sur
+terre dans les SAV chargés. Ces deux contrôles visuels sont confirmés sous
+Windows. Aucun nouveau résultat éditeur/jeu, export ou hydrologique n'est déduit
+de ce retour. DEV10 reste ouverte ; aucun code changé après cette validation.
+
+# 2.0 DEV_10_R64 — tooltips et objets SAV
+
+Les tooltips communs utilisent le pointeur en coordonnées écran, avec repli
+au-dessus/à gauche près des bords. Le menu de départs ne s'appuie plus sur
+son origine native Windows. Positionnement à confirmer sur le poste utilisateur.
+
+Lecture SAV : objets actuels byte7 conservés ; objet original byte14 stocké
+séparément en tableau session-only en lecture seule. Ni restauration des objets
+consommés, ni écriture SAV, ni conversion d'export implicite.
+
+Interprétation commune au rendu/compteurs/focus : récifs13–16 sur eau0–7 ;
+112/113 terrestres = chantier ; 111/114 runtime inconnus. Croissance224–230,
+216–222 et souches208–214 visibles ; animations d'abattage128–207 des variantes
+0..4/6 reconnues, variante5 et trous7 restent non confirmés. Couleurs schématiques,
+pas sprites du jeu. Le catalogue statique des EDM/MAP conserve son comportement.
+
+Les graphiques décoratifs utilisent une projection dérivée séparée ; leurs
+IDs canoniques ne sont jamais réécrits dans la carte et les listes d'objets
+conservent les IDs réels. Le filtre terrain+objets ignore les marqueurs de
+chantier sur copie, conformément à l'exclusion des bâtiments.
+
+La génération, les presets et rivières ne sont pas modifiés. Export SAV→EDM/MAP
+reste un lot séparé. Les distances restent pour Stats2. Maximum768, aucun push
+ou EXE modifié. Qualification R64 :1251 tests passent,2 skips et1 échec hydrologique hérité ;
+ils ne remplacent pas une validation visuelle Windows ou un lancement de jeu.
+
+> Mise à jour du 13 octobre 2026 : Julien valide R63. Position des tooltips
+> incorrecte (loin du curseur, en haut à gauche), à corriger. Cette passe est
+> documentaire ; résultats ci-dessous conservés, aucun nouveau test en jeu revendiqué.
+
+## 2.0 DEV_10_R63 — audit des placements et tooltips
+
+Julien valide le nouveau Continental R62 le 12 octobre. Sa vignette de
+noisemap a déjà été actualisée en R62. La révision des distances est reportée
+à Stats 2, sans changement du graphique. R63 audite les cinq algorithmes de
+départ : Auto, Éloignement, Équilibré, Îles, Classique.
+
+Le libellé Îles remplace Îles — seul en FR/EN/DE/ES ; les anciennes valeurs des
+lots restent compatibles. Le message de refus de Fair/Classique sur les îles
+d'équipe recommandait à tort Équilibré : il recommande maintenant Auto,
+Éloignement ou Îles. Tooltips traduits sur le choix principal, les entrées du
+menu et le choix de chaque lot, avec explication des limites de chaque mode.
+Les couleurs de thème et la langue courante suivent l'infrastructure UI.
+
+66 cas contrôlés en Legacy/Upgraded : 58 générations complètes passent,
+8 incompatibilités sont refusées comme prévu. Tailles 256/384/768, jusqu'à 20
+joueurs ; affectations insulaires et groupes d'équipe vérifiés. 36 fichiers
+EDM/MAP exportés et réimportés : PASS. 77 tests ciblés placements/tooltips
+passent. La suite générale reste distincte de cette qualification ; les
+anomalies héritées sont consignées dans le dossier de preuves. Les sources de
+génération R62/R63 sont identiques par AST, sauf les trois textes de refus.
+Hashes protégés et vignettes inchangés. Compilation et auto-test : PASS.
+
+Référence : `references/SETTLERS3_START_ALGORITHMS_REFERENCE.md`. Preuves :
+`references/dev_notes/DEV10_R63_QUALIFICATION/`. Candidate locale R63 :
+présentation des tooltips à vérifier sous Windows ; aucun EXE ni push modifié.
+
+## 2.0 DEV_10_R62 — calibration mer du nouveau Continental
+
+Le 12 octobre, Julien accepte les rivières R61 et souhaite tester une mer
+plus proche de Classique, en conservant les petits lacs du nouveau Continental.
+La source `continental_landmass` agrandit son budget de contour avant relief
+et lacs : +0 point en 256, +3 en 384, +2,25 en 512, +1,5 en 768 ; interpolation
+linéaire entre ces tailles. Les sources Îles par équipe et Îles individuelles
+conservent leurs budgets historiques. La correction est indépendante des
+joueurs/équipes et ne force pas un quota d'eau final. La règle des lacs selon
+la surface, leurs formes et leur recul côtier restent inchangés ; leurs
+positions peuvent évoluer avec le nouveau contour. Les unités physiques de
+relief et la calibration d'amplitude restent sur leur référence R61.
+
+Comparaison Legacy des trois seeds 2026101204/2026101214/2026101224, eau 0..7
+connectée au bord par HEX6, lacs et rivières exclus (pourcentage de toute la carte) :
+
+| Taille | Classique | Continental R61 | Continental R62 |
+|---:|---:|---:|---:|
+| 256 | 46,05 % | 41,62 % | 41,62 % |
+| 384 | 33,74 % | 36,82 % | 33,90 % |
+| 512 | 26,38 % | 28,68 % | 26,40 % |
+| 768 | 18,17 % | 19,60 % | 18,11 % |
+
+Calibration expérimentale sur un petit échantillon, pas une égalité par seed.
+R61 a été mesurée dans les deux moteurs ; R62 est comparée en Legacy et
+qualifiée en génération complète dans les deux moteurs. Neuf générations
+256..768 jusqu'à 20 joueurs : tous les starts, zéro échec dur. Lacs source
+Continental contrôlés : 0/1/3/7 en 256/384/512/768. Roundtrips EDM/MAP en
+384 Legacy/Upgraded et 768 Upgraded : PASS. Cinq comparaisons Area+starts
+Classique/Îles individuelles/Îles par équipe sont bit-identiques à R61.
+L'aperçu et la génération ont des hauteurs identiques dans les contrôles
+384/512. La vignette déterministe Continental a été régénérée ; les autres
+vignettes sont identiques. Auto-test, compilation et tests ciblés : PASS.
+Fichiers natifs protégés inchangés. Preuves :
+`references/dev_notes/DEV10_R62_QUALIFICATION/`.
+
+Candidate locale R62 : validation visuelle utilisateur attendue. Suite pytest
+complète indisponible (module absent), validation Windows/éditeur/jeu non
+remplacée par ces contrôles. Maximum 768 ; aucun EXE ni push modifié.
+
+## 2.0 DEV_10_R61 — départage des directions de rivières Amélioré
+
+Les candidats de même score sont départagés par un classement déterministe
+lié au seed, à la position et à l'étape du chemin, aux embouchures et pendant
+le tracé. Un meilleur score garde sa priorité. Les filtres côtiers, les hauteurs,
+les règles de quantité et les paramètres de longueur sont conservés ; aucun
+tirage supplémentaire dans le PRNG natif. Les deux moteurs utilisent la même
+politique. Le mode de rivières Classique conserve le choix natif.
+
+Sur trois seeds Continental Upgraded 768, les premiers segments d'embouchures
+des lacs orientés sud-est passent de 26/71 (36,62 %) en R60 à 20/81 (24,69 %)
+en R61. Ce petit échantillon mesure les premiers segments, pas toutes les
+orientations du tracé ; il ne démontre pas une isotropie parfaite. Les chemins
+partent de l'eau et remontent le relief, ce qui ne représente pas directement
+un écoulement sortant du lac.
+
+Neuf générations complètes Continental/Îles par équipe/Îles individuelles,
+256 à 768, jusqu'à 20 joueurs : tous les starts présents, zéro échec dur.
+Exports et réimports EDM/MAP de deux cas vérifiés, état initial préservé.
+Trois contrôles en rivières Classique : Area et starts identiques à R60.
+Contrôles ciblés des égalités, des côtes, du relief et des quantités : PASS.
+Compilation et auto-test du paquet : PASS. Les fichiers natifs protégés sont
+inchangés. Preuves : `references/dev_notes/DEV10_R61_QUALIFICATION/`.
+
+Candidate locale à comparer visuellement. Suite pytest complète indisponible
+(module absent) ; validation Windows/éditeur/jeu attendue. Maximum 768,
+aucun EXE ni push modifié. La validation des Îles par équipe R59 reste acquise ;
+le nouveau Continental R60 et cet essai R61 restent à valider par l'utilisateur.
+
+## 2.0 DEV_10_R60 — Continental issu du moteur de la grande île
+
+Julien valide l’archétype Îles par équipe (géographie et placement R59) le
+12 octobre. Le libellé perd son tiret dans les listes concernées, en quatre
+langues, et la source du relief reçoit son aperçu déterministe (équipes 2+2).
+
+La composition « Continental » remplace « Legacy par blocs » et devient le
+profil nommé Continental. Classique reste le relief natif ; le moteur d’îles
+validé est inchangé. Une seule masse terrestre utilise sa cible physique
+continentale : 61,77 % source en 384 et 79,78 % en 768. La forme emploie la
+croissance progressive R58. Le relief continu et ses crêtes réutilisent R57,
+avec une échelle liée à la superficie (2 à 8 unités physiques, une par environ
+60 000 cases), indépendante des joueurs et des équipes. Les petits lacs suivent
+également la surface : aucun en 256, un en 384, trois en 512, sept en 768.
+
+La source renvoie un champ commun pour aperçu, génération, fusions et masques.
+Elle ne renvoie aucun contrat de départ insulaire : les départs continentaux
+restent choisis par l’algorithme sélectionné et les équipes exportées gardent
+leur sens normal. Aucun bonus de mini-marais par défaut dans le profil nommé
+Continental ; marais naturels conservés, option bonus toujours activable.
+Les miroirs natifs du continental sont conservés dans l’aperçu et la génération.
+
+La clé source est `continental_landmass`. Les profils enregistrés avec
+`legacy_blocks` / `legacy_derived` migrent vers elle ; la paire de seuils anciens
+par défaut 98/125 migre vers 140/200. Les autres seuils sont conservés après la
+migration historique de schéma. L’API `continental_legacy_blocks_profile` et la
+clé de preset historique sont conservées comme compatibilité de chargement.
+
+Six générations continentales Legacy/Upgraded en 256/384/512/768, jusqu’à 20
+joueurs, plus une génération avec les deux miroirs : tous les starts et zéro
+échec dur. Roundtrips EDM/MAP vérifiés. Tests de fusions et des quatre modes de
+miroir, de migration et d’indépendance joueurs/équipes : PASS. Classique, Îles
+individuelles et Îles par équipe gardent chacun leur Area/starts bit-identique
+au contrôle R59. Les vignettes proviennent uniquement du code source réel.
+
+Candidate locale R60 : rendu visuel interne vérifié sur les cartes générées ;
+validation utilisateur du nouveau Continental attendue. Suite pytest complète
+indisponible dans cet environnement. Maximum 768, aucun EXE ni push modifié.
+Voir `DEV_CANDIDATE_NOTES.md` et `references/dev_notes/DEV10_R60_QUALIFICATION/`.
+
+## Historique 2.0 DEV_10_R59 — Îles par équipe validées — éviter les départs alliés trop serrés
+
+Le cas fourni, Legacy 768 / 12 joueurs / seed 1241516019 / équipes 3+9, reproduit
+exactement les starts du fichier R58. P6 et P11 sont à 50 cases euclidiennes,
+soit 40 HEX. Le diagnostic R58 n’utilise aucun repli compact dans ce cas : les
+choix successifs favorables aux ressources ont laissé cette paire au minimum
+légal. Les starts P1/P3 et P5/P11 sont également proches.
+
+Après la recherche initiale, Îles — par équipe réévalue maintenant l’ensemble
+de l’équipe. La somme des déficits quadratiques d’espacement entre alliés guide
+des déplacements successifs, en commençant par les joueurs les plus serrés.
+La cible de 65 à 130 reste souple ; le minimum éditeur 50 reste inchangé. Le pool
+reste borné par l’enveloppe montagne/rivière du placement compact de référence
+(+8 sur le pire éloignement et +12 sur la somme). Chaque déplacement doit réduire
+strictement la pression totale des paires. Quatre passes maximum, arrêt sans
+amélioration ; un placement serré reste autorisé si les alternatives sont mauvaises.
+
+Sur le seed fourni : 12 starts, zéro échec dur ; distance minimale entre alliés
+50 → 137,71 cases. P6/P11 passe de 40 à 477 HEX après redistribution. Le diagnostic
+`spacing_refined_islands` expose les îles réévaluées. La géographie source R58
+reste inchangée ; les bonus et objets suivent ensuite les nouveaux départs.
+
+Le graphe devient « Distance au joueur le plus proche » (FR/EN/DE/ES), avec
+rapports texte cohérents. Aucun calcul ni valeur n’est changé : le graphe
+mesure encore max(0,distance HEX des centres − 70), sans exclure les alliés.
+Les 12 lignes de la carte fournie sont strictement identiques à R58, dont les
+zéros P6/P11. Le choix centres/bordures et alliés/adversaires est à réfléchir plus tard.
+
+Onze générations Legacy/Upgraded 384/512/768 passent avec tous leurs starts
+et zéro échec dur. Les dix masques sources comparés restent identiques à R58.
+Voir les notes candidate et `references/dev_notes/DEV10_R59_QUALIFICATION/`.
+Suite pytest indisponible ici ; validation visuelle, éditeur et jeu attendus.
+Maximum 768, export et archétype indépendant Grandes îles préservés. Le nouveau
+continental proposé reste un sujet suivant ; il n’est pas implémenté dans R59.
+
+## Historique 2.0 DEV_10_R58 — croissance progressive des contours d’Îles par équipe
+
+R57 a été validée par Julien sur les petits lacs, les montagnes réparties et les
+départs. R58 remplace la sélection brute du contour, uniquement dans la voie
+Îles — par équipe, par un front de croissance à coût positif guidé par le même
+champ de bruit et le même garde territorial. Franchir un col ne rend plus
+instantanément admissible toute une grosse dépression située derrière.
+La préférence est intégrée au calcul source, sans élargissement correctif du
+masque terminé. La finition connectée du quota exact reste celle du pipeline.
+
+Les domaines, chenaux et surfaces proportionnelles aux équipes sont conservés.
+Les contours changent pour un même seed ; relief, lacs et départs utilisent
+ensuite ces nouveaux contours. L’aperçu et la génération partagent ce chemin.
+Le signal de potentiel utilise une force de 2 et un coût de déplacement minimal
+de 0,45 case ; le graphe emploie huit directions euclidiennes, puis le masque
+retenu et les contrôles de composantes restent HEX6. SciPy est déjà une dépendance.
+
+Seed fautif 984499091, Upgraded 768, 12 joueurs en équipes 3+9 : surfaces source
+100 477 et 301 429 conservées ; l’annexe sud d’environ 5 500 cases reliée par les
+seules plages disparaît. La carte complète possède 12 départs, aucun contrôle
+dur en échec, et les roundtrips EDM/MAP conservent Area préparée et starts avec
+checksums valides. Aucune garantie universelle de largeur minimale n’est ajoutée.
+
+L’archétype indépendant Grandes îles garde sa construction historique.
+Le continental reste une piste pour la suite : réutiliser le moteur physique
+de la grosse île en séparant géographie, équipes et placement des départs,
+sans bonus de marais imposé par l’archétype. Cette piste n’est pas implémentée.
+
+Dix générations Legacy/Upgraded 384/512/768, dont 20 joueurs, passent tous les
+contrôles durs. Treize configurations de masque vérifient proportions exactes
+et chenaux ; le contrôle indépendant Grandes îles reste bit-identique à R57.
+Voir `DEV_CANDIDATE_NOTES.md` et `references/dev_notes/DEV10_R58_QUALIFICATION/`.
+Candidate locale : validation visuelle Windows et essai en jeu attendus ; suite
+pytest indisponible dans cet environnement. Maximum 768 et formats inchangés.
+
+## Historique 2.0 DEV_10_R57 — validée sur lacs, relief et départs — petits lacs, relief réparti et départs espacés
+
+« Îles — par équipe » reçoit des bassins plus petits et plus nombreux selon la
+surface réelle de chaque île : un par 60 000 cases, au maximum huit, avec une
+cible de 0,25 % de l’île par bassin, bornée de 160 à 900 cases. Les centres
+restent au-delà de la mi-profondeur depuis la côte et chaque bassin conserve
+une large bande de terre avant la mer. Les contours extérieurs et le budget
+terrestre proportionnel aux équipes restent ceux de R56.
+
+Sur les îles partagées, la montée côtière du relief utilise une échelle absolue
+plafonnée à 40 cases afin de laisser le champ continu former des montagnes
+ailleurs qu’au centre. Son niveau moyen est compensé à la source selon le
+changement moyen de progression (coefficient empirique 170). Aucun découpage
+par joueur ni montagne attribuée à un joueur ; seuils et amplitude utilisateur
+restent utilisés dans le calcul source partagé par l’aperçu et la génération.
+
+Les départs privilégient toujours montagne et rivière. Parmi les candidats à
+au plus +8 cases HEX6 du meilleur pire éloignement et +12 de la meilleure somme,
+le choix favorise un espacement souple de 65 à 130 cases selon la surface par
+joueur. La validité, l’emprise, le minimum éditeur de 50 et le repli maximin
+restent contraignants. Le résultat complet de l’équipe est comparé à un
+placement compact de référence : si le dernier joueur se retrouve trop loin
+des ressources, l’équipe conserve ce placement compact. Ce repli est indiqué
+par `resource_guard_islands`. Les distances retenues sont exposées en métadonnées.
+
+Huit configurations Legacy/Upgraded, 384/768 et 4 à 20 joueurs passent tous
+les contrôles durs avec tous les départs présents. Dans le cas Legacy 768/8,
+seed 2026101015 : 7 lacs de 900 cases source au lieu de 3 de 3 529 ; espacement
+minimal 138,84 au lieu de 50,04 ; montagnes 16,95 % de la terre au lieu de
+13,44 %. Le test 768/20 atteint 96,19 de séparation minimale. Les contours
+sources sont identiques sur les huit comparaisons. « Grandes îles » conserve
+son Area et ses starts identiques sur le contrôle indépendant.
+
+Candidate locale R57 : compilation, auto-test, tests unittest ciblés et campagne
+de générations contrôlés. Roundtrips EDM/MAP : checksum, Area préparée et starts
+conservés ; contrôle visuel interne sur un rendu de la carte réelle 384/4. Suite pytest complète indisponible ici (paquet
+absent) ; validation Windows, éditeur et en jeu encore attendue. Maximum 768,
+formats d’export et baselines protégées inchangés. Voir les notes candidate et
+`references/dev_notes/DEV10_R57_QUALIFICATION/` pour les preuves reproductibles.
+
+## Historique 2.0 DEV_10_R56 — couverture terre/eau adaptative et starts ressources
+
+- « Îles — par équipe » fait varier la cible terrestre selon le nombre d’îles :
+  la référence continentale mesurée pour une île, puis un retour progressif vers
+  56,5 % quand le nombre d’îles augmente. Les surfaces restent proportionnelles
+  aux tailles d’équipes. À 768, cibles sources : 79,78 % pour une île, 68,14 %
+  pour deux, 62,32 % pour quatre et 59,41 % pour huit.
+- « Grandes îles » garde son masque validé à 56,5 % ; l’adaptation ne concerne
+  que les groupes explicites d’« Îles — par équipe ».
+- « Grandes îles » garde aussi son ordre et son tirage de départ déterministes ;
+  seule la voie par équipe privilégie les fronts montagne/rivière.
+- Le choix des départs garde les critères de validité et l’espacement éditeur,
+  mais favorise désormais la proximité simultanée aux montagnes et rivières de
+  la même île. Les distances par joueur sont consignées en métadonnées ; les
+  distances des ressources absentes sont neutres.
+- Essais Legacy/Upgraded 384 et Legacy 768 (une équipe de 8/20, 4+4, 8 joueurs
+  indépendants, 19+1) : starts complets et aucune validation dure en échec.
+  L’aperçu 384/4 donne 91 084 cellules terrestres avec une équipe unique contre
+  85 255 avec quatre îles indépendantes. `compileall` et auto-test application
+  passent ; pytest indisponible. Vérification Windows/éditeur/jeu attendue.
+- Régression Legacy « Grandes îles » 384/4, seed `2026093003` : mêmes starts et
+  même SHA-256 Area que l’archive R55.
+- Aucun changement d’export, d’EXE ou de limite 768 ; candidate R56 locale.
+
+## Historique 2.0 DEV_10_R55 — lacs intérieurs selon la taille des îles
+
+- Remplace le quota d’un lac par quatre équipiers : environ un bassin par
+  125 000 cases de terre de l’île, maximum trois. Les petites îles n’en reçoivent
+  aucun, même si leur équipe compte huit joueurs ; les grandes îles peuvent en
+  recevoir même avec un effectif réduit.
+- Place les centres à au moins 50 % de la profondeur maximale depuis la côte et
+  garde chaque case du lac à au moins 35 %, avec une marge qui tient aussi
+  compte du rayon du bassin. L’échelle du signal suit le rayon réel de l’île.
+- Aucun changement aux reliefs montagneux, aux starts, aux autres terrains,
+  ressources, objets, export ou maximum de 768.
+- Essais Legacy 384/8, 512/8, 768/8, équipes 4+4 à 768 et groupe de 2 à 768 :
+  aucune validation dure en échec. `compileall` et `run_gui.py --self-test` PASS.
+  Pytest absent ; vérifications Windows/éditeur/jeu attendues.
+
+## Historique 2.0 DEV_10_R54 — relief continu et continental pour Îles par équipe
+
+- Supprime les zones de relief par joueur. Un champ continu couvre toute l’île
+  partagée, sans centres ni secteurs correspondant aux joueurs.
+- À partir de quatre équipiers, ajoute un signal de crêtes déformées à l’échelle
+  de l’île. L’échelle de relief plafonne à huit joueurs ; elle ne continue pas à
+  subdiviser les équipes plus grandes. Les lacs intérieurs restent indépendants
+  du relief : un par quatre équipiers, maximum trois.
+- Deux seeds Legacy 768/8 : 12,93 % et 12,47 % des terres en montagne, deux lacs,
+  huit starts valides et aucune validation dure en échec. Legacy 768/20 (19 + 1
+  indépendant) : 13,48 %, trois bassins demandés et vingt starts valides.
+- Îles individuelles 384/4, seed 2026101015 : les tableaux hauteur, terrain,
+  objets, ressources, flags et starts ont le même SHA-256 que R53 :
+  ca92fb4d8b57a25627b96aa46567ce2f824d0e440c3fe2b30fa297d87756ab51.
+- Vérification Windows, éditeur et jeu attendue. Maximum 768 ; exports et hashes
+  protégés inchangés.
+
+## Historique R53 — première répartition par régions de joueurs, remplacée par R54
+
+R53 donnait un champ indépendant à chaque région interne liée à un joueur. Les
+masses et les starts restaient valides, mais Julien a rejeté l’aspect découpé ;
+R54 supprime cette méthode.
+
+## 2.0 DEV_10_R52 — archétype Îles — par équipe
+
+- Ajoute l’archétype « Îles — par équipe » aux moteurs Legacy, Upgraded et aux
+  profils Custom. Chaque équipe positive partage une île dont la surface suit
+  son nombre de joueurs ; chaque joueur sans équipe (« − » / valeur 0) reçoit
+  sa propre île. La terre totale reste dans la cible insulaire existante.
+- Place les coéquipiers sur leur île en les espaçant selon la règle éditeur
+  existante. Le relief automatique se calibre sur la plus petite île réelle ;
+  les contrôles d’amplitude et de seuils de l’onglet Archétype restent actifs.
+- L’aperçu et le rapport des îles utilisent les équipes sélectionnées. Les
+  stratégies Classique et Équitable sont refusées pour cet archétype, car elles
+  ne garantissent pas le regroupement des coéquipiers. « ? » reste différé.
+- Contrôles de génération réels : groupes 2/2 et 2/1/1 à 384, un groupe de 4,
+  joueurs indépendants, groupes 4/2/2 à 768/8P, et 19/1 à 768/20P ; toutes les
+  validations dures passent. Les deux modes Custom Legacy/Upgraded passent aussi.
+- Aucun changement au format d’export ; limite 768 conservée. Vérification
+  Windows, éditeur et jeu à effectuer sur cette candidate.
+
+## 2.0 DEV_10_R51 — claims ignorés dans les deux filtres de départs
+
+Les deux contextes ne prennent en compte que le terrain et les objets définis par
+le contexte : « avant objets » retire les objets Area ; « carte actuelle » les
+conserve avec leurs flags d’occupation. Les claims et anciennes métadonnées de
+départs sont neutralisés sur une copie d’analyse, jamais dans la source. Wokkel.map
+produit 44 718 zones vertes et 3 266 jaunes en « avant objets », puis 8 914
+vertes et 5 812 jaunes en « carte actuelle ». SAV : la copie conserve ses objets
+runtime et ne passe pas par la préparation d’export EDM/MAP. Génération, exports
+et maximum 768 inchangés.
+
+## Historique 2.0 DEV_10_R50 — carte vide pour le filtre des départs
+
+R50 a fait ignorer les objets Area et les blocs privés 7/8/9 dans « avant objets »
+et neutralisé sur copie les claims de départ des EDM/MAP. Wokkel.map affichait
+44 718 zones vertes et 3 266 jaunes dans ce mode. Le contexte « carte actuelle »
+conservait encore les claims : R51 complète cette correction.
+
+## 2.0 DEV_10_R49 — départs sur les anciens EDM avec marchandises
+
+Le bloc natif 9 contient des piles de marchandises, pas des bâtiments ou unités.
+Sa présence seule ne désactive plus le diagnostic des départs importés.
+Les gardes des blocs 7/8 (entités privées) et des territoires occupés restent actifs.
+Les trois EDM Echappee fournis sont conservés comme fixtures de régression,
+avec PlayerInfo et marchandises : 200, 200 et 120 piles.
+Les contextes « avant objets » et « carte actuelle » sont vérifiés sur chacun.
+Les règles de placement, de génération et d’export restent celles de R48.
+Les SAV avec état de partie ne sont pas requalifiés par cette correction.
+Validation visuelle sous Windows attendue sur ces trois fichiers.
+
+## 2.0 DEV_10_R48 — départs éditeur et parité export/import
+
+R47 n’est pas validée sur ce sujet : le test utilisateur expose une catégorie
+oubliée, « éditeur accepté / position exacte jeu refusée ». Vert = admis par
+l’éditeur ; jaune = position exacte admise par le jeu, refusée par l’éditeur.
+Le survol et les badges signalent la recherche voisine possible si l’éditeur
+accepte mais le contrôle exact du jeu refuse. Ce contrôle ne prouve pas un
+refus de chargement ; l’initialisation native peut chercher une position voisine.
+Aucune garantie de destination voisine ni de lancement complet n’est donnée.
+
+Le filtre propose chaque civilisation avec « avant objets » (défaut) ou
+« carte actuelle ». Même contexte explicite sur génération et import, aucune
+dépendance au snapshot pour la vue utilisateur. Avant objets enlève les objets
+et leur bit d’occupation, conserve les autres flags et rétablit le blocage terrain.
+Les badges utilisent toujours les objets finaux, la nation et l’espacement.
+Grille préparée avec la fonction exacte du writer, sur copie, cache invalidé
+par contenu. Génération, Area originale, snapshots et exports restent inchangés.
+
+Cas réel 2026101011 / Legacy / Continental / 4P / 768 : les deux EDM ont une
+Area identique. J5 (265,404), Romain, est accepté par les deux EXE éditeurs.
+Le helper jeu exact le refuse pour le relief ; recherche native mode 0 retient
+(265,398) sur le banc neutre, arrêté avant la création de ville. Les couleurs
+R47 omettaient 12 368 cases éditeur ; la préparation export change 20 411 hauteurs
+et 308 flags par rapport à la génération, expliquant les écarts de réimportation.
+Preuves : references/dev_notes/DEV10_R48_DEPARTS_ET_EXPORT.md.
+Maximum 768 ; équipes « − » ; aucun push ni EXE. Essai Windows/jeu attendu.
+
+## Historique 2.0 DEV_10_R47 — départs valides sur terrain définitif
+
+Le filtre utilise désormais le terrain et le relief finaux. Les objets et leur
+occupation restent ceux présents au placement : les ajouts ultérieurs ne ferment
+pas les zones possibles. Le survol indique cette distinction. Les départs posés
+restent contrôlés sur la carte finale complète, avec civilisation et espacement.
+Correction des faux verts sur herbe sèche et désert apparus après la sélection.
+Classique après contenu et imports analysent leur état actuel complet.
+Vert/jaune = admissibilité locale jeu/éditeur dans le contexte indiqué ; aucune
+certification du lancement complet d’une partie. Génération et exports inchangés.
+
+Requalification directe dans les trois EXE originaux : 10 188 comparaisons exactes
+(terrains/flags sur 256 valeurs, civilisations, claims, relief, bords, emprises,
+espacement et points du seed signalé). Aucun code natif intercepté dans le helper
+jeu/nivellement ni les prédicats éditeur. 11 fixtures d’emprises reconfirmées.
+Seed 2026101010, 6 joueurs, 768, Îles individuelles / Îles — seul : aucun faux
+vert sur herbe sèche ni zone désert pour toutes les civilisations, dans les deux
+modes. Area et starts identiques à R46. Détails : docs/PLAYER_STARTS.md et
+references/dev_notes/DEV10_R47_DEPARTS_TERRAIN_FINAL.md.
+Maximum 768, équipes « − » et garde-fous internes conservés. « ? » différé.
+Aucun push ni EXE ; essai visuel Windows et lancement en jeu attendus.
+
+## 2.0 DEV_10_R46 — départs jeu/éditeur et aucune équipe
+
+« − » signifie aucune équipe ; chaque joueur concerné reste exporté dans un
+groupe natif distinct. Alliances positives inchangées. « ? » est différé au
+futur lot Îles par équipe. Le filtre conservateur disparaît de l’interface,
+ses garde-fous internes de génération sont conservés.
+Vert : admissible localement pour le jeu et l’éditeur ; jaune : admissible
+localement pour le jeu, refusé par l’éditeur. Les motifs sont disponibles au
+survol. Le raster utilise le snapshot de sélection ; les badges des départs
+posés utilisent la carte finale, la civilisation réelle et l’écartement éditeur.
+Ces diagnostics locaux ne garantissent pas le lancement complet d’un MAP.
+Aucun export bloqué ; génération et maximum 768 inchangés.
+Qualification native : 500 cas United et 500 cas éditeur standard concordants,
+11 fixtures d’emprises d’objets. Voir docs/PLAYER_STARTS.md et
+references/dev_notes/DEV10_R46_DEPARTS_JEU_EDITEUR.md.
+Validation visuelle Windows et essai en jeu restent à effectuer. Aucun push ni EXE.
+
+## 2.0 DEV_10_R45 — export natif, équipes et Îles individuelles
+
+Préparation export United complète sur copie : contexte côtes/marais (0x10),
+correction des hauteurs, finalisation (0x20). Objets, claims et ressources conservés.
+Part 3 corrigée : (équipe, contrôle), et non l’inverse. Zéro est une vraie équipe
+native ; « aucune » dans MapGen devient un groupe distinct par joueur. Les
+alliances positives sont compactées en groupes natifs contigus à partir de zéro.
+Grandes îles devient Îles individuelles, sans changer sa génération ni les clés
+persistées. Petites îles retirée des choix proposés et abandonnée. Futur archétype
+Îles par équipe : surface au prorata des joueurs, chaque joueur sans alliance
+formant son propre groupe. Aucun algorithme par équipe ajouté dans cette candidate.
+Maximum 768 conservé. Comparaison starts jeu/éditeur après essai MAP <=768 ;
+aucune catégorie jaune sans preuve. Validation Windows/jeu attendue.
+Preuves : references/dev_notes/DEV10_R45_QUALIFICATION/ et
+references/dev_notes/DEV10_R45_EXPORT_ET_EQUIPES.md. Aucun push ni EXE.
+
+## 2.0 DEV_10_R44 — maximum 768 et reprise DEV10
+
+Décision de Julien du 2026-10-10 : maximum 768×768 pour l’application.
+Tailles 832–1024 retirées de la génération, du batch et de la CLI ; imports
+supérieurs à 768 refusés avant remplacement de la session ; export MAP/EDM
+supérieur à 768 refusé, y compris par appel direct. Classique, filtres natifs
+et moteurs indépendants bornés à 768. Identité Grandes îles de R43 conservée.
+
+Le code du jeu fourni réserve une grille 768 et conserve ce pas de ligne lors
+du chargement 1024 : écrasement des données joueurs, erreur reproduite à
++FD0B6. Une nation corrompue observée conduit à l’adresse de la capture.
+Julien confirme également qu’une 1024 créée dans United échoue. Investigation
+mise de côté à sa demande ; aucun EXE modifié. Les tailles intermédiaires
+n’ont pas toutes été essayées individuellement.
+
+Prochains lots : préparation native complète des côtes/marais à l’export,
+puis « aucune équipe », puis comparaison des validités jeu/éditeur des starts.
+Ne pas annoncer « valide en jeu » ni ajouter une catégorie jaune avant essai.
+L’export EDM ne sera pas bloqué pour un départ refusé par l’éditeur.
+Voir docs/MAP_EXPORT.md et dev_notes/DEV10_MAXIMUM_768_20261010.md.
+Aucun push ni EXE ; DEV10 reste ouverte.
+
+## 2.0 DEV_10_R41 — 2026-10-09 — marais bonus et civilisations
+
+## 2.0 DEV_10_R43 — Classique étendu et identité Grandes îles
+
+Classique accepte désormais les tailles 832, 896, 960 et 1024, avec les mêmes
+règles de sélection et garde de carte neuve. Les filtres natifs couvrent aussi
+ces tailles. Legacy + Équilibré conserve l’archétype final : l’aperçu de sélection
+ne remplace plus Grandes îles par Continental dans les métadonnées/export.
+Retour R42 : crash 1024 c0000005 à s3_united.exe+0xFD0B6. Cause non établie,
+MAP exact requis ; ne pas annoncer ce crash corrigé. La capture est disponible.
+Équipes toujours reportées. Aucun push ni EXE ; DEV10 reste ouverte.
+
+
+## 2.0 DEV_10_R42 — export MAP/EDM conforme à United
+
+Correction native des hauteurs appliquée à une copie au moment de l’export,
+version 11 pour Amazones/marchandises étendues, padding natif et miniature
+RGB555 actualisée. Dimensions 832–1024 conservées. Voir docs/MAP_EXPORT.md.
+Les équipes restent inchangées et seront le prochain lot. Les sprites R41
+sont confirmés impeccables par Julien. TEST_01 est jouable selon son retour ;
+les exports exacts R42 restent à tester dans le jeu et l’éditeur United.
+Aucun push ni EXE ; DEV10 reste ouverte.
+
+
+R41 : marais bonus uniquement pour Chinois et civilisation libre (255), sur la
+masse terrestre du joueur, avec distances et garde-fous existants. Les slots
+retenus des cartes partielles gardent leur civilisation. Diagnostics des bonus
+manquants et validations par île adaptés. Quatre sprites civils originaux dans
+le filtre Départs valides et les sélecteurs Joueurs, menus thémés.
+R40 validée pour les départs : 2780/2780 sur 240 cartes ; relief conservé.
+Cas 512/15/4156456048 confirmé : bonus J8 sur île voisine dans R40, corrigé ici.
+Validation Windows/éditeur/jeu attendue ; aucun push ni EXE.
+Voir docs/PLAYER_STARTS.md et DEV_CANDIDATE_NOTES.md.
+
+## 2.0 DEV_10_R40 — 2026-10-09 — relief et tailles des îles
+
+- Qualification étendue : 240 cartes, tous les 2780 départs placés ; un défaut de marais Classique/par île conservé au TODO.
+
+R40 : amplitude du relief réduite directement à la source des petites Grandes îles,
+selon la surface par joueur ; amplitude et seuils effectifs visibles dans Archétype,
+avec adaptation automatique et réglages manuels. Les grandes îles restent à 100 %.
+Graphique Taille des îles et statistiques des masses terrestres (continent unique inclus).
+Nouveaux cadenas et drapeau vert originaux ; comptage des pierres globales conservé
+lors des bonus tardifs Équilibrés. Validation Windows/éditeur/jeu attendue ; aucun push ni EXE.
+Voir docs/ISLAND_RELIEF.md et DEV_CANDIDATE_NOTES.md.
+
+## 2.0 DEV_10_R39 — 2026-10-09 — diagnostic des départs
+
+R39 : le diagnostic conserve l’état exact au moment de la sélection des départs.
+Équilibré avant objets, Classique après objets ; autres placeurs à leur appel réel.
+Les cartes importées sans cet historique sont explicitement analysées à l’état actuel.
+Filtres MapGen et natifs : refus terrain/bord, occupation/accessibilité, nivellement
+séparés ; comptes successifs globaux et par île. Label commun « Filtre ».
+Aucune modification du relief, des positions, des ressources ou de l’export.
+Validation Windows/éditeur/jeu attendue ; aucun push ni EXE.
+
+## 2.0 DEV_10_R38 — 2026-10-08
+
+- Équilibré avant objets ; score limité aux cinq minerais accessibles.
+- Carte conservée pour placements Îles/Éloignement incomplets.
+- Vue Départs valides : critères MapGen/natifs, civilisations et survol.
+- EDM de test explicite : joueurs incomplets ou aucun joueur ; MAP protégé.
+- Globe et cadenas 16×16 originaux de Julien.
+- Relief insulaire et sélection Classique inchangés ; validation Windows attendue.
+
 # Changelog
+
+## 2.0 DEV_10_R37 — 2026-10-08
+
+- Équilibré : recherche complète à la distance souhaitée avant de comparer
+  les ressources ; relâchement progressif quand les recherches ne placent pas tous les joueurs.
+- Essai du pool admissible complet avant relâchement ; amélioration des
+  ressources d’une solution de secours sans rapprocher les départs.
+- Seed 2026100817, Continental 512/4p : minimum 65→141 en Legacy,
+  68→148 en Amélioré ; quatre départs valides conservés.
+- Un test ajouté pour cette seed dans les deux moteurs.
+- Validité, terrain, bonus, autres algorithmes et interface inchangés.
+- Qualification : references/dev_notes/DEV10_R37_QUALIFICATION.json.
+- Validation Windows/éditeur/jeu à effectuer ; aucun push.
+
+
+## 2.0 DEV_10_R36 — 2026-10-08
+
+- Équilibré : pénalité souple de proximité adaptée à la terre accessible et
+  au nombre de joueurs ; score de ressources inchangé.
+- Cible souhaitée non obligatoire : préserver tous les joueurs si la place
+  impose des départs plus proches. Minimum de validité et secours inchangés.
+- Rapport : distance souhaitée et séparation minimale obtenue.
+- Deux tests ciblés ajoutés ; qualification dev_notes/DEV10_R36_QUALIFICATION.json.
+- Classique, Îles, Éloignement, terrain et interface inchangés.
+- Validation Windows/éditeur/jeu à effectuer ; aucun push.
+
+
+## 2.0 DEV_10_R35 — 2026-10-08
+
+- Huit sprites de vues, trois filtres, blé actif et raisin conservé ; PNG inchangés.
+- Icône fournie 16×16 pour fenêtre et application, sans redimensionnement.
+- Équilibré dans Départs, batch et CLI (`fair`), distinct d’Éloignement (`balanced`).
+- Sélection sur contenu global avant bonus : terre utilisable et accès terrestre
+  aux montagnes, charbon et fer ; préférences sans seuil de rejet de qualité.
+- Carte conservée et signalée si départs incomplets ; export incomplet bloqué.
+- Classique, Îles — seul, géographie et montagnes conservés.
+- Quatre tests ciblés ; détails et limites dans docs/PLAYER_STARTS.md.
+
+
+## 2.0 DEV_10_R34 — civilisations communes et couleurs des joueurs
+
+- Choix des quatre civilisations et Choisir disponible dans tous les algorithmes.
+- Entrées transmises au cache, batch et CLI, puis exportées dans MAP et EDM.
+- Carrés de couleur de 10 px devant les noms, palette existante J1–J20.
+- Slots inactifs barrés/désactivés et configuration des vingt slots conservés.
+- Algorithmes et reliefs inchangés ; contrôles conservateurs communs hors Classique.
+- Choix des couleurs reporté à 2.1 ou après ; icône R33 conservée telle quelle.
+
+## 2.0 DEV_10_R33 — fenêtre joueurs compacte et icône
+
+- Deux listes de dix joueurs, colonnes Joueur / Civilisation / Équipe.
+- Équipe numérique courte sur la même ligne, rappel commun « 0 : aucune ».
+- Noms des slots inutilisés barrés ; sélecteurs désactivés uniquement pour ces slots.
+- Hors Classique, civilisation libre affichée comme texte normal pour les joueurs actifs.
+- Icône fournie intégrée au runtime et à la configuration du build Windows.
+- Aucune modification des algorithmes, paramètres d’équipes ou formats.
+
+## 2.0 DEV_10_R32 — équipes et libellés
+
+- Choisir en français ; labels joueurs simples, sélecteurs inutilisés grisés.
+- Îles — seul ; futur Îles — par équipe noté au TODO.
+- Départs → Joueurs… : équipe 0 à 20 par joueur, pour tous les algorithmes.
+- Équipes conservées au cache/batch/CLI et exportées dans MAP et EDM.
+- Setup corrigé : type Choisir et équipes configurées, plus de valeurs cycliques.
+- Aucun changement des positions, règles de validité ou relief insulaire.
+
+## 2.0 DEV_10_R31 — Choose et slots inactifs
+
+- Option Choose (255) vérifiée dans les deux éditeurs et conservée à l’export.
+- Slots inutilisés grisés et identifiés ; configuration conservée pour leur réactivation.
+- Validité pour les quatre civilisations sur Choose, filtre supplémentaire documenté.
+- Nations fixes R30 et génération insulaire R28 conservées.
+- Correction documentaire : les Asiatiques acceptent la boue, pas les marais.
+- Trois cas fonctionnels ajoutés ; outils de recherche exclus du programme.
+
+## 2.0 DEV_10_R30 — départs Classique
+
+- Retrait complet du repli de relief R29 ; Grandes îles restauré à R28.
+- Classique actif dans le menu principal, batch et CLI ; nations explicites
+  exportées, placement après contenu global et bonus MapGen de départ désactivés.
+- Sélection native et effets successifs de ville : mêmes positions et PRNG
+  que le .exe sur neuf scénarios de référence, dont l’échec à un million d’essais.
+- Carte conservée si le Classique désactive un slot ; export incomplet explicite.
+- 13 cas de régression fonctionnels, aucun outil de recherche ajouté au programme.
+- Validation Windows/éditeur/jeu ouverte ; souci des starts insulaires reporté.
+
+## 2.0 DEV_10_R28 — recherche des départs insulaires
+
+- Suppression de l’échantillonnage ; toutes les positions admissibles conservées.
+- Marge de carte et dégagement devenus préférences ; contrôles obligatoires inchangés.
+- Recherche avec retour sur les choix précédents en cas de conflit de séparation.
+- Erreurs précises : terrain/occupation, relief ou combinaison de séparation impossible.
+- Quatre tests fonctionnels ajoutés ; aucun port de recherche inactif.
+- Le cas Grandes îles 384/8p/seed 42 reste refusé par le relief ; aucune parité Classique revendiquée.
+- Rejet global encore présent, aucune validation Windows/éditeur/jeu ni push.
+
+
+## 2.0 DEV_10_R27 — messages d’erreur
+
+- Fenêtre thémée commune pour erreurs, avertissements et informations applicatives.
+- Copier le message complet avec version, contexte et traceback, même replié.
+- Résumé par opération, conseils pour accès/fichier/paramètres, cause originale conservée.
+- Fenêtre non bloquante unique : répétitions comptées, messages distincts sélectionnables.
+- Échecs de lots regroupés après exécution ; erreurs de callbacks également visibles.
+- TODO : envisager un onglet Départs automatiques/manuels ; position actuelle provisoire.
+- Aucun changement des règles de placement ni du rejet des générations.
+
+## 2.0 DEV_10_R26 — correction de l’interface
+
+R26 : correction du Générateur masqué par ses cadres de lignes ; contrôle de
+la fenêtre Tk réelle ajouté. R25 refusée côté interface par Julien. Départs :
+sélecteur en haut entre Archétype et Miroir, absence rapportée non reproduite.
+À revoir ensuite : ne pas rejeter toute la génération faute de départ trouvé.
+Voir DEV_CANDIDATE_NOTES.md.
+
+## 2.0 DEV_10_R25 — candidate locale
+
+- Départs principal, batch, cache et CLI raccordés ; un joueur par île conservé.
+- Filtre actif de nivellement des domaines neufs 31×31, quatre profils de nation.
+- Candidats incompatibles écartés sans modifier le relief ; refus si insuffisants.
+- 144 contrôles natifs sur 36 starts de cinq MAP acceptés, avant création des villes.
+- 384 appels natifs de qualification du masque ; aucune dépendance de recherche.
+- Source reconstruite depuis R23 et le préfixe intact de R24 tronquée.
+- Classique exact reste ouvert ; aucun push ni validation Windows/jeu revendiquée.
+
+## 2.0 DEV_10_R24 — candidate locale
+
+- Menu Départs : Automatique/Éloignement/Îles, moteur/cache/batch/CLI raccordés.
+- Contrat un joueur par île et comportements R20 conservés.
+- Nivellement/runtime non raccordés : essai provisoire retiré après refus de
+  profils existants ; Classique exact reste indisponible.
+- Placeurs continentaux mutualisés ; modules de recherche non raccordés,
+  outils/fixtures et 171 tests associés retirés. Trois tests fonctionnels ajoutés.
+- Comparaison détaillée des deux éditeurs avec le jeu : docs/PLAYER_STARTS.md.
+- Aucun push ni validation Windows/éditeur/jeu revendiquée.
+
+## Candidate locale 2.0 DEV_10_R23 — territoire et hauteurs des départs natifs
+
+Poursuite autorisée après R22. Territoire/claims/frontières portés et isolés :
+32 scénarios EXE exacts, 82 617 appels auxiliaires contrôlés, les quatre champs
+exacts des 19 999 enregistrements d’influence. Application des hauteurs portée :
+1 000 descripteurs et 32 copies/rafraîchissements natifs exacts.
+1 153 tests PASS (813,66 s) ; 177 ciblés et 16 contrôles maintenance PASS.
+Placeur actif R20 conservé ; construction/occupation/contexte/acteurs à finir
+avant raccordement Classique exact et îles. Pas de parité complète revendiquée.
+Référence : references/history/DEPARTS_NATIFS_TERRITOIRE_R23_20261006.md.
+DEV10 ouverte, aucun push ; aucun nouvel essai visuel demandé pour ce lot.
+
+## Candidate locale 2.0 DEV_10_R22 — sélection des départs natifs
+
+Poursuite autorisée par Julien après R21. Sélection 0x5074B0 portée, isolée :
+62 scénarios exacts (appels, slots, PRNG), 1 000 distances et 1 536 tirages exacts ;
+quatre épuisements réels d’un million de tentatives exacts.
+19 999 offsets ordonnés exacts contre l’initialiseur du jeu. Validité/ville
+remplacées par callbacks contrôlés dans ces essais ; pas de parité complète.
+Placeur actif R20 conservé. Raccordement runtime/ville, Classique et îles à suivre.
+Suite : 1 095 réussis ; un attendu de version R21 corrigé, puis 130 tests PASS.
+Référence : references/history/DEPARTS_NATIFS_SELECTION_R22_20261006.md.
+DEV10 ouverte, aucun push ; aucun nouvel essai visuel demandé pour ce lot.
+
+## Candidate locale 2.0 DEV_10_R21 — noyau des départs natifs
+
+Retour Julien : rien de visible signalé dans R20, essais difficiles ; poursuite
+explicitement autorisée. Pas de validation complète Windows/jeu déduite.
+Noyau isolé : nivellement normal 0x4DA440, filtre 0x4D99E0 et richesse 0x5081A0.
+1 000 comparaisons directes EXE : valeur et buffers 31×31 exacts ; 359 essais
+sur les seuils de richesse exacts. Objets/flags/claim runtime fournis explicitement,
+sans conversion supposée depuis Area. Le placeur actif reste celui de R20.
+Tests : 1 027 réussis (574,50 s), dont 45 du noyau ; 16 contrôles maintenance réussis.
+Aucune nouvelle commande UI, aucun changement de carte ou bonus dans ce lot.
+Classique complet à raccorder après port sélection/PRNG/contexte/initialisation ;
+variante îles obligatoire avec un départ par île. DEV10 ouverte, aucun push.
+Référence : references/history/DEPARTS_NATIFS_NOYAU_R21_20261006.md ; qualification :
+references/dev_notes/DEV10_R21_QUALIFICATION.json.
+
+
+## Candidate locale 2.0 DEV_10_R20 — validité des départs
+
+Autorisation du 2026-10-06 : correction terrain/objets et resets groupés.
+Les placeurs continentaux filtrent désormais occupation/accessibilité, empreinte
+normale et 70 offsets du contrôle éditeur. Grandes îles conserve un départ par
+île et le même filtre ; séparation minimale 50 en coordonnées euclidiennes.
+Les cellules utiles des tours sont protégées lors de la reprise des terrains
+non archétypaux et des objets Legacy ; aucune peinture forcée d'herbe.
+Contrôle final des départs : échec explicite en cas d'incompatibilité, sans
+suppression silencieuse d'objets ni déplacement qui désynchroniserait les bonus.
+Resets individuels : source/bruit/type de masque conservés ; dessin manuel
+conservé avec remise à zéro des paramètres. Piles et reset global inchangés.
+Les moteurs de terrain sans bonus et les assets protégés restent inchangés.
+
+Exigence ferme : futur algorithme **Classique exactement identique au jeu**,
+avec sous-algorithme pour les îles. Le placeur provisoire R20 n'est pas ce
+Classique. Test de nivellement 0x4DA440 et sélection native complète à porter
+et qualifier avant de déclarer la parité des départs. Aucun nouveau sélecteur
+ni stratégie d'équilibrage livré ici. Risque : manque de candidats admissibles
+sur une carte très dense ; échec explicite, pas de relâchement de sécurité.
+DEV10 reste ouverte, aucun push. Validation Windows/éditeur/jeu attendue.
+Audit : references/history/CONDITIONS_PLACEMENT_DEPARTS_20261006.md.
+Qualification : references/dev_notes/DEV10_R20_QUALIFICATION.json.
+
+
+## Candidate locale 2.0 DEV_10_R19 — catalogue allégé
+
+R18 appréciée par Julien : « excellentes modifications ». Ajustements du catalogue
+et du gap Copier seed/Importer autorisés le 2026-10-06, repris dans R19.
+Catalogue : ligne unique Nom · Taille (Variable pour les modèles), sans retour
+à la ligne ; noms longs tronqués selon la police, nom complet en infobulle.
+Charger une copie et poubelle 24 × 24 sur la même rangée pour les fichiers custom,
+avec 4 px d’écart. Suppression toujours confirmée, infobulle traduite et thémée.
+Les messages des fichiers invalides restent visibles sur une ligne séparée.
+Sprites originaux et reflow mesuré R18 conservés ; aucune relecture au resize.
+Copier seed/Importer : gap de 7 à 4 px, identique aux autres boutons voisins.
+Qualification : references/dev_notes/DEV10_R19_QUALIFICATION.json.
+DEV10 ouverte ; aucun push ni EXE, génération/données natives inchangées.
+R19 validée par Julien le 2026-10-06 ; étape 4 limitée à l’éditeur/catalogue clôturée. Aucun nouveau test ajouté.
+974 tests PASS (856.51 s) ; Tk quatre langues/deux thèmes, compilation et packaging PASS.
+Molette validée ; resets valides mais doivent conserver le bruit sélectionné (DEV10).
+Exports/EDM/MAP et erreurs avec bouton Copier : chantier dédié DEV11 ou DEV12.
+Ouverture 832–1024 validée globalement dans l’éditeur modifié Settlers United ; réexport vers le jeu non fonctionnel.
+Future MAJ pixel art distincte du lot éditeur/catalogue et des dessins récents.
+
+## Candidate locale 2.0 DEV_10_R18 — sprites et agencement adaptatif
+
+R17 appréciée avec corrections demandées : réduction des sprites refusée et
+agencement/repositionnement encore trop espacés. R18 reprend ces points.
+Sprites originaux 24 × 24 conservés, y compris avec texte ; aucun redimensionnement.
+Éditeur : annuler/rétablir, transformations et importer/exporter/catalogue
+partagent padx 2/pady 1 ; boutons à padding (5,0,5,1), hauteur Tk mesurée 31 px.
+Catalogue : libellés/actions regroupés à côté de la vignette, fiches compactes ;
+colonnes calculées avec la largeur requise des fiches, sans seuil fixe ni plafond.
+En français : fiche + marges 259 px, deux colonnes à 560 px, trois à 800 px.
+En-tête, Session et barre Vue : demandes Tk et marges réelles remplacent les
+seuils fixes ; en-tête recalculé après sa propre allocation, langues prises en compte.
+À largeur minimale, les commandes globales passent sur une rangée supplémentaire.
+Générateur/bonus : rangées indépendantes pour éviter les colonnes partagées qui
+créaient des espaces ; réserve supplémentaire de 32 px supprimée, viewport mesuré.
+Disposition automatique des previews et ses seuils de lisibilité conservés.
+F11 55/45, infobulles et disponibilité PNG de R17 conservés.
+DEV10 ouverte ; aucun push ni EXE. Génération et données natives inchangées.
+Qualification : references/dev_notes/DEV10_R18_QUALIFICATION.json.
+Validation visuelle Windows R18 attendue. Aucun nouveau test ajouté.
+974 tests vérifiés : 918 PASS en suite complète ; 56 erreurs de simulateur corrigées, 57 tests concernés PASS en relance.
+Compilation et contrôles de packaging PASS ; aucun changement applicatif après lancement de la suite.
+
+## Candidate locale 2.0 DEV_10_R17 — calibration et catalogue compact
+
+R16 jugée « pas trop mal » par Julien ; ajustements demandés repris dans R17.
+Boutons à icône seule : enveloppe commune 30 × 31 px mesurée (dé +1 px),
+sprite 24 × 24 et marges minimales ; soleil/lune 20 × 20 avec compensation.
+Images accompagnées de texte : affichage 16 × 16, cache par taille, PNG originaux
+inchangés ; hauteur identique aux boutons textuels (33 px dans le banc Tk).
+Les dimensions finales des boutons textuels suivent la police et l’échelle Tk/OS.
+Infobulles traduites pour dé (principal/lot), thème (action suivante/raccourci)
+et suppression des slots A/B ; autres actions compactes conservées.
+Annuler/rétablir : mêmes colonnes, padx 2/pady 1 que les transformations.
+Catalogue : modèles « Variable », fichiers utilisateur avec taille réelle ;
+actions à 8 px des libellés, sans colonne centrale extensible, grille conservée.
+F11 : vue 55 % / onglets 45 %, maximisation et ancrage supérieur conservés.
+Enregistrer l’aperçu PNG désactivé au démarrage, activé au chargement comme Exporter.
+DEV10 ouverte ; aucun push ni EXE. Génération et données natives inchangées.
+Qualification : references/dev_notes/DEV10_R17_QUALIFICATION.json.
+Suite complète : 974 tests PASS (1016.70 s), aucun nouveau test.
+Tk réel quatre langues/deux thèmes, mesures et actions du lot PASS.
+Compilation, intégrité et self-test après extraction PASS.
+Validation visuelle Windows R17 attendue.
+
+
+## Candidate locale 2.0 DEV_10_R16 — agencement et sprites partagés
+
+R15 acceptée par Julien avec ajustements d’agencement demandés, repris dans R16.
+Annuler/rétablir espacés ; importer/exporter côte à côte, catalogue en dessous.
+Catalogue : actions alignées et séparées, grille adaptative de 1 à 4 colonnes.
+Le redimensionnement réutilise les fiches et images ; aucun PNG relu à cette occasion.
+Éditeur/catalogue : fenêtres redimensionnables avec agrandissement natif disponible.
+Sprites réutilisés dans les actions compactes (infobulles localisées), l’historique
+et les dialogues d’export ; cinq dessins de minerais dans le filtre thermique.
+Nouveau dessin original Recentrer la carte intégré : 33 PNG, 54 sprites/frames.
+F11 configurable : maximise le programme et rétablit les deux séparateurs
+(position naturelle sous les contrôles, proportion vue/onglets 3:2).
+F11 ne modifie ni le zoom ni la position de la carte ; Ctrl+R recentre la carte.
+Un déplacement manuel reprend la main sur le séparateur horizontal.
+DEV10 reste ouverte ; aucun push ni EXE. Génération et données natives inchangées.
+Qualification : references/dev_notes/DEV10_R16_QUALIFICATION.json.
+Suite complète : 974 tests PASS (557.10 s), un nouveau scénario F11.
+Tk réel : quatre langues/deux thèmes, catalogue peuplé, historique/exports PASS.
+Compilation, intégrité des sprites/génération et self-test après extraction PASS.
+Validation visuelle Windows R16 attendue.
+
+
+## Candidate locale 2.0 DEV_10_R15 — lot complet de sprites
+
+R14 validée par Julien le 2026-10-05, avec inversion des deux miroirs signalée.
+R15 corrige leur action selon les dessins : miroir horizontal inverse haut/bas,
+miroir vertical inverse gauche/droite. Les actions restent annulables.
+Les deux lots du 2026-10-06 couvrent les 24 sprites de l’éditeur/catalogue.
+Les 13 existants sont remplacés par les dernières copies : seule la gomme change ;
+les 12 autres sont identiques. Onze nouveaux dessins, PNG originaux conservés.
+Icône + libellé sur les actions restantes, catalogue et dialogues thémés.
+Fermer est également accessible dans le catalogue ; comportements conservés.
+32 PNG au registre commun (53 sprites/frames). Aucun sprite du lot ne manque.
+Suite complète : 973 tests PASS (545.88 s), aucun nouveau test.
+Tk réel : boutons/catalogue/dialogues/sauvegarde, miroirs/undo, quatre langues
+et deux thèmes PASS. Éditeur 686 px de haut sur écran 1366×768.
+32 ressources, PNG originaux, génération inchangée, compilation et self-test PASS.
+R15 acceptée avec remarques UI, traitées dans R16.
+DEV10 reste ouverte, aucun push ni EXE ; génération et données natives inchangées.
+
+
+## Candidate locale 2.0 DEV_10_R14 — deuxième lot d’icônes
+
+R13 validée explicitement par Julien le 2026-10-05.
+R14 intègre huit nouveaux PNG originaux 24×24 : annuler/rétablir, inverser les
+gris, miroirs horizontal/vertical, rotations gauche/droite et remplissage.
+Icônes + texte, cache partagé et thèmes/langues conservés. Remplissage par clic
+de la zone contiguë de gris identique (4 voisins), avec le gris choisi.
+Un clic = une action annulable ; cliquer sur le même gris ne crée pas d’historique.
+Le clic droit reste la gomme ; rayon/bord doux ne changent pas le remplissage.
+Rotations ±90° sans interpolation, annulables. Vingt-et-un PNG au registre.
+Deux nouveaux scénarios automatisés pour frontières/historique et taille 512.
+Génération et données natives inchangées ; DEV10 ouverte, aucun push ni EXE.
+Suite complète : 973 tests PASS (564.66 s), deux nouveaux scénarios.
+Tk réel : remplissage/historique/rotations, quatre langues/deux thèmes PASS.
+Écran 1366×768 : éditeur 665 px de haut ; 21 sprites et self-test PASS.
+55 fichiers de génération et 13 PNG précédents identiques à R13.
+Compilation, maintenance documentaire et hashes protégés PASS.
+R14 validée par Julien ; miroirs inversés signalés, corrigés dans R15. Suite des dessins par petits lots.
+
+
+## v2.0 DEV_10_R13 — premier lot d’icônes et rangement
+
+R12 : vignettes jugées très bien par Julien ; calcul hors ligne confirmé.
+R13 intègre le premier lot dessiné par Julien : pinceau, gomme, pipette, rond,
+carré. Les cinq PNG RGBA 24×24 sont copiés à l’identique, sans redessin.
+Icône et libellé dans les menus et la sélection ; comportements de dessin,
+événements, langues et thèmes conservés. Images réutilisées entre éditeurs.
+Les sprites fournis sont regroupés sous assets/sprites par usage : éditeur,
+minerais, marqueurs de joueurs et interface. Treize PNG (34 sprites/frames),
+chargeur commun, registre, provenance/hashes et packaging source/Windows adaptés.
+Les huit PNG précédents sont déplacés byte pour byte. Le self-test contrôle
+les treize ressources. Vignettes procédurales et captures restent distinctes.
+Suite complète : 971 tests PASS (578.37 s), deux nouveaux scénarios.
+Tk réel : outils/formes, quatre langues/deux thèmes et photos partagées PASS.
+Treize ressources, huit anciens PNG exacts et génération inchangée : PASS.
+Compilation/self-test/protected hashes PASS.
+Guide : docs/SPRITES.md ; qualification : references/dev_notes/DEV10_R13_QUALIFICATION.json.
+R13 validée explicitement par Julien le 2026-10-05 ; DEV10 ouverte, aucun push ni EXE.
+
+
+## v2.0 DEV_10_R12 — vignettes des sources
+
+R11 validée et fonctionnelle selon Julien le 2026-10-05.
+R12 ajoute vingt vignettes fixes pour les bruits et compositions dans le choix
+de source principale et les six fusions. PNG 64×64 affichés en 24×24 ;
+échantillons réels, seed/réglages constants, sans fusions ni masques.
+Ce sont des repères de sélection ; les aperçus de travail restent dynamiques.
+Images partagées entre sélecteurs, réutilisées après changement de langue ;
+aucune génération au démarrage ou à l’ouverture des menus. Menus thémés,
+état désactivé et navigation clavier conservés ; sélection inchangée sans action.
+Provenance et hashes : data/source_thumbnails/manifest.json ; reconstruction
+hors interface : tools/generate_source_thumbnails.py. Aucune règle native modifiée.
+Suite complète : 969 tests PASS (599.00 s), deux nouveaux scénarios.
+Tk réel : sept sélecteurs, quatre langues, deux thèmes, menus sans recalcul PASS.
+55 fichiers de génération identiques à R11 ; compilation/self-test/hashes PASS.
+Qualification : references/dev_notes/DEV10_R12_QUALIFICATION.json.
+Validation Windows R12 attendue ; DEV10 ouverte, aucun push ni EXE.
+
+
+## v2.0 DEV_10_R11 — masquage exact et vues persistantes
+
+R10 validée par Julien le 2026-10-05. R11 ajoute le lot autorisé :
+Masquer, permissions exactes noir=0/blanc=100%, gris proportionnel, force
+0–100% initialisée à 100% lors du choix et inversion conservée dans le profil.
+Les permissions se cumulent ; sur une fusion elles bornent sa contribution,
+et ne remplacent pas le champ par zéro avant Mélanger/Minimum/etc.
+Les modulations existantes gardent leur ordre ; aucune ne réactive une zone
+bloquée par une permission sur la même cible. Une fusion suivante peut agir
+sur une source masquée ; cible Résultat pour masquer la composition entière.
+Vues libres, fixées en haut (défaut), à droite ou automatiques ; préférence
+persistante. Zone de réglages indépendante du panneau fixe ; auto selon la
+largeur/hauteur réelle de l’onglet, avec hystérésis. Changer le placement ou
+la taille redessine les champs en cache sans relancer la génération ni
+reconstruire les réglages. Clic sur une vue : agrandissement thémé du dernier
+champ calculé, statistiques et légende macro accessibles.
+Vignettes 24×24 dans le menu de masques et sur la sélection ; formes calculées
+une fois, dessins copiés dans le profil, PNG invalides exclus, caches bornés.
+Vignettes fixes des bruits/compositions : lot suivant distinct, pas implémentées.
+Six nouveaux scénarios ; suite complète : 967 tests PASS (588.60 s).
+Tk réel PASS : défilement fixe, placements sans régénération, masques et caches.
+Parité exacte R10/R11 sur quatre previews 384 ; deux cartes complètes masquées
+Legacy/Amélioré et exports EDM/MAP (checksums) PASS. Compilation/self-test PASS.
+Détails : references/dev_notes/DEV10_R11_QUALIFICATION.json.
+R11 validée et fonctionnelle selon Julien le 2026-10-05.
+DEV10 reste ouverte ; aucune publication Git ni construction EXE.
+
+
+## v2.0 DEV_10_R10 — cibles des masques et dialogues centrés
+
+R9 validée par Julien le 2026-10-05. R10 implémente l’étape 3 autorisée :
+chaque masque cible Défaut (résultat), Source principale ou Fusion 1–6.
+Source : avant les fusions ; fusion : sur son propre bruit avant mélange ;
+résultat : après toutes les fusions. Les profils anciens gardent Défaut.
+Plusieurs masques sur une cible suivent l’ordre de la liste. Les miniatures
+source/fusion affichent leur masque ; une cible absente/désactivée est signalée
+et sans effet, sans redirection. Le masque suit sa fusion réordonnée ; sa
+suppression conserve une cible supprimée à réaffecter explicitement.
+Les dialogues thémés sont centrés sur leur parent, après calcul de leur taille,
+et bornés à l’écran. Aucun changement de générateur/format binaire demandé.
+Cinq nouveaux scénarios fonctionnels. Suite complète : 961 tests PASS (557,36 s).
+Tk réel PASS : cibles, édition, déplacement/suppression et dialogues centrés.
+Parité exacte R9/R10 : quatre previews 384 avec/sans masques résultat ; deux
+cartes complètes ciblées passent leurs contrôles obligatoires. Compilation,
+hashes protégés, auto-test extrait, CRC/parité archive PASS. Qualification :
+references/dev_notes/DEV10_R10_QUALIFICATION.json. Fonctionnement R10 confirmé par Julien le 2026-10-05.
+DEV10 reste ouverte ; candidate source locale, aucun push ni build EXE.
+Suite du lot masques : bilan des sprites existants et des dessins/taille à fournir
+avec Julien, après validation de l’étape 3 ; réorganisation non faite ici.
+Les menus « suite » restent centrés sur la branche actuelle.
+
+
+## v2.0 DEV_10_R9 — éditeur et sélection directe des masques
+
+R8 : fonctionnement confirmé par Julien, avec remarques UI reprises dans R9.
+R9 : fenêtres et confirmations de masques sous une infrastructure commune de
+thèmes sémantiques, y compris changement de thème sur les fenêtres ouvertes.
+Les sélecteurs de fichiers natifs restent régis par le système. Nouveau masque
+est déplacé dans le catalogue : nouveau document vide, confirmation des dessins
+modifiés, nom et historique remis à zéro ; Effacer tout reste une édition annulable.
+Fermer / Enregistrer dans mes masques / Appliquer au profil sur une ligne.
+Éditeur redimensionnable, dessin carré centré, coordonnées adaptées sans changer
+la résolution, rafraîchissements regroupés au prochain idle. Contour du pinceau
+rond/carré et nom/états PNG et profil visibles séparément.
+Mes masques est directement accessible dans le sélecteur de la couche : PNG
+carrés valides, vérifiés progressivement ; invalides/rectangles restent au
+catalogue avec diagnostic/cadrage. Actualisation à chaque ouverture du menu et
+relecture du fichier choisi ; cache partagé borné. Grille, résolution et nom sont
+copiés dans le profil, sans dépendance au fichier après sélection.
+Étape 3 différée. Réorganisation des sprites lors du prochain ajout fourni par
+Julien, avec inventaire des fichiers et dessins effectués par le code ; pas maintenant.
+Préférence de collaboration : proposer spontanément des améliorations pertinentes,
+en distinguant le lot actuel des idées pour plus tard.
+18 tests ciblés PASS (1,44 s), deux nouveaux scénarios seulement ; compilation PASS.
+Essais Tk réels sous Linux PASS : redimensionnement/dessin, boîte de nom et sauvegarde,
+restauration du focus/grab, catalogue, exclusion PNG invalide et rectangle,
+démarrage MainWindow et propagation clair/sombre sur l’éditeur ouvert.
+956 scénarios vérifiés : suite complète (946 PASS), puis reprise des dix contrôles
+UI/docs corrigés (10 PASS). Aucun échec restant. Auto-test de ressources PASS.
+R9 validée par Julien le 2026-10-05 : tout fonctionne bien. Réserve mineure :
+le dialogue de confirmation de sortie apparaît en haut à gauche de l’écran.
+À corriger dans la prochaine révision : centrer les dialogues de l’éditeur sur
+leur fenêtre parente, après calcul de leur taille, en restant dans l’écran utile.
+Aucun code modifié pour cette prise de notes ; aucun push.
+
+
+## v2.0 DEV_10_R8 — commandes de dessin et sauvegarde visible
+
+R7 validée par Julien le 2026-10-04 : « c’est parfait, tout semble bien fonctionner ».
+Retour complémentaire : l’étape 2 doit être enrichie avec un curseur de sélection
+et des commandes de dessin ; ne pas passer à l’étape 3 dans cette candidate.
+R8 ajoute un curseur de gris, un dégradé cliquable et une pastille de la valeur
+choisie ; curseurs rayon/bord doux synchronisés aux champs, y compris la pipette.
+Choix rond/carré, chacun dur ou doux. Nouveau masque remet une copie à zéro et
+vide son nom, avec undo possible ; aucune application automatique au profil.
+La sauvegarde existait en R7 : son bouton est désormais visible en bas près
+ d’Appliquer au profil. Un nouveau nom enregistre un nouveau PNG utilisateur.
+Boutons groupés sur deux colonnes pour limiter la hauteur de la fenêtre.
+22 ciblés PASS (1,66 s), dont deux nouveaux tests, traces Tcl réelles et fichiers PNG.
+Compilation PASS. Suite complète : 954 tests PASS (546.00 s). Archive : CRC, parité source et auto-test extrait PASS. Fonctionnement R8 confirmé par Julien ; remarques UI traitées dans R9.
+Toute la génération et les données exactes R7. Aucun push, DEV10 reste ouverte.
+Étape 3 ciblage/source dessinée différée. Étape 4 éventuelle : icônes dessinées
+et fournies par Julien pour apporter de la couleur, sans asset généré par IA.
+Qualification : references/dev_notes/DEV10_R8_QUALIFICATION.json.
+
+## v2.0 DEV_10_R7 — catalogue et éditeur de masques
+
+R6 validée et fonctionnelle selon Julien le 2026-10-04. R7 implémente les étapes
+1 et 2 du brainstorm approuvé : dossier masks dans les données utilisateur,
+catalogue avec miniatures, ouverture du dossier/actualisation, ajout/suppression
+et protection des modèles fournis. PNG externe reconnu sur son contenu réel ;
+fichier illisible, animé ou excessif écarté individuellement avec un motif.
+Couleur convertie en gris, transparence sur noir, masque uniforme utilisable.
+Rectangle : choix explicite entre marges noires, recadrage central et étirement.
+Éditeur : gris 0–255, rayon, bord dur/doux, gomme, pipette, undo/redo par trait,
+inversion, miroirs et rotation. Résolutions 64/128/256/512, profil portable à sa
+résolution ; cache du catalogue borné, miniatures ajoutées au prochain cycle idle.
+Appliquer au profil, enregistrer dans mes masques et exporter sont distincts.
+Six comparaisons de calcul 64 × 64 exactes R6 ; moteurs/données natives inchangés.
+159 ciblés profils/masques PASS (90,98 s) ; 21 ciblés UI/architecture PASS (1,48 s).
+Huit nouveaux tests au total. Compilation PASS. Suite complète : 952 tests PASS (544.24 s). Archive : CRC, parité source et auto-test extrait PASS.
+R7 validée par Julien le 2026-10-04 ; aucun push, DEV10 reste ouverte.
+Étape 3 proposée par Julien : cibler source principale/fusion ou utiliser le dessin
+comme source de relief autonome. À cadrer après validation R7, non implémentée.
+Qualification : references/dev_notes/DEV10_R7_QUALIFICATION.json.
+
+## v2.0 DEV_10_R6 — langue du rapport Statistiques
+
+R5 acceptable pour le moment selon Julien le 2026-10-04 : « on va dire qu’on est bon
+pour le moment ». Aucun détail de scénarios Windows fourni ; DEV10 reste ouverte.
+R6 corrige le rapport resté dans l’ancienne langue sans régénération. Le callback
+existait mais Tk ignorait ses écritures dans le champ Text désactivé. L’écriture
+est maintenant temporairement autorisée, puis l’état lecture seule et le défilement
+sont restaurés. Carte, widget et statistiques en cache conservés.
+L’audit statique précédent avait conclu à tort que cette traduction fonctionnait.
+Un seul nouveau test reproduit ce défaut avant correction, puis vérifie EN/DE/ES/FR.
+75 ciblés PASS (1,56 s). Suite complète : 944 tests PASS (684.70 s). Archive : CRC, parité source et auto-test extrait PASS.
+R6 validée et fonctionnelle selon Julien le 2026-10-04 ; aucun push de candidate.
+Refonte complète Statistiques : mise à jour dédiée après 2.1, contenu enrichi,
+organisation et visuels plus jolis et interactifs ; version précise non décidée.
+Qualification : references/dev_notes/DEV10_R6_QUALIFICATION.json.
+
+## v2.0 DEV_10_R5 — 2026-10-04 — démarrage R4 corrigé
+
+- Corrige la boucle idle du layout d’un onglet masqué : une barre déjà griddée
+  n’est plus reprogrammée indéfiniment parce qu’elle n’est pas visible à l’écran.
+- Reproduit la boucle R4 avant correction, puis vérifie sa terminaison, y compris
+  retrait/retour des barres. BAT et correctifs de séparateurs/délais R4 conservés.
+- 193 ciblés PASS, deux scénarios nouveaux ; compilation PASS.
+  Suite complète : 943 tests PASS (729.71 s). Archive : CRC, parité source et auto-test extrait PASS. Démarrage Windows à confirmer ; aucun push.
+
+## v2.0 DEV_10_R4 — 2026-10-04 — séparateurs internes
+
+- Supprime les limites fixes et le ratio de hauteur du séparateur supérieur ;
+  inputs suivis à leur hauteur réelle, ou position manuelle en pixels, réductible à zéro.
+- Retire les délais visuels fixes 24/100 ms lors des redimensionnements internes ;
+  actualise au prochain cycle idle sans relancer de temporisateur à chaque mouvement.
+- Garde les images Tk vivantes jusqu’à leur remplacement effectif dans les canvas.
+- 220 ciblés PASS, cinq nouveaux scénarios ; compilation PASS.
+  Suite complète : 941 tests PASS (684.16 s). Archive : CRC, parité source et auto-test extrait PASS. Rendu Windows à confirmer, aucun push.
+- Note le bruit Custom via équations : faisabilité/intérêt à évaluer fin DEV10,
+  programmation à décider alors ; aucune implémentation engagée.
+
+## v2.0 DEV_10_R3 — 2026-10-04 — mises à jour UI
+
+- Charge les modes et resets Générateur en place, dépendances rafraîchies
+  après chargement complet ; sortie de champ inchangé sans passage en Custom.
+- Évite les recalculs de relief pour les modifications Générateur seules.
+- Retire callbacks et travaux de redimensionnement devenus obsolètes ; ne
+  réapplique pas les dispositions inchangées. Restaure le dernier aperçu après
+  les reconstructions de langue, qui restent autorisées.
+- 179 ciblés PASS, dont 57 cas UI dans les quatre langues. Compilation PASS.
+  Suite complète : 936 tests PASS (745.40 s). Archive : CRC, parité source et auto-test extrait PASS. Génération et ressources exactes R2.
+- Validation visuelle Windows à venir ; aucun push, DEV10 reste ouverte.
+
+## v2.0 DEV_10_R2 — 2026-10-04 — gemmes et soufre bonus
+
+- Ajoute deux familles optionnelles au bonus de zones minérales, avec leurs
+  sprites, activation, surface et quantité moyenne ; traductions existantes FR/EN/DE/ES.
+- Étend Égal/Prorata/Par minerai et les calculs de surface aux cinq familles ;
+  maximum total dynamique 4 100 cases pour cinq familles actives, 820 par cœur.
+- Gemmes et soufre restent désactivés par défaut et dans les anciens profils.
+  Sauvegarde, digest/cache, édition en place et reset Bonus raccordés.
+- Réutilise le placement et les deux transitions rocheuses existants, ainsi
+  que les protections des tours et le forçage commun R1 ; bonus hors quotas globaux.
+- 191 ciblés PASS, douze poses et quatre cartes identiques à R1 avec nouveautés OFF.
+  Quatre cartes avec cinq minerais/deux joueurs et huit exports MAP/EDM PASS.
+- Archive R2 : CRC, parité source et auto-test extrait PASS.
+- Suite complète : 879 tests PASS (545.70 s). Hashes protégés PASS. R2 validée par Julien le 2026-10-04 ; aucun push.
+
+- Décision du 2026-10-04 : nombre de zones par minerai déprogrammé
+  indéfiniment par Julien, reprise sur demande explicite uniquement.
+
+## v2.0 DEV_10_R1 — 2026-10-04 — premier lot court
+
+- Rend configurable l’extension maximale des centres des cinq bonus :
+  2–512 HEX au-delà de la cible, 34 par défaut. La bande D±2 reste conservée,
+  puis les couronnes sont essayées dans leur ordre habituel. Forçage OFF inchangé.
+- Raccorde le réglage aux routes Legacy et Upgraded, profils sauvegardés,
+  cache et reset Bonus ; le champ est désactivé lorsque le forçage est OFF.
+- Complète les aides minérales/bonus FR/EN/DE/ES et corrige l’occupation :
+  pourcentage du support montagneux compatible, hors bonus de départ.
+- Qualification : 851 tests PASS, quatre cartes par défaut exactes DEV9 ;
+  détails dans docs/DEV_10_PROGRESS.md.
+- R1 validée par Julien le 2026-10-04 ; DEV10 avance par petits lots, pas de push.
+
 
 ## v2.0 DEV_9 — 2026-10-04 — Grandes îles validée
 
@@ -2936,7 +4172,7 @@ et documentés ; les ajouts statistiques sont reportés à Stats V2.
   le benchmark 768 descend encore vers 13–16 s, sans modifier la règle de
   transitions ni le masque océanique principal.
 - Consigne l'audit du point 4 dans
-  `references/SETTLERS3_LEGACY_PIPELINE_AUDIT_v1.md` : les garde-fous
+  `references/history/SETTLERS3_LEGACY_PIPELINE_AUDIT_v1.md` : les garde-fous
   Eau→Shore→terrain et les chaînes HEX6 sont confirmés, tandis que Shore48,
   les quotas/supports Legacy, les rivières, les décorations et la proximité
   économique des starts restent les écarts prioritaires. L'ordre start-first

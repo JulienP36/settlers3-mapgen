@@ -20,3 +20,6 @@ For long-term binary checkpoint storage, prefer Git LFS or GitHub Releases rathe
 
 DEV9 candidate map examples (`examples/dev9_r*/`) stay local and in recovery
 ZIPs; validated source/tests/fixtures and public notes are pushed.
+
+Generated start-placement examples (`examples/r*_starts/`) also remain local
+and in recovery ZIPs. Tests and their required compact fixtures remain public.

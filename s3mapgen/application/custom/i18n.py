@@ -126,10 +126,10 @@ _ARCHETYPE_DESCRIPTIONS = {
         "es": "Macrotopología: una masa terrestre principal con océano periférico.",
     },
     "large_islands": {
-        "fr": "Macro-topologie : plusieurs grandes masses insulaires.",
-        "en": "Macro-topology: several large island landmasses.",
-        "de": "Makrotopologie: mehrere große Inselmassen.",
-        "es": "Macrotopología: varias grandes masas insulares.",
+        "fr": "Macro-topologie : une île par joueur.",
+        "en": "Macro-topology: one island per player.",
+        "de": "Makrotopologie: eine Insel pro Spieler.",
+        "es": "Macrotopología: una isla por jugador.",
     },
     "small_islands": {
         "fr": "Macro-topologie : nombreuses petites masses insulaires.",
@@ -201,16 +201,16 @@ _CUSTOM_SECTION_TEXT = {
         "fr": "Source du relief", "en": "Relief source", "de": "Reliefquelle", "es": "Fuente del relieve",
     },
     "archetype_relief_source_hint": {
-        "fr": "Legacy natif conserve son relief d’origine. Legacy par blocs construit un continent, des chaînes montagneuses et des bassins intérieurs, puis utilise le raffinement, la sculpture et la relaxation natifs. Les sources noise-map complètes restent des générateurs indépendants.",
-        "en": "Native Legacy keeps its original relief. Legacy blocks builds a continent, mountain belts and inland basins, then uses native refinement, sculpture and relaxation. Complete noise-map sources remain independent generators.",
-        "de": "Native Legacy behält sein ursprüngliches Relief. Legacy-Blöcke erzeugt einen Kontinent, Gebirgsketten und Binnenbecken und verwendet anschließend native Verfeinerung, Modellierung und Glättung. Vollständige Noise-Map-Quellen bleiben unabhängige Generatoren.",
-        "es": "Legacy nativo conserva su relieve original. Legacy por bloques crea un continente, cordilleras y cuencas interiores y luego usa el refinamiento, modelado y suavizado nativos. Las fuentes de noise map completas siguen siendo generadores independientes.",
+        "fr": "Classique conserve le relief natif. Continental construit une grande masse terrestre, avec des montagnes réparties et de petits lacs selon sa surface. Les compositions partagent les contrôles de fusions et de masques.",
+        "en": "Classic retains native relief. Continental builds one landmass with distributed mountains and small lakes based on its area. Compositions share fusion and mask controls.",
+        "de": "Klassisch behält das native Relief. Kontinental erzeugt eine Landmasse mit verteilten Bergen und kleinen Seen nach ihrer Fläche. Kompositionen teilen Mischungs- und Maskenregler.",
+        "es": "Clásico conserva el relieve nativo. Continental crea una masa terrestre con montañas distribuidas y pequeños lagos según su superficie. Las composiciones comparten controles de fusiones y máscaras.",
     },
     "archetype_relief_source_native": {
         "fr": "Legacy natif", "en": "Native Legacy", "de": "Native Legacy", "es": "Legacy nativo",
     },
     "archetype_relief_source_custom_legacy": {
-        "fr": "Legacy par blocs", "en": "Legacy blocks", "de": "Legacy-Blöcke", "es": "Legacy por bloques",
+        "fr": "Continental", "en": "Continental", "de": "Kontinental", "es": "Continental",
     },
     "archetype_relief_source_fractal": {
         "fr": "fBm fractal", "en": "Fractal fBm", "de": "Fraktales fBm", "es": "fBm fractal",
@@ -1234,10 +1234,10 @@ _CUSTOM_SECTION_TEXT = {
         "es": "Modo personalizado: la superficie de cada mineral está activa; superficie total y radios están desactivados.",
     },
     "start_bonus_rocky_limits": {
-        "fr": "Rayon 1–16 HEX6 · cœur 1–820 cases · total dynamique jusqu’à 2 460 · moyenne 1–15.",
-        "en": "Radius 1–16 HEX6 · core 1–820 cells · dynamic total up to 2,460 · average 1–15.",
-        "de": "Radius 1–16 HEX6 · Kern 1–820 Zellen · dynamische Summe bis 2.460 · Mittel 1–15.",
-        "es": "Radio 1–16 HEX6 · núcleo 1–820 casillas · total dinámico hasta 2.460 · media 1–15.",
+        "fr": "Rayon 1–16 HEX6 · cœur 1–820 cases · total dynamique jusqu’à 4 100 · moyenne 1–15.",
+        "en": "Radius 1–16 HEX6 · core 1–820 cells · dynamic total up to 4,100 · average 1–15.",
+        "de": "Radius 1–16 HEX6 · Kern 1–820 Zellen · dynamische Summe bis 4.100 · Mittel 1–15.",
+        "es": "Radio 1–16 HEX6 · núcleo 1–820 casillas · total dinámico hasta 4.100 · media 1–15.",
     },
     "start_bonus_rocky_surface_family": {
         "fr": "Surface cœur — {value}",
@@ -1350,6 +1350,73 @@ _CUSTOM_SECTION_TEXT = {
         "de": "Radius ab der Gebietsgrenze zur Prüfung von nativem Wasser; 0 deaktiviert die Prüfung. Zwei Ufer und ein legaler Fluss sind nötig; vorhandenes Wasser bleibt geschützt.",
         "es": "Radio desde el borde del territorio para comprobar agua nativa; 0 desactiva este control. Se requieren dos orillas y un río legal; el agua existente queda protegida.",
     },
+    "start_bonus_center_extension": {
+        "fr": "Extension maximale au-delà de la cible",
+        "en": "Maximum extension beyond target",
+        "de": "Maximale Erweiterung über das Ziel",
+        "es": "Extensión máxima más allá del objetivo",
+    },
+    "start_bonus_center_extension_hint": {
+        "fr": "Limite commune aux cinq bonus, en hexagones au-delà de la distance cible du centre. 34 par défaut. La bande normale de ±2 reste conservée ; ce réglage agit seulement si la recherche étendue est activée.",
+        "en": "Shared limit for all five bonuses, in hexagons beyond the target centre distance. Default: 34. The normal ±2 band is preserved; this setting applies only when extended search is enabled.",
+        "de": "Gemeinsame Grenze für alle fünf Boni, in Hexfeldern über den Zielabstand der Mitte hinaus. Standard: 34. Der normale Bereich von ±2 bleibt erhalten; gilt nur bei aktivierter Sucherweiterung.",
+        "es": "Límite común a los cinco bonos, en hexágonos más allá de la distancia objetivo del centro. Valor predeterminado: 34. Se conserva la banda normal de ±2; solo actúa con la búsqueda ampliada activada.",
+    },
+    "mineral_shares_hint": {
+        "fr": "Part de ce minerai parmi les cases minéralisées. Les parts sont normalisées si leur total diffère de 100 % ; 0 désactive cette famille.",
+        "en": "Share of this mineral among mineral-bearing cells. Shares are normalized if their sum differs from 100%; 0 disables this family.",
+        "de": "Anteil dieses Minerals an mineralhaltigen Zellen. Anteile werden bei einer Summe ungleich 100 % normalisiert; 0 deaktiviert diese Familie.",
+        "es": "Parte de este mineral entre las casillas mineralizadas. Las partes se normalizan si el total difiere del 100 %; 0 desactiva esta familia.",
+    },
+    "start_bonus_adults_hint": {
+        "fr": "Arbres adultes demandés par joueur, en plus du quota global. La surface de la forêt est déduite du nombre d’arbres et de leur espacement.",
+        "en": "Adult trees requested per player, added to the global quota. Forest area is derived from tree count and spacing.",
+        "de": "Gewünschte ausgewachsene Bäume je Spieler, zusätzlich zum globalen Kontingent. Die Waldfläche ergibt sich aus Anzahl und Abstand.",
+        "es": "Árboles adultos solicitados por jugador, además del cupo global. La superficie del bosque se calcula según su número y separación.",
+    },
+    "start_bonus_saplings_hint": {
+        "fr": "Pousses demandées par joueur dans la forêt bonus, en plus des arbres adultes et du quota global.",
+        "en": "Saplings requested per player in the bonus forest, in addition to adult trees and the global quota.",
+        "de": "Gewünschte Setzlinge je Spieler im Bonuswald, zusätzlich zu ausgewachsenen Bäumen und dem globalen Kontingent.",
+        "es": "Retoños solicitados por jugador en el bosque de bono, además de los árboles adultos y del cupo global.",
+    },
+    "start_bonus_anchors_hint": {
+        "fr": "Nombre de pierres de construction demandé par joueur. Chaque pierre conserve son emprise et son espacement ; la surface du groupe est calculée automatiquement.",
+        "en": "Building stones requested per player. Each stone retains its footprint and spacing; group area is calculated automatically.",
+        "de": "Gewünschte Bausteine je Spieler. Jeder Stein behält seine Grundfläche und seinen Abstand; die Gruppenfläche wird automatisch berechnet.",
+        "es": "Piedras de construcción solicitadas por jugador. Cada piedra conserva su huella y separación; la superficie del grupo se calcula automáticamente.",
+    },
+    "start_bonus_stone_quantity_hint": {
+        "fr": "Stock moyen par pierre, de 1 à 12. Le stock bonus total visé par joueur est le nombre de pierres multiplié par cette moyenne.",
+        "en": "Average stock per stone, from 1 to 12. Target total bonus stock per player is stone count multiplied by this average.",
+        "de": "Durchschnittlicher Vorrat je Stein, von 1 bis 12. Der Zielvorrat je Spieler ist die Steinanzahl mal diesem Durchschnitt.",
+        "es": "Reserva media por piedra, de 1 a 12. La reserva total objetivo por jugador es el número de piedras multiplicado por esta media.",
+    },
+    "start_bonus_swamp_radius_hint": {
+        "fr": "Uniquement pour les Chinois et les joueurs à civilisation libre, sur leur propre masse terrestre. Rayon du mini-marais en hexagones. La forme native peut varier ; la forme hexagonale suit ce rayon exactement.",
+        "en": "Only for Chinese and free-choice players, on their own land mass. Mini-swamp radius in hexagons. The native shape may vary; the hexagonal shape follows this radius exactly.",
+        "de": "Nur für Asiaten und freie Volkswahl, auf ihrer eigenen Landmasse. Radius des Minisumpfs in Hexfeldern. Die native Form kann variieren; die sechseckige Form folgt genau diesem Radius.",
+        "es": "Solo para asiáticos y jugadores de elección libre, en su propia masa terrestre. Radio del minipantano en hexágonos. La forma nativa puede variar; la forma hexagonal sigue exactamente este radio.",
+    },
+    "start_bonus_rocky_radius_hint": {
+        "fr": "En mode Égal, rayon commun du cœur minéralisé de chaque minerai actif. Les transitions rocheuses s’ajoutent autour du cœur.",
+        "en": "In Equal mode, common mineral-core radius for each active mineral. Rocky transitions are added around the core.",
+        "de": "Im Modus Gleich: gemeinsamer Radius des mineralisierten Kerns jeder aktiven Familie. Felsübergänge kommen außen hinzu.",
+        "es": "En modo Igual, radio común del núcleo mineralizado de cada mineral activo. Las transiciones rocosas se añaden alrededor.",
+    },
+    "start_bonus_core_hint": {
+        "fr": "Cases du cœur minéralisé, sans les transitions. Modifiables en mode Par minerai ; calculées dans les deux autres modes.",
+        "en": "Mineral-core cells, excluding transitions. Editable in Per mineral mode; calculated in the other two modes.",
+        "de": "Zellen des mineralisierten Kerns, ohne Übergänge. Im Modus Je Mineral editierbar, in den anderen Modi berechnet.",
+        "es": "Casillas del núcleo mineralizado, sin transiciones. Editables en modo Por mineral; calculadas en los otros dos modos.",
+    },
+    "start_bonus_lake_radius_hint": {
+        "fr": "Bornes du rayon du lac en hexagones, hors rives. Un rayon est choisi dans cet intervalle ; le terrain disponible peut limiter la pose.",
+        "en": "Lake radius bounds in hexagons, excluding shores. A radius is chosen within this range; available terrain may limit placement.",
+        "de": "Grenzen des Seeradius in Hexfeldern, ohne Ufer. Ein Radius wird in diesem Bereich gewählt; das Gelände kann die Platzierung begrenzen.",
+        "es": "Límites del radio del lago en hexágonos, sin orillas. Se elige un radio en este intervalo; el terreno disponible puede limitar la colocación.",
+    },
+
 }
 
 
@@ -1380,3 +1447,13 @@ __all__ = (
     "parameter_group",
     "parameter_label",
 )
+
+
+# Island-source amplitude is resolved before native relaxation and shared by previews.
+_CUSTOM_SECTION_TEXT.update({
+    "archetype_island_amplitude": {"fr": "Amplitude du relief", "en": "Relief amplitude", "de": "Reliefamplitude", "es": "Amplitud del relieve"},
+    "archetype_island_auto": {"fr": "Adapter l’amplitude à la taille des îles", "en": "Adapt amplitude to island size", "de": "Amplitude an Inselgröße anpassen", "es": "Adaptar amplitud al tamaño de las islas"},
+    "archetype_island_thresholds_auto": {"fr": "Adapter les seuils montagne et neige", "en": "Adapt mountain and snow thresholds", "de": "Gebirgs- und Schneeschwellen anpassen", "es": "Adaptar umbrales de montaña y nieve"},
+    "archetype_island_effective": {"fr": "Effectif : amplitude {amplitude} % · montagne {mountain} · neige {snow}", "en": "Effective: amplitude {amplitude}% · mountain {mountain} · snow {snow}", "de": "Effektiv: Amplitude {amplitude} % · Gebirge {mountain} · Schnee {snow}", "es": "Efectivo: amplitud {amplitude} % · montaña {mountain} · nieve {snow}"},
+    "archetype_island_amplitude_hint": {"fr": "100 % conserve le relief d’origine. L’adaptation réduit le relief des petites îles selon la taille de carte et le nombre de joueurs. Désactivez-la pour choisir 25 à 100 %. Les seuils automatiques suivent la calibration de la source ; désactivez leur adaptation pour les régler librement. L’aperçu utilise les mêmes valeurs que la génération.", "en": "100% preserves the original relief. Adaptation lowers small islands using map size and player count. Disable it to choose 25–100%. Automatic thresholds follow source calibration; disable threshold adaptation to edit them freely. Preview and generation use the same values.", "de": "100 % erhält das ursprüngliche Relief. Kleine Inseln werden nach Kartengröße und Spielerzahl abgesenkt. Ohne Anpassung sind 25–100 % wählbar. Automatische Schwellen folgen der Quellenkalibrierung; deaktivieren zum freien Einstellen. Vorschau und Generierung verwenden dieselben Werte.", "es": "100 % conserva el relieve original. La adaptación reduce las islas pequeñas según tamaño y jugadores. Desactívela para elegir 25–100 %. Los umbrales automáticos siguen la calibración; desactive su adaptación para editarlos. Vista previa y generación usan los mismos valores."},
+})

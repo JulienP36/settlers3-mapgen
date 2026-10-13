@@ -6,8 +6,10 @@ application cache, rendering options, feedback, history and comparison APIs.
 
 from __future__ import annotations
 import random
+from ..ui.messages import make_report, show_message, show_report
 import tkinter as tk
-from tkinter import messagebox, ttk
+from ..ui.i18n.starts import START_LABELS, START_LABEL_ALIASES
+from tkinter import ttk
 from PIL import Image, ImageTk
 from ...generation.archetypes import ARCHETYPES, ARCHETYPE_ORDER
 from ...generation.core import native_size_warning_kind
@@ -28,6 +30,8 @@ class BatchController:
 
     @staticmethod
     def _batch_label_key(value,label_tables,fallback):
+        if label_tables is START_LABELS and value in START_LABEL_ALIASES:
+            return START_LABEL_ALIASES[value]
         for labels in label_tables.values():
             for key,label in labels.items():
                 if label==value:return key
@@ -56,7 +60,7 @@ class BatchController:
         self._batch_randomize_button.pack(side='left',padx=(0,12))
         self._batch_common_seed_var=tk.StringVar(value=str(self._default_batch_seed()))
         self._batch_common_seed_entry=ttk.Entry(header,textvariable=self._batch_common_seed_var,width=13);self._batch_common_seed_entry.pack(side='left')
-        self._batch_common_seed_random=ttk.Button(header,image=self._seed_dice_icon,padding=0,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0))
+        self._batch_common_seed_random=ttk.Button(header,image=self._seed_dice_icon,padding=(0,0,0,1),width=0,command=self._batch_randomize_common_seed);self._batch_common_seed_random.pack(side='left',padx=(4,0));self._bind_action_tooltip(self._batch_common_seed_random,self._seed_tooltip_text)
         self._batch_apply_seed_button=ttk.Button(header,text=bt['apply_seed'],command=self._batch_apply_seed_all);self._batch_apply_seed_button.pack(side='left',padx=(4,0))
         self._batch_i18n['hint_label']=ttk.Label(header,text=BATCH_HINTS.get(lang,BATCH_HINTS['en']));self._batch_i18n['hint_label'].pack(side='right')
 
@@ -78,8 +82,11 @@ class BatchController:
             row['mode']=ttk.Combobox(box,textvariable=row['mode_var'],values=[MODE_LABELS[lang][k] for k in MODE_ORDER],state='readonly',width=19);row['mode'].pack();input_widgets.append((row['mode'],'readonly'))
             box=group('archetype');row['arch_var']=tk.StringVar(value=ARCHETYPE_LABELS[lang][current_arch])
             row['arch']=ttk.Combobox(box,textvariable=row['arch_var'],values=[ARCHETYPE_LABELS[lang][k] for k in ARCHETYPE_ORDER],state='readonly',width=17);row['arch'].pack();input_widgets.append((row['arch'],'readonly'))
-            box=group('modifiers');row['modifier_var']=tk.StringVar(value=bt['none'])
-            row['modifier']=ttk.Combobox(box,textvariable=row['modifier_var'],values=[bt['none']],state='disabled',width=13);row['modifier'].pack();input_widgets.append((row['modifier'],'disabled'))
+            box=group('starts');row['start_var']=tk.StringVar(value=START_LABELS[lang][self._start_algorithm_key()])
+            row['start']=ttk.Combobox(box,textvariable=row['start_var'],values=[START_LABELS[lang][k] for k in ('auto','balanced','fair','islands','classic')],state='readonly',width=23);row['start'].pack();input_widgets.append((row['start'],'readonly'))
+            start_help = lambda r=row: self._start_tooltip_text(self._batch_label_key(r['start_var'].get(), START_LABELS, 'auto'))
+            self._bind_action_tooltip(row['start'], start_help)
+            row['start'].bind('<<ComboboxSelected>>', lambda e, r=row, text=start_help: self._show_ui_tooltip(r['start'], text()), add='+')
             box=group('mirror');row['mirror_var']=tk.StringVar(value=MIRROR_LABELS[lang][current_mirror])
             mirror_width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2)
             row['mirror']=ttk.Combobox(box,textvariable=row['mirror_var'],values=list(MIRROR_LABELS[lang].values()),state='readonly',width=mirror_width);row['mirror'].pack();input_widgets.append((row['mirror'],'readonly'))
@@ -89,7 +96,7 @@ class BatchController:
             row['players']=ttk.Spinbox(box,from_=2,to=NATIVE_LIMITS.get(int(current_size),20),textvariable=row['players_var'],width=7);row['players'].pack();input_widgets.append((row['players'],'normal'))
             box=group('seed');row['seed_var']=tk.StringVar(value=str(first_seed))
             seed_line=ttk.Frame(box);seed_line.pack(fill='x');row['seed']=ttk.Entry(seed_line,textvariable=row['seed_var'],width=14);row['seed'].pack(side='left');input_widgets.append((row['seed'],'normal'))
-            row['random']=ttk.Button(seed_line,image=self._seed_dice_icon,padding=0,command=lambda r=row:self._batch_randomize_row(r));row['random'].pack(side='left',padx=(4,0));input_widgets.append((row['random'],'normal'))
+            row['random']=ttk.Button(seed_line,image=self._seed_dice_icon,padding=(0,0,0,1),width=0,command=lambda r=row:self._batch_randomize_row(r));row['random'].pack(side='left',padx=(4,0));self._bind_action_tooltip(row['random'],self._seed_tooltip_text);input_widgets.append((row['random'],'normal'))
             row['size'].bind('<<ComboboxSelected>>',lambda e,r=row:self._batch_row_size_changed(r))
 
             mini_bg=getattr(self,'_ui_theme_colors',{}).get('panel','#292a2d')
@@ -131,7 +138,7 @@ class BatchController:
         value=self._batch_common_seed_var.get().strip()
         try:int(value)
         except (TypeError,ValueError):
-            messagebox.showerror(self._batch_text('invalid_title'),self._batch_text('invalid_seed'),parent=self._batch_window);return
+            show_message(self._batch_window, 'input', title=self._batch_text('invalid_title'), message=self._batch_text('invalid_seed'));return
         for row in self._batch_rows:row['seed_var'].set(value)
 
     def _batch_randomize_common_seed(self):
@@ -341,7 +348,8 @@ class BatchController:
                 for key,label in row['group_labels'].items():label.configure(text=bt[key])
                 row['mode'].configure(values=[MODE_LABELS[lang][key] for key in MODE_ORDER]);row['mode_var'].set(MODE_LABELS[lang][mode])
                 row['arch'].configure(values=[ARCHETYPE_LABELS[lang][key] for key in ARCHETYPE_ORDER]);row['arch_var'].set(ARCHETYPE_LABELS[lang][arch])
-                row['modifier'].configure(values=[bt['none']],state='disabled');row['modifier_var'].set(bt['none'])
+                algorithm=self._batch_label_key(row['start_var'].get(),START_LABELS,'auto')
+                row['start'].configure(values=[START_LABELS[lang][key] for key in ('auto','balanced','fair','islands','classic')]);row['start_var'].set(START_LABELS[lang][algorithm])
                 if row.get('mirror') is not None:
                     row['mirror'].configure(values=list(MIRROR_LABELS[lang].values()),width=max(8,max((len(str(value)) for value in MIRROR_LABELS[lang].values()),default=0)+2));row['mirror_var'].set(MIRROR_LABELS[lang][mirror])
                 row['show'].configure(text=bt['show']);row['set_a'].configure(text=bt['set_a']);row['set_b'].configure(text=bt['set_b'])
@@ -419,7 +427,7 @@ class BatchController:
             config = self._custom_config_for_generation(mode, archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self, '_custom_config', None) if mode == 'custom' else None)
             digest = config.digest if config is not None else ''
             revision=cache_engine_revision(mode, archetype, digest)
-            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror,configuration_digest=digest)
+            key=GenerationCacheKey(seed=seed,side=side,players=players,mode=mode,archetype=archetype,modifiers=(),engine_revision=revision,mirror_mode=mirror,configuration_digest=digest,start_algorithm=self._batch_label_key(row['start_var'].get(),START_LABELS,'auto'),start_nations=self._start_nations(players),player_teams=tuple(getattr(self,'player_teams',(0,)*20)[:players]))
             row['size_warning_kind']=native_size_warning_kind(side) if mode=='legacy' and archetype=='continental' else None
             row['viability_warning']=row['size_warning_kind'] is not None
             requests.append({'row':row,'key':key})
@@ -438,11 +446,11 @@ class BatchController:
         if self._batch_running:return
         try:requests=self._batch_collect_requests()
         except ValueError as exc:
-            messagebox.showerror(self._batch_text('invalid_title'),str(exc),parent=self._batch_window);return
+            show_message(self._batch_window, 'input', title=self._batch_text('invalid_title'), exception=exc);return
         if not self._confirm_batch_cache_capacity(requests):return
         self._batch_queue=list(requests);self._batch_active_count=len(requests);self._batch_running=True;self._batch_cancel_requested=False;self._batch_active_row=None;self._batch_last_success=None
         for request in requests:
-            row=request['row'];row['result']=None;row['cached']=False;row['error']='';row.pop('history_key',None);row.pop('preview_image',None);row.pop('thumbnail_photo',None);row.pop('thumbnail_base_image',None);row['thumbnail'].configure(image='',text=str(row['index']))
+            row=request['row'];row['result']=None;row['cached']=False;row['error']='';row.pop('error_report',None);row.pop('history_key',None);row.pop('preview_image',None);row.pop('thumbnail_photo',None);row.pop('thumbnail_base_image',None);row['thumbnail'].configure(image='',text=str(row['index']))
             self._batch_update_progress(row,0,self._batch_text('waiting'),'waiting')
             row['show'].configure(state='disabled');row['set_a'].configure(state='disabled');row['set_b'].configure(state='disabled')
         self._batch_set_running_controls(True);self._batch_summary_var.set(self._batch_text('running',current=1,total=len(requests)))
@@ -520,7 +528,7 @@ class BatchController:
             out=self.session_cache.get(key);cached=out is not None
             if out is None:
                 config = self._custom_config_for_generation(key.mode, key.archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self,'_custom_config',None) if key.mode == 'custom' else None)
-                out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config)
+                out=self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams)
             self.session_cache.put(key,out);self.session_cache.set_metadata(key,{'origin':'batch'});row['history_key']=key;row['result']=out;row['cached']=cached;self._batch_last_success=out
             result_state='cached' if cached else 'success'
             result_text=self._batch_text(result_state)
@@ -529,6 +537,12 @@ class BatchController:
                 result_text=f"{result_text} · {self._batch_text(warning_text_key,side=key.side,max_players=NATIVE_LIMITS[key.side])}"
             self._batch_update_progress(row,100,result_text,result_state);self._batch_render_thumbnail(row)
         except Exception as exc:
+            row['error_report'] = make_report('batch', exception=exc,
+                language=self.prefs.get('language', 'fr'), context={
+                    'Ligne / Row': row['index'], 'Seed': key.seed, 'Taille / Size': key.side,
+                    'Joueurs / Players': key.players, 'Mode': key.mode,
+                    'Archétype / Archetype': key.archetype, 'Départs / Starts': key.start_algorithm,
+                })
             row['error']=str(exc);self._batch_update_progress(row,100,self._batch_text('failed',error=str(exc)),'failed')
         finally:
             self._batch_active_row=None;self._refresh_history();self.after(30,self._batch_run_next)
@@ -563,6 +577,10 @@ class BatchController:
                 lost_ids.add(id(out));self._batch_update_progress(row,100,self._batch_text('not_cached'),'not_cached')
         if lost_ids:self._batch_summary_var.set(self._batch_text('finished_retention',success=success,failed=failed,cancelled=cancelled,lost=len(lost_ids)))
         self._feedback('batch_done','success' if failed==0 and not lost_ids else 'warning',success=success,failed=failed,cancelled=cancelled)
+        # Let every row finish; present their failures together, once, afterwards.
+        for row in active:
+            if row['state'] == 'failed' and row.get('error_report') is not None:
+                show_report(self, row['error_report'])
 
     def _batch_should_autodisplay(self):
         return getattr(self,'current',None) is None

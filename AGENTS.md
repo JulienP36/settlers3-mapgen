@@ -29,3 +29,9 @@
   ciblés pendant le travail puis une suite complète avant livraison. Le dépôt
   est la mémoire canonique ; ne pas rejouer les anciens chats si les documents
   courants suffisent.
+
+- Proposer spontanément des améliorations pertinentes, en distinguant le lot
+  actuel des idées pour plus tard ; ne pas élargir le périmètre sans accord.
+- Toute nouvelle fenêtre de l’application doit suivre les thèmes présents et
+  futurs : utiliser `application/ui/theme/windows.py` (`ThemedWindow`,
+  `themed_prompt`) et les rôles de palette, sans branche clair/sombre locale.

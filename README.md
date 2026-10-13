@@ -6,17 +6,19 @@
 
 > **Note de développement / transparence :** ce projet est conçu, dirigé, testé et validé humainement, avec un usage important de **ChatGPT / OpenAI comme assistance d’implémentation**, notamment pour le backend, l’analyse technique et les outils de reverse-engineering. Cette assistance fait partie explicitement du processus de développement du projet.
 
-## État actuel — v2.0 DEV_9
+## État actuel — v2.0 DEV10
 
-DEV9 clôt le focus **Grandes îles**, sur la base de R25 validée : une île et
-un départ par joueur, relief indépendant, profils/composition communs et
-rivières améliorées adaptatives. La source alternative s’appelle désormais
-« Grandes îles — relief ondulé ». Voir [le bilan DEV9](docs/DEV_9_CHECKPOINT.md).
+**DEV10 est complète et validée**, à partir de R66. Voir [le bilan DEV10](docs/DEV_10_CHECKPOINT.md)
+et [le travail futur](TODO_MAPGEN.md). La source Custom **Formule** V1 est acceptée
+pour la 2.0 ; son futur éditeur dédié est reporté hors 2.0.
 
-Qualification R25 : 818 tests, sept cartes et quatre exports PASS. Les
-références complètes sont conservées dans le ZIP source et exclues du push.
-Les anciens reports DEV9 passent à DEV10 ; leur répartition et Petites îles
-(DEV10 ou DEV11) seront décidées au prochain bilan. Voir `TODO_MAPGEN.md`.
+Continental, Îles individuelles et Îles par équipe sont implémentés. Le maximum
+est **768 × 768** ; Petites îles est abandonné. L'algorithme Classique conserve son
+comportement natif. Les corrections hydrologiques concernent Amélioré.
+
+L'historique détaillé est dans [CHANGELOG](CHANGELOG.md). Les références de
+recherche et les preuves de qualification restent dans le ZIP source.
+DEV10 est un checkpoint de développement ; la promotion RC/STABLE reste à venir.
 
 ## Présentation du projet
 
@@ -28,7 +30,7 @@ Le projet poursuit trois objectifs complémentaires :
 - **proposer une génération améliorée** grâce au mode **Upgraded**, qui applique les règles de gameplay, de morphologie, de ressources et de sécurité affinées au cours du projet ;
 - **ouvrir progressivement la génération à l'utilisateur** avec le mode **Custom**, où les paramètres pourront être ajustés manuellement tout en conservant les garde-fous critiques.
 
-La forme générale de la carte est volontairement séparée du mode de génération. Les **archétypes** définissent la macro-géographie (continent, grandes îles, petites îles, etc.), tandis que le **mode de génération** contrôle le relief, les zones de terrain, l'hydrologie détaillée, les ressources, les objets, les positions de départ, la balance et les validations.
+La forme générale de la carte est volontairement séparée du mode de génération. Les **archétypes** définissent la macro-géographie (Continental, Îles individuelles, Îles par équipe), tandis que le **mode de génération** contrôle le relief, les zones de terrain, l'hydrologie détaillée, les ressources, les objets, les positions de départ, la balance et les validations.
 
 Le projet repose sur une règle importante : les **positions de départ des joueurs sont placées très tôt** dans le pipeline. Le reste de la génération doit ensuite s'adapter à ces zones réservées afin de réduire les positions invalides et de permettre un meilleur équilibrage des ressources.
 
@@ -59,23 +61,6 @@ Les aperçus visuels sont toujours des rendus déterministes issus des vraies do
 ![Génération par lot de quatre cartes avec miniatures et états de cache](docs/screenshots/v1_8_batch.png)
 
 *Quatre tâches séquentielles avec miniatures réelles ; la barre bleue montre une réutilisation volontaire du cache pour une configuration identique.*
-
-## Résultats de R63 avant les candidates R64/R65 — marge de domaine à zéro
-
-R63 met à **0 % par défaut** la marge du domaine pour tous les archétypes,
-comme sur le comportement natif Legacy. Le preset Custom R53 couvre maintenant
-tout le carré de carte ; sa transition de bord reste à 8 %. La source Legacy
-native ignore ce réglage, donc son relief ne change pas. Le 5 % historique reste
-disponible et correspond à 18 cases sur le preset R53.
-
-Sur la preview 256², seed `20260920`, le passage de 5 % à 0 % rapproche la
-distance médiane du premier terrain au bord de 30 à 11 cases et réduit l’eau de
-45,6 % à 23,9 %. La qualification montre que les départs passent (6/6), mais que les deux cas
-768 dépassent légèrement la cible terre (86,2–86,8 %, maximum 85 %). Il faudra
-juger ce compromis sous Windows puis recalibrer d’autres paramètres si besoin,
-sans remettre de marge. L’effet du cadre carré sur les littoraux reste à
-examiner. Les rivières Custom sont reportées, y compris le cas illégal d’une
-rivière créée dans un lac. R63 reste une candidate locale.
 
 ### R55 — previews et providers pour Continental Custom
 
@@ -476,7 +461,7 @@ ne sont donc pas conservés comme règles. Le détail reproductible est dans
 `references/history/minerals/SETTLERS3_LEGACY_MINERAL_COMPARISON_DEV2.md`.
 
 Le portage natif de référence est présent dans DEV_2 pour les tailles `256, 320, 384, 448,
-512, 576, 640, 704, 768, 832, 896, 960 et 1024`. Les modes miroir proposent
+512, 576, 640, 704 et 768`. Les modes miroir proposent
 `Axe long`, `Axe court` ou `Les deux`. Les tailles sous 384 et au-dessus de 768
 restent exportables et signalées dans le feedback lorsqu'elles sortent du
 cadre de jeu habituel. Les audits de l'algorithme restent la source de vérité ;
@@ -542,8 +527,8 @@ sont décrits dans un registre extensible et restent hors quotas globaux.
 ## Archétypes
 
 - **Continental** — implémenté ;
-- **Large Islands** — prévu ;
-- **Small Islands** — prévu ;
+- **Îles individuelles** — implémenté, une île par joueur ;
+- **Îles par équipe** — futur archétype, surfaces au prorata des joueurs ;
 - d'autres macro-formes pourront être ajoutées sans dupliquer le moteur de génération.
 
 L'archétype décrit principalement la **forme globale terre/eau**. Les objets, ressources, formes locales des zones, balance et logique de starts appartiennent au mode de génération.
@@ -635,10 +620,10 @@ Les références principales sont dans `references/`. En particulier :
 - `AGENTS.md` — consignes courtes auto-découvertes pour reprendre le travail ;
 - `SETTLERS3_PREGEN_READ_FIRST.md` — point d'entrée obligatoire avant toute modification/génération ;
 - `REFERENCE_INDEX.md` — routage des références actives, historiques et de reprise ;
-- `SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` — mesures long-play historiques, avec surcharge v2.0 ;
+- `history/SETTLERS3_MAPGEN_REFERENCE_v15_LONGPLAY_RULES.md` — mesures long-play historiques, avec surcharge v2.0 ;
 - `SETTLERS3_UPGRADED_RULE_MATRIX_CURRENT.md` — correspondance courante des règles Upgraded / Custom / validators ;
-- `SETTLERS3_EDM_MAP_FORMAT_REFERENCE_v3.md` — format EDM/MAP ;
-- `SETTLERS3_SAV_FORMAT_REFERENCE_v1.md` — lecture SAV ;
+- `SETTLERS3_EDM_MAP_FORMAT_REFERENCE.md` — format EDM/MAP ;
+- `SETTLERS3_SAV_FORMAT_REFERENCE.md` — lecture SAV ;
 - `docs/ARCHITECTURE.md` — couches runtime, flux de données, invariants et zones protégées ;
 - `docs/DEBUGGING.md` — diagnostic reproductible, commandes de validation et informations à conserver ;
 - `docs/GITHUB_PUBLICATION.md` — métadonnées proposées et checklist de publication, sans modifier les réglages du dépôt ;

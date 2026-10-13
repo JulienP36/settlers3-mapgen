@@ -15,6 +15,7 @@ import numpy as np
 
 
 NOISE_SOURCE_OPTIONS = (
+    "formula",
     "white",
     "value",
     "perlin",
@@ -74,6 +75,7 @@ _COORDINATE_TRANSFORM_SETTINGS = frozenset(
 # controls that it never reads.  The common bias/contrast/seed controls are
 # deliberately kept available wherever they have a meaningful effect.
 NOISE_SOURCE_SETTING_APPLICABILITY = {
+    "formula": frozenset({"expression", "frequency", "octaves", "lacunarity", "gain", "rotation_degrees", "stretch_percent", "seed_offset", "bias_percent", "contrast_percent", "warp_strength_percent", "warp_frequency"}),
     "white": frozenset(
         {
             "bias_percent",
@@ -267,9 +269,24 @@ NOISE_SOURCE_SETTING_APPLICABILITY = {
 }
 
 
-def noise_source_setting_applies(source: str, setting: str) -> bool:
+def noise_source_setting_applies(source: str, setting: str, settings=None) -> bool:
     """Return whether one visible setting is consumed by ``source``."""
 
+    if source == "formula" and settings is not None:
+        import ast
+        from .formula import DEFAULT_FORMULA, NOISE_FUNCTIONS, parse_formula
+        common = _COMMON_OUTPUT_TRANSFORM_SETTINGS | _COORDINATE_TRANSFORM_SETTINGS | {'expression', 'bias_percent', 'contrast_percent', 'rotation_degrees', 'stretch_percent'}
+        applicable = set(common)
+        try:
+            for node in ast.walk(parse_formula(settings.get('expression', DEFAULT_FORMULA))):
+                if isinstance(node, ast.Call) and node.func.id in NOISE_FUNCTIONS:
+                    keys = set(NOISE_SOURCE_SETTING_APPLICABILITY[node.func.id])
+                    if len(node.args) >= 1: keys.discard('frequency')
+                    if len(node.args) >= 2: keys.discard('octaves')
+                    applicable.update(keys)
+        except ValueError:
+            pass  # Keep expression/output controls usable while an edit is invalid.
+        return str(setting) in applicable
     return str(setting) in NOISE_SOURCE_SETTING_APPLICABILITY.get(
         str(source), frozenset()
     )
@@ -1082,7 +1099,25 @@ def generate_noise_source(
     gain = float(settings.get("gain", 0.5))
     source_seed = (int(seed) + int(settings.get("seed_offset", 0))) & 0xFFFFFFFF
 
-    if source == "white":
+    if source == "formula":
+        from .formula import DEFAULT_FORMULA, evaluate_formula
+        from .profiles import NOISE_SOURCE_SETTING_DEFAULTS
+        def provider(name, args):
+            child = dict(settings)
+            child.pop('expression', None)
+            # Output transforms belong to the formula result, once only.
+            for key in _COMMON_OUTPUT_TRANSFORM_SETTINGS | {'bias_percent', 'contrast_percent'}:
+                child[key] = NOISE_SOURCE_SETTING_DEFAULTS[key]
+            child['bias_percent'] = 0
+            child['contrast_percent'] = 100
+            if args: child['frequency'] = args[0]
+            if len(args) > 1: child['octaves'] = int(args[1])
+            child['seed_offset'] = int(settings.get('seed_offset', 0)) + (int(args[2]) if len(args)>2 else 0)
+            if adaptive_domain is not None:
+                child = adapt_noise_settings_for_domain_size(name, child, adaptive_domain[0], reference_domain_side=adaptive_domain[1])
+            return generate_noise_source(name, side, seed, child, adaptive_domain=adaptive_domain)
+        field = evaluate_formula(settings.get('expression', DEFAULT_FORMULA), x, y, provider)
+    elif source == "white":
         columns = np.rint((x + 0.5) * float(int(side) - 1)).astype(np.int64)
         rows = np.rint((y + 0.5) * float(int(side) - 1)).astype(np.int64)
         field = _hash_unit(columns, rows, source_seed) * 2.0 - 1.0
@@ -1237,6 +1272,8 @@ def adapt_noise_settings_for_domain_size(
 
     result = dict(settings)
     source = str(source)
+    if source == "formula":
+        return result  # Each called provider adapts its own frequencies once.
     applicable = NOISE_SOURCE_SETTING_APPLICABILITY.get(source, frozenset())
     if "frequency" not in applicable:
         return result

@@ -28,7 +28,7 @@ class Var:
         self.value = value
 
 
-def row(index, *, mode="Classique", archetype="Continental", mirror="Aucun", side="768", players="4", seed="100"):
+def row(index, *, mode="Classique", archetype="Continental", mirror="Aucun", side="768", players="4", seed="100", start="Automatique"):
     return {
         "index": index,
         "mode_var": Var(mode),
@@ -37,6 +37,7 @@ def row(index, *, mode="Classique", archetype="Continental", mirror="Aucun", sid
         "size_var": Var(side),
         "players_var": Var(players),
         "seed_var": Var(seed),
+        "start_var": Var(start),
     }
 
 
@@ -49,6 +50,7 @@ def batch_dummy(rows, count=None, language="fr"):
     dummy._batch_rows = rows
     dummy._batch_count_var = Var(count if count is not None else len(rows))
     dummy._batch_label_key = MainWindow._batch_label_key
+    dummy._start_nations = lambda players: MainWindow._start_nations(dummy,players)
     return dummy
 
 
@@ -61,13 +63,17 @@ def test_batch_is_bilingual_and_replaces_the_reserved_placeholder():
 
 def test_batch_collects_one_to_four_independent_generation_keys():
     dummy = batch_dummy([
-        row(1, mode="Classique", players="4", seed="101"),
-        row(2, mode="Amélioré", players="8", seed="202"),
+        row(1, mode="Classique", players="4", seed="101", start="Éloignement"),
+        row(2, mode="Amélioré", players="8", seed="202", start="Îles — seul"),
     ])
+    dummy.classic_start_nations = (255,1,2,3,0,1,2,3)
     requests = MainWindow._batch_collect_requests(dummy)
     assert [request["key"].seed for request in requests] == [101, 202]
     assert [request["key"].players for request in requests] == [4, 8]
     assert [request["key"].mode for request in requests] == ["legacy", "upgraded"]
+    assert [request["key"].start_algorithm for request in requests] == ["balanced", "islands"]
+    assert requests[0]["key"].start_nations == (255,1,2,3)
+    assert requests[1]["key"].start_nations == dummy.classic_start_nations
     assert requests[0]["key"].engine_revision == "continental_legacy_native_content"
     assert requests[1]["key"].engine_revision == "continental_upgraded-native-v1"
 
@@ -95,7 +101,7 @@ def test_batch_rejects_unknown_sizes_before_starting():
 
 def test_batch_queue_is_sequential_and_populates_history_and_ab_actions():
     assert "request=self._batch_queue.pop(0)" in SRC
-    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config)" in SRC
+    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams)" in SRC
     assert "self.session_cache.put(key,out)" in SRC
     assert "self.after(30,self._batch_run_next)" in SRC
     assert "self._set_compare_output(slot,out)" in SRC

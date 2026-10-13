@@ -10,6 +10,8 @@ from PIL import Image
 
 from ..paths import (
     APP_DIR,
+    APP_ICON_PNG,
+    APP_ICON_ICO,
     BASE,
     EDM_SCAFFOLD,
     FROZEN,
@@ -56,6 +58,16 @@ def inspect_package() -> dict:
     except Exception as exc:
         checks['gui_runtime_import']={'ok':False,'error':repr(exc)}
         errors.append('gui_runtime_import')
+
+    try:
+        with Image.open(APP_ICON_PNG) as png, Image.open(APP_ICON_ICO) as ico:
+            sizes=sorted(ico.ico.sizes())
+            ok=png.size==(16,16) and sizes==[(16,16)]
+        checks['application_icon']={'ok':ok,'png':str(APP_ICON_PNG),'ico':str(APP_ICON_ICO),'ico_sizes':sizes}
+        if not ok: errors.append('application_icon')
+    except Exception as exc:
+        checks['application_icon']={'ok':False,'error':repr(exc)}
+        errors.append('application_icon')
 
     for name,path in (('legacy_profile',LEGACY_PROFILE),):
         try:
@@ -106,6 +118,15 @@ def inspect_package() -> dict:
     except Exception as exc:
         checks['start_markers']={'path':str(START_MARKER_SHEET),'ok':False,'error':str(exc)}
         errors.append('start_markers')
+
+    try:
+        from ..ui.sprites import SPRITE_FILES, sprite_image
+        for key in SPRITE_FILES:
+            sprite_image(key)
+        checks['sprites']={'ok':True,'count':len(SPRITE_FILES)}
+    except Exception as exc:
+        checks['sprites']={'ok':False,'error':str(exc)}
+        errors.append('sprites')
 
     return {
         'status':'PASS' if not errors else 'FAIL',

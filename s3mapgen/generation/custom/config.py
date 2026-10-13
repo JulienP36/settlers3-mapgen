@@ -409,8 +409,10 @@ def default_river_algorithm(base_archetype, archetype_profile=None):
     return "native" if base_archetype == "continental" and source == "native_legacy" else "improved"
 
 
-def default_archetype_start_packages(base_archetype):
-    return ("start_mini_swamp",) if base_archetype == "large_islands" else default_start_package_keys()
+def default_archetype_start_packages(base_archetype, archetype_profile=None):
+    if (archetype_profile or {}).get("morphology", {}).get("relief_source") == "continental_landmass":
+        return tuple(key for key in default_start_package_keys() if key != "start_mini_swamp")
+    return ("start_mini_swamp",) if base_archetype in {"large_islands", "team_islands"} else default_start_package_keys()
 
 
 def build_custom_config(
@@ -440,7 +442,7 @@ def build_custom_config(
         str(base_mode),
         str(base_archetype),
         selected,
-        tuple(start_packages) if start_packages is not None else default_archetype_start_packages(base_archetype),
+        tuple(start_packages) if start_packages is not None else default_archetype_start_packages(base_archetype, archetype_profile),
         2,
         deepcopy(dict(sections)) if isinstance(sections, Mapping) else {},
         deepcopy(dict(archetype_profile))

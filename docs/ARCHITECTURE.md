@@ -7,9 +7,30 @@ source variant, and a separately selectable general improved river policy.
 The policy uses map/land scale and connected-land length limits; named profiles
 set its visible defaults. The island mini-swamp uses the one visible bonus
 pass. Internal source keys and native engine separation stay compatible.
-Checkpoint scope and next work: `DEV_9_CHECKPOINT.md` and `../TODO_MAPGEN.md`.
+Checkpoint scope: `DEV_9_CHECKPOINT.md`; local candidate progress: `DEV_10_PROGRESS.md` and `../TODO_MAPGEN.md`.
 
-This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_9 closes the validated Large islands work: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the independent Upgraded pipeline and the declarative Custom foundation. Public Legacy and Upgraded selections are specific presets of the same Custom contract; their internal native engines remain protected and separate. The Custom content sections expose semantic Minerals, Fish, Trees, Building Stones, Decorations and opt-in start-bonus controls. When a start bonus is active, the pipeline stages archetype-linked terrain, bonus terrain, global non-archetype terrain, bonus objects and global objects in that order; the no-bonus route stays on the native pass unchanged. Forest bonus adults are written before saplings. Active object passes maintain a live halo from actual writes across trees, saplings, stones and decorations, including the native Legacy pass, while the complete Building Stone footprint remains protected; no empty future zone is reserved. The mini-swamp bonus uses an extensible shape selector (`Native`/`Hexagon`), derives its extent from a bounded radius, and generates an independent Native component for each start with the same global swamp family plan. The scrollable UI surfaces coalesce scrollbar motion and resize work without changing generation behavior, and the decorated root window applies its native caption palette on first display. Before changing generation or binary-map behavior, follow `references/REFERENCE_INDEX.md` and the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+This guide describes the current runtime without redefining the native rules under audit. v2.0 DEV_9 closes the validated Large islands work: obsolete Legacy generators remain removed, while the native Legacy v1 reconstruction stays in its own package beside the independent Upgraded pipeline and the declarative Custom foundation. Public Legacy and Upgraded selections are specific presets of the same Custom contract; their internal native engines remain protected and separate. The Custom content sections expose semantic Minerals, Fish, Trees, Building Stones, Decorations and opt-in start-bonus controls. When a start bonus is active, the pipeline stages archetype-linked terrain, bonus terrain, global non-archetype terrain, bonus objects and global objects in that order; the no-bonus route stays on the native pass unchanged. Forest bonus adults are written before saplings. Active object passes maintain a live halo from actual writes across trees, saplings, stones and decorations, including the native Legacy pass, while the complete Building Stone footprint remains protected; no empty future zone is reserved. The mini-swamp bonus uses an extensible shape selector (`Native`/`Hexagon`), derives its extent from a bounded radius, and generates an independent Native component for each start with the same global swamp family plan. The scrollable UI surfaces coalesce scrollbar motion and resize work without changing generation behavior, and the decorated root window applies its native caption palette on first display. DEV10 R2 extends the start-mineral bonus to all five resource families, with gems and sulfur disabled by default. The three surface modes, dynamic total capacity, configuration and editor use the shared mineral catalogue. Placement and transitions are reused. DEV10 R1 exposes a shared centre-search extension for forced start bonuses (2–512 HEX beyond the target, default 34). It preserves the normal ±2 band, ring order, object footprints and the force-OFF path. Before changing generation or binary-map behavior, follow `references/REFERENCE_INDEX.md` and the routed reading rules in `references/SETTLERS3_PREGEN_READ_FIRST.md`.
+
+## R31 — choix libre
+
+Le dialogue expose 255/Choose et désactive les slots inutilisés. Le moteur
+conserve 255 dans PlayerInfo ; il impose l’intersection des quatre validités
+natives et simule une ville romaine privée pour un slot indéfini. Ce filtre
+supplémentaire est enregistré dans les métadonnées ; les nations fixes R30
+conservent leur sélection. Aucune dépendance de recherche ajoutée.
+
+## R30 — départs Classique
+
+Le Classique place les joueurs après les passes globales. Le module partagé
+`generation/classic_starts.py` possède les contrôles par nation et les effets
+de ville nécessaires au candidat suivant ; `native_start_selection.py` porte
+le contrôle aléatoire natif, raccordé exclusivement à ce runtime actif.
+Les copies de claim/hauteur/objets sont privées : le jeu crée les villes à la
+lecture du MAP, dont PlayerInfo garde nations et coordonnées. Les bonus
+supplémentaires MapGen sont désactivés pour ce chemin. L’interface recueille
+les nations via une fenêtre thémée ; le cache les distingue. Les autres
+stratégies restent celles de R28. Aucun outil d’émulation livré au programme.
+Guide et preuves : PLAYER_STARTS.md ; ../examples/r30_starts.
 
 ## R67–R69 native relief blocks
 

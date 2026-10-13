@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from .icons import _selector_icon
+from ..sprites import sprite_photo
 
 
 class ColorMenuSelect(ttk.Menubutton):
@@ -28,7 +29,7 @@ class ColorMenuSelect(ttk.Menubutton):
         self.menu.delete(0, "end")
         self._icons = {}
         for key, label, color, kind in self._items:
-            icon = _selector_icon(self, color, kind)
+            icon = sprite_photo(self, kind[7:]) if kind.startswith('sprite:') else _selector_icon(self, color, kind)
             self._icons[key] = icon
             self.menu.add_command(label=label, image=icon, compound="left", command=lambda k=key, value=label: self._choose(k, value))
         labels = [item[1] for item in self._items]

@@ -11,12 +11,12 @@ SRC = "\n".join(
 
 
 def test_compact_layout_switches_before_the_right_edge_clips():
-    assert "compact=width<1750" in SRC
-    assert "switch earlier" in SRC
+    assert "compact=content_width(self._header_shell)<required" in SRC
+    assert "_header_required_width" in SRC
 
 
 def test_compare_identity_buttons_are_natural_until_real_minimum():
-    assert "compact=self._responsive_mode=='compact' and width<900" in SRC
+    assert "compact=self._responsive_mode!='wide' and content_width(self.session_box)<self._session_required_width" in SRC
     assert "self.compare_a_button.configure(width=8 if compact else 0)" in SRC
     assert "self.compare_b_button.configure(width=8 if compact else 0)" in SRC
 

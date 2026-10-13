@@ -33,13 +33,15 @@ def test_legacy_pipeline_assembles_the_archetype_but_executes_legacy_rules():
     assert "populate_native_content" not in source
 
 
-def test_legacy_native_modules_own_global_content_and_starts():
+def test_legacy_owns_content_and_dispatches_shared_starts():
     native_terrain = (ROOT / "generators" / "legacy" / "native_terrain.py").read_text(encoding="utf-8")
     native_content = (ROOT / "generators" / "legacy" / "native_content.py").read_text(encoding="utf-8")
     starts = (ROOT / "generators" / "legacy" / "starts.py").read_text(encoding="utf-8")
     assert "populate_native_content" in native_terrain
     assert "def populate_native_content" in native_content
-    assert "START_FOOTPRINT" in starts
+    shared = (ROOT / "start_placement.py").read_text(encoding="utf-8")
+    assert "START_FOOTPRINT" in shared
+    assert "_place_starts" in starts
     assert "place_starts" in starts
 
 

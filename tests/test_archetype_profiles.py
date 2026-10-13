@@ -42,7 +42,7 @@ from s3mapgen.generation.archetypes import (
     NOISE_SOURCE_OPTIONS,
     NOISE_SOURCE_SETTING_APPLICABILITY,
     RELIEF_SOURCE_OPTIONS,
-    RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_CUSTOM_LEGACY, RELIEF_SOURCE_CONTINENTAL,
     MASK_LAYER_MANUAL_GRID_SIDE,
     project_preview_rgb,
     relief_thresholds,
@@ -78,12 +78,6 @@ def _generator():
     return MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE)
 
 
-def _calibrated_custom_legacy_profile():
-    profile = default_archetype_profile("continental")
-    profile["morphology"]["relief_source"] = RELIEF_SOURCE_CUSTOM_LEGACY
-    profile["relief"]["mountain_threshold"] = CUSTOM_LEGACY_MOUNTAIN_THRESHOLD
-    profile["relief"]["snow_threshold"] = CUSTOM_LEGACY_SNOW_THRESHOLD
-    return profile
 
 
 def test_continental_archetype_profile_records_native_macro_defaults():
@@ -100,9 +94,11 @@ def test_continental_archetype_profile_records_native_macro_defaults():
     assert profile["morphology"]["frame_margin_percent"] == 0
     assert RELIEF_SOURCE_OPTIONS == (
         "native_legacy",
-        "legacy_blocks",
         "large_islands",
         "large_islands_r21",
+        "team_islands",
+        "continental_landmass",
+        "formula",
         "white",
         "value",
         "perlin",
@@ -131,11 +127,11 @@ def test_classic_and_continental_profiles_are_distinct_named_choices():
     assert classic["profile_name"] == "Classique"
     assert first["profile_name"] == "Continental"
     assert first["profile_preset_key"] == "continental_custom_r82"
-    assert first["morphology"]["relief_source"] == "legacy_blocks"
+    assert first["morphology"]["relief_source"] == "continental_landmass"
     assert first["morphology"]["frame_margin_percent"] == 0
     assert first["relief"]["water_threshold"] == 0
-    assert first["relief"]["mountain_threshold"] == 98
-    assert first["relief"]["snow_threshold"] == 125
+    assert first["relief"]["mountain_threshold"] == 140
+    assert first["relief"]["snow_threshold"] == 200
     assert first["morphology"]["noise_layer_count"] == 0
     assert first["morphology"]["mask_layer_count"] == 0
     assert classic["morphology"]["relief_source"] == "native_legacy"
@@ -149,7 +145,7 @@ def test_adaptive_frequency_toggle_migrates_older_profiles_and_requires_a_bool()
         archetype_key="continental",
     )
 
-    assert old_profile["schema_version"] == 21
+    assert old_profile["schema_version"] == 23
     assert old_profile["morphology"]["size_adaptive_frequency"] is False
 
     with pytest.raises(ValueError, match="size_adaptive_frequency"):
@@ -517,13 +513,13 @@ def test_complete_relief_sources_ignore_native_coast_and_have_distinct_ranges():
     assert len(fingerprints) == len(generated)
 
 
-def test_retired_legacy_derived_profiles_migrate_to_block_generation():
+def test_retired_legacy_derived_profiles_migrate_to_continental_generation():
     profile = default_archetype_profile("continental")
     profile["morphology"]["relief_source"] = "legacy_derived"
 
     normalized = normalize_archetype_profile(profile)
 
-    assert normalized["morphology"]["relief_source"] == RELIEF_SOURCE_CUSTOM_LEGACY
+    assert normalized["morphology"]["relief_source"] == RELIEF_SOURCE_CONTINENTAL
 
 
 def test_custom_legacy_anchors_have_one_coastal_ring_and_stationary_interior():
@@ -561,26 +557,16 @@ def test_previous_custom_legacy_thresholds_migrate_to_the_real_altitude_range():
         "morphology": {"relief_source": RELIEF_SOURCE_CUSTOM_LEGACY},
     }
     migrated = normalize_archetype_profile(old, archetype_key="continental")
-    assert migrated["schema_version"] == 21
-    assert migrated["relief"]["mountain_threshold"] == CUSTOM_LEGACY_MOUNTAIN_THRESHOLD
-    assert migrated["relief"]["snow_threshold"] == CUSTOM_LEGACY_SNOW_THRESHOLD
+    assert migrated["schema_version"] == 23
+    assert migrated["relief"]["mountain_threshold"] == 140
+    assert migrated["relief"]["snow_threshold"] == 200
     assert normalize_archetype_profile(migrated, archetype_key="continental") == migrated
 
 
-def test_custom_legacy_source_switch_exposes_calibrated_thresholds():
-    custom = thresholds_on_relief_source_change(
-        "native_legacy", RELIEF_SOURCE_CUSTOM_LEGACY, 140, 190,
-    )
-    assert custom == (
-        CUSTOM_LEGACY_MOUNTAIN_THRESHOLD,
-        CUSTOM_LEGACY_SNOW_THRESHOLD,
-    )
-    assert thresholds_on_relief_source_change(
-        RELIEF_SOURCE_CUSTOM_LEGACY, "native_legacy", *custom,
-    ) == (140, 190)
-    assert thresholds_on_relief_source_change(
-        "native_legacy", RELIEF_SOURCE_CUSTOM_LEGACY, 128, 180,
-    ) == (128, 180)
+def test_continental_source_switch_preserves_manual_thresholds():
+    assert thresholds_on_relief_source_change("native_legacy", RELIEF_SOURCE_CONTINENTAL, 140, 190) == (140, 200)
+    assert thresholds_on_relief_source_change(RELIEF_SOURCE_CONTINENTAL, "native_legacy", 140, 200) == (140, 190)
+    assert thresholds_on_relief_source_change("native_legacy", RELIEF_SOURCE_CONTINENTAL, 128, 180) == (128, 180)
 
 
 def test_custom_refinement_uses_both_diagonals_without_changing_native():
@@ -637,162 +623,12 @@ def test_largest_land_component_removes_only_disconnected_fragments():
     assert np.all(signed[9:12, 10] == 0)
 
 
-def test_custom_legacy_emerges_as_a_single_landmass_with_central_water_and_relief():
-    from s3mapgen.generation.archetypes.profiles import NATIVE_NOISE_MINIMUM
-    from s3mapgen.map_data.hexgrid import component_labels
-
-    for side in (384, 512, 768):
-        for seed in (20260918, 123456789):
-            profile = _calibrated_custom_legacy_profile()
-            water_threshold, mountain_threshold, _snow_threshold = relief_thresholds(profile)
-            signed = generate_relief_preview_noise_fast(
-                side,
-                seed,
-                archetype_profile=profile,
-                finalize=False,
-            )
-            raw = np.clip(
-                signed.astype(np.int16) - int(NATIVE_NOISE_MINIMUM),
-                0,
-                255,
-            )
-            land = signed > water_threshold
-            _, land_count = component_labels(land)
-            assert land_count == 1
-            assert 0.45 <= float(np.mean(land)) <= 0.90
-
-            mountain_share = float(
-                np.count_nonzero(raw[land] >= mountain_threshold - int(NATIVE_NOISE_MINIMUM))
-            ) / max(1, int(land.sum()))
-            assert mountain_share > 0.05
-
-            water_labels, water_count = component_labels(~land)
-            edge_labels = set(
-                np.concatenate(
-                    (
-                        water_labels[0, :],
-                        water_labels[-1, :],
-                        water_labels[:, 0],
-                        water_labels[:, -1],
-                    )
-                ).tolist()
-            )
-            inland_lakes = [
-                label
-                for label in range(1, water_count + 1)
-                if label not in edge_labels
-            ]
-            assert inland_lakes
-            lake_component_limit = {384: 32, 512: 48, 768: 100}[side]
-            assert len(inland_lakes) <= lake_component_limit
-
-            central_lakes = []
-            for label in inland_lakes:
-                rows, cols = np.where(water_labels == label)
-                if rows.size < 32:
-                    continue
-                center_row = float(rows.mean())
-                center_col = float(cols.mean())
-                if (
-                    side * 0.25 <= center_row <= side * 0.75
-                    and side * 0.25 <= center_col <= side * 0.75
-                ):
-                    central_lakes.append(label)
-            assert central_lakes
 
 
-def test_custom_legacy_thresholds_change_land_mountain_and_snow_coverage():
-    side = 384
-    seed = 20260918
-    base = _calibrated_custom_legacy_profile()
-    noise = generate_relief_preview_noise_fast(
-        side,
-        seed,
-        archetype_profile=base,
-        finalize=False,
-    )
-    base_macro = classify_macro(noise, base)
-    base_shares = macro_percentages(base_macro)
-
-    wetter = deepcopy(base)
-    wetter["relief"]["water_threshold"] = 20
-    wet_shares = macro_percentages(classify_macro(noise, wetter))
-    assert sum(wet_shares[1:]) < sum(base_shares[1:])
-
-    higher_mountains = deepcopy(base)
-    higher_mountains["relief"]["mountain_threshold"] = 110
-    mountain_shares = macro_percentages(classify_macro(noise, higher_mountains))
-    assert mountain_shares[3] + mountain_shares[4] < base_shares[3] + base_shares[4]
-
-    higher_snow = deepcopy(base)
-    higher_snow["relief"]["snow_threshold"] = 220
-    snow_shares = macro_percentages(classify_macro(noise, higher_snow))
-    assert snow_shares[4] < base_shares[4]
 
 
-def test_custom_legacy_blocks_reach_previews_and_both_native_engines():
-    side = 256
-    seed = 20260918
-    native_profile = default_archetype_profile("continental")
-    custom_profile = _calibrated_custom_legacy_profile()
-
-    principal, _components = generate_noise_component_previews(
-        custom_profile,
-        96,
-        seed,
-    )
-    assert principal.shape == (96, 96)
-    assert float(np.std(principal)) > 5.0
-
-    native_preview = generate_archetype_noise_preview(
-        native_profile,
-        side,
-        seed,
-    )
-    custom_preview = generate_archetype_noise_preview(
-        custom_profile,
-        side,
-        seed,
-    )
-    assert not np.array_equal(native_preview, custom_preview)
-    indicative_noise, indicative_macro = generate_archetype_indicative_preview(
-        custom_profile,
-        side,
-        seed,
-    )
-    assert indicative_noise.shape == (side, side)
-    assert float(np.std(indicative_noise)) > 5.0
-    assert len(np.unique(indicative_macro)) >= 3
-
-    custom_results = []
-    for generate in (generate_primary_terrain, generate_upgraded_primary_terrain):
-        native_result = generate(side, seed, archetype_profile=native_profile)
-        result = generate(side, seed, archetype_profile=custom_profile)
-        assert result.height.shape == (side, side)
-        assert np.count_nonzero(native_result.height != result.height) > side * side // 4
-        custom_results.append(result)
-    assert np.array_equal(custom_results[0].height, custom_results[1].height)
 
 
-def test_custom_legacy_full_engines_match_and_keep_one_landmass_at_classic_sizes():
-    from s3mapgen.map_data.hexgrid import component_labels
-
-    seed = 20260918
-    profile = _calibrated_custom_legacy_profile()
-    for side in (384, 512, 768):
-        legacy = generate_primary_terrain(side, seed, archetype_profile=profile)
-        upgraded = generate_upgraded_primary_terrain(
-            side,
-            seed,
-            archetype_profile=profile,
-        )
-        assert np.array_equal(legacy.height, upgraded.height)
-        river = (legacy.terrain >= 96) & (legacy.terrain <= 99)
-        assert np.any(river)
-        assert np.percentile(legacy.height[river], 90) < 85
-        land = legacy.height > 0
-        _, land_count = component_labels(land)
-        assert land_count == 1
 
 
 def test_noise_source_parameters_have_visible_independent_effects():
@@ -1333,7 +1169,7 @@ def test_advanced_remap_defaults_migrate_older_profiles_as_identity_values():
     )
     settings = profile["morphology"]["relief_source_settings"]
 
-    assert profile["schema_version"] == 21
+    assert profile["schema_version"] == 23
     assert settings["frequency"] == 6.0
     assert settings["remap_low_percent"] == 0
     assert settings["remap_high_percent"] == 100
@@ -1878,7 +1714,7 @@ def test_unchanged_custom_archetype_matches_the_base_map(mode):
 def test_custom_archetype_runs_under_the_selected_generator_mode(mode):
     generator = _generator()
     base = generator.generate(
-        2, 20260920, mode=mode, archetype="continental", side=256
+        2, 20260920, mode=mode, archetype="continental", side=384
     )
     profile = default_archetype_profile()
     profile["morphology"]["relief_source"] = "domain_warp"
@@ -1889,7 +1725,7 @@ def test_custom_archetype_runs_under_the_selected_generator_mode(mode):
         20260920,
         mode=mode,
         archetype="continental",
-        side=256,
+        side=384,
         custom_config=config,
     )
 
@@ -2419,7 +2255,7 @@ def test_macro_percentages_report_all_five_classes():
 def test_custom_effective_margin_is_the_new_zero_baseline():
     profile = continental_legacy_blocks_profile()
     assert profile["morphology"]["frame_margin_percent"] == 0
-    assert profile["morphology"]["relief_source"] == "legacy_blocks"
+    assert profile["morphology"]["relief_source"] == "continental_landmass"
 
 
 def test_legacy_midpoint_refinement_parameter_is_editable_in_both_engines():

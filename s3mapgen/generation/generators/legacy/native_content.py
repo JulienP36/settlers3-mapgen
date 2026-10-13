@@ -462,6 +462,7 @@ def populate_native_content(
     include_resources: bool = True,
     preserve_existing_resources: bool = False,
     object_hitbox_radius: int | None = None,
+    before_objects=None,
 ) -> dict[str, object]:
     """Populate global native objects, mountain minerals and fish.
 
@@ -487,48 +488,54 @@ def populate_native_content(
                 int(object_hitbox_radius),
             )
 
-    fixed_attempts = 0
-    fixed_accepts = 0
-    for source, object_id, density, flag_mode, pattern_arg in FIXED_OBJECT_CALLS:
-        if _object_family(object_id) in disabled:
-            continue
-        attempts, accepted = _place_fixed(
-            grid,
-            rng,
-            barrier,
-            source,
-            object_id,
-            density,
-            flag_mode,
-            pattern_arg,
-            bank,
-            protected_object_mask,
-            live_object_collision,
-        )
-        fixed_attempts += attempts
-        fixed_accepts += accepted
+    def place_objects():
+        fixed_attempts = 0
+        fixed_accepts = 0
+        for source, object_id, density, flag_mode, pattern_arg in FIXED_OBJECT_CALLS:
+            if _object_family(object_id) in disabled:
+                continue
+            attempts, accepted = _place_fixed(
+                grid,
+                rng,
+                barrier,
+                source,
+                object_id,
+                density,
+                flag_mode,
+                pattern_arg,
+                bank,
+                protected_object_mask,
+                live_object_collision,
+            )
+            fixed_attempts += attempts
+            fixed_accepts += accepted
 
-    range_attempts = 0
-    range_accepts = 0
-    for source, low_id, high_id, density, flag_mode, pattern_arg in RANGE_OBJECT_CALLS:
-        if _object_family(low_id) in disabled:
-            continue
-        attempts, accepted = _place_range(
-            grid,
-            rng,
-            barrier,
-            source,
-            low_id,
-            high_id,
-            density,
-            flag_mode,
-            pattern_arg,
-            bank,
-            protected_object_mask,
-            live_object_collision,
-        )
-        range_attempts += attempts
-        range_accepts += accepted
+        range_attempts = 0
+        range_accepts = 0
+        for source, low_id, high_id, density, flag_mode, pattern_arg in RANGE_OBJECT_CALLS:
+            if _object_family(low_id) in disabled:
+                continue
+            attempts, accepted = _place_range(
+                grid,
+                rng,
+                barrier,
+                source,
+                low_id,
+                high_id,
+                density,
+                flag_mode,
+                pattern_arg,
+                bank,
+                protected_object_mask,
+                live_object_collision,
+            )
+            range_attempts += attempts
+            range_accepts += accepted
+
+        return fixed_attempts, fixed_accepts, range_attempts, range_accepts
+
+    if before_objects is None:
+        fixed_attempts, fixed_accepts, range_attempts, range_accepts = place_objects()
 
     mineral_groups: dict[str, int] = {}
     mineral_writes: dict[str, int] = {}
@@ -554,6 +561,10 @@ def populate_native_content(
             preserve_existing_resources=preserve_existing_resources,
             protected_mask=protected_resource_mask,
         )
+
+    if before_objects is not None:
+        protected_object_mask = before_objects(grid)
+        fixed_attempts, fixed_accepts, range_attempts, range_accepts = place_objects()
 
     objects = grid.objects
     resources = grid.resources

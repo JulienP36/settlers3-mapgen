@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+from ..ui.sprites import sprite_photo
+from ..ui.messages import show_message
+
 import shutil
-import traceback
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from ...map_data.binary import export_with_scaffold
+from ...map_data.sav_conversion import sav_to_map_state
+from ...map_data.object_context import is_runtime
 from ...version import SOURCE_CANDIDATE_LABEL
 from ..analysis.charts import render_stats_chart
 from ..analysis.core import stats_csv, stats_json
@@ -88,12 +92,12 @@ class ExportController:
         w.configure(background=self._ui_theme_colors.get('panel','#292a2d'));w.rowconfigure(0,weight=1)
         body=ttk.Frame(w,padding=14);body.grid(sticky='nsew');body.columnconfigure(1,weight=1);w.columnconfigure(0,weight=1)
         folder=tk.StringVar(value=str(OUTPUT));basename=tk.StringVar(value=self._default_export_basename(True));formats={key:tk.BooleanVar(value=True) for key in ('json','csv','png')}
-        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=54).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
+        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=54).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],image=sprite_photo(self,'mask/folder'),compound='left',padding=(5,0,5,1),command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
         ttk.Label(body,text=text['basename']).grid(row=1,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=basename).grid(row=1,column=1,columnspan=2,sticky='ew',padx=(8,0));ttk.Label(body,text=text['safe_name'],style='Hint.TLabel').grid(row=2,column=1,columnspan=2,sticky='w',padx=(8,0))
         box=ttk.LabelFrame(body,text=text['formats'],padding=8);box.grid(row=3,column=0,columnspan=3,sticky='ew',pady=(12,8))
         for col,key in enumerate(('json','csv','png')):ttk.Checkbutton(box,text=text[key],variable=formats[key]).grid(row=0,column=col,sticky='w',padx=(0 if col==0 else 14,0))
         summary=tk.StringVar();ttk.Label(body,text=text['files']).grid(row=4,column=0,sticky='nw');ttk.Label(body,textvariable=summary,justify='left',wraplength=520).grid(row=4,column=1,columnspan=2,sticky='w',padx=(8,0))
-        actions=ttk.Frame(body);actions.grid(row=5,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],command=lambda:self._close_export_center('_stats_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export']);export_button.pack(side='left')
+        actions=ttk.Frame(body);actions.grid(row=5,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],image=sprite_photo(self,'mask/cancel'),compound='left',padding=(5,0,5,1),command=lambda:self._close_export_center('_stats_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export'],image=sprite_photo(self,'mask/export'),compound='left',padding=(5,0,5,1));export_button.pack(side='left')
         def planned():
             try:return stats_export_paths(Path(folder.get()),basename.get(),[key for key,var in formats.items() if var.get()])
             except ValueError:return {}
@@ -101,9 +105,9 @@ class ExportController:
             paths=planned();summary.set('\n'.join(path.name for path in paths.values()) if paths else text['none']);export_button.configure(state='normal' if paths else 'disabled')
         def perform():
             paths=planned()
-            if not paths:return messagebox.showwarning(text['stats_title'],text['none'],parent=w)
+            if not paths:return show_message(w, 'stats_export', title=text['stats_title'], message=text['none'], severity='warning')
             target=Path(folder.get())
-            if not str(folder.get()).strip():return messagebox.showerror(text['stats_title'],text['invalid_folder'],parent=w)
+            if not str(folder.get()).strip():return show_message(w, 'stats_export', title=text['stats_title'], message=text['invalid_folder'], severity='error')
             if not self._confirm_export_conflicts(paths,w,text):return
             try:
                 target.mkdir(parents=True,exist_ok=True);stats=self._ensure_stats_cache()
@@ -112,8 +116,8 @@ class ExportController:
                 if 'png' in paths:
                     width=max(900,int(self.stats_chart_canvas.winfo_width()));height=max(520,int(self.stats_chart_canvas.winfo_height()))
                     render_stats_chart(stats,self._stats_chart_key(),lang=lang,dark=self.prefs.get('theme','dark')=='dark',width=width,height=height,compare_stats=self._compare_stats_pair()).save(paths['png'])
-                names='\n'.join(path.name for path in paths.values());self._close_export_center('_stats_export_window');self._feedback('graph_exported','success',format='/'.join(key.upper() for key in paths),file=target.name);messagebox.showinfo(text['stats_title'],text['done'].format(files=names),parent=self)
-            except Exception as error:messagebox.showerror(text['stats_title'],str(error),parent=w)
+                names='\n'.join(path.name for path in paths.values());self._close_export_center('_stats_export_window');self._feedback('graph_exported','success',format='/'.join(key.upper() for key in paths),file=target.name);show_message(self, 'stats_export', title=text['stats_title'], message=text['done'].format(files=names), severity='info')
+            except Exception as error:show_message(w, 'stats_export', exception=error, context={'Dossier / Folder': folder.get(), 'Nom / Name': basename.get()})
         export_button.configure(command=perform)
         for var in (folder,basename,*formats.values()):var.trace_add('write',refresh)
         refresh();self._place_export_center(w);self._activate_export_modal(w)
@@ -126,7 +130,7 @@ class ExportController:
         path=filedialog.asksaveasfilename(defaultextension='.png',filetypes=[('PNG','*.png')])
         if not path:return
         try:self._task_begin('Export de l’aperçu…',20);render(self.current.state,path,**self._render_options());self._task_done('Aperçu PNG enregistré')
-        except Exception as e:self._task_error('Erreur aperçu');messagebox.showerror('Aperçu PNG',f'{e}\n\n{traceback.format_exc()}')
+        except Exception as e:self._task_error('Erreur aperçu');show_message(self, 'preview_export', exception=e, context={'Fichier / File': path})
 
     def _open_map_export_center(self):
         if not self.current:return
@@ -139,16 +143,27 @@ class ExportController:
         w.configure(background=self._ui_theme_colors.get('panel','#292a2d'));w.rowconfigure(0,weight=1)
         body=ttk.Frame(w,padding=14);body.grid(sticky='nsew');body.columnconfigure(1,weight=1);w.columnconfigure(0,weight=1)
         folder=tk.StringVar(value=str(OUTPUT));basename=tk.StringVar(value=self._default_export_basename(False))
+        incomplete = bool(state.metadata.get('start_disabled_slots') or state.metadata.get('classic_disabled_slots'))
+        if incomplete:
+            capabilities['map'] = False
+        if is_runtime(state) and not state.starts:
+            capabilities['map'] = False
+        test_edm = tk.BooleanVar(value=incomplete)
+        empty_edm = tk.BooleanVar(value=False)
         preferred_png='png_global' if self._view_key()=='global' else 'png_current'
         formats={key:tk.BooleanVar(value=(capabilities[key] and (key in ('edm','map','sav') or key==preferred_png))) for key in capabilities}
-        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=58).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
+        ttk.Label(body,text=text['folder']).grid(row=0,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=folder,width=58).grid(row=0,column=1,sticky='ew',padx=8);ttk.Button(body,text=text['browse'],image=sprite_photo(self,'mask/folder'),compound='left',padding=(5,0,5,1),command=lambda:self._choose_export_folder(folder,w)).grid(row=0,column=2)
         ttk.Label(body,text=text['basename']).grid(row=1,column=0,sticky='w',pady=4);ttk.Entry(body,textvariable=basename).grid(row=1,column=1,columnspan=2,sticky='ew',padx=(8,0));ttk.Label(body,text=text['safe_name'],style='Hint.TLabel').grid(row=2,column=1,columnspan=2,sticky='w',padx=(8,0))
         box=ttk.LabelFrame(body,text=text['formats'],padding=8);box.grid(row=3,column=0,columnspan=3,sticky='ew',pady=(12,6));box.columnconfigure(0,weight=1);box.columnconfigure(1,weight=1)
         order=('edm','map','sav','png_global','png_current')
         for index,key in enumerate(order):
             check=ttk.Checkbutton(box,text=text[key],variable=formats[key]);check.grid(row=index//2,column=index%2,sticky='w',padx=(0 if index%2==0 else 14,0),pady=2)
             if not capabilities[key]:check.configure(state='disabled',style='Unavailable.TCheckbutton')
+        ttk.Checkbutton(box, text=_lang_text(lang, 'EDM de test — autoriser les joueurs incomplets', 'Test EDM — allow incomplete players', 'Test-EDM — unvollständige Spieler erlauben', 'EDM de prueba — permitir jugadores incompletos'), variable=test_edm).grid(row=3,column=0,columnspan=2,sticky='w')
+        ttk.Checkbutton(box, text=_lang_text(lang, 'EDM vide — aucun joueur', 'Empty EDM — no players', 'Leeres EDM — keine Spieler', 'EDM vacío — sin jugadores'), variable=empty_edm).grid(row=4,column=0,columnspan=2,sticky='w')
         hints=[]
+        if is_runtime(state):hints.append(text['sav_map_notice'])
+        if is_runtime(state) and not state.starts:hints.append(text['sav_map_no_starts'])
         if not capabilities['edm']:hints.append(text['binary_unavailable'])
         elif state.side!=768:hints.append(text['binary_experimental'])
         if not capabilities['sav']:hints.append(text['sav_unavailable'])
@@ -156,7 +171,7 @@ class ExportController:
         if not capabilities['png_current']:hints.append(text['current_unavailable'])
         ttk.Label(body,text='\n'.join(hints),style='Hint.TLabel',justify='left',wraplength=620).grid(row=4,column=0,columnspan=3,sticky='w',pady=(2,8))
         summary=tk.StringVar();ttk.Label(body,text=text['files']).grid(row=5,column=0,sticky='nw');ttk.Label(body,textvariable=summary,justify='left',wraplength=540).grid(row=5,column=1,columnspan=2,sticky='w',padx=(8,0))
-        actions=ttk.Frame(body);actions.grid(row=6,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],command=lambda:self._close_export_center('_map_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export']);export_button.pack(side='left')
+        actions=ttk.Frame(body);actions.grid(row=6,column=0,columnspan=3,sticky='e',pady=(14,0));ttk.Button(actions,text=text['cancel'],image=sprite_photo(self,'mask/cancel'),compound='left',padding=(5,0,5,1),command=lambda:self._close_export_center('_map_export_window')).pack(side='left',padx=(0,6));export_button=ttk.Button(actions,text=text['export'],image=sprite_photo(self,'mask/export'),compound='left',padding=(5,0,5,1));export_button.pack(side='left')
         def planned():
             try:return map_export_paths(Path(folder.get()),basename.get(),[key for key,var in formats.items() if var.get() and capabilities[key]])
             except ValueError:return {}
@@ -164,23 +179,27 @@ class ExportController:
             paths=planned();summary.set('\n'.join(path.name for path in paths.values()) if paths else text['none']);export_button.configure(state='normal' if paths else 'disabled')
         def perform():
             paths=planned()
-            if not paths:return messagebox.showwarning(text['map_title'],text['none'],parent=w)
+            if not paths:return show_message(w, 'map_export', title=text['map_title'], message=text['none'], severity='warning')
             target=Path(folder.get())
-            if not str(folder.get()).strip():return messagebox.showerror(text['map_title'],text['invalid_folder'],parent=w)
+            if not str(folder.get()).strip():return show_message(w, 'map_export', title=text['map_title'], message=text['invalid_folder'], severity='error')
             if not self._confirm_export_conflicts(paths,w,text):return
             self._close_export_center('_map_export_window')
             try:
+                binary_state=sav_to_map_state(state, include_players=('map' in paths or not empty_edm.get())) if ('edm' in paths or 'map' in paths) else state
                 target.mkdir(parents=True,exist_ok=True);self._task_begin(text['map_title']+'…',5);total=len(paths);done=0
-                if 'edm' in paths:export_with_scaffold(state,EDM_SCAFFOLD,paths['edm']);done+=1;self._task_progress(5+85*done/total,paths['edm'].name)
-                if 'map' in paths:export_with_scaffold(state,MAP_SCAFFOLD,paths['map']);done+=1;self._task_progress(5+85*done/total,paths['map'].name)
+                if 'edm' in paths:export_with_scaffold(binary_state,EDM_SCAFFOLD,paths['edm'],test_edm=test_edm.get() or empty_edm.get(),empty=empty_edm.get());done+=1;self._task_progress(5+85*done/total,paths['edm'].name)
+                if 'map' in paths:export_with_scaffold(binary_state,MAP_SCAFFOLD,paths['map']);done+=1;self._task_progress(5+85*done/total,paths['map'].name)
                 if 'sav' in paths:
                     if source_path.resolve()!=paths['sav'].resolve():shutil.copy2(source_path,paths['sav'])
                     done+=1;self._task_progress(5+85*done/total,paths['sav'].name)
                 projection=self.prefs.get('projection','square')
                 if 'png_global' in paths:render(state,paths['png_global'],labels=False,view='global',overlay_alpha=100,projection=projection);done+=1;self._task_progress(5+85*done/total,paths['png_global'].name)
                 if 'png_current' in paths:render(state,paths['png_current'],labels=True,**self._render_options());done+=1;self._task_progress(5+85*done/total,paths['png_current'].name)
-                names='\n'.join(path.name for path in paths.values());self._task_done(FEEDBACK_TEXT[lang]['export_done']);messagebox.showinfo(text['map_title'],text['done'].format(files=names),parent=self)
-            except Exception as error:self._task_error(_lang_text(lang,'Erreur export','Export error','Exportfehler','Error de exportación'));messagebox.showerror(text['map_title'],str(error),parent=self)
+                names='\n'.join(path.name for path in paths.values())
+                conversion=binary_state.metadata.get('sav_export_conversion')
+                if conversion:names+='\n\n'+text['sav_map_result'].format(**conversion)
+                self._task_done(FEEDBACK_TEXT[lang]['export_done']);show_message(self, 'map_export', title=text['map_title'], message=text['done'].format(files=names), severity='info')
+            except Exception as error:self._task_error(_lang_text(lang,'Erreur export','Export error','Exportfehler','Error de exportación'));show_message(self, 'map_export', exception=error, context={'Dossier / Folder': folder.get(), 'Nom / Name': basename.get()})
         export_button.configure(command=perform)
         for var in (folder,basename,*formats.values()):var.trace_add('write',refresh)
         refresh();self._place_export_center(w);self._activate_export_modal(w)

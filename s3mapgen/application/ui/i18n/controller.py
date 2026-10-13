@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 
+from .starts import START_LABELS
 from ....generation.modes import MODE_ORDER
 from ...analysis.core import format_stats_report
 from ..viewer.options import HEATMAP_ICON_COLORS, VIEW_ICON_COLORS
@@ -31,6 +32,8 @@ class LanguageController:
 
     def _apply_language(self):
         if not hasattr(self,'lang_var'):return
+        if hasattr(self, '_hide_ui_tooltip'):
+            self._hide_ui_tooltip()
         lang=self.prefs.get('language','fr');vk=self._view_key();hk=self._heatmap_key();mk=self._mode_key();ak=self._arch_key()
         self.title(WINDOW_TITLES[lang])
         for w,source in getattr(self,'_i18n_widgets',[]):
@@ -41,7 +44,7 @@ class LanguageController:
             self._view_combo.set_items([(k,VIEW_LABELS[lang][k],VIEW_ICON_COLORS[k],k) for k in VIEW_LABELS[lang]])
             self._view_combo.configure(width=max(12,max(len(v) for v in VIEW_LABELS[lang].values())+1))
         self.view.set(VIEW_LABELS[lang][vk]);self._view_combo._sync_icon()
-        self.heatmap_combo.set_items([(k,HEATMAP_LABELS[lang][k],HEATMAP_ICON_COLORS[k],'dot') for k in HEATMAP_LABELS[lang]])
+        self.heatmap_combo.set_items([(k,HEATMAP_LABELS[lang][k],HEATMAP_ICON_COLORS[k],('sprite:minerals/'+k) if k in ('coal','iron','gold','gems','sulfur') else ('sprite:heatmap/'+k) if k in ('trees','building_stones','fish') else 'dot') for k in HEATMAP_LABELS[lang]])
         self.heatmap_combo.configure(width=max(14,min(22,max(len(v) for v in HEATMAP_LABELS[lang].values())+1)))
         self.heatmap_var.set(HEATMAP_LABELS[lang][hk]);self.heatmap_combo._sync_icon()
         self.mode_combo.configure(values=[MODE_LABELS[lang][k] for k in MODE_ORDER]);self.mode.set(MODE_LABELS[lang][mk])
@@ -49,12 +52,14 @@ class LanguageController:
         if hasattr(self,'_custom_refresh_main_archetype_input'):
             self._custom_refresh_main_archetype_input()
         else:
-            self.arch_combo.configure(values=[ARCHETYPE_INPUT_LABELS[lang][k] for k in ('classic','continental','large_islands','small_islands')])
+            self.arch_combo.configure(values=[ARCHETYPE_INPUT_LABELS[lang][k] for k in ('classic','continental','large_islands','team_islands')])
             self.arch_input.set(ARCHETYPE_INPUT_LABELS[lang]['classic'])
-        if hasattr(self,'modifier_text'):
-            self.modifier_text.set(NONE_LABELS.get(lang,NONE_LABELS['en']))
-            try:self.modifier_menu.entryconfigure(0,label=NONE_LABELS.get(lang,NONE_LABELS['en']))
-            except tk.TclError:pass
+        if hasattr(self,'start_menu'):
+            self.start_text.set(START_LABELS[lang][self._start_algorithm_key()])
+            for index,key in enumerate(('auto','balanced','fair','islands')):
+                self.start_menu.entryconfigure(index,label=START_LABELS[lang][key])
+            self.start_menu.entryconfigure(5,label=START_LABELS[lang]['classic'])
+            self.start_menu.entryconfigure(6,label=START_LABELS[lang]['nations'])
         if hasattr(self,'mirror_combo'):
             mirror=self._mirror_key()
             self.mirror_combo.configure(values=list(MIRROR_LABELS[lang].values()))
@@ -70,7 +75,16 @@ class LanguageController:
         self.lang_var.set(LANGUAGE_LABELS[lang]);self.lang_combo._sync_icon()
         self._refresh_stats_chart_labels()
         if getattr(self,'current',None) and getattr(self,'stats',None):
-            st=self._ensure_stats_cache();self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(st,lang=lang))
+            report=format_stats_report(self._ensure_stats_cache(),lang=lang)
+            previous_state=self.stats.cget('state');position=self.stats.yview()
+            # Text silently ignores writes while disabled. Keep this report
+            # read-only outside the short translation update, as on load.
+            try:
+                self.stats.configure(state='normal')
+                self.stats.delete('1.0','end');self.stats.insert('end',report)
+            finally:
+                self.stats.configure(state=previous_state)
+            if position:self.stats.yview_moveto(position[0])
         self._refresh_stats_chart();self._refresh_compare_buttons()
         if hasattr(self, '_custom_refresh_after_language'):
             self._custom_refresh_after_language()
@@ -87,6 +101,8 @@ class LanguageController:
         self._retranslate_history_center()
         self._retranslate_history_capacity_dialog()
         self._retranslate_help_window()
+        self._apply_compact_action_icons()
+        if hasattr(self,'_schedule_responsive_layout'):self._schedule_responsive_layout()
         self._update_view_controls();self._clear_inspector();self._retranslate_feedback()
 
     def _language_changed(self):

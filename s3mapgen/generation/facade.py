@@ -11,6 +11,21 @@ from .generators.legacy import generate as generate_legacy
 from .contracts import GenerationOutput
 from .generators.upgraded import generate as generate_upgraded
 from .custom import CustomGenerationConfig, build_custom_config
+from .archetypes.profiles import RELIEF_SOURCE_TEAM_ISLANDS
+
+
+def _validate_team_island_start_strategy(archetype, start_algorithm, config):
+    profile = getattr(config, "archetype_profile", {})
+    source = profile.get("morphology", {}).get("relief_source")
+    if (
+        (archetype == "team_islands" or source == RELIEF_SOURCE_TEAM_ISLANDS)
+        and start_algorithm in ("classic", "fair")
+    ):
+        raise ValueError(
+            "Îles par équipe exige un placement insulaire pour garantir que "
+            "les coéquipiers commencent sur la même île. Choisissez Auto, "
+            "Éloignement ou Îles."
+        )
 
 
 class MapGenerator:
@@ -98,12 +113,16 @@ class MapGenerator:
         progress_callback=None,
         **kwargs: Any,
     ):
+        start_algorithm = str(kwargs.pop("start_algorithm", "auto"))
+        start_nations = tuple(kwargs.pop("start_nations", ()))
+        player_teams = tuple(kwargs.pop("player_teams", ()))
+        start_slot_types = tuple(kwargs.pop("start_slot_types", ()))
         mirror_mode = int(kwargs.pop("mirror_mode", 0))
         custom_config = kwargs.pop("custom_config", None)
         custom_profile = kwargs.pop("custom_profile", None)
         custom_base_mode = str(kwargs.pop("custom_base_mode", "upgraded"))
         if mode == "legacy":
-            if archetype not in {"continental", "large_islands"}:
+            if archetype not in {"continental", "large_islands", "team_islands"}:
                 raise NotImplementedError(
                     "Native Legacy v1 currently implements the Continental archetype only"
                 )
@@ -113,10 +132,17 @@ class MapGenerator:
                 custom_config,
                 custom_profile,
             )
+            _validate_team_island_start_strategy(
+                archetype, start_algorithm, route_config,
+            )
             request = GenerationRequest(
                 side=int(side),
                 players=int(players),
                 seed=int(seed),
+                start_algorithm=start_algorithm,
+                start_nations=start_nations,
+                player_teams=player_teams,
+                start_slot_types=start_slot_types,
             )
             callback = progress_callback or self.progress_callback
             events: list[str] = []
@@ -155,10 +181,17 @@ class MapGenerator:
                 custom_config,
                 custom_profile,
             )
+            _validate_team_island_start_strategy(
+                archetype, start_algorithm, custom_config,
+            )
             request = GenerationRequest(
                 side=int(side),
                 players=int(players),
                 seed=int(seed),
+                start_algorithm=start_algorithm,
+                start_nations=start_nations,
+                player_teams=player_teams,
+                start_slot_types=start_slot_types,
             )
             callback = progress_callback or self.progress_callback
             events: list[str] = []
@@ -199,6 +232,12 @@ class MapGenerator:
             return GenerationOutput(state, validations, list(events))
         if mode != "upgraded":
             raise ValueError(f"Mode de génération inconnu : {mode}")
+        route_config, _ = self._resolve_route_config(
+            "upgraded", archetype, custom_config, custom_profile,
+        )
+        _validate_team_island_start_strategy(
+            archetype, start_algorithm, route_config,
+        )
         if mirror_mode not in (0, 1, 2, 3):
             raise ValueError("mirror_mode doit être compris entre 0 et 3")
         callback = progress_callback or self.progress_callback
@@ -213,16 +252,11 @@ class MapGenerator:
                     pass
 
         state, validations = generate_upgraded(
-            GenerationRequest(side=int(side), players=int(players), seed=int(seed)),
+            GenerationRequest(side=int(side), players=int(players), seed=int(seed), start_algorithm=start_algorithm, start_nations=start_nations, start_slot_types=start_slot_types, player_teams=player_teams),
             progress=report,
             mirror_mode=mirror_mode,
             archetype=archetype,
-            profile=self._resolve_route_config(
-                "upgraded",
-                archetype,
-                custom_config,
-                custom_profile,
-            )[0].runtime_profile(
+            profile=route_config.runtime_profile(
                 execution_kind=(
                     "custom"
                     if custom_config is not None or custom_profile is not None

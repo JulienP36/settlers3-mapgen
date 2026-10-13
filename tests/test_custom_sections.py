@@ -117,6 +117,7 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
     assert sections["start_bonus"] == {
         "distance_from_border": 0,
         "force_extended_radius": False,
+        "center_extension_limit": 34,
         "forest": {
             "enabled": True,
             "adult_trees_per_player": 30,
@@ -147,6 +148,8 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
             "coal": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
             "iron": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
             "gold": {"enabled": True, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
+            "gems": {"enabled": False, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
+            "sulfur": {"enabled": False, "core_cells": 61, "average_quantity": 10, "quantity_mode": "custom"},
         },
             "lake_fish_river": {
                 "enabled": True,

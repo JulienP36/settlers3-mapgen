@@ -42,7 +42,7 @@ from ...archetypes.profiles import (
 from ...archetypes.island_source import generate_island_source, uses_island_source
 
 
-MAX_SIDE = 1024
+MAX_SIDE = 768
 
 WATER = 0x00
 GRASS = 0x10
@@ -897,9 +897,11 @@ def _choose_first_river_step(
     continuation: bool,
     *,
     allowed_mask: np.ndarray | None = None,
+    tie_policy=None,
 ) -> int:
     best_direction = 0
     best_height = -1
+    tied_directions = []
     marker = grid.marker
     terrain = grid.terrain
     height = grid.height
@@ -929,8 +931,13 @@ def _choose_first_river_step(
             if next_height > best_height:
                 best_height = next_height
                 best_direction = direction
+                tied_directions = [direction]
+            elif tie_policy is not None and next_height == best_height:
+                tied_directions.append(direction)
         if continuation:
             marker[row, col] = saved_marker
+    if tie_policy is not None:
+        return tie_policy.choose_tied_direction(tied_directions, row, col)
     return best_direction
 
 
@@ -1162,11 +1169,12 @@ def _generate_rivers(
     rate_percent: float = 100.0,
     allow_water_start: bool = True,
     algorithm: str = "native",
+    tie_seed: int = 0,
 ) -> dict[str, int | float]:
     river_policy = None
     if algorithm == "improved":
         from ...river_policy import ImprovedRiverPolicy
-        river_policy = ImprovedRiverPolicy(grid.terrain)
+        river_policy = ImprovedRiverPolicy(grid.terrain, seed=tie_seed)
     side = grid.side
     area = side * side
     height = grid.height
@@ -1210,10 +1218,10 @@ def _generate_rivers(
             continue
         if river_policy is not None and continuation:
             first_direction = _choose_first_river_step(
-                grid, r, q, continuation, allowed_mask=river_policy.inland,
+                grid, r, q, continuation, allowed_mask=river_policy.inland, tie_policy=river_policy,
             )
         else:
-            first_direction = _choose_first_river_step(grid, r, q, continuation)
+            first_direction = _choose_first_river_step(grid, r, q, continuation, tie_policy=river_policy)
         if first_direction == 0 or _river_window_conflict(grid, r, q):
             continue
 
@@ -1296,6 +1304,13 @@ def _generate_rivers(
                     best_score = scores[slot]
                     chosen_direction = direction
                 direction = _wrap_direction(direction + 1)
+
+            if river_policy is not None and best_score > 0:
+                tied = [_wrap_direction(scan_start + slot) for slot in range(3)
+                        if scores[slot] == best_score]
+                chosen_direction = river_policy.choose_tied_direction(
+                    tied, current_row, current_col, phase=path_count,
+                )
 
             path_count += 1
             marker[current_row, current_col] = 1
@@ -1863,6 +1878,7 @@ def generate_primary_terrain(
     defer_non_archetype: bool = False,
     archetype_profile: dict | None = None,
     players: int = 4,
+    player_teams=(),
 ) -> NativeTerrainResult:
     """Generate the primary native terrain field.
 
@@ -1873,6 +1889,10 @@ def generate_primary_terrain(
     start records remain outside this result for the future SAV workflow.
     """
 
+    from ...archetypes.island_amplitude import resolve_island_profile
+    archetype_profile = resolve_island_profile(
+        archetype_profile, side, players, player_teams=player_teams,
+    )
     side = int(side)
     mode = int(mode)
     if side <= 0 or side > MAX_SIDE or side % 64:
@@ -1988,13 +2008,14 @@ def generate_primary_terrain(
     topology_report = None
     signed_noise = None
     if uses_island_source(archetype_profile):
-        if mode:
-            raise ValueError("Grandes îles utilise le mode sans miroir")
+        if mode and archetype_profile.get("morphology", {}).get("relief_source") != "continental_landmass":
+            raise ValueError("Les archétypes insulaires utilisent le mode sans miroir")
         fields = generate_island_source(
             side, players, seed, archetype_profile,
             native_relaxation=lambda values: relax_large_island_height(
                 values, archetype_profile=archetype_profile,
             ),
+            player_teams=player_teams,
         )
         grid.height[:] = fields.height
         signed_noise = fields.noise
@@ -2024,7 +2045,7 @@ def generate_primary_terrain(
     river_meta = _generate_rivers(
         grid, rng, rate_percent=effective_river_rate,
         allow_water_start=not noise_archetype_profile,
-        algorithm=river_algorithm,
+        algorithm=river_algorithm, tie_seed=int(seed),
     )
     river_meta["river_algorithm"] = river_algorithm
     if noise_archetype_profile:
@@ -2038,7 +2059,7 @@ def generate_primary_terrain(
         river_meta.update(complete_missing_island_rivers(
             grid, topology_labels, seed=seed,
             generate_native=lambda g, r, **kw: _generate_rivers(
-                g, r, algorithm=river_algorithm, **kw,
+                g, r, algorithm=river_algorithm, tie_seed=int(seed), **kw,
             ), rng_factory=NativeRng16,
         ))
     report("structural_transitions")

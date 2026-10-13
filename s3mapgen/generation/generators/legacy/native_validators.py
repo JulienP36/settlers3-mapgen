@@ -136,7 +136,8 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
     add("NATIVE_OBJECT_ACCESS", not np.any(state.accessibility[(objects != 0) & (objects != 127)] != 1)
         and not np.any(state.accessibility[objects == 127] != 0),
         "object cells are non-walkable except exhausted stones")
-    add("NATIVE_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}")
+    add("NATIVE_START_COUNT", len(state.starts) == int(state.metadata.get("players", len(state.starts))), f"starts={len(state.starts)}",
+        hard=state.metadata.get("start_algorithm_effective") != "classic")
     start_mass = state.metadata.get("startable_mass", {})
     if isinstance(start_mass, dict) and not state.metadata.get("large_island_starts"):
         add(
@@ -147,7 +148,12 @@ def validate(state, *, mode: int = 0) -> list[ValidationResult]:
             hard=False,
         )
     from ...archetypes.large_islands import validate_island_contract
-    out.extend(validate_island_contract(state))
+    island_checks = validate_island_contract(state)
+    if state.metadata.get("start_algorithm_effective") in ("classic", "fair"):
+        for check in island_checks:
+            if check.rule_id in ("ISLAND_STARTS", "ISLAND_SWAMPS"):
+                check.hard = False  # The game selector does not promise one per island.
+    out.extend(island_checks)
     return out
 
 

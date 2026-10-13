@@ -18,15 +18,10 @@ NATIVE_PLAYER_LIMITS: dict[int, int] = {
     640: 20,
     704: 20,
     768: 20,
-    832: 20,
-    896: 20,
-    960: 20,
-    1024: 20,
 }
 
 NATIVE_GAME_MIN_SIDE = 384
 NATIVE_GAME_MAX_SIDE = 768
-EDITOR_EXTENDED_SIDES = (832, 896, 960, 1024)
 
 
 def native_size_warning_kind(side: int) -> str | None:
@@ -35,8 +30,6 @@ def native_size_warning_kind(side: int) -> str | None:
     side = int(side)
     if side < NATIVE_GAME_MIN_SIDE:
         return "small"
-    if side > NATIVE_GAME_MAX_SIDE:
-        return "extended"
     return None
 
 
@@ -52,6 +45,10 @@ class GenerationRequest:
     players: int
     seed: int
     modifiers: tuple[str, ...] = ()
+    start_algorithm: str = "auto"
+    start_nations: tuple[int, ...] = ()
+    start_slot_types: tuple[int, ...] = ()
+    player_teams: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         if self.side not in NATIVE_PLAYER_LIMITS:
@@ -65,5 +62,17 @@ class GenerationRequest:
             )
         if not isinstance(self.seed, int):
             raise TypeError("La seed doit être un entier")
+        from ..start_algorithms import check_start_algorithm
+        check_start_algorithm(self.start_algorithm)
+        if self.start_algorithm == 'classic':
+            if self.start_slot_types and (len(self.start_slot_types)!=self.players or any(t not in (1,2) for t in self.start_slot_types)):
+                raise ValueError('Classique : types de slots natifs 1 ou 2 requis')
+        if (self.start_nations or self.start_algorithm == 'classic') and (
+            len(self.start_nations) != self.players
+            or any(type(n) is not int or n not in (0,1,2,3,255) for n in self.start_nations)
+        ):
+            raise ValueError('Départs : choisir une nation (0..3) ou Choisir (255) pour chaque joueur')
+        if self.player_teams and (len(self.player_teams) != self.players or any(type(t) is not int or not 0 <= t <= 20 for t in self.player_teams)):
+            raise ValueError("Équipes : une valeur entière de 0 à 20 par joueur requise")
         if self.modifiers:
             raise ValueError("Les modificateurs ne sont pas encore disponibles")

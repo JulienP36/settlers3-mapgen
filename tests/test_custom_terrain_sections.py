@@ -182,6 +182,6 @@ def test_mineral_sprite_assets_are_exactly_16_pixels():
     from PIL import Image
 
     for key in ("coal", "iron", "gold", "gems", "sulfur"):
-        with Image.open(BASE / "data" / "mineral_icons" / f"{key}.png") as image:
+        with Image.open(BASE / "assets" / "sprites" / "minerals" / f"{key}.png") as image:
             assert image.size == (16, 16)
             assert image.mode in {"RGBA", "LA"}

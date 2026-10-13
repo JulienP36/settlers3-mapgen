@@ -9,20 +9,12 @@ from ...map_data.constants import *
 from ...map_data.hexgrid import hex_distance
 from ...map_data.model import MapState
 from ..paths import START_MARKER_SHEET
+from ..ui.sprites import sprite_image
 
-WATER_COLORS=[(74,164,237),(63,151,226),(53,138,215),(43,125,204),(34,111,190),(27,98,176),(22,84,160),(17,69,143)]
-REEF_COLOR=(66,60,57)
-SAPLING_COLOR=(150,210,112)
-# ID 34 is the native one-cell rocky-grass patch.  The muted yellow/olive
-# sample keeps it distinct from Rocky while staying close to the reference
-# texture shown in the native editor.
-ROCKY_GRASS_PATCH_COLOR=(178,157,52)
-PALETTE={GRASS:(72,148,69),18:(101,166,78),19:(116,177,88),DRY_GRASS:(155,166,80),ROCK_TRANS_1:(112,118,104),ROCK_TRANS_2:(126,130,118),ROCKY:(109,109,103),ROCK_SNOW_TRANS:(152,154,148),SNOW_TRANS:(208,210,205),SNOW:(244,245,242),SHORE:(211,192,131),DESERT:(211,177,80),DESERT_TRANS:(187,157,75),GRASS_DESERT_TRANS:(153,143,87),SWAMP:(25,89,79),SWAMP_TRANS:(42,111,88),GRASS_SWAMP_TRANS:(79,132,73),MUD:(137,98,62),MUD_TRANS_2:(116,82,54),MUD_TRANS_1:(86,61,45),22:(147,112,72),28:(126,99,66),ROCKY_DETAIL:ROCKY_GRASS_PATCH_COLOR,96:(65,176,221),97:(50,161,210),98:(38,145,196),99:(28,130,182)}
-
-# Retained native sculpture cells use the base land color in this schematic
-# renderer. Keep their actual ID and blocking flag in MapState/export; this
-# color does not assert a native texture or an original terrain name.
-PALETTE[0x70] = PALETTE[GRASS]
+from ...map_data.preview import (
+    WATER_COLORS, REEF_COLOR, SAPLING_COLOR, ROCKY_GRASS_PATCH_COLOR, PALETTE,
+    global_rgb as _global_rgb,
+)
 
 # Settlers III player-color palette validated for v1.6 STABLE.
 # Order follows player slots P1..P20; P1 is the canonical S3 red.  The palette
@@ -58,7 +50,11 @@ def _load_player_start_markers(path=START_MARKER_SHEET)->tuple[Image.Image,...]:
     the exact two rows J1..J10 then J11..J20; the background becomes alpha.
     """
     try:
-        sheet=Image.open(path).convert('RGBA')
+        if path == START_MARKER_SHEET:
+            sheet = sprite_image('players/start_markers')
+        else:
+            with Image.open(path) as source:
+                sheet = source.convert('RGBA')
     except OSError:
         return ()
     rgba=np.asarray(sheet);background=rgba[0,0,:3]
@@ -131,29 +127,6 @@ def initial_territory_boundary(start:tuple[int,int], side:int)->set[tuple[int,in
     return {((cx+dx)%side,(cy+dy)%side) for dx,dy in _CANONICAL_BOUNDARY}
 
 
-def _global_rgb(state:MapState)->np.ndarray:
-    T,O=state.terrain,state.objects;side=state.side
-    rgb=np.zeros((side,side,3),np.uint8)
-    for i,c in enumerate(WATER_COLORS):rgb[T==i]=c
-    for tid,c in PALETTE.items():rgb[T==tid]=c
-    rgb[rgb.sum(axis=2)==0]=(150,150,150)
-    # Static world-decor families are single-cell anchors in the preview.  The
-    # colors are intentionally restrained so they remain legible over their
-    # ecological support without pretending to be the game's sprites.
-    rgb[np.isin(O,range(1,29))]=(130,130,126)      # stones
-    rgb[np.isin(O,range(29,34))]=(126,91,58)       # wrecks
-    rgb[O==34]=(112,106,106)                      # graves
-    rgb[np.isin(O,range(35,43))]=(86,132,62)      # plants / fungi / stumps
-    rgb[np.isin(O,range(43,45))]=(72,84,58)       # dead trees
-    rgb[np.isin(O,range(45,50))]=(180,134,52)     # desert props
-    rgb[np.isin(O,range(50,62))]=(66,137,58)      # flowers / bushes
-    rgb[np.isin(O,range(62,68))]=(55,130,92)      # reeds
-    adult=(O>=68)&(O<=81)&~np.isin(O,[78,79])
-    rgb[adult]=(25,88,34);rgb[np.isin(O,[78,79])]=(46,113,51);rgb[O==84]=SAPLING_COLOR
-    rgb[(O>=115)&(O<=126)]=(205,205,198);rgb[O==127]=(150,150,145)
-    rgb[np.isin(O,REEF_IDS)]=REEF_COLOR
-    return rgb
-
 def _resource_density(state:MapState,resource:str)->np.ndarray:
     T,O,R=state.terrain,state.objects,state.resources
     values=np.zeros((state.side,state.side),np.float32)
@@ -181,7 +154,14 @@ def _heatmap_rgb(state:MapState,resource:str)->np.ndarray:
 def _overlay_rgb(state:MapState,view:str,heatmap_resource:str='trees')->np.ndarray:
     T,O,R,H,C=state.terrain,state.objects,state.resources,state.height,state.claim;side=state.side
     rgb=np.zeros((side,side,3),np.uint8)
-    if view=='heightmap': rgb[:]=np.repeat(H[:,:,None],3,axis=2)
+    if view=='valid_starts':
+        from ...generation.start_diagnostics import departure_diagnostics
+        policy = heatmap_resource if heatmap_resource.split(':')[0] in ('valid_all','valid_0','valid_1','valid_2','valid_3') else 'valid_all'
+        report = departure_diagnostics(state, policy, context='before_objects')
+        rgb[:] = _global_rgb(state) // 3
+        rgb[report['green']] = (50, 255, 100)
+        rgb[report['yellow']] = (255, 210, 45)
+    elif view=='heightmap': rgb[:]=np.repeat(H[:,:,None],3,axis=2)
     elif view=='resources':
         rgb[:]=(45,45,45);water=np.isin(T,WATER_IDS);rgb[water]=(36,91,145);fam=R&0xF0
         rgb[fam==0x10]=(0,0,0);rgb[fam==0x20]=(255,148,0);rgb[fam==0x30]=(255,255,0);rgb[fam==0x40]=(206,0,0);rgb[fam==0x50]=(196,178,92)
@@ -518,7 +498,8 @@ def render_square_base(state,view='global',overlay_alpha=100,heatmap_resource='t
     base=_global_rgb(state);rgb=base.copy() if view=='global' else _blend(base,_overlay_rgb(state,view,heatmap_resource),overlay_alpha)
     # Keep reefs visible as dark rock anchors even when an overlay is fully opaque.
     if view!='heatmap':
-        rgb[np.isin(state.objects,REEF_IDS)]=REEF_COLOR
+        from ...map_data.object_context import reef_mask
+        rgb[reef_mask(state)]=REEF_COLOR
     return Image.fromarray(rgb,'RGB')
 
 def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overlay_alpha=100,projection='square',start_markers=None,start_marker_scale:float=1.0,focus=None,start_circles:bool=False)->Image.Image:
@@ -530,6 +511,17 @@ def compose_rendered_map(base:Image.Image,state,labels=True,view='global',overla
     # original boundary visible while highlighting another semantic family.
     if draw_start_markers or start_circles:
         _draw_start_marker_layer(im,state,projection,start_marker_scale,bool(start_circles),100,draw_start_markers)
+    if view == 'valid_starts' and draw_start_markers:
+        from ...generation.editor_starts import placed_start_checks
+        draw = ImageDraw.Draw(im)
+        colors = {'green':(50,255,100),'yellow':(255,210,45),'invalid':(235,75,65),'unknown':(150,150,150)}
+        for row in placed_start_checks(state):
+            x,y=row['x'],row['y']
+            if projection == 'parallelogram':
+                x,y=_project_point(x,y,state.side)
+            radius=max(2,round(3*start_marker_scale))
+            x += radius*2
+            draw.ellipse((x-radius,y-radius,x+radius,y+radius),fill=colors[row['status']],outline=(25,25,25))
     if isinstance(focus,dict) and focus.get('kind')=='start_player':
         _draw_nearest_opponent_arrow(im,state,focus,projection)
     return im

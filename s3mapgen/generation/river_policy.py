@@ -3,8 +3,8 @@
 The native scan, relief score, marker routing, minimum lengths, confluences
 and painting remain owned by each engine. This policy only filters coastal
 steps, adjusts forward candidate scores, and regulates new mouths using map
-size and land area. It neither
-modifies heights nor consumes the engine PRNG.
+size and land area. Equal best directions use seed-based ranking independent
+of candidate order. It neither modifies heights nor consumes the engine PRNG.
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ from ..map_data.hexgrid import component_labels, neighbor_count
 class ImprovedRiverPolicy:
     """General HEX6 policy, independent of island labels and archetype names."""
 
-    def __init__(self, terrain: np.ndarray):
+    def __init__(self, terrain: np.ndarray, *, seed: int = 0):
+        self.tie_seed = int(seed) & 0xFFFFFFFF
         # Freeze the water mask before mouths are painted as river cells.
         # Otherwise a later branch could creep along a former coastline.
         self.near_water = neighbor_count(terrain <= 7) > 0
@@ -41,6 +42,29 @@ class ImprovedRiverPolicy:
         )
         self.component_length_scales[0] = self.length_scale
         self.local_length_scale = self.length_scale
+
+    def choose_tied_direction(self, directions, row, col, *, phase=0):
+        """Rank equivalent directions without orientation or PRNG-order bias.
+
+        The caller supplies only equally best, legal candidates. Spatial and
+        seed hashing gives a reproducible choice independent of list order.
+        """
+        directions = tuple(set(map(int, directions)))
+        if not directions:
+            return 0
+        if len(directions) == 1:
+            return directions[0]
+        def rank(direction):
+            value = (self.tie_seed ^ (int(row) * 0x9E3779B1)
+                     ^ (int(col) * 0x85EBCA77) ^ (int(phase) * 0xC2B2AE3D)
+                     ^ (direction * 0x27D4EB2F)) & 0xFFFFFFFF
+            value ^= value >> 16
+            value = (value * 0x7FEB352D) & 0xFFFFFFFF
+            value ^= value >> 15
+            value = (value * 0x846CA68B) & 0xFFFFFFFF
+            value ^= value >> 16
+            return value, direction
+        return min(directions, key=rank)
 
     def quantity(self, side: int, terrain: np.ndarray, rate_percent: float) -> None:
         # Calibration against classic relief: counts grow faster than

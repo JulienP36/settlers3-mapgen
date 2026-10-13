@@ -18,7 +18,7 @@ from s3mapgen.generation.custom import build_custom_config, default_sections
 from s3mapgen.generation.archetypes import (
     CONTINENTAL_CUSTOM_PROFILE_KEY,
     continental_legacy_blocks_profile,
-    RELIEF_SOURCE_CUSTOM_LEGACY,
+    RELIEF_SOURCE_CUSTOM_LEGACY, RELIEF_SOURCE_CONTINENTAL,
     default_archetype_profile,
 )
 
@@ -169,9 +169,10 @@ def test_continental_profile_selector_offers_classic_and_current_relief():
     assert options == {
         "native": "Classique",
         CONTINENTAL_CUSTOM_PROFILE_KEY: "Continental",
-        "large_islands": "Grandes îles",
+        "large_islands": "Îles individuelles",
+        "team_islands": "Îles par équipe",
     }
-    assert set(presets) == {"native", CONTINENTAL_CUSTOM_PROFILE_KEY, "large_islands"}
+    assert set(presets) == {"native", CONTINENTAL_CUSTOM_PROFILE_KEY, "large_islands", "team_islands"}
     assert presets[CONTINENTAL_CUSTOM_PROFILE_KEY] == continental_legacy_blocks_profile()
 
 
@@ -201,7 +202,7 @@ def test_main_archetype_selector_applies_the_named_continental_profile():
     controller._custom_main_archetype_input_options = lambda _language: {
         "classic": "Classique",
         "continental": "Continental",
-        "large_islands": "Grandes îles",
+        "large_islands": "Îles individuelles",
         "small_islands": "Petites îles",
     }
     controller._custom_ensure_config = lambda mode, archetype: build_custom_config(
@@ -230,7 +231,7 @@ def test_main_archetype_selector_classic_choice_restores_native_profile():
     controller._custom_main_archetype_input_options = lambda _language: {
         "classic": "Classique",
         "continental": "Continental",
-        "large_islands": "Grandes îles",
+        "large_islands": "Îles individuelles",
         "small_islands": "Petites îles",
     }
     controller._custom_ensure_config = lambda mode, archetype: build_custom_config(
@@ -344,8 +345,8 @@ def test_relief_source_selector_includes_custom_legacy_blocks():
     controller = CustomGeneratorController.__new__(CustomGeneratorController)
     options = controller._custom_archetype_relief_source_options("fr")
 
-    assert RELIEF_SOURCE_CUSTOM_LEGACY in options
-    assert options[RELIEF_SOURCE_CUSTOM_LEGACY] == "Composition · Legacy par blocs"
+    assert RELIEF_SOURCE_CONTINENTAL in options
+    assert options[RELIEF_SOURCE_CONTINENTAL] == "Composition · Continental"
 
 
 def test_native_block_controls_only_apply_to_native_or_custom_legacy_sources():
@@ -359,7 +360,7 @@ def test_native_block_controls_only_apply_to_native_or_custom_legacy_sources():
     )
     for source, expected in (
         ("native_legacy", "normal"),
-        ("legacy_blocks", "normal"),
+        ("continental_landmass", "disabled"),
         ("perlin", "disabled"),
     ):
         controller = CustomGeneratorController.__new__(CustomGeneratorController)
@@ -383,7 +384,7 @@ def test_native_block_controls_only_apply_to_native_or_custom_legacy_sources():
         )
         assert controller._custom_archetype_spinboxes[
             "morphology.shape_scale_percent"
-        ].states[-1] == ("disabled" if source == "legacy_blocks" else "normal")
+        ].states[-1] == "normal"
 
 
 class _FakeImageCanvas:
@@ -983,18 +984,14 @@ def test_custom_sections_use_responsive_natural_width_layout():
     assert 'return {"start_bonus", "minerals"}' in CUSTOM_CONTROLLER_SOURCE
     assert 'return max(shell.winfo_reqwidth(), body.winfo_reqwidth())' in CUSTOM_CONTROLLER_SOURCE
     assert 'section_layout_gap = 16' in CUSTOM_CONTROLLER_SOURCE
-    assert 'section_layout_safety_margin = 32' in CUSTOM_CONTROLLER_SOURCE
-    assert 'section_pair_required_width(keys) + section_layout_safety_margin' in CUSTOM_CONTROLLER_SOURCE
+    assert 'section_layout_safety_margin = 32' not in CUSTOM_CONTROLLER_SOURCE
+    assert 'section_pair_required_width(keys)' in CUSTOM_CONTROLLER_SOURCE
     assert 'for candidate in (2,):' in CUSTOM_CONTROLLER_SOURCE
-    assert 'available_width = max(0, root.winfo_width() - 28)' in CUSTOM_CONTROLLER_SOURCE
+    assert 'available_width = content_width(root)' in CUSTOM_CONTROLLER_SOURCE
     assert 'self._custom_generator_tab._scroll_fit_width = True' in CUSTOM_CONTROLLER_SOURCE
     assert "fit_width=bool(getattr(inner,'_scroll_fit_width',False))" in SETTINGS_CONTROLLER_SOURCE
     assert 'target_width=available_w if fit_width else max(required_w,available_w)' in SETTINGS_CONTROLLER_SOURCE
     assert 'sections_frame.bind("<Configure>", schedule_section_relayout, add="+")' in CUSTOM_CONTROLLER_SOURCE
-    assert 'root.bind("<Configure>", schedule_section_relayout, add="+")' in CUSTOM_CONTROLLER_SOURCE
-    assert 'shell.grid_configure(' in CUSTOM_CONTROLLER_SOURCE
-    assert 'columnspan=column_count' in CUSTOM_CONTROLLER_SOURCE
-    assert 'section_layout_gap if column < len(row) - 1 else 0' in CUSTOM_CONTROLLER_SOURCE
     assert 'body.grid(\n                        row=1,\n                        column=0,\n                        columnspan=2,' in CUSTOM_CONTROLLER_SOURCE
     assert 'header.grid(row=0, column=0, sticky="w")' in CUSTOM_CONTROLLER_SOURCE
     assert 'sticky="nw"' in CUSTOM_CONTROLLER_SOURCE
@@ -1095,10 +1092,8 @@ def test_custom_generator_uses_natural_width_and_aligned_mineral_rows():
     assert 'bonus_group_fits(("forest", "stones"), available_width)' in CUSTOM_CONTROLLER_SOURCE
     assert 'bonus_group_fits(("lake", "rocky", "swamp"), available_width)' in CUSTOM_CONTROLLER_SOURCE
     assert 'layout_bonus_group(("lake", "rocky", "swamp"), 3)' in CUSTOM_CONTROLLER_SOURCE
-    assert 'layout_bonus_group(("lake", "rocky"), 2)' in CUSTOM_CONTROLLER_SOURCE
-    assert 'layout_bonus_group(("swamp",), 1, start_row=1)' in CUSTOM_CONTROLLER_SOURCE
+    assert 'layout_bonus_group(("lake", "rocky", "swamp"), 2)' in CUSTOM_CONTROLLER_SOURCE
     assert 'sections_frame.bind("<Configure>", schedule_bonus_panel_relayout, add="+")' in CUSTOM_CONTROLLER_SOURCE
-    assert 'root.bind("<Configure>", schedule_bonus_panel_relayout, add="+")' in CUSTOM_CONTROLLER_SOURCE
     assert 'rocky_matrix = ttk.Frame(rocky_bonus' in CUSTOM_CONTROLLER_SOURCE
     assert 'line = ttk.Frame(rocky_matrix)' in CUSTOM_CONTROLLER_SOURCE
     assert 'add_start_preview(parent, row, variable' not in CUSTOM_CONTROLLER_SOURCE
@@ -1320,7 +1315,7 @@ def test_source_selector_offers_the_same_complete_and_simple_sources_for_all_pre
     controller = CustomGeneratorController.__new__(CustomGeneratorController)
     controller._custom_current_archetype = lambda: "large_islands"
     options = controller._custom_archetype_relief_source_options(language)
-    assert {"large_islands", "native_legacy", "legacy_blocks", "perlin", "fbm"} <= options.keys()
+    assert {"large_islands", "native_legacy", "continental_landmass", "perlin", "fbm"} <= options.keys()
     controller._custom_current_archetype = lambda: "continental"
     assert options == controller._custom_archetype_relief_source_options(language)
     assert options["large_islands"].split(" · ")[0] != options["perlin"].split(" · ")[0]
@@ -1428,6 +1423,19 @@ def test_archetype_tab_build_uses_the_same_customizable_editor_for_both_presets(
     for name in ("Frame", "LabelFrame", "Label", "Button", "Combobox", "Spinbox",
                  "Checkbutton", "Progressbar", "Separator"):
         monkeypatch.setattr(module.ttk, name, Widget)
+    import s3mapgen.application.custom.mask_selector as mask_selector
+    monkeypatch.setattr(mask_selector, "MaskSelect", Widget)
+    import s3mapgen.application.custom.source_selector as source_selector
+    monkeypatch.setattr(source_selector, "SourceSelect", Widget)
+    monkeypatch.setattr(module, "SourceSelect", Widget)
+    class FormulaWidget(Widget):
+        def __init__(self, parent, *_args):
+            super().__init__(parent)
+            self.active = self.dirty = False
+        def set_active(self, active):
+            self.active = active
+            self.grid() if active else self.grid_remove()
+    monkeypatch.setattr(module, "FormulaPanel", FormulaWidget)
     monkeypatch.setattr(module.tk, "Canvas", Widget)
     monkeypatch.setattr(module.tk, "StringVar", Variable)
     monkeypatch.setattr(module.tk, "BooleanVar", Variable)
@@ -1486,7 +1494,8 @@ def test_archetype_tab_build_uses_the_same_customizable_editor_for_both_presets(
     vars_before = dict(controller._custom_archetype_vars)
     for preset_key in ("native", "large_islands", CONTINENTAL_CUSTOM_PROFILE_KEY):
         controller._custom_apply_archetype_preset(preset_key)
-        expected = controller._custom_archetype_profile_presets()[preset_key]
+        from s3mapgen.generation.archetypes.island_amplitude import resolve_island_profile
+        expected = resolve_island_profile(controller._custom_archetype_profile_presets()[preset_key], int(controller.size.get()), int(controller.players.get()))
         assert tuple(controller._custom_archetype_tab.winfo_children()) == initial_widgets
         assert controller._custom_archetype_vars == vars_before
         assert controller._custom_archetype_vars["relief.mountain_threshold"].get() == str(expected["relief"]["mountain_threshold"])
@@ -1548,7 +1557,7 @@ def test_leaving_large_islands_restores_classic_default_without_rebuilding():
     controller._custom_current_mode = lambda: "upgraded"
     controller._custom_language = lambda: "fr"
     controller._custom_ensure_config = lambda *args: controller._custom_config
-    controller.arch = _FakeVar("Grandes îles")
+    controller.arch = _FakeVar("Îles individuelles")
     controller._custom_river_algorithm_var = _FakeVar("Amélioré")
     controller._custom_sync_archetype_editor_values = lambda: None
     controller._custom_activate_archetype = lambda c: setattr(controller, "_custom_config", c)

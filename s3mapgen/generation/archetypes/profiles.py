@@ -21,7 +21,7 @@ from typing import Any
 
 from .noise_sources import NOISE_SOURCE_OPTIONS
 
-ARCHETYPE_PROFILE_SCHEMA_VERSION = 21
+ARCHETYPE_PROFILE_SCHEMA_VERSION = 23
 
 # The native relief pass first builds an unsigned 0..255 field and then
 # applies ``raw - 0x1E`` while flooring water at zero.  The signed value shown
@@ -41,6 +41,7 @@ MIN_MOUNTAIN_SNOW_THRESHOLD_GAP = 2
 MORPHOLOGY_DEFAULTS = {
     "shape_scale_percent": 100,
     "relief_contrast_percent": 100,
+    "island_amplitude_percent": 100,
     "native_coarse_variation_percent": 100,
     "native_refinement_percent": 100,
     "native_large_scale_refinement_percent": 100,
@@ -54,6 +55,7 @@ MORPHOLOGY_DEFAULTS = {
 MORPHOLOGY_BOUNDS = {
     "shape_scale_percent": (50, 100),
     "relief_contrast_percent": (25, 200),
+    "island_amplitude_percent": (25, 100),
     "native_coarse_variation_percent": (0, 200),
     "native_refinement_percent": (0, 300),
     "native_large_scale_refinement_percent": (0, 200),
@@ -66,6 +68,8 @@ MORPHOLOGY_BOUNDS = {
 
 MORPHOLOGY_TOGGLE_DEFAULTS = {
     "size_adaptive_frequency": False,
+    "island_amplitude_auto": False,
+    "island_thresholds_auto": False,
 }
 
 FINITE_DOMAIN_MODE_DEFAULT = "percent"
@@ -91,35 +95,30 @@ RELIEF_SOURCE_CUSTOM_LEGACY = "legacy_blocks"
 # Complete island geometry and height provider, composable like other sources.
 RELIEF_SOURCE_LARGE_ISLANDS = "large_islands"
 RELIEF_SOURCE_LARGE_ISLANDS_R21 = "large_islands_r21"
-ISLAND_RELIEF_SOURCES = (RELIEF_SOURCE_LARGE_ISLANDS, RELIEF_SOURCE_LARGE_ISLANDS_R21)
+RELIEF_SOURCE_TEAM_ISLANDS = "team_islands"
+RELIEF_SOURCE_CONTINENTAL = "continental_landmass"
+ISLAND_RELIEF_SOURCES = (
+    RELIEF_SOURCE_LARGE_ISLANDS,
+    RELIEF_SOURCE_LARGE_ISLANDS_R21,
+    RELIEF_SOURCE_TEAM_ISLANDS,
+    RELIEF_SOURCE_CONTINENTAL,
+)
 CUSTOM_LEGACY_MOUNTAIN_THRESHOLD = 98
 CUSTOM_LEGACY_SNOW_THRESHOLD = 125
 # Principal sources include complete compositions and elementary noises.
 RELIEF_SOURCE_OPTIONS = (
     RELIEF_SOURCE_DEFAULT,
-    RELIEF_SOURCE_CUSTOM_LEGACY,
     *ISLAND_RELIEF_SOURCES,
     *NOISE_SOURCE_OPTIONS,
 )
 
 
-def thresholds_on_relief_source_change(
-    current: str, selected: str, mountain: int, snow: int,
-) -> tuple[int, int]:
-    """Rebase only untouched source defaults; preserve manually edited thresholds."""
-
+def thresholds_on_relief_source_change(current, selected, mountain, snow):
+    """Keep user thresholds; upgrade the former source's untouched defaults."""
     pair = (int(mountain), int(snow))
-    if (
-        selected != current
-        and selected == RELIEF_SOURCE_CUSTOM_LEGACY
-        and pair == (140, 190)
-    ):
-        return CUSTOM_LEGACY_MOUNTAIN_THRESHOLD, CUSTOM_LEGACY_SNOW_THRESHOLD
-    if (
-        current == RELIEF_SOURCE_CUSTOM_LEGACY
-        and selected != current
-        and pair == (CUSTOM_LEGACY_MOUNTAIN_THRESHOLD, CUSTOM_LEGACY_SNOW_THRESHOLD)
-    ):
+    if selected != current and selected == RELIEF_SOURCE_CONTINENTAL and pair in ((98, 125), (140, 190)):
+        return 140, 200
+    if current == RELIEF_SOURCE_CONTINENTAL and selected == RELIEF_SOURCE_DEFAULT and pair == (140, 200):
         return 140, 190
     return pair
 
@@ -163,7 +162,7 @@ NOISE_MASK_TYPE_OPTIONS = (
     "curvature",
     "noise",
 )
-NOISE_MASK_SOURCE_OPTIONS = NOISE_SOURCE_OPTIONS
+NOISE_MASK_SOURCE_OPTIONS = tuple(source for source in NOISE_SOURCE_OPTIONS if source != "formula")
 NOISE_MASK_DEFAULTS: dict[str, str | int] = {
     "type": "none",
     "source": "perlin",
@@ -294,8 +293,10 @@ MASK_LAYER_COUNT = 6
 MASK_LAYER_DEFAULT_COUNT = 0
 MASK_LAYER_COUNT_BOUNDS = (0, MASK_LAYER_COUNT)
 MASK_LAYER_MANUAL_GRID_SIDE = 64
+MASK_LAYER_MANUAL_GRID_SIDES = (64, 128, 256, 512)
 MASK_LAYER_TYPE_OPTIONS = (*SHAPE_TEMPLATE_TYPE_OPTIONS[1:], "manual")
 MASK_LAYER_OPERATION_OPTIONS = (
+    "mask",
     "blend",
     "add",
     "subtract",
@@ -504,6 +505,8 @@ def _mask_layer_default(index: int) -> dict[str, Any]:
         "enabled": False,
         "type": seed["type"],
         "operation": seed["operation"],
+        "target": "result",
+        "inverted": False,
         "strength_percent": seed["strength_percent"],
         "order": int(index),
         "settings": settings,
@@ -743,12 +746,12 @@ def _deep_merge(base: Mapping[str, Any], overlay: Mapping[str, Any]) -> dict[str
     return result
 
 
-def _normalize_noise_source_settings(raw_settings: Any) -> dict[str, int | float]:
+def _normalize_noise_source_settings(raw_settings: Any) -> dict[str, int | float | str]:
     if raw_settings is None:
         raw_settings = {}
     if not isinstance(raw_settings, Mapping):
         raise TypeError("Les paramètres d’une source de bruit doivent être un objet")
-    normalized: dict[str, int | float] = {}
+    normalized: dict[str, int | float | str] = {}
     for key, default in NOISE_SOURCE_SETTING_DEFAULTS.items():
         try:
             raw = float(raw_settings.get(key, default))
@@ -760,6 +763,9 @@ def _normalize_noise_source_settings(raw_settings: Any) -> dict[str, int | float
                 f"Le paramètre de bruit {key} doit être compris entre {minimum} et {maximum}"
             )
         normalized[key] = int(round(raw)) if isinstance(default, int) else float(raw)
+    if "expression" in raw_settings:
+        from .formula import normalize_formula
+        normalized["expression"] = normalize_formula(raw_settings["expression"])
     return normalized
 
 
@@ -865,22 +871,23 @@ def _normalize_manual_mask_provider_settings(
     normalized = deepcopy(dict(raw_settings))
     if "grid" not in normalized:
         return normalized
+    raw_side = normalized.get("grid_side", MASK_LAYER_MANUAL_GRID_SIDE)
+    if isinstance(raw_side, bool) or raw_side not in MASK_LAYER_MANUAL_GRID_SIDES:
+        raise ValueError("Résolution du masque manuel : 64, 128, 256 ou 512")
+    side = int(raw_side)
     raw_grid = normalized["grid"]
     if isinstance(raw_grid, (list, tuple)):
-        if len(raw_grid) == MASK_LAYER_MANUAL_GRID_SIDE and all(
-            isinstance(row, (list, tuple)) for row in raw_grid
-        ):
+        if len(raw_grid) == side and all(isinstance(row, (list, tuple)) for row in raw_grid):
+            if any(len(row) != side for row in raw_grid):
+                raise ValueError("La grille du masque doit être carrée")
             flattened = [value for row in raw_grid for value in row]
         else:
             flattened = list(raw_grid)
     else:
         raise TypeError("La grille du masque manuel doit être une liste")
-    expected = MASK_LAYER_MANUAL_GRID_SIDE * MASK_LAYER_MANUAL_GRID_SIDE
+    expected = side * side
     if len(flattened) != expected:
-        raise ValueError(
-            "La grille du masque manuel doit contenir "
-            f"{expected} niveaux de gris"
-        )
+        raise ValueError(f"La grille du masque manuel doit contenir {expected} niveaux de gris")
     values: list[int] = []
     for value in flattened:
         try:
@@ -895,7 +902,7 @@ def _normalize_manual_mask_provider_settings(
             )
         values.append(int(numeric))
     normalized["grid"] = values
-    normalized["grid_side"] = MASK_LAYER_MANUAL_GRID_SIDE
+    normalized["grid_side"] = side
     return normalized
 
 
@@ -967,6 +974,9 @@ def _normalize_noise_layers(raw_layers: Any) -> list[dict[str, Any]]:
             else {}
         )
         source_settings.setdefault("frequency", scale)
+        if source_name == "formula":
+            from .formula import DEFAULT_FORMULA
+            source_settings.setdefault("expression", DEFAULT_FORMULA)
         normalized.append(
             {
                 "enabled": bool(source.get("enabled", defaults["enabled"])),
@@ -1019,6 +1029,11 @@ def _normalize_mask_layers(raw_layers: Any) -> list[dict[str, Any]]:
             raise ValueError(
                 f"Type de masque inconnu pour la couche {index + 1} : {mask_type}"
             )
+        target = str(source.get('target', 'result'))
+        if target not in ('result', 'source') and target not in tuple(
+            f'{prefix}:{index}' for prefix in ('fusion', 'missing') for index in range(6)
+        ):
+            raise ValueError(f'Cible de masque inconnue : {target}')
         operation = str(source.get("operation", defaults["operation"]))
         if operation not in MASK_LAYER_OPERATION_OPTIONS:
             raise ValueError(
@@ -1043,6 +1058,8 @@ def _normalize_mask_layers(raw_layers: Any) -> list[dict[str, Any]]:
                 f"La force de la couche de masque {index + 1} doit être comprise entre "
                 f"{MASK_LAYER_STRENGTH_BOUNDS[0]} et {MASK_LAYER_STRENGTH_BOUNDS[1]} %"
             )
+        if operation == "mask" and strength > 100:
+            raise ValueError("La force du masquage exact doit être comprise entre 0 et 100 %")
         raw_settings = source.get("settings", {})
         if not isinstance(raw_settings, Mapping):
             raise TypeError(
@@ -1098,6 +1115,8 @@ def _normalize_mask_layers(raw_layers: Any) -> list[dict[str, Any]]:
         normalized.append(
             {
                 "enabled": bool(source.get("enabled", defaults["enabled"])),
+                "target": target,
+                "inverted": bool(source.get("inverted", False)),
                 "type": mask_type,
                 "operation": operation,
                 "strength_percent": int(strength),
@@ -1107,6 +1126,19 @@ def _normalize_mask_layers(raw_layers: Any) -> list[dict[str, Any]]:
             }
         )
     return normalized
+
+
+def remap_mask_targets(raw_layers, positions):
+    """Follow existing fusion identities through stack edits; deletion is inert."""
+    layers = deepcopy(list(raw_layers))
+    for layer in layers:
+        target = str(layer.get('target', 'result'))
+        if target.startswith('fusion:'):
+            index = int(target.split(':')[1])
+            if index in positions:
+                moved = positions[index]
+                layer['target'] = f'missing:{index}' if moved is None else f'fusion:{moved}'
+    return layers
 
 
 def _editable_noise_layer_stack(raw_layers: Any) -> list[dict[str, Any]]:
@@ -1334,8 +1366,13 @@ def default_archetype_profile(key: str = "continental") -> dict[str, Any]:
     if key == "large_islands":
         result = deepcopy(CONTINENTAL_ARCHETYPE_PROFILE)
         result.update(profile_name="Large Islands", archetype_key=key, mass={"layout": key, "micro_islands": False})
-        result["morphology"]["relief_source"] = RELIEF_SOURCE_LARGE_ISLANDS
+        result["morphology"].update(relief_source=RELIEF_SOURCE_LARGE_ISLANDS, island_amplitude_auto=True, island_thresholds_auto=True)
         result["relief"]["snow_threshold"] = 200
+        return result
+    if key == "team_islands":
+        result = default_archetype_profile("large_islands")
+        result.update(profile_name="Team Islands", archetype_key=key, mass={"layout": key, "micro_islands": False})
+        result["morphology"]["relief_source"] = RELIEF_SOURCE_TEAM_ISLANDS
         return result
     return _reserved_profile(key)
 
@@ -1386,6 +1423,8 @@ def normalize_archetype_profile(
             CUSTOM_LEGACY_SNOW_THRESHOLD,
             round(snow * 0.66),
         )
+    if source_relief in {"legacy_blocks", "legacy_derived"} and (mountain, snow) == (98, 125):
+        mountain, snow = 140, 200
     if not (
         NATIVE_NOISE_MINIMUM <= water < mountain
         and mountain + MIN_MOUNTAIN_SNOW_THRESHOLD_GAP <= snow <= 255
@@ -1424,6 +1463,14 @@ def normalize_archetype_profile(
     if not isinstance(adaptive_frequency, bool):
         raise ValueError("Le réglage size_adaptive_frequency doit être booléen")
     normalized_morphology["size_adaptive_frequency"] = adaptive_frequency
+    for name in ("island_amplitude_auto", "island_thresholds_auto"):
+        value = morphology.get(name, True)
+        # Historical explicitly customized thresholds remain literal.
+        if name == "island_thresholds_auto" and name not in source.get("morphology", {}) and source.get("relief") and (mountain, snow) != (140, 200):
+            value = False
+        if not isinstance(value, bool):
+            raise ValueError(f"Le réglage {name} doit être booléen")
+        normalized_morphology[name] = value
     finite_domain_mode = str(
         morphology.get("finite_domain_mode", FINITE_DOMAIN_MODE_DEFAULT)
     )
@@ -1443,7 +1490,8 @@ def normalize_archetype_profile(
         # R73's temporary rank-redistribution experiment is retired. Keep
         # saved profiles loadable by migrating that choice to the block-based
         # Legacy Custom generator introduced in R74.
-        "legacy_derived": RELIEF_SOURCE_CUSTOM_LEGACY,
+        "legacy_derived": RELIEF_SOURCE_CONTINENTAL,
+        "legacy_blocks": RELIEF_SOURCE_CONTINENTAL,
     }.get(relief_source, relief_source)
     if key == "large_islands" and source_schema_version < 21:
         # Earlier saved island profiles inherited a Continental source label,
@@ -1457,6 +1505,9 @@ def normalize_archetype_profile(
     normalized_morphology["relief_source_settings"] = _normalize_noise_source_settings(
         morphology.get("relief_source_settings")
     )
+    if relief_source == "formula":
+        from .formula import DEFAULT_FORMULA
+        normalized_morphology["relief_source_settings"].setdefault("expression", DEFAULT_FORMULA)
     normalized_morphology["relief_source_mask"] = _normalize_noise_mask(
         morphology.get("relief_source_mask")
     )
@@ -1571,19 +1622,14 @@ def normalize_archetype_profile(
     return result
 
 
-def continental_legacy_blocks_profile() -> dict[str, Any]:
-    """Return the named Continental profile derived from the native Legacy blocks.
-
-    It uses the R82 field and thresholds already available in the editor.  The
-    native Legacy profile remains the separate Classique choice; no extra
-    terrain rules or hand-authored geometry are introduced here.
-    """
+def continental_landmass_profile() -> dict[str, Any]:
+    """Return the continuous-landmass Continental preset."""
 
     profile = default_archetype_profile("continental")
     profile["profile_name"] = CONTINENTAL_CUSTOM_PROFILE_NAME
     profile["profile_preset_key"] = CONTINENTAL_CUSTOM_PROFILE_KEY
     morphology = deepcopy(profile["morphology"])
-    morphology["relief_source"] = RELIEF_SOURCE_CUSTOM_LEGACY
+    morphology["relief_source"] = RELIEF_SOURCE_CONTINENTAL
     morphology["relief_source_settings"] = deepcopy(NOISE_SOURCE_SETTING_DEFAULTS)
     morphology["relief_source_mask"] = deepcopy(NOISE_MASK_DEFAULTS)
     morphology["shape_template"] = deepcopy(SHAPE_TEMPLATE_DEFAULTS)
@@ -1594,10 +1640,16 @@ def continental_legacy_blocks_profile() -> dict[str, Any]:
     profile["morphology"] = morphology
     profile["relief"].update(
         water_threshold=0,
-        mountain_threshold=CUSTOM_LEGACY_MOUNTAIN_THRESHOLD,
-        snow_threshold=CUSTOM_LEGACY_SNOW_THRESHOLD,
+        mountain_threshold=140,
+        snow_threshold=200,
     )
+    morphology.update(island_amplitude_auto=True, island_thresholds_auto=True)
     return normalize_archetype_profile(profile, archetype_key="continental")
+
+
+def continental_legacy_blocks_profile() -> dict[str, Any]:
+    """Compatibility alias for the retired preset factory name."""
+    return continental_landmass_profile()
 
 
 def continental_noise_calibration_profile() -> dict[str, Any]:
@@ -1800,13 +1852,21 @@ def mask_layer_parameters(
 
 
 def has_active_mask_layers(profile: Mapping[str, Any] | None = None) -> bool:
-    """Return whether at least one independent mask is enabled."""
-
-    return any(
-        bool(layer.get("enabled", False))
-        and int(layer.get("strength_percent", 0)) > 0
-        for layer in mask_layer_parameters(profile)
-    )
+    """Return whether an enabled mask has an available target."""
+    normalized = normalize_archetype_profile(profile, archetype_key=str((profile or {}).get("archetype_key", "continental")))
+    morphology = normalized["morphology"]
+    for layer in morphology["mask_layers"][:morphology["mask_layer_count"]]:
+        if not layer["enabled"] or layer["strength_percent"] <= 0:
+            continue
+        target = layer["target"]
+        if target in ("result", "source"):
+            return True
+        if target.startswith("fusion:"):
+            index = int(target.split(":")[1])
+            fusion = morphology["noise_layers"][index]
+            if index < morphology["noise_layer_count"] and fusion["enabled"] and fusion["strength_percent"] > 0:
+                return True
+    return False
 
 
 def relief_source_settings(
@@ -1907,6 +1967,7 @@ __all__ = (
     "CONTINENTAL_CUSTOM_PROFILE_KEY",
     "CONTINENTAL_CUSTOM_PROFILE_NAME",
     "continental_legacy_blocks_profile",
+    "continental_landmass_profile",
     "continental_noise_calibration_profile",
     "CONTINENTAL_PARAMETER_DESCRIPTORS",
     "FINITE_DOMAIN_MODE_DEFAULT",
@@ -1919,6 +1980,7 @@ __all__ = (
     "RELIEF_SOURCE_CUSTOM_LEGACY",
     "RELIEF_SOURCE_LARGE_ISLANDS",
     "RELIEF_SOURCE_LARGE_ISLANDS_R21",
+    "RELIEF_SOURCE_TEAM_ISLANDS", "RELIEF_SOURCE_CONTINENTAL",
     "ISLAND_RELIEF_SOURCES",
     "CUSTOM_LEGACY_MOUNTAIN_THRESHOLD",
     "CUSTOM_LEGACY_SNOW_THRESHOLD",
@@ -1954,6 +2016,7 @@ __all__ = (
     "MASK_LAYER_DEFAULT_COUNT",
     "MASK_LAYER_DEFAULTS",
     "MASK_LAYER_MANUAL_GRID_SIDE",
+    "MASK_LAYER_MANUAL_GRID_SIDES",
     "MASK_LAYER_OPERATION_OPTIONS",
     "MASK_LAYER_ORDER_BOUNDS",
     "MASK_LAYER_STRENGTH_BOUNDS",

@@ -26,7 +26,9 @@ WITNESSES = json.loads(Path("tests/fixtures/islands_r21_source.json").read_text(
 @pytest.mark.parametrize("case", WITNESSES, ids=lambda c: f"{c['side']}-{c['players']}")
 def test_archived_island_source_retains_exact_original_height_and_mask(case):
     profile = default_archetype_profile("large_islands")
-    profile["morphology"]["relief_source"] = RELIEF_SOURCE_LARGE_ISLANDS_R21
+    profile["morphology"].update(relief_source=RELIEF_SOURCE_LARGE_ISLANDS_R21,
+                                 island_amplitude_auto=False, island_thresholds_auto=False,
+                                 island_amplitude_percent=100)
     preview = generate_archetype_preview(profile, case["side"], case["seed"], players=case["players"])
     assert hashlib.sha256(preview.noise.tobytes()).hexdigest() == case["height_sha256"]
     assert hashlib.sha256(preview.island_mask.tobytes()).hexdigest() == case["labels_sha256"]
@@ -82,6 +84,10 @@ def test_component_reset_preserves_other_slots_and_generator_settings(kind, defa
     morphology[f"{kind}_layer_count"] = 3
     for layer in morphology[f"{kind}_layers"][:3]:
         layer.update(enabled=True, strength_percent=85)
+    if kind == "noise":
+        morphology["noise_layers"][1].update(source="simplex", family="simplex")
+    else:
+        morphology["mask_layers"][1]["type"] = "star"
     config = build_custom_config("upgraded", "large_islands").with_archetype_profile(profile)
     controller._custom_config = config
     controller._custom_archetype_editor_editable = True
@@ -92,7 +98,12 @@ def test_component_reset_preserves_other_slots_and_generator_settings(kind, defa
     controller._custom_reset_archetype_component(kind, 1)
     after = controller._custom_config.archetype_profile
     expected = deepcopy(before)
-    expected["morphology"][f"{kind}_layers"][1] = deepcopy(defaults[1])
+    reset = deepcopy(defaults[1])
+    if kind == "noise":
+        reset.update(source="simplex", family="simplex")
+    else:
+        reset["type"] = "star"
+    expected["morphology"][f"{kind}_layers"][1] = reset
     assert after == expected
     assert controller._custom_config.semantic_sections() == config.semantic_sections()
     assert controller._custom_archetype_noise_layer_solo == (None if kind == "noise" else 1)
@@ -119,6 +130,6 @@ def test_primary_reset_keeps_fusions_masks_and_manual_thresholds():
     controller._custom_reset_archetype_section("primary_source")
     expected = deepcopy(before)
     baseline = default_archetype_profile("large_islands")
-    for key in ("relief_source", "relief_source_settings", "relief_source_mask"):
+    for key in ("relief_source_settings", "relief_source_mask"):
         expected["morphology"][key] = baseline["morphology"][key]
     assert controller._custom_config.archetype_profile == expected

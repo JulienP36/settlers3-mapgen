@@ -1,33 +1,17 @@
 """Deterministic Pillow drawings used by Tk controls and map thumbnails."""
 
-from pathlib import Path
 from PIL import Image, ImageDraw, ImageOps, ImageTk
-
-from ...paths import BASE
-
-
-_SEED_DICE_PATH = Path(__file__).with_name("assets") / "seed_dice.png"
-_INFO_ICON_PATH = Path(__file__).with_name("assets") / "info.png"
-_MINERAL_ICON_PATHS = {
-    "coal": BASE / "data" / "mineral_icons" / "coal.png",
-    "iron": BASE / "data" / "mineral_icons" / "iron.png",
-    "gold": BASE / "data" / "mineral_icons" / "gold.png",
-    "gems": BASE / "data" / "mineral_icons" / "gems.png",
-    "sulfur": BASE / "data" / "mineral_icons" / "sulfur.png",
-}
+from ..sprites import sprite_image, sprite_photo
 
 
 def seed_dice_icon(master):
     """Load the 24px user-provided die used by every seed randomizer."""
-    with Image.open(_SEED_DICE_PATH) as source:
-        image = source.convert("RGBA")
-    return ImageTk.PhotoImage(image, master=master)
+    return sprite_photo(master, 'ui/seed_dice')
 
 
 def info_icons(master):
     """Load the three 16×16 help-marker frames: off, normal and hover."""
-    with Image.open(_INFO_ICON_PATH) as source:
-        image = source.convert("RGBA")
+    image = sprite_image('ui/info')
     if image.size != (48, 16):
         raise ValueError("L’icône d’aide doit être une bande de trois frames 16×16")
     return tuple(
@@ -44,9 +28,7 @@ def mineral_icon(master, key: str, *, disabled: bool = False):
     without changing the compact row geometry.
     """
 
-    path = _MINERAL_ICON_PATHS[str(key)]
-    with Image.open(path) as source:
-        image = source.convert("RGBA")
+    image = sprite_image(f'minerals/{key}')
     if image.size != (16, 16):
         raise ValueError(f"L’icône de minerai {key!r} doit rester en 16×16 pixels")
     if disabled:
@@ -58,41 +40,19 @@ def mineral_icon(master, key: str, *, disabled: bool = False):
 
 def selector_icon_image(color, kind="dot", size=18):
     """Return the Pillow image behind a selector icon without requiring Tk."""
+    if kind in ("lock_closed", "lock_open"):
+        return sprite_image("ui/" + kind)
+    if kind.startswith("sprite:"):
+        return sprite_image(kind[7:])
+    if kind in ("global", "territories", "initial_territory", "heightmap", "resources", "paths", "crops", "heatmap", "valid_starts"):
+        return sprite_image("views/" + kind)
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     c = color
-    if kind == "global":
-        d.ellipse((2, 2, size - 3, size - 3), fill=c, outline="#111111", width=1)
-        d.arc((5, 4, size - 6, size - 4), 80, 280, fill="#d7f2ff", width=1)
-        d.line((3, size // 2, size - 4, size // 2), fill="#d7f2ff", width=1)
-    elif kind == "starts":
+    if kind == "starts":
         d.ellipse((3, 2, size - 4, size - 5), fill=c, outline="#111111", width=1)
         d.ellipse((7, 6, size - 8, size - 9), fill="#fff2df")
         d.polygon(((size // 2, size - 2), (size // 2 - 3, size - 7), (size // 2 + 3, size - 7)), fill=c, outline="#111111")
-    elif kind == "initial_territory":
-        d.polygon([(size // 2, 2), (size - 3, 5), (size - 4, size - 5), (size // 2, size - 2), (3, size - 5), (2, 5)], fill=c, outline="#111111")
-        d.line((5, 7, 8, 11, 12, 6, 15, 10), fill="#fff1d2", width=2)
-    elif kind == "heightmap":
-        d.polygon([(2, size - 3), (size // 2, 2), (size - 3, size - 3)], fill=c, outline="#111111")
-        d.line((size // 2, 4, size // 2 - 3, 9), fill="#f2eaff", width=2)
-    elif kind == "resources":
-        d.polygon([(size // 2, 2), (size - 3, size // 2), (size // 2, size - 3), (2, size // 2)], fill=c, outline="#111111")
-        d.ellipse((7, 7, 10, 10), fill="#fff0c7")
-    elif kind == "territories":
-        d.polygon([(size // 2, 2), (size - 3, 5), (size - 4, 12), (size // 2, size - 2), (3, 12), (2, 5)], fill=c, outline="#111111")
-        d.line((5, 8, 8, 11, 13, 5), fill="#e8ffe8", width=2)
-    elif kind == "paths":
-        d.line((2, size - 4, 6, 9, 9, 11, size - 3, 3), fill="#111111", width=5)
-        d.line((2, size - 4, 6, 9, 9, 11, size - 3, 3), fill=c, width=3)
-    elif kind == "crops":
-        d.line((size // 2, size - 3, size // 2, 4), fill="#5a4716", width=2)
-        d.ellipse((3, 4, 9, 8), fill=c, outline="#111111")
-        d.ellipse((9, 7, 15, 11), fill=c, outline="#111111")
-        d.ellipse((4, 10, 10, 14), fill=c, outline="#111111")
-    elif kind == "heatmap":
-        d.ellipse((2, 2, size - 3, size - 3), fill=c, outline="#111111")
-        d.ellipse((5, 5, size - 6, size - 6), outline="#ffd9d9", width=2)
-        d.ellipse((8, 8, 10, 10), fill="#ffffff")
     elif kind == "cross":
         d.line((3, 3, size - 4, size - 4), fill="#111111", width=5)
         d.line((size - 4, 3, 3, size - 4), fill="#111111", width=5)
@@ -131,14 +91,6 @@ def selector_icon_image(color, kind="dot", size=18):
         d.rectangle((x0, y0 + quarter, x1, y1 - quarter), fill="#f1bf00")
         d.rectangle((x0, y1 - quarter + 1, x1, y1), fill="#aa151b")
         d.rectangle((x0, y0, x1, y1), outline="#111111")
-    elif kind == "lock_closed":
-        d.rounded_rectangle((4, 8, size - 4, size - 3), radius=2, fill=c, outline="#111111")
-        d.arc((5, 2, size - 5, 11), 180, 360, fill=c, width=3)
-        d.ellipse((8, 11, 10, 13), fill="#ffffff")
-    elif kind == "lock_open":
-        d.rounded_rectangle((4, 8, size - 4, size - 3), radius=2, fill=c, outline="#111111")
-        d.arc((7, 2, size - 2, 11), 180, 315, fill=c, width=3)
-        d.ellipse((8, 11, 10, 13), fill="#ffffff")
     elif kind == "status_on":
         d.ellipse((0, 0, size - 1, size - 1), fill=c, outline="#111111", width=1)
         d.line((size * .23, size * .52, size * .43, size * .71, size * .77, size * .29), fill="#ffffff", width=max(2, size // 6), joint="curve")
@@ -176,11 +128,8 @@ def _selector_icon(master, color, kind="dot", size=18):
 def _history_heading_lock_icon(master, width=62, size=18):
     """Center a real lock inside the full History protection heading width."""
     im = Image.new("RGBA", (width, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    x, c = (width - size) // 2, "#d84a3a"
-    d.rounded_rectangle((x + 4, 8, x + size - 4, size - 3), radius=2, fill=c, outline="#111111")
-    d.arc((x + 5, 2, x + size - 5, 11), 180, 360, fill=c, width=3)
-    d.ellipse((x + 8, 11, x + 10, 13), fill="#ffffff")
+    lock = sprite_image("ui/lock_closed")
+    im.alpha_composite(lock, ((width - lock.width) // 2, max(0, (size - lock.height) // 2)))
     return ImageTk.PhotoImage(im, master=master)
 
 

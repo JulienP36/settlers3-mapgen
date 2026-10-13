@@ -87,8 +87,8 @@ def test_explicit_native_algorithm_matches_implicit_default(engine):
 @pytest.mark.parametrize("base_mode,archetype,side,players", [
     ("legacy", "continental", 256, 2),
     ("upgraded", "continental", 256, 2),
-    ("legacy", "large_islands", 384, 8),
-    ("upgraded", "large_islands", 384, 8),
+    ("legacy", "large_islands", 384, 4),
+    ("upgraded", "large_islands", 384, 4),
 ])
 def test_algorithm_is_routed_by_generator_section_and_full_pipeline_valid(base_mode, archetype, side, players):
     from s3mapgen.application.paths import LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE

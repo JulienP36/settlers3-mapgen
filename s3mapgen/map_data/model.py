@@ -10,6 +10,14 @@ class MapState:
     area: np.ndarray
     starts: list[tuple[int,int]] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    # Read-only, session-only state at the actual start-selection boundary.
+    departure_area: np.ndarray | None = field(default=None, repr=False, compare=False)
+    departure_phase: str = "current"
+    # SAV byte14, distinct from the current object (byte7) in area. Session-only.
+    original_objects: np.ndarray | None = field(default=None, repr=False, compare=False)
+
+    # Raw SAV byte10, separate from import-filter accessibility.
+    runtime_flags: np.ndarray | None = field(default=None, repr=False, compare=False)
 
     @classmethod
     def empty(cls, side:int):

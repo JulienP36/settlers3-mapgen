@@ -17,6 +17,9 @@ class GenerationCacheKey:
     engine_revision: str = "generation-v2"
     mirror_mode: int = 0
     configuration_digest: str = ""
+    start_algorithm: str = "auto"
+    start_nations: tuple[int, ...] = ()
+    player_teams: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)

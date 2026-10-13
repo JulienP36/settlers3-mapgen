@@ -22,6 +22,10 @@ from ...map_data.constants import (
 )
 from ..rendering.preview import PLAYER_COLORS, START_TERRITORY_RADIUS
 from ...map_data.hexgrid import component_labels, hex_distance, neighbor_count
+from ...map_data.object_context import (
+    decoration_objects, reef_mask, construction_mask, felling_mask,
+    runtime_object_name, is_runtime,
+)
 
 
 MINERALS = {
@@ -357,7 +361,7 @@ def _edge_component_ids(labels: np.ndarray) -> set[int]:
     return {int(v) for v in np.unique(vals) if int(v) != 0}
 
 
-def _object_family_counts(objects: np.ndarray) -> dict[str, int]:
+def _object_family_counts(objects: np.ndarray, state=None) -> dict[str, int]:
     out: dict[str, int] = {}
     for key, (ids, _fr, _en) in TREE_FAMILIES.items():
         out[key] = int(np.isin(objects, ids).sum())
@@ -372,7 +376,7 @@ def _object_family_counts(objects: np.ndarray) -> dict[str, int]:
     out['saplings_stage_2'] = int(np.isin(objects, SAPLING_STAGE_2_IDS).sum())
     out['saplings_stage_1'] = int(np.isin(objects, SAPLING_STAGE_1_IDS).sum())
     out['building_stones'] = int(((objects >= 115) & (objects <= 127)).sum())
-    out['reefs'] = int(((objects >= 111) & (objects <= 114)).sum())
+    out['reefs'] = int(reef_mask(state).sum()) if state is not None else int(((objects >= 111) & (objects <= 114)).sum())
     out['wheat'] = int(((objects >= 85) & (objects <= 93)).sum())
     out['vine'] = int(((objects >= 94) & (objects <= 102)).sum())
     out['rice'] = int(((objects >= 103) & (objects <= 110)).sum())
@@ -384,12 +388,19 @@ def _object_family_counts(objects: np.ndarray) -> dict[str, int]:
     known |= np.isin(objects, SAPLING_STAGE_1_IDS)
     known |= ((objects >= 85) & (objects <= 127))
     known |= np.isin(objects, BEE_NEST_IDS)
+    if state is not None and is_runtime(state):
+        known &= ~np.isin(objects, (111, 112, 113, 114))
+        known |= reef_mask(state) | construction_mask(state) | felling_mask(state)
+        out['construction_markers'] = int(construction_mask(state).sum())
+        out['trees_being_felled'] = int(felling_mask(state).sum())
     out['other_nonzero'] = int(((objects != 0) & ~known).sum())
     return out
 
 
-def _decorative_object_family_counts(objects: np.ndarray) -> dict[str, int]:
+def _decorative_object_family_counts(objects: np.ndarray, state=None) -> dict[str, int]:
     """Count the known static-world decoration families without overlap."""
+    if state is not None:
+        objects = decoration_objects(state)
     return {
         key: int(np.isin(objects, ids).sum())
         for key, ids in DECORATIVE_OBJECT_FAMILIES
@@ -430,11 +441,12 @@ def analyze_map(state) -> dict[str, Any]:
     object_ids = []
     for oid, count in sorted(object_counter.items(), key=lambda kv: (-kv[1], kv[0])):
         if oid == 0: continue
-        fr, en = OBJECT_NAMES.get(oid, (f'Objet {oid}', f'Object {oid}'))
+        fr, en = runtime_object_name(state, oid) or OBJECT_NAMES.get(oid, (f'Objet {oid}', f'Object {oid}'))
         object_ids.append({'id': oid, 'name_fr': fr, 'name_en': en, 'count': int(count), 'pct_map': _pct(count, n)})
 
-    object_families = _object_family_counts(O)
-    decorative_object_families = _decorative_object_family_counts(O)
+    object_families = _object_family_counts(O, state)
+    decorative_object_families = _decorative_object_family_counts(O, state)
+    decoration_counter = Counter(map(int, decoration_objects(state).ravel().tolist()))
     tree_adults = sum(object_families[k] for k in ('birch','elm','oak','other_adult'))
     tree_all_adults = tree_adults + object_families['palm']
 
@@ -504,6 +516,7 @@ def analyze_map(state) -> dict[str, Any]:
     snow_family_mask = np.isin(T, (ROCK_SNOW_TRANS, SNOW_TRANS, SNOW))
     mountain_non_snow_mask = mining_support & ~snow_family_mask
 
+    island_details = _component_details(land)
     river_details = _component_details(np.isin(T, RIVER_IDS))
     mountain_details = _component_details(np.isin(T, MOUNTAIN_ANALYSIS_IDS))
     swamp_details = _component_details(np.isin(T, SWAMP_IDS))
@@ -568,6 +581,10 @@ def analyze_map(state) -> dict[str, Any]:
             'ids': object_ids,
             'families': object_families,
             'decorative_families': decorative_object_families,
+            # IDs in this derived chart projection are not raw SAV IDs.
+            'decorative_ids': [{'id': oid, 'count': count}
+                               for oid, count in sorted(decoration_counter.items()) if oid],
+            'interpretation': 'runtime' if is_runtime(state) else 'map',
         },
         'vegetation': {
             'adult_wood_trees': int(tree_adults), 'adult_trees_including_palms': int(tree_all_adults),
@@ -628,6 +645,7 @@ def analyze_map(state) -> dict[str, Any]:
             'river_component_stats': _component_summary(river_details), 'river_details': river_details,
         },
         'spatial': {
+            'islands': {'summary': _component_summary(island_details), 'components': island_details},
             'mountain_components': len(mountain_details), 'mountain_sizes': [d['cells'] for d in mountain_details],
             'desert_components': len(desert_details), 'desert_sizes': [d['cells'] for d in desert_details],
             'swamp_components': len(swamp_details), 'swamp_sizes': [d['cells'] for d in swamp_details],
@@ -659,6 +677,13 @@ def stats_csv(stats: dict[str, Any]) -> str:
     w = csv.writer(out)
     w.writerow(['section','metric','key','value'])
     for k, v in stats['general'].items(): w.writerow(['general', k, '', v])
+    islands = stats.get('spatial', {}).get('islands', {})
+    summary = islands.get('summary', {})
+    w.writerow(['islands', 'count', '', summary.get('count', 0)])
+    for key, value in summary.get('size_distribution', {}).items():
+        w.writerow(['islands', 'size_' + key, '', value])
+    for row in islands.get('components', []):
+        w.writerow(['island', 'cells', row['id'], row['cells']])
     for row in stats['terrain']['families']:
         w.writerow(['terrain_family', 'cells', row['key'], row['cells']])
         w.writerow(['terrain_family', 'pct_map', row['key'], row['pct_map']])
@@ -692,6 +717,22 @@ def stats_csv(stats: dict[str, Any]) -> str:
     return out.getvalue()
 
 
+def _island_report_lines(stats, lang):
+    islands = stats.get('spatial', {}).get('islands')
+    if islands is None:
+        return []
+    summary = islands['summary']; sizes = summary['size_distribution']
+    title = {'fr': 'ÎLES / CONTINENTS', 'en': 'ISLANDS / CONTINENTS', 'de': 'INSELN / KONTINENTE', 'es': 'ISLAS / CONTINENTES'}[lang]
+    count_label = {'fr': 'Masses terrestres', 'en': 'Land masses', 'de': 'Landmassen', 'es': 'Masas terrestres'}[lang]
+    size_label = {'fr': 'Surface en cases : min / médiane / moyenne / max', 'en': 'Size in cells: min / median / mean / max', 'de': 'Größe in Zellen: min / Median / Mittel / max', 'es': 'Tamaño en celdas: mín. / mediana / media / máx.'}[lang]
+    largest = summary['largest']
+    share = _pct(largest['cells'], stats['general']['land_cells']) if largest else 0.
+    share_label = {'fr': 'Part des terres dans la plus grande masse', 'en': 'Land share of the largest mass', 'de': 'Landanteil der größten Masse', 'es': 'Proporción terrestre de la mayor masa'}[lang]
+    return ['', title, f"{count_label} : {summary['count']}",
+            f"{size_label} : {sizes['min']:,.0f} / {sizes['median']:,.1f} / {sizes['mean']:,.1f} / {sizes['max']:,.0f}",
+            f"{share_label} : {share:.2f} %"]
+
+
 def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
     """Fully localized German/Spanish report without falling through to English."""
     de=lang=='de';g=stats['general'];r=stats['resources'];v=stats['vegetation'];bs=stats['building_stones'];h=stats['height'].get('land_distribution',stats['height']['distribution']);hy=stats['hydrology'];p=stats['players'];ag=stats['agriculture'];d1000=stats.get('densities',{})
@@ -714,6 +755,7 @@ def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
         lines+=['','NORMALISIERTE DICHTEN / 1000' if de else 'DENSIDADES NORMALIZADAS / 1000','-'*72]
         density_rows=[('adult_trees_per_1000_land','Ausgewachsene Bäume','Árboles adultos','Land','tierra'),('palms_per_1000_land','Palmen','Palmeras','Land','tierra'),('saplings_per_1000_land','Setzlinge','Retoños','Land','tierra'),('building_stone_stock_per_1000_land','Steinvorrat','Reserva de piedra','Land','tierra'),('fish_stock_per_1000_water','Fischvorrat','Reserva de peces','Wasser','agua'),('mineral_stock_per_1000_mountain','Mineralvorrat','Reservas minerales','Gebirge','montaña'),('agriculture_cells_per_1000_land','Landwirtschaft','Agricultura','Land','tierra')]
         for key,de_name,es_name,de_unit,es_unit in density_rows:lines.append(f"{de_name if de else es_name}: {d1000.get(key,0):.2f} / 1000 {de_unit if de else es_unit}")
+    lines.extend(_island_report_lines(stats, lang))
     lines+=['','HYDROLOGIE / HÖHE' if de else 'HIDROLOGÍA / ALTURA','-'*72]
     lines.append((f"Binnengewässer: {hy['inland_water_components']} Komponenten | größte {hy['largest_inland_water']:,} Zellen | Flüsse {hy['river_components']} Komponenten" if de else f"Aguas interiores: {hy['inland_water_components']} componentes | mayor {hy['largest_inland_water']:,} celdas | ríos {hy['river_components']} componentes"))
     lines.append((f"Landhöhen P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | Median {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}" if de else f"Alturas terrestres P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | mediana {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | máx {h['max']:.0f}"))
@@ -725,7 +767,7 @@ def _format_stats_report_de_es(stats: dict[str, Any], lang: str) -> str:
         lines+=['','LANDWIRTSCHAFT' if de else 'AGRICULTURA','-'*72,(f"Weizen {ag['wheat']:,} | Weinreben {ag['vine']:,} | Reis {ag['rice']:,} | Bienennester {ag.get('bee_nests',0):,}" if de else f"Trigo {ag['wheat']:,} | Vid {ag['vine']:,} | Arroz {ag['rice']:,} | Nidos de abejas {ag.get('bee_nests',0):,}")]
     if p['starts']:
         lines+=['','SPIELER / STARTPOSITIONEN' if de else 'JUGADORES / INICIOS','-'*72]
-        for row in p['nearest_start']:lines.append((f"P{row['player']}: nächster Gegner = {row['distance']} HEX" if de else f"P{row['player']}: oponente más cercano = {row['distance']} HEX"))
+        for row in p['nearest_start']:lines.append((f"P{row['player']}: nächster Spieler = {row['distance']} HEX" if de else f"P{row['player']}: jugador más cercano = {row['distance']} HEX"))
         if p.get('metadata'):
             lines+=['','SPIELERFELDER (SAV)' if de else 'CAMPOS DE JUGADOR (SAV)','-'*72]
             for row in p['metadata']:
@@ -788,6 +830,7 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
             lines.append(f"Mining stock: {d1000.get('mineral_stock_per_1000_mountain',0):.2f} / 1000 mountain")
             lines.append(f"Agriculture: {d1000.get('agriculture_cells_per_1000_land',0):.2f} / 1000 land")
     lines.append('')
+    lines.extend(_island_report_lines(stats, 'fr' if fr else 'en'))
     lines.append('HYDROLOGIE / RELIEF' if fr else 'HYDROLOGY / HEIGHT'); lines.append('-' * 72)
     lines.append((f"Eaux intérieures : {hy['inland_water_components']} composantes | plus grande {hy['largest_inland_water']:,} cases | rivières {hy['river_components']} composantes" if fr else f"Inland waters: {hy['inland_water_components']} components | largest {hy['largest_inland_water']:,} cells | rivers {hy['river_components']} components"))
     lines.append((f"Hauteurs terrestres P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | médiane {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}" if fr else f"Land heights P10 {h['p10']:.1f} | P25 {h['p25']:.1f} | median {h['median']:.1f} | P75 {h['p75']:.1f} | P95 {h['p95']:.1f} | max {h['max']:.0f}"))
@@ -804,7 +847,7 @@ def format_stats_report(stats: dict[str, Any], lang: str = 'fr') -> str:
     if p['starts']:
         lines.append(''); lines.append('JOUEURS / STARTS' if fr else 'PLAYERS / STARTS'); lines.append('-' * 72)
         for row in p['nearest_start']:
-            lines.append((f"P{row['player']}: adversaire le plus proche = {row['distance']} HEX" if fr else f"P{row['player']}: nearest opponent = {row['distance']} HEX"))
+            lines.append((f"P{row['player']}: joueur le plus proche = {row['distance']} HEX" if fr else f"P{row['player']}: nearest player = {row['distance']} HEX"))
         if p.get('metadata'):
             lines += ['', 'INFORMATIONS JOUEURS (SAV)' if fr else 'PLAYER FIELDS (SAV)', '-' * 72]
             for row in p['metadata']:

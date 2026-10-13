@@ -11,6 +11,7 @@ DEFAULT_SHORTCUTS = {
     "save_preview": "Ctrl+P",
     "manage_history": "Ctrl+H",
     "reset_view": "Ctrl+R",
+    "reset_workspace": "F11",
     "copy_seed": "Ctrl+Shift+C",
     "toggle_ab": "Ctrl+B",
     "clear_compare": "",

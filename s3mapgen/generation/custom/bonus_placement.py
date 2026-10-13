@@ -1,21 +1,44 @@
 """Bounded centre search and write-free plans for forced start bonuses."""
 from dataclasses import dataclass
+import math
+from typing import Mapping
 
 import numpy as np
 
 from ...map_data.hexgrid import hex_distance
 
 FORCED_CENTER_EXTENSION = 34
+FORCED_CENTER_EXTENSION_MIN = 2
+FORCED_CENTER_EXTENSION_MAX = 512
 
 
-def ordered_centers(support, sx, sy, desired, shuffle):
+def normalize_center_extension(value):
+    """Keep the normal D±2 band and bound the additional centre search."""
+    try:
+        number = float(value)
+        if not math.isfinite(number):
+            return FORCED_CENTER_EXTENSION
+        return max(FORCED_CENTER_EXTENSION_MIN, min(FORCED_CENTER_EXTENSION_MAX, round(number)))
+    except (TypeError, ValueError, OverflowError):
+        return FORCED_CENTER_EXTENSION
+
+
+def center_extension_limit(sections):
+    """Read the shared bound, including profiles predating this setting."""
+    start = sections.get("start_bonus", {}) if isinstance(sections, Mapping) else {}
+    value = start.get("center_extension_limit", FORCED_CENTER_EXTENSION) if isinstance(start, Mapping) else FORCED_CENTER_EXTENSION
+    return normalize_center_extension(value)
+
+
+def ordered_centers(support, sx, sy, desired, shuffle, *, extension_limit=FORCED_CENTER_EXTENSION):
     """Shuffle the normal band, then each successive HEX6 ring separately."""
     desired = max(1, int(desired))
+    extension_limit = normalize_center_extension(extension_limit)
     ys, xs = np.nonzero(support)
     dx, dy = xs - int(sx), ys - int(sy)
     distances = np.maximum(np.maximum(np.abs(dx), np.abs(dy)), np.abs(dx - dy))
     for low, high in [(max(1, desired - 2), desired + 2)] + [
-        (r, r) for r in range(desired + 3, desired + FORCED_CENTER_EXTENSION + 1)
+        (r, r) for r in range(desired + 3, desired + int(extension_limit) + 1)
     ]:
         indices = np.flatnonzero((distances >= low) & (distances <= high))
         points = [(int(xs[i]), int(ys[i])) for i in indices]

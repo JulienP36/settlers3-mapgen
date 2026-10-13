@@ -46,7 +46,7 @@ official editor/game validation where those layers are relevant.
 Build a candidate with one explicit root folder:
 
 ```text
-python tools/package_source.py --output ../SETTLERS3_MAPGEN_V2_0_DEV_9_20261004.zip --root-name SETTLERS3_MAPGEN_V2_0_DEV_9
+python tools/package_source.py --output ../SETTLERS3_MAPGEN_V2_0_DEV_10_R19_20261006.zip --root-name SETTLERS3_MAPGEN_V2_0_DEV_10_R19
 ```
 
 The builder rejects missing required files, unsafe paths, multiple roots, corruption and known local-output paths. For release confidence, extract into a new directory and run `run_gui.py --self-test` from the extracted copy. Reuse the full suite for the identical source state; rerun it when code changed materially.
