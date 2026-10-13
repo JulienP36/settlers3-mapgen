@@ -36,8 +36,23 @@ jobs:
       - name: Protected baseline hashes
         shell: powershell
         run: .\build\windows\verify_protected_hashes.ps1
+      - name: Tcl runtime diagnostics
+        run: >-
+          python -c "import sys, tkinter as tk; t=tk.Tcl();
+          print(sys.executable); print(t.eval('info library')); print(t.eval('info patchlevel'))"
+      - name: Custom editor Tcl tests (isolated process)
+        run: python -m pytest -q tests/test_custom_ui_updates.py
+      - name: Desktop Tk tests (isolated process)
+        run: >-
+          python -m pytest -q
+          tests/application/shell/test_desktop_startup.py
+          tests/application/test_messages.py
       - name: Regression tests
-        run: python -m pytest -q
+        run: >-
+          python -m pytest -q
+          --ignore=tests/test_custom_ui_updates.py
+          --ignore=tests/application/shell/test_desktop_startup.py
+          --ignore=tests/application/test_messages.py
       - name: Engine smoke validation
         run: python tests/run_smoke.py
       - name: Build and validate standalone folder

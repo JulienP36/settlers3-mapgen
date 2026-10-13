@@ -106,9 +106,16 @@ class Widget:
             self.parent.children.remove(self)
 
 
+@pytest.fixture(scope="module")
+def tcl_interpreter():
+    # The tests need real Tcl variables/traces, not one interpreter reload per
+    # parametrized case. Keep one interpreter in this isolated test module.
+    return tk.Tcl()
+
+
 @pytest.fixture(params=["fr", "en", "de", "es"])
-def editor(monkeypatch, request):
-    interp = tk.Tcl()
+def editor(monkeypatch, request, tcl_interpreter):
+    interp = tcl_interpreter
     monkeypatch.setattr(Widget, "tk", interp, raising=False)
     for name in ("Frame", "LabelFrame", "Label", "Button", "Combobox", "Spinbox", "Checkbutton", "Separator"):
         monkeypatch.setattr(module.ttk, name, type(name, (Widget,), {}))
@@ -141,7 +148,27 @@ def editor(monkeypatch, request):
     c._selection_changed = c._custom_selection_changed
     c._render_custom_parameter_tabs()
     c._custom_generator_tab.flush()
-    return c
+    yield c
+    # Traces register Python callbacks inside Tcl; release those callbacks so
+    # each case leaves the shared interpreter independent of its controller.
+    def variables(value):
+        if isinstance(value, tk.Variable):
+            yield value
+        elif isinstance(value, dict):
+            for item in value.values():
+                yield from variables(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                yield from variables(item)
+    seen = set()
+    for variable in variables(vars(c)):
+        if id(variable) in seen:
+            continue
+        seen.add(id(variable))
+        for modes, callback in variable.trace_info():
+            variable.trace_remove(modes, callback)
+    c._custom_generator_tab.destroy()
+    c.__dict__.clear()
 
 
 def assert_display(c):

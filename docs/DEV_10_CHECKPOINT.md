@@ -42,3 +42,22 @@ Build portable, installation propre, updater et préparation de Release relèven
 de la qualification RC/STABLE ; ils ne sont pas annoncés validés par ce push.
 
 Publication autorisée uniquement sur `dev`, sans suffixe R. Aucun tag ni Release.
+
+## Maintenance DEV10 — tests Windows du build
+
+Le premier build du checkpoint échoue : 1304 PASS, un contrôle réel de widget
+hors hit-test et une erreur intermittente de création Tcl (`init.tcl`).
+Correction des conditions de test : fenêtre positionnée dans la zone de travail,
+tailles adaptées au bureau disponible, défilement du point de clic sur les deux
+axes ; assertion réelle `winfo_containing(...) is widget` conservée.
+Fixture Custom : un interpréteur Tcl réel par module, callbacks libérés par cas.
+CI : Tcl et Tk exécutés en processus isolés avant la régression générale ; aucun
+test retiré. Diagnostic du chemin/version Tcl ajouté. Aucun code applicatif,
+algorithme, preset ou ressource native modifié.
+
+Qualification locale : 65 PASS et 2 tests desktop SKIP sans affichage ; avec
+bureau réel virtuel, test desktop PASS en 1024×768 et 4 tests desktop/messages
+PASS en 1920×1080. Auto-test source PASS. L'ancien test passe aussi sous Linux :
+l'échec Windows exact et la cause native du chargement Tcl ne sont pas reproduits
+localement. Résultat du nouveau build Windows attendu avant annonce de succès.
+

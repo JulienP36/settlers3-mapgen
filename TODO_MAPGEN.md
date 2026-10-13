@@ -45,6 +45,13 @@ sans inventer une validation en jeu de chaque ancien fichier exact.
   consolidation des livrables ; pas de nouvelle fonctionnalité Formule.
 - [x] Bilan DEV10 consolidé ; checkpoint complet et push explicitement autorisés.
 
+## Build Windows DEV10 — maintenance
+
+- [x] Conditions du test desktop et cycle de vie Tcl corrigés ; CI isolée sans
+  supprimer de tests. Contrôles locaux PASS, applications/natif inchangés.
+- [ ] Confirmer le build Windows après cette correction ; premier run bloqué
+  pendant les tests, avant le packaging. Voir RELEASE_VALIDATION.
+
 ## Surveillance conditionnelle — ne bloque pas DEV10
 
 - Reprendre les rares îles pauvres en montagne seulement avec un nouveau seed
