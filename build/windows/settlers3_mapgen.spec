@@ -11,6 +11,7 @@ datas=[
     (str(project_root/'data'),'data'),
     (str(project_root/'assets'/'sprites'),'assets/sprites'),
     (str(project_root/'assets'/'Settlers3MapGen.png'),'assets'),
+    (str(project_root/'assets'/'Settlers3MapGen_64.png'),'assets'),
     (str(icon_path),'assets'),
 ]
 

@@ -1502,6 +1502,14 @@ def normalize_archetype_profile(
     if relief_source not in RELIEF_SOURCE_OPTIONS:
         raise ValueError(f"Source de relief inconnue : {relief_source}")
     normalized_morphology["relief_source"] = relief_source
+    if relief_source == RELIEF_SOURCE_CONTINENTAL:
+        # Migrate inherited island switches before editor controls or saves use them.
+        if normalized_morphology["island_amplitude_auto"]:
+            normalized_morphology["island_amplitude_percent"] = 100
+        if normalized_morphology["island_thresholds_auto"]:
+            result["relief"].update(mountain_threshold=140, snow_threshold=200)
+        normalized_morphology.update(island_amplitude_auto=False, island_thresholds_auto=False)
+        result.pop("_island_relief_values", None)
     normalized_morphology["relief_source_settings"] = _normalize_noise_source_settings(
         morphology.get("relief_source_settings")
     )
@@ -1643,7 +1651,7 @@ def continental_landmass_profile() -> dict[str, Any]:
         mountain_threshold=140,
         snow_threshold=200,
     )
-    morphology.update(island_amplitude_auto=True, island_thresholds_auto=True)
+    morphology.update(island_amplitude_auto=False, island_thresholds_auto=False, island_amplitude_percent=100)
     return normalize_archetype_profile(profile, archetype_key="continental")
 
 

@@ -26,8 +26,8 @@ def _family(
 ACTIVE_UPGRADED_PROFILE: dict[str, object] = {
     "profile_name": "Upgraded Continental",
     "profile_kind": "upgraded",
-    # Reference area used only for proportional quotas outside the calibrated
-    # map size.  It is not a separate generator version.
+    # Native reference size. Object quotas use the compatible-terrain
+    # calibration in generation/object_quotas.py, not a map-area multiplier.
     "side": 768,
     "max_players": 20,
     "supported_players": list(range(2, 21)),

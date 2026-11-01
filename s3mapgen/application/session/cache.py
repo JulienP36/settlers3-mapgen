@@ -20,6 +20,7 @@ class GenerationCacheKey:
     start_algorithm: str = "auto"
     start_nations: tuple[int, ...] = ()
     player_teams: tuple[int, ...] = ()
+    random_team_count: int = 2
 
 
 @dataclass(frozen=True)

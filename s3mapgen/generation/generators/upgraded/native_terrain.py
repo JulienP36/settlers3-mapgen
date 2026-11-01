@@ -757,6 +757,7 @@ def _classify_relief(
     grid: NativeTerrainGrid,
     archetype_profile: dict | None = None,
     signed_noise: np.ndarray | None = None,
+    threshold_fields: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> tuple[int, int, int]:
     water_threshold, mountain_threshold, snow_threshold = relief_thresholds(
         archetype_profile
@@ -771,8 +772,8 @@ def _classify_relief(
     classified = np.select(
         (
             heights <= water_threshold,
-            heights < mountain_threshold,
-            heights < snow_threshold,
+            heights < (mountain_threshold if threshold_fields is None else threshold_fields[0][interior]),
+            heights < (snow_threshold if threshold_fields is None else threshold_fields[1][interior]),
         ),
         (WATER, GRASS, ROCK),
         default=SNOW,
@@ -1891,7 +1892,7 @@ def generate_primary_terrain(
 
     from ...archetypes.island_amplitude import resolve_island_profile
     archetype_profile = resolve_island_profile(
-        archetype_profile, side, players, player_teams=player_teams,
+        archetype_profile, side, players, player_teams=player_teams, seed=seed,
     )
     side = int(side)
     mode = int(mode)
@@ -2006,6 +2007,7 @@ def generate_primary_terrain(
 
     topology_labels = None
     topology_report = None
+    threshold_fields = None
     signed_noise = None
     if uses_island_source(archetype_profile):
         if mode and archetype_profile.get("morphology", {}).get("relief_source") != "continental_landmass":
@@ -2017,12 +2019,13 @@ def generate_primary_terrain(
             ),
             player_teams=player_teams,
         )
+        threshold_fields = fields.threshold_fields
         grid.height[:] = fields.height
         signed_noise = fields.noise
         topology_labels, topology_report = fields.topology_labels, fields.report
 
     report("relief_classification")
-    relief_threshold_values = _classify_relief(grid, archetype_profile, signed_noise)
+    relief_threshold_values = _classify_relief(grid, archetype_profile, signed_noise, threshold_fields)
     _clear_pre_river_fields(grid)
     report("rivers")
     river_rate = 100.0
@@ -2073,9 +2076,9 @@ def generate_primary_terrain(
 
         custom_rates = effective_terrain_rates(surface_rates)
     native_default_rates = {
-        "desert": 100.0,
+        "desert": 50.0,
         "swamp": 100.0,
-        "mud": 0.0,
+        "mud": 50.0,
         "dry_grass": 100.0,
         "details": 100.0,
     }
@@ -2087,8 +2090,15 @@ def generate_primary_terrain(
     custom_mud_rate = (
         float(custom_rates["mud"])
         if custom_rates is not None
-        else 0.0
+        else 50.0
     )
+    if custom_rates is None:
+        custom_rates = native_default_rates
+        surface_rates = dict(surface_rates or {})
+        surface_rates["terrains"] = {
+            key: {"enabled": True, "rate_percent": value}
+            for key, value in custom_rates.items()
+        }
     if defer_non_archetype:
         reference_grid = _copy_native_grid(grid)
         reference_rng = _copy_native_rng(rng)
@@ -2159,7 +2169,7 @@ def generate_primary_terrain(
             for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
                 if native_default_rates[key] <= 0.0:
                     continue
-                _apply_family_plan(reference_grid, reference_rng, plan, 100.0)
+                _apply_family_plan(reference_grid, reference_rng, plan, native_default_rates[key])
             _apply_micro_terrain_brushes(reference_grid, reference_rng, 100.0)
             native_reference_terrain = reference_grid.terrain.copy()
 
@@ -2305,7 +2315,7 @@ def resume_deferred_terrain(
             for plan, key in zip(_FAMILY_PLANS, _FAMILY_PLAN_KEYS):
                 if native_default_rates[key] <= 0.0:
                     continue
-                _apply_family_plan(reference_grid, reference_rng, plan, 100.0)
+                _apply_family_plan(reference_grid, reference_rng, plan, native_default_rates[key])
             _apply_micro_terrain_brushes(reference_grid, reference_rng, 100.0)
             _mirror_terrain_only(reference_grid, continuation.mode)
             native_reference_terrain = reference_grid.terrain.copy()

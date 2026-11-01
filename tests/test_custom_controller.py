@@ -1352,7 +1352,10 @@ def test_island_preview_worker_uses_actual_domain_players_and_generic_components
     monkeypatch.setattr(module, "generate_archetype_preview", generate)
     controller._custom_archetype_preview_worker_loop()
     assert len(calls) == 1
-    assert calls[0][0] == (profile, 384, 42, 0)
+    from s3mapgen.generation.archetypes.island_amplitude import resolve_island_profile
+    expected = resolve_island_profile(profile, 384, 8, seed=42)
+    assert calls[0][0] == (expected, 384, 42, 0)
+    assert controller._custom_archetype_relief_completed == (7, module._island_relief_request_key(profile, 384, 8, 42, ()), expected)
     assert calls[0][1]["players"] == 8
     assert calls[0][1]["relax_macro"] is True
     assert controller._custom_archetype_preview_completed == (7, exact, None, "source", ("fusion",), ("mask",))
@@ -1456,7 +1459,7 @@ def test_archetype_tab_build_uses_the_same_customizable_editor_for_both_presets(
                  "preview_size", "preview_status", "preview_stats", "preview_relaxation"):
         setattr(controller, f"_custom_archetype_{name}_var", Variable())
     for name in ("size", "seed", "mirror", "players"):
-        setattr(controller, name, Variable("4"))
+        setattr(controller, name, Variable("384" if name == "size" else "4"))
     for name in ("_custom_clear_archetype_preview_traces", "_custom_refresh_archetype_header",
                  "_custom_refresh_archetype_mask_layer_action_states",
                  "_custom_refresh_archetype_noise_layer_action_states",
@@ -1495,7 +1498,11 @@ def test_archetype_tab_build_uses_the_same_customizable_editor_for_both_presets(
     for preset_key in ("native", "large_islands", CONTINENTAL_CUSTOM_PROFILE_KEY):
         controller._custom_apply_archetype_preset(preset_key)
         from s3mapgen.generation.archetypes.island_amplitude import resolve_island_profile
-        expected = resolve_island_profile(controller._custom_archetype_profile_presets()[preset_key], int(controller.size.get()), int(controller.players.get()))
+        expected = resolve_island_profile(controller._custom_archetype_profile_presets()[preset_key], int(controller.size.get()), int(controller.players.get()), seed=int(controller.seed.get()))
+        from s3mapgen.application.custom.controller import _island_relief_request_key
+        key = _island_relief_request_key(controller._custom_config.archetype_profile, int(controller.size.get()), int(controller.players.get()), int(controller.seed.get()), ())
+        controller._custom_island_relief_result = (key, expected)
+        controller._custom_refresh_island_relief_controls()
         assert tuple(controller._custom_archetype_tab.winfo_children()) == initial_widgets
         assert controller._custom_archetype_vars == vars_before
         assert controller._custom_archetype_vars["relief.mountain_threshold"].get() == str(expected["relief"]["mountain_threshold"])
@@ -1597,3 +1604,156 @@ def test_large_islands_river_reset_uses_its_improved_default():
     controller._custom_reset_section("rivers")
     assert controller._custom_config.semantic_sections()["rivers"]["algorithm"] == "improved"
     assert not controller._custom_section_is_modified("rivers")
+
+
+def _island_controls_probe(selected=".archetype_host"):
+    c = _preview_gate_probe(selected)
+    c._custom_config = build_custom_config("upgraded", "team_islands")
+    c.size, c.players, c.seed = _FakeVar(384), _FakeVar(4), _FakeVar(42)
+    c.player_teams = (1, 1, 1, 2)
+    c._custom_island_relief_frame = SimpleNamespace(grid=lambda: None, grid_remove=lambda: None)
+    c._custom_island_amplitude_auto_var = _FakeVar(True)
+    c._custom_island_thresholds_auto_var = _FakeVar(True)
+    c._custom_island_amplitude_auto_button = _FakeSpinbox()
+    c._custom_island_thresholds_auto_button = _FakeSpinbox()
+    c._custom_archetype_spinboxes = {}
+    c._custom_archetype_vars = {key: _FakeVar("") for key in (
+        "morphology.island_amplitude_percent", "relief.mountain_threshold", "relief.snow_threshold")}
+    c._custom_island_effective_var = _FakeVar("")
+    c._custom_archetype_preview_worker = None
+    c._custom_archetype_preview_noise_completed = None
+    c._custom_archetype_components_completed = None
+    c._custom_archetype_preview_noise_cache = {}
+    c._custom_island_relief_result = None
+    return c
+
+
+@pytest.mark.parametrize("selected", [".generator_host", ".archetype_host"])
+def test_island_control_refresh_and_parameter_changes_never_resolve_on_tk(monkeypatch, selected):
+    import s3mapgen.application.custom.controller as module
+    c = _island_controls_probe(selected)
+    def forbidden(*args, **kwargs):
+        pytest.fail("Contour resolution ran on the UI callback")
+    monkeypatch.setattr(module, "resolve_island_profile", forbidden)
+    for size, players, seed in ((384, 4, 42), (512, 6, 43), (768, 8, 2026101010)):
+        c.size.set(size); c.players.set(players); c.seed.set(seed)
+        c._custom_refresh_island_relief_controls()
+        c._custom_schedule_archetype_preview_refresh()
+        assert c._custom_archetype_vars["relief.mountain_threshold"].get() == "…"
+    if selected == ".generator_host":
+        assert c._custom_archetype_tab.after_calls == 0
+        assert c._custom_archetype_preview_request is None
+    else:
+        assert c._custom_archetype_tab.after_calls == 3
+
+
+def test_debounce_immediately_invalidates_completed_values_before_the_next_worker():
+    c = _island_controls_probe()
+    c._custom_archetype_preview_completed = (0, object(), None)
+    c._custom_archetype_relief_completed = (0, (), {})
+    c._custom_schedule_archetype_preview_refresh()
+    assert c._custom_archetype_preview_request_id == 1
+    assert c._custom_archetype_preview_completed is None
+    assert c._custom_archetype_relief_completed is None
+
+
+def test_island_worker_discards_superseded_resolution_and_uses_latest_request(monkeypatch):
+    import s3mapgen.application.custom.controller as module
+    c = _island_controls_probe()
+    profile = c._custom_config.archetype_profile
+    c._custom_archetype_preview_request_id = 1
+    c._custom_archetype_preview_request = (1, profile, 384, 42, 0, False, True, 4, c.player_teams)
+    entered, release = threading.Event(), threading.Event()
+    original = module.resolve_island_profile
+    thread_ids, component_seeds = [], []
+    def slow_resolve(profile, side, players, **kwargs):
+        thread_ids.append(threading.get_ident())
+        if kwargs['seed'] == 42:
+            entered.set()
+            assert release.wait(5)
+        return original(profile, side, players, **kwargs)
+    monkeypatch.setattr(module, "resolve_island_profile", slow_resolve)
+    monkeypatch.setattr(module, "generate_noise_component_previews", lambda profile, size, seed, **kw: (component_seeds.append(seed) or "source", ()))
+    monkeypatch.setattr(module, "generate_mask_component_previews", lambda *a, **kw: ())
+    exact = object()
+    monkeypatch.setattr(module, "generate_archetype_preview", lambda *a, **kw: exact)
+    worker = threading.Thread(target=c._custom_archetype_preview_worker_loop)
+    c._custom_archetype_preview_worker = worker
+    worker.start()
+    try:
+        assert entered.wait(5)
+        c.seed.set(43)
+        # Real callback must stay responsive while contour resolution is blocked.
+        c._custom_schedule_archetype_preview_refresh()
+        with c._custom_archetype_preview_lock:
+            latest = c._custom_archetype_preview_request_id
+            c._custom_archetype_preview_request = (latest, profile, 384, 43, 0, False, True, 4, c.player_teams)
+    finally:
+        release.set()
+        worker.join(10)
+    assert not worker.is_alive()
+    assert all(ident != threading.get_ident() for ident in thread_ids)
+    assert component_seeds == [43]
+    assert c._custom_archetype_preview_completed[:3] == (latest, exact, None)
+    assert c._custom_archetype_relief_completed[0] == latest
+
+
+def test_poll_commits_only_current_effective_values_and_cache_matches_all_inputs():
+    from s3mapgen.application.custom.controller import _island_relief_request_key
+    from s3mapgen.generation.archetypes.island_amplitude import resolve_island_profile
+    c = _island_controls_probe()
+    profile = c._custom_config.archetype_profile
+    effective = resolve_island_profile(profile, 384, 4, seed=42, player_teams=c.player_teams)
+    key = _island_relief_request_key(profile, 384, 4, 42, c.player_teams)
+    c._custom_archetype_preview_request_id = 2
+    c._custom_archetype_relief_completed = (1, key, effective)
+    c._custom_poll_archetype_preview()
+    assert c._custom_island_relief_result is None
+    c._custom_archetype_relief_completed = (2, key, effective)
+    c._custom_poll_archetype_preview()
+    assert "83–100" in c._custom_island_effective_var.get()
+    c.seed.set(43)
+    c._custom_refresh_island_relief_controls()
+    assert c._custom_archetype_vars["relief.mountain_threshold"].get() == "…"
+
+
+def test_pending_automatic_toggle_never_resolves_or_freezes_stale_values(monkeypatch):
+    import s3mapgen.application.custom.controller as module
+    c = _island_controls_probe()
+    c._custom_island_amplitude_auto_var.set(False)
+    monkeypatch.setattr(module, "resolve_island_profile", lambda *a, **kw: pytest.fail("UI resolution"))
+    c._custom_island_automatic_changed("island_amplitude_auto")
+    assert c._custom_config.archetype_profile['morphology']['island_amplitude_auto']
+    assert c._custom_island_amplitude_auto_var.get()
+
+
+def test_component_refresh_preserves_cancelled_full_preview_requirement():
+    c = _island_controls_probe()
+    c._custom_archetype_preview_last_result = object()
+    c._custom_archetype_preview_refresh_main_pending = False
+    c._custom_archetype_preview_main_inflight = True
+    c._custom_schedule_archetype_preview_refresh(refresh_main=False)
+    assert c._custom_archetype_preview_refresh_main_pending
+
+
+@pytest.mark.parametrize('name', ['island_amplitude_auto', 'island_thresholds_auto'])
+def test_manual_toggle_reuses_only_the_matching_worker_minimum(monkeypatch, name):
+    import s3mapgen.application.custom.controller as module
+    from s3mapgen.generation.archetypes.island_amplitude import resolve_island_profile
+    c = _island_controls_probe()
+    profile = c._custom_config.archetype_profile
+    effective = resolve_island_profile(profile, 384, 4, seed=42, player_teams=c.player_teams)
+    key = module._island_relief_request_key(profile, 384, 4, 42, c.player_teams)
+    c._custom_island_relief_result = (key, effective)
+    getattr(c, '_custom_' + name + '_var').set(False)
+    c._custom_activate_archetype = lambda config: setattr(c, '_custom_config', config)
+    c._custom_sync_archetype_editor_values = lambda: None
+    monkeypatch.setattr(module, 'resolve_island_profile', lambda *a, **kw: pytest.fail('UI resolution'))
+    c._custom_island_automatic_changed(name)
+    changed = c._custom_config.archetype_profile
+    assert not changed['morphology'][name]
+    if name == 'island_amplitude_auto':
+        assert changed['morphology']['island_amplitude_percent'] == 83
+    else:
+        assert changed['relief']['mountain_threshold'] == 118
+        assert changed['relief']['snow_threshold'] == 167

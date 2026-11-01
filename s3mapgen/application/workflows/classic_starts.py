@@ -27,7 +27,7 @@ TEXT = {
 }
 
 
-def choose_classic_nations(parent, nations, players, language='fr', *, teams=()):
+def choose_classic_nations(parent, nations, players, language='fr', *, teams=(), random_team_count=2):
     title, explanation, labels, player, apply, cancel, legend, civilization, team_label, team_hint = TEXT.get(language,TEXT['fr'])
     win = ThemedWindow(parent)
     win.withdraw()
@@ -75,23 +75,45 @@ def choose_classic_nations(parent, nations, players, language='fr', *, teams=())
                          activebackground='panel', activeforeground='text', disabledforeground='disabled')
         values.append(variable)
         team = teams[i] if i < len(teams) else 0
-        team_variable = tk.StringVar(win,value="−" if team == 0 else str(team))
-        ttk.Combobox(table,values=("−", *map(str,range(1,21))),textvariable=team_variable,
+        team_variable = tk.StringVar(win,value="−" if team == 0 else "?" if team == -1 else str(team))
+        ttk.Combobox(table,values=("−", "?", *map(str,range(1,21))),textvariable=team_variable,
                      state='readonly' if enabled else 'disabled',width=3).grid(row=row+1,column=2,sticky='w',pady=3)
         team_values.append(team_variable)
+    random_text = {
+        'fr': ('? : équipe aléatoire selon le seed', 'Nombre d’équipes :', 'Effectifs équilibrés ; équipes fixées conservées. Le nombre est adapté aux joueurs disponibles et aux équipes fixées.'),
+        'en': ('?: seed-based random team', 'Number of teams:', 'Balanced sizes; fixed teams kept. Count adjusts to available players and fixed teams.'),
+        'de': ('?: zufälliges Team nach Seed', 'Anzahl Teams:', 'Ausgeglichene Größen; feste Teams bleiben. Anzahl angepasst an verfügbare Spieler und feste Teams.'),
+        'es': ('?: equipo aleatorio según la semilla', 'Número de equipos:', 'Tamaños equilibrados; equipos fijos conservados. Cantidad adaptada a jugadores disponibles y equipos fijos.'),
+    }.get(language)
+    if random_text is None:
+        random_text = ('? : équipe aléatoire selon le seed', 'Nombre d’équipes :', 'Équipes fixées conservées ; nombre adapté aux joueurs disponibles.')
+    options = ttk.Frame(body)
+    options.grid(row=3,column=0,columnspan=2,sticky='w',pady=(8,0))
+    ttk.Label(options,text=random_text[0]).pack(side='left',padx=(0,12))
+    ttk.Label(options,text=random_text[1]).pack(side='left',padx=(0,6))
+    count_var = tk.StringVar(win,value=str(random_team_count))
+    count_select = ttk.Combobox(options,values=tuple(map(str,range(2,21))),textvariable=count_var,width=3,state='readonly')
+    count_select.pack(side='left')
+    def update_random_controls(*_):
+        count_select.configure(state='readonly' if any(v.get() == '?' for v in team_values[:players]) else 'disabled')
+    for variable in team_values[:players]:
+        variable.trace_add('write',update_random_controls)
+    update_random_controls()
+    ttk.Label(body,text=random_text[2],wraplength=640).grid(row=4,column=0,columnspan=2,sticky='w',pady=(4,0))
     result = None
     previous_grab = parent.grab_current()
     def finish(confirmed=False):
         nonlocal result
         if confirmed:
             result = (tuple(NATION_CHOICES[labels.index(v.get())] for v in values),
-                      tuple(0 if v.get() == "−" else int(v.get()) for v in team_values))
+                      tuple(0 if v.get() == "−" else -1 if v.get() == "?" else int(v.get()) for v in team_values),
+                      int(count_var.get()))
         win.destroy()
         if previous_grab is not None and previous_grab.winfo_exists():
             previous_grab.grab_set()
             previous_grab.focus_set()
     buttons = ttk.Frame(body)
-    buttons.grid(row=3,column=0,columnspan=2,sticky='e',pady=(8,0))
+    buttons.grid(row=5,column=0,columnspan=2,sticky='e',pady=(8,0))
     ttk.Button(buttons,text=cancel,command=finish).pack(side='left',padx=(0,8))
     primary = ttk.Button(buttons,text=apply,style='Primary.TButton',command=lambda:finish(True))
     primary.pack(side='left')

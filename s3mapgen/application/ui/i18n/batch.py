@@ -81,3 +81,11 @@ for _lang,_values in _BATCH_RETENTION_TEXT.items():BATCH_TEXT[_lang].update(_val
 
 for _language,_label in {"fr":"Départs","en":"Starts","de":"Startpositionen","es":"Inicios"}.items():
     BATCH_TEXT[_language]["starts"]=_label
+
+for _lang,_values in {
+ 'fr':{'opening_base':'Base à l’ouverture : {mode} / {archetype}. Civilisations et équipes communes · équipes aléatoires : {teams}. Survoler pour le détail.', 'opening_details':'Réglages détaillés copiés à l’ouverture. Chaque ligne choisit ses variantes ; Personnalisé retrouve la copie initiale. Civilisations / équipes communes (seuls les joueurs demandés sont utilisés) :'},
+ 'en':{'opening_base':'Opening base: {mode} / {archetype}. Shared civilizations and teams · random teams: {teams}. Hover for details.', 'opening_details':'Detailed settings copied on opening. Each row selects variants; Custom restores the opening copy. Shared civilizations / teams (only the requested players are used):'},
+ 'de':{'opening_base':'Ausgangsbasis: {mode} / {archetype}. Gemeinsame Völker und Teams · Zufallsteams: {teams}. Details beim Überfahren.', 'opening_details':'Detaileinstellungen beim Öffnen kopiert. Jede Zeile wählt Varianten; Benutzerdefiniert stellt die Ausgangskopie wieder her. Gemeinsame Völker / Teams (nur angeforderte Spieler werden verwendet):'},
+ 'es':{'opening_base':'Base inicial: {mode} / {archetype}. Civilizaciones y equipos comunes · equipos aleatorios: {teams}. Detalles al pasar el ratón.', 'opening_details':'Ajustes detallados copiados al abrir. Cada fila elige variantes; Personalizado recupera la copia inicial. Civilizaciones / equipos comunes (solo se usan los jugadores solicitados):'},
+}.items():
+ BATCH_TEXT[_lang].update(_values)

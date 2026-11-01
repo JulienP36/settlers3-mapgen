@@ -15,7 +15,7 @@ Archive : `SETTLERS3_MAPGEN_V<MAJEURE>_<MINEURE>_<ETAT>[_<NUMERO>]_<DATE>.zip`.
 Exemples : `2.0 DEV_11_R1` (candidate locale), `2.0 DEV_11` (checkpoint complet),
 `2.0 STABLE` (release finale).
 
-- Chaque modification fonctionnelle d'une candidate locale incrémente `R`.
+- Chaque modification d'une candidate locale incrémente `R`, y compris une révision documentaire archivée.
 - Les candidates `DEV_X_Rn` restent locales ; seuls les checkpoints DEV complets
   validés sont publiés sur `dev`, sans suffixe R.
 - Le compteur DEV avance après publication du checkpoint précédent ; un push
@@ -25,10 +25,16 @@ Exemples : `2.0 DEV_11_R1` (candidate locale), `2.0 DEV_11` (checkpoint complet)
 
 ## État courant
 
-Checkpoint complet : **2.0 DEV_10**, issu de R66 validée. Build Windows validé :
-1306 tests, 4 subtests, smokes et auto-test figé PASS (run `38467559806`).
-Version Windows : `(2, 0, 10, 0)`. DEV11 est à cadrer ; aucune candidate
-fonctionnelle DEV11 n'est engagée par cette mise à jour documentaire.
+Dernier checkpoint publié : **2.0 DEV_10**, issu de R66 validée. Build Windows
+DEV10 validé : 1306 tests, 4 subtests, smokes et auto-test figé PASS
+(run `38467559806`, version Windows `(2, 0, 10, 0)`).
+
+Candidate locale : **2.0 DEV_11**, revue documentaire du 31 octobre 2026.
+La passe fonctionnelle R13 est acceptée ; captures finales intégrées en R14.
+DEV11 reste ouverte pour la construction et qualification du portable Windows,
+puis validation globale. Aucun push intermédiaire ni nouvelle branche.
+La qualification DEV10 ne vaut pas qualification du portable DEV11.
+Checklist active : `docs/RELEASE_2_0_CHECKLIST.md`.
 
 ## Historique
 

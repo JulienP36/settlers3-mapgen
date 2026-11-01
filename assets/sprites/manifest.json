@@ -112,9 +112,9 @@
     "provenance": "Drawn and provided by Julien; latest supplied original PNG bytes unchanged"
   },
   "mask_editor/picker.png": {
-    "origin": "pipette-0001.png",
+    "origin": "pipette-0002.png",
     "upload_date": "2026-10-06",
-    "sha256": "1c351f37f870c44b2a9f3215de1aa2ac8a4d20aa964808bc75650ac37b020641",
+    "sha256": "72ccc885c10173a4798394be2cfe064db672f2d5a01c76835ec3dc0d2b34df2c",
     "size": [
       24,
       24
@@ -490,5 +490,59 @@
       16
     ],
     "provenance": "Original sprite supplied by Julien; copied byte-for-byte, R41"
+  },
+  "languages/fr.png": {
+    "origin": "flag_fr-0001.png",
+    "sha256": "a3ce4633735d2378bf33056852a130d055ef6d19d3c747e8d2139dc2f635ffff",
+    "size": [
+      18,
+      18
+    ],
+    "provenance": "Pixel art dessiné et fourni par Julien le 28 octobre 2026 ; copie exacte."
+  },
+  "languages/en.png": {
+    "origin": "flag_en-0001.png",
+    "sha256": "ca4458d8723efad9cbee1183893d69f0c0457a057e59eebfeacc92ff9355aafe",
+    "size": [
+      18,
+      18
+    ],
+    "provenance": "Pixel art dessiné et fourni par Julien le 28 octobre 2026 ; copie exacte."
+  },
+  "languages/de.png": {
+    "origin": "flag_de-0001.png",
+    "sha256": "8179a230129bde98e2150bb9edc96574fe3d68e363957721287f7ff16c5ad4d5",
+    "size": [
+      18,
+      18
+    ],
+    "provenance": "Pixel art dessiné et fourni par Julien le 28 octobre 2026 ; copie exacte."
+  },
+  "languages/es.png": {
+    "origin": "flag_es-0001.png",
+    "sha256": "ef9c4e415c01ddf341dc7aefe78e5a4093cfbd8496fb7642a52aa0149cc1f345",
+    "size": [
+      18,
+      18
+    ],
+    "provenance": "Pixel art dessiné et fourni par Julien le 28 octobre 2026 ; copie exacte."
+  },
+  "ui/sun.png": {
+    "origin": "Soleil-0001.png",
+    "sha256": "0a32308ccd1a07fe9e73f83f5af68f334e559bec5edbdff2725991c56a39f71f",
+    "size": [
+      20,
+      20
+    ],
+    "provenance": "Pixel art fourni par Julien, copié sans retouche (29 octobre 2026)"
+  },
+  "ui/moon.png": {
+    "origin": "Lune-0001.png",
+    "sha256": "f4394e8a26c9af8c443bbf3aed62d480f34aec846c4d4f3820f703d0fb8f3fc1",
+    "size": [
+      20,
+      20
+    ],
+    "provenance": "Pixel art fourni par Julien, copié sans retouche (29 octobre 2026)"
   }
 }

@@ -54,12 +54,12 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
         "start_bonus", "decorations", "objects",
     }
     assert tuple(sections["terrains"]) == TERRAIN_FAMILY_KEYS
-    assert sections["terrains"]["mud"] == {"enabled": False, "rate_percent": 0.0}
-    assert sections["terrains"]["desert"] == {"enabled": True, "rate_percent": 100.0}
+    assert sections["terrains"]["mud"] == {"enabled": True, "rate_percent": 50.0}
+    assert sections["terrains"]["desert"] == {"enabled": True, "rate_percent": 50.0}
     assert all(
         sections["terrains"][key] == {"enabled": True, "rate_percent": 100.0}
         for key in TERRAIN_FAMILY_KEYS
-        if key != "mud"
+        if key not in ("mud", "desert")
     )
     assert tuple(sections["decorations"]) == DECORATION_FAMILY_KEYS
     assert sections["decorations"] == {key: 100.0 for key in DECORATION_FAMILY_KEYS}
@@ -86,7 +86,7 @@ def test_custom_sections_have_short_bounded_semantic_defaults():
     assert sections["fish"]["average_quantity"] == 10
     assert sections["fish"]["band_thickness"] == 12
     assert sections["rivers"] == {"algorithm": "native", "rate_percent": 100.0}
-    assert sections["objects"] == {"grass_compatible_on_dry_and_details": False}
+    assert sections["objects"] == {"grass_compatible_on_dry_and_details": False, "terrain_scaled_quotas": True}
     assert sections["trees"] == {
         "base_quota_percent": 100.0,
         "saplings": {

@@ -65,3 +65,13 @@ START_TOOLTIPS = {
         'nations': "Configura las civilizaciones y los equipos. Estos ajustes se comparten entre los algoritmos de inicio.",
     },
 }
+
+
+for language, label, description in (
+    ('fr', 'Par équipes', "Répartit les équipes chacune de son côté, sans rapprocher les alliés. Privilégie l’espacement et l’accès aux montagnes/rivières. Respecte les îles reconnues ; chaque joueur sans équipe reste indépendant."),
+    ('en', 'By teams', "Assigns each team its own side without pulling allies together. Favors spacing and mountain/river access. Respects recognized islands; unteamed players remain independent."),
+    ('de', 'Nach Teams', "Verteilt Teams auf eigene Seiten, ohne Verbündete zusammenzuziehen. Bevorzugt Abstand und Zugang zu Bergen/Flüssen. Erkannte Inseln bleiben erhalten; Spieler ohne Team bleiben unabhängig."),
+    ('es', 'Por equipos', "Sitúa cada equipo en su lado sin acercar a los aliados. Prioriza separación y acceso a montañas/ríos. Respeta las islas reconocidas; los jugadores sin equipo siguen independientes."),
+):
+    START_LABELS[language]['teams'] = label
+    START_TOOLTIPS[language]['teams'] = description

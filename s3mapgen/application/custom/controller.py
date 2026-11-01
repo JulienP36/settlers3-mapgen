@@ -19,7 +19,9 @@ from .formula_editor import FormulaPanel, ensure_applied_formula_inputs
 from ...generation.archetypes.formula import DEFAULT_FORMULA
 from ...generation.archetypes.profiles import remap_mask_targets
 from ...generation.archetypes.island_source import uses_island_source
-from ...generation.archetypes.island_amplitude import resolve_island_profile
+from ...generation.archetypes.island_amplitude import resolve_island_profile, effective_island_value
+from ...generation.teams import resolve_player_teams
+from ...generation.object_quotas import estimate_stone_quota, quota_preview_input
 
 from ...generation.archetypes import (
     ARCHETYPES,
@@ -303,6 +305,17 @@ _ARCHETYPE_PREVIEW_EXACT_PROGRESS_SPAN = 0.80
 _ARCHETYPE_COMPONENT_PREVIEW_SIZE = 128
 
 
+def _island_relief_request_key(profile, side, players, seed, teams):
+    """Cheap identity for effective labels; no contour construction on Tk."""
+    m = profile.get("morphology", {})
+    return (
+        int(side), int(players), int(seed), tuple(teams),
+        profile.get("archetype_key"), m.get("relief_source"),
+        m.get("island_amplitude_auto"), m.get("island_thresholds_auto"),
+        m.get("island_amplitude_percent"), tuple(sorted(profile.get("relief", {}).items())),
+    )
+
+
 class _ArchetypePreviewSuperseded(Exception):
     """Internal signal used to stop a preview request that is no longer current."""
 
@@ -399,6 +412,8 @@ class CustomGeneratorController(PreviewDockController):
         self._custom_archetype_preview_completed = None
         self._custom_archetype_preview_noise_completed = None
         self._custom_archetype_components_completed = None
+        self._custom_archetype_relief_completed = None
+        self._custom_island_relief_result = None
         self._custom_archetype_preview_lock = threading.Lock()
         self._custom_archetype_preview_worker: threading.Thread | None = None
         self._custom_archetype_preview_canvases: dict[str, tk.Canvas] = {}
@@ -704,6 +719,12 @@ class CustomGeneratorController(PreviewDockController):
     def _custom_clear_preview_size_trace(self) -> None:
         """Remove the previous live preview listener before rebuilding the tab."""
 
+        for variable, trace in getattr(self, "_custom_preview_input_traces", []):
+            try:
+                variable.trace_remove("write", trace)
+            except (AttributeError, tk.TclError):
+                pass
+        self._custom_preview_input_traces = []
         trace_id = getattr(self, "_custom_preview_size_trace", None)
         if trace_id is None or not hasattr(self, "size"):
             return
@@ -743,6 +764,7 @@ class CustomGeneratorController(PreviewDockController):
             self._custom_archetype_preview_completed = None
             self._custom_archetype_preview_noise_completed = None
             self._custom_archetype_components_completed = None
+            self._custom_archetype_relief_completed = None
             self._custom_archetype_preview_progress = None
         self._custom_archetype_preview_canvases = {}
         self._custom_archetype_preview_photos = {}
@@ -1261,7 +1283,6 @@ class CustomGeneratorController(PreviewDockController):
         # Cancel the previous state immediately.  Otherwise a result computed
         # with the old checkbox value can arrive during the debounce window
         # and make the toggle appear to do nothing.
-        self._custom_cancel_archetype_preview_work()
         self._custom_archetype_preview_noise_cache.clear()
         self._custom_archetype_preview_raw_noise_cache.clear()
         self._custom_schedule_archetype_preview_refresh()
@@ -1309,6 +1330,9 @@ class CustomGeneratorController(PreviewDockController):
     def _custom_cancel_archetype_preview_work(self) -> None:
         """Invalidate queued/finished preview work without clearing canvases."""
 
+        if getattr(self, "_custom_archetype_preview_main_inflight", False):
+            self._custom_archetype_preview_refresh_main_pending = True
+        self._custom_archetype_preview_main_inflight = False
         after_id = getattr(self, "_custom_archetype_preview_after", None)
         if after_id is not None:
             try:
@@ -1329,6 +1353,7 @@ class CustomGeneratorController(PreviewDockController):
             self._custom_archetype_preview_completed = None
             self._custom_archetype_preview_noise_completed = None
             self._custom_archetype_components_completed = None
+            self._custom_archetype_relief_completed = None
             self._custom_archetype_preview_progress = None
 
     def _custom_archetype_notebook_tab_changed(self, *_args) -> None:
@@ -1382,6 +1407,9 @@ class CustomGeneratorController(PreviewDockController):
     ) -> None:
         """Queue a fast component refresh and, when needed, a full map pass."""
 
+        # Invalidate immediately, before the debounce: old results must never
+        # commit under the newly selected parameters. This does no geometry work.
+        self._custom_cancel_archetype_preview_work()
         self._custom_refresh_island_relief_controls()
         refresh_main = bool(refresh_main) or (
             getattr(self, "_custom_archetype_preview_last_result", None) is None
@@ -1395,7 +1423,6 @@ class CustomGeneratorController(PreviewDockController):
             return
         if not self._custom_archetype_tab_is_active():
             self._custom_archetype_preview_refresh_pending = True
-            self._custom_cancel_archetype_preview_work()
             return
         self._custom_archetype_preview_refresh_pending = False
         previous = getattr(self, "_custom_archetype_preview_after", None)
@@ -1460,6 +1487,7 @@ class CustomGeneratorController(PreviewDockController):
             getattr(self, "_custom_archetype_preview_refresh_main_pending", True)
         ) or getattr(self, "_custom_archetype_preview_last_result", None) is None
         self._custom_archetype_preview_refresh_main_pending = False
+        self._custom_archetype_preview_main_inflight = refresh_main
         if refresh_main:
             self._custom_set_archetype_preview_progress(0.0, reset=True)
         key = self._custom_current_archetype()
@@ -1501,11 +1529,16 @@ class CustomGeneratorController(PreviewDockController):
                 players = int(players_var.get()) if players_var is not None else 4
                 self._custom_archetype_preview_request += (players,)
                 if profile.get("morphology", {}).get("relief_source") == RELIEF_SOURCE_TEAM_ISLANDS:
-                    teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
+                    teams = resolve_player_teams(
+                        players, seed,
+                        getattr(self, "player_teams", (0,) * players)[:players],
+                        getattr(self, "random_team_count", 2),
+                    )
                     self._custom_archetype_preview_request += (teams,)
             self._custom_archetype_preview_completed = None
             self._custom_archetype_preview_noise_completed = None
             self._custom_archetype_components_completed = None
+            self._custom_archetype_relief_completed = None
             self._custom_archetype_preview_progress = None
             worker = self._custom_archetype_preview_worker
             if worker is None or not worker.is_alive():
@@ -1570,6 +1603,18 @@ class CustomGeneratorController(PreviewDockController):
                     )
 
             try:
+                if uses_island_source(profile):
+                    relief_key = _island_relief_request_key(profile, side, players, seed, player_teams)
+                    profile = resolve_island_profile(
+                        profile, side, players, seed=seed, player_teams=player_teams,
+                    )
+                    with self._custom_archetype_preview_lock:
+                        if request_id != self._custom_archetype_preview_request_id:
+                            continue
+                        self._custom_archetype_relief_completed = (request_id, relief_key, profile)
+                with self._custom_archetype_preview_lock:
+                    if request_id != self._custom_archetype_preview_request_id:
+                        continue
                 component_source, component_layers = (
                     generate_noise_component_previews(
                         profile,
@@ -1674,6 +1719,8 @@ class CustomGeneratorController(PreviewDockController):
             self._custom_cancel_archetype_preview_work()
             return
         with self._custom_archetype_preview_lock:
+            relief_completed = getattr(self, "_custom_archetype_relief_completed", None)
+            self._custom_archetype_relief_completed = None
             completed = self._custom_archetype_preview_completed
             self._custom_archetype_preview_completed = None
             noise_completed = self._custom_archetype_preview_noise_completed
@@ -1684,6 +1731,11 @@ class CustomGeneratorController(PreviewDockController):
             self._custom_archetype_preview_progress = None
             worker = self._custom_archetype_preview_worker
             pending = self._custom_archetype_preview_request is not None
+        if relief_completed is not None:
+            request_id, relief_key, effective = relief_completed
+            if request_id == self._custom_archetype_preview_request_id:
+                self._custom_island_relief_result = (relief_key, effective)
+                self._custom_refresh_island_relief_controls()
         if components_completed is not None:
             (
                 request_id,
@@ -1764,6 +1816,7 @@ class CustomGeneratorController(PreviewDockController):
                     exact_mask_previews,
                 ) = completed
             if request_id == self._custom_archetype_preview_request_id:
+                self._custom_archetype_preview_main_inflight = False
                 if error is not None or preview is None:
                     self._custom_set_archetype_preview_placeholder(
                         _lang_text(
@@ -2277,7 +2330,7 @@ class CustomGeneratorController(PreviewDockController):
         if key == "decorations":
             return (
                 current.get("decorations", {}) != baseline.get("decorations", {})
-                or current.get("objects", {}) != baseline.get("objects", {})
+                or current.get("objects", {}).get("grass_compatible_on_dry_and_details", False) != baseline.get("objects", {}).get("grass_compatible_on_dry_and_details", False)
             )
         return current.get(key, {}) != baseline.get(key, {})
 
@@ -2969,7 +3022,25 @@ class CustomGeneratorController(PreviewDockController):
             refresh_main=refresh_main
         )
 
+    def _custom_cached_island_relief(self, profile):
+        """Read the last matching worker result without doing any geometry work."""
+        m = profile["morphology"]
+        if not m["island_amplitude_auto"] and not m["island_thresholds_auto"]:
+            return profile
+        players = int(self.players.get())
+        seed = int(self.seed.get())
+        teams = ()
+        if m["relief_source"] == RELIEF_SOURCE_TEAM_ISLANDS:
+            teams = resolve_player_teams(
+                players, seed, getattr(self, "player_teams", (0,) * players)[:players],
+                getattr(self, "random_team_count", 2),
+            )
+        key = _island_relief_request_key(profile, int(self.size.get()), players, seed, teams)
+        cached = getattr(self, "_custom_island_relief_result", None)
+        return cached[1] if cached is not None and cached[0] == key else None
+
     def _custom_refresh_island_relief_controls(self) -> None:
+        """Refresh widgets cheaply; expensive values arrive from the preview worker."""
         frame = getattr(self, "_custom_island_relief_frame", None)
         config = getattr(self, "_custom_config", None)
         if frame is None or config is None:
@@ -2981,15 +3052,17 @@ class CustomGeneratorController(PreviewDockController):
                 frame.grid()
             else:
                 frame.grid_remove()
-            players = int(self.players.get())
-            teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
-            effective = resolve_island_profile(
-                profile, int(self.size.get()), players, player_teams=teams,
-            )
+            effective = self._custom_cached_island_relief(profile)
             m = profile["morphology"]
+            pending = effective is None
+            continental = m["relief_source"] == "continental_landmass"
             editable = bool(getattr(self, "_custom_archetype_editor_editable", True))
-            for name, flag in (("island_amplitude_auto", m["island_amplitude_auto"]), ("island_thresholds_auto", m["island_thresholds_auto"])):
+            for name in ("island_amplitude_auto", "island_thresholds_auto"):
+                flag = m[name]
                 getattr(self, "_custom_" + name + "_var").set(flag)
+                button = getattr(self, "_custom_" + name + "_button", None)
+                if button is not None:
+                    button.configure(state="disabled" if continental or not editable or (pending and flag) else "normal")
             controls = [("morphology.island_amplitude_percent", island and m["island_amplitude_auto"]),
                         ("relief.mountain_threshold", island and m["island_thresholds_auto"]),
                         ("relief.snow_threshold", island and m["island_thresholds_auto"])]
@@ -2999,13 +3072,18 @@ class CustomGeneratorController(PreviewDockController):
                     widget.configure(state="disabled" if automatic or not editable else "normal")
                 variable = self._custom_archetype_vars.get(key)
                 if variable is not None:
-                    variable.set(str(get_path(effective if automatic else profile, tuple(key.split('.')))))
+                    value = "…" if automatic and pending else str(get_path(effective if automatic else profile, tuple(key.split('.'))))
+                    variable.set(value)
             if island:
-                self._custom_island_effective_var.set(custom_section_text(
-                    "archetype_island_effective", self._custom_language(),
-                    amplitude=effective["morphology"]["island_amplitude_percent"],
-                    mountain=effective["relief"]["mountain_threshold"],
-                    snow=effective["relief"]["snow_threshold"]))
+                if pending:
+                    self._custom_island_effective_var.set(custom_section_text(
+                        "archetype_island_effective_pending", self._custom_language()))
+                else:
+                    self._custom_island_effective_var.set(custom_section_text(
+                        "archetype_island_effective", self._custom_language(),
+                        amplitude=effective_island_value(effective, "amplitude", effective["morphology"]["island_amplitude_percent"]),
+                        mountain=effective_island_value(effective, "mountain", effective["relief"]["mountain_threshold"]),
+                        snow=effective_island_value(effective, "snow", effective["relief"]["snow_threshold"])))
         except (AttributeError, KeyError, TypeError, ValueError, tk.TclError):
             return
 
@@ -3014,12 +3092,14 @@ class CustomGeneratorController(PreviewDockController):
         if config is None:
             return
         profile = deepcopy(config.archetype_profile)
-        players = int(self.players.get())
-        teams = tuple(getattr(self, "player_teams", (0,) * players)[:players])
-        effective = resolve_island_profile(
-            profile, int(self.size.get()), players, player_teams=teams,
-        )
+        effective = self._custom_cached_island_relief(profile)
         enabled = bool(getattr(self, "_custom_" + name + "_var").get())
+        if not enabled and effective is None:
+            # The checkbox is disabled while its effective value is pending.
+            # Also guard programmatic invocation: never freeze an obsolete value.
+            self._custom_refresh_island_relief_controls()
+            self._custom_schedule_archetype_preview_refresh()
+            return
         if not enabled:
             if name == "island_amplitude_auto":
                 profile["morphology"]["island_amplitude_percent"] = effective["morphology"]["island_amplitude_percent"]
@@ -3976,7 +4056,7 @@ class CustomGeneratorController(PreviewDockController):
         sections = config.semantic_sections()
         if key == "decorations":
             sections["decorations"] = deepcopy(baseline.get("decorations", {}))
-            sections["objects"] = deepcopy(baseline.get("objects", {}))
+            sections["objects"]["grass_compatible_on_dry_and_details"] = baseline.get("objects", {}).get("grass_compatible_on_dry_and_details", False)
         elif key in sections:
             sections[key] = deepcopy(baseline.get(key, {}))
         packages = default_archetype_start_packages(config.base_archetype, config.archetype_profile) if key == "start_bonus" else config.start_packages
@@ -4036,7 +4116,7 @@ class CustomGeneratorController(PreviewDockController):
             self._custom_package_vars[spec.key] = var
 
         sections_frame = ttk.Frame(root)
-        sections_frame.grid(row=3, column=0, sticky="ew", pady=(0, 10))
+        sections_frame.grid(row=4, column=0, sticky="ew", pady=(0, 10))
         for column in range(3):
             sections_frame.columnconfigure(column, weight=0)
         self._custom_section_frames = {}
@@ -5187,7 +5267,7 @@ class CustomGeneratorController(PreviewDockController):
 
         stone_preview_vars = {
             key: tk.StringVar(value="")
-            for key in ("size", "global", "active", "stock", "groups")
+            for key in ("size", "global", "active", "stock", "groups", "basis")
         }
         # Keep the historical singular name as an alias for the first line;
         # the preview is rendered as a compact, reusable panel like Trees.
@@ -5207,7 +5287,7 @@ class CustomGeneratorController(PreviewDockController):
         )
         stone_preview_frame.configure(labelwidget=stone_preview_title)
         stone_preview_frame.grid(row=2, column=0, sticky="w", pady=(6, 0))
-        for row, key in enumerate(("size", "global", "active", "stock", "groups")):
+        for row, key in enumerate(("size", "global", "active", "stock", "groups", "basis")):
             ttk.Label(
                 stone_preview_frame,
                 textvariable=stone_preview_vars[key],
@@ -5250,17 +5330,32 @@ class CustomGeneratorController(PreviewDockController):
                 side = max(1, int(self.size.get()))
             except (AttributeError, TypeError, ValueError):
                 side = 768
-            scale = (side / 768.0) ** 2
-            requested = round(
-                anchor_profile
-                * scale
-                * _read_number(
-                    self._custom_section_vars.get("building_stones.anchor_density_percent"),
-                    100.0,
-                )
-                / 100.0
-            )
-            exhausted = round(exhausted_profile * scale)
+            estimate_config = self._custom_config or config
+            inputs = None
+            try:
+                players = int(self.players.get())
+                inputs = quota_preview_input(players, int(self.seed.get()),
+                    tuple(getattr(self, "player_teams", (0,) * players)[:players]),
+                    self._start_nations(players), self._start_algorithm_key(), self._mirror_key(),
+                    getattr(self, "random_team_count", 2))
+            except (AttributeError, TypeError, ValueError, tk.TclError):
+                pass
+            quota_flag = self._custom_section_vars.get("objects.terrain_scaled_quotas")
+            if quota_flag is not None:
+                estimate_sections = estimate_config.semantic_sections()
+                estimate_sections["objects"]["terrain_scaled_quotas"] = bool(quota_flag.get())
+                estimate_config = estimate_config.with_sections(estimate_sections)
+            state = getattr(getattr(self, "current", None), "state", None)
+            expanded_var = self._custom_section_vars.get("objects.grass_compatible_on_dry_and_details")
+            expanded = bool(expanded_var.get()) if expanded_var is not None else False
+            requested, basis_kind, support_cells = estimate_stone_quota(
+                estimate_config, side, anchor_profile,
+                _read_number(self._custom_section_vars.get("building_stones.anchor_density_percent"), 100.0),
+                state=state, inputs=inputs, expanded_grass=expanded)
+            exhausted = round(requested * 0.01125)
+            stone_preview_vars["basis"].set(custom_section_text(
+                "preview_basis_current" if basis_kind == "current" else "preview_basis_area" if basis_kind == "area" else "preview_basis_reference",
+                language, value=support_cells))
             active = max(0, requested - exhausted)
             average = _read_number(
                 self._custom_section_vars.get("building_stones.average_quantity"),
@@ -5329,9 +5424,13 @@ class CustomGeneratorController(PreviewDockController):
             refresh_stone_preview()
 
         if hasattr(self, "size"):
-            self._custom_preview_size_trace = self.size.trace_add(
-                "write", refresh_custom_previews_for_size
-            )
+            self._custom_preview_size_trace = self.size.trace_add("write", refresh_custom_previews_for_size)
+        self._custom_preview_input_traces = []
+        for input_name in ("seed", "players"):
+            input_var = getattr(self, input_name, None)
+            if input_var is not None and hasattr(input_var, "trace_add"):
+                trace = input_var.trace_add("write", refresh_custom_previews_for_size)
+                self._custom_preview_input_traces.append((input_var, trace))
 
         decorations = add_collapsible_section(
             "decorations", 7, custom_section_text("decorations", language), pady=(0, 8)
@@ -5345,6 +5444,17 @@ class CustomGeneratorController(PreviewDockController):
         self._custom_decoration_rate_vars = {}
         self._custom_decoration_rate_widgets = {}
         decoration_values = sections["decorations"]
+        quota_var = tk.BooleanVar(value=bool(sections.get("objects", {}).get("terrain_scaled_quotas", True)))
+        register_value(("objects", "terrain_scaled_quotas"), quota_var)
+        quota_var.trace_add("write", refresh_stone_preview)
+        quota_line = ttk.Frame(root)
+        quota_line.grid(row=3, column=0, sticky="w", pady=(0, 8))
+        self._custom_quota_scaling_widget = ttk.Checkbutton(
+            quota_line, text=custom_section_text("objects_terrain_scaled_quotas", language),
+            variable=quota_var, command=lambda: self._custom_section_changed(
+                ("objects", "terrain_scaled_quotas"), quota_var.get()))
+        self._custom_quota_scaling_widget.grid(row=0, column=0, sticky="w")
+        add_info(quota_line, 0, custom_section_text("objects_terrain_scaled_quotas_hint", language), column=1, pady=0)
         object_values = sections.get("objects", {})
         decoration_dependency_var = tk.StringVar(value="")
         grass_object_var = tk.BooleanVar(value=bool(
@@ -6635,6 +6745,7 @@ class CustomGeneratorController(PreviewDockController):
                 "in_global_pool",
                 "groups_enabled",
                 "grass_compatible_on_dry_and_details",
+                "terrain_scaled_quotas",
                 "force_extended_radius",
             }:
                 value = bool(raw)
@@ -7333,6 +7444,7 @@ class CustomGeneratorController(PreviewDockController):
             setattr(self, "_custom_" + name + "_var", variable)
             button = ttk.Checkbutton(island_frame, text=custom_section_text(label_key, language), variable=variable,
                                      command=lambda n=name: self._custom_island_automatic_changed(n))
+            setattr(self, "_custom_" + name + "_button", button)
             button.grid(row=row, column=0, sticky="w")
             if not editable:
                 button.configure(state="disabled")

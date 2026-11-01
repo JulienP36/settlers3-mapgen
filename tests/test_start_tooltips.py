@@ -31,12 +31,12 @@ class Host(GenerationWorkflowController):
 def test_menu_help_follows_hovered_choice_not_selected_algorithm():
     host = Host()
     for index, key in ((0,'auto'),(1,'balanced'),(2,'fair'),(3,'islands'),
-                       (5,'classic'),(6,'nations')):
+                       (4,'teams'),(6,'classic'),(7,'nations')):
         host.start_menu.active = index
         host._start_menu_tooltip()
         assert host.visible[0] == START_TOOLTIPS['fr'][key]
         assert host._start_algorithm_key() == 'balanced'
-    for index in (None, 4):
+    for index in (None, 5):
         host.start_menu.active = index
         host._start_menu_tooltip()
         assert host.visible is None

@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .core import GenerationRequest
+from .teams import resolve_player_teams
+from .object_quotas import quota_geometry_signature, quota_preview_input
 from .archetypes import get_archetype
 from .generators.legacy import generate as generate_legacy
 from .contracts import GenerationOutput
@@ -115,7 +117,19 @@ class MapGenerator:
     ):
         start_algorithm = str(kwargs.pop("start_algorithm", "auto"))
         start_nations = tuple(kwargs.pop("start_nations", ()))
-        player_teams = tuple(kwargs.pop("player_teams", ()))
+        requested_teams = tuple(kwargs.pop("player_teams", ()))
+        random_team_count = kwargs.pop("random_team_count", 2)
+        player_teams = resolve_player_teams(int(players), int(seed), requested_teams, random_team_count)
+
+        def record_team_draw(state, config):
+            if "object_quota_basis" in state.metadata:
+                state.metadata["object_quota_geometry_signature"] = quota_geometry_signature(config)
+                state.metadata["object_quota_inputs"] = quota_preview_input(players, seed, requested_teams, start_nations, start_algorithm, mirror_mode, random_team_count)
+            if -1 in requested_teams:
+                state.metadata["requested_player_teams"] = list(requested_teams)
+                state.metadata["random_team_count"] = random_team_count
+                state.metadata["effective_random_team_count"] = len({t for t in player_teams if t > 0})
+
         start_slot_types = tuple(kwargs.pop("start_slot_types", ()))
         mirror_mode = int(kwargs.pop("mirror_mode", 0))
         custom_config = kwargs.pop("custom_config", None)
@@ -169,6 +183,7 @@ class MapGenerator:
             report("continental_legacy_native.complete", "terrain natif terminé")
             self.stage_log = list(events)
             self.current_mode = "legacy"
+            record_team_draw(state, route_config)
             return GenerationOutput(state, validations, list(events))
 
         if mode == "custom":
@@ -229,6 +244,7 @@ class MapGenerator:
             report("custom.complete", "profil Custom terminé")
             self.stage_log = list(events)
             self.current_mode = "custom"
+            record_team_draw(state, custom_config)
             return GenerationOutput(state, validations, list(events))
         if mode != "upgraded":
             raise ValueError(f"Mode de génération inconnu : {mode}")
@@ -266,4 +282,5 @@ class MapGenerator:
         )
         self.stage_log = events
         self.current_mode = "upgraded"
+        record_team_draw(state, route_config)
         return GenerationOutput(state, validations, list(events))

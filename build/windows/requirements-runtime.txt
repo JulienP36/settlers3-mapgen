@@ -1,0 +1,4 @@
+# Runtime versions used by the source qualification for this portable baseline.
+numpy==2.3.5
+scipy==1.17.0
+Pillow==12.3.0

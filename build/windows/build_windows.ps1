@@ -16,11 +16,15 @@ $ArtifactVersion = $AppVersion -replace '[^A-Za-z0-9]+', '_'
 $ArtifactStem = "SETTLERS3_MAPGEN_V$ArtifactVersion`_WINDOWS_X64"
 $ZipPath = Join-Path $ArtifactRoot ($ArtifactStem + '.zip')
 $ReportPath = Join-Path $ArtifactRoot ($ArtifactStem + '_SELFTEST.json')
+$QualificationPath = Join-Path $ArtifactRoot ($ArtifactStem + '_QUALIFICATION.json')
 
 if ($InstallDependencies) {
     python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt -r build\windows\requirements-build.txt
+    python -m pip install -r build\windows\requirements-runtime.txt -r build\windows\requirements-build.txt
 }
+
+python build\windows\generate_icons.py --check
+if ($LASTEXITCODE -ne 0) { throw 'Application icon validation failed.' }
 
 python build\windows\generate_version_info.py
 if ($LASTEXITCODE -ne 0) { throw 'Windows version metadata generation failed.' }
@@ -47,6 +51,9 @@ $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
 if ($Report.status -ne 'PASS' -or -not $Report.frozen) {
     throw 'Packaged executable did not validate as a frozen runtime.'
 }
+
+python build\windows\qualify_portable.py --folder $DistRoot --report $QualificationPath
+if ($LASTEXITCODE -ne 0) { throw 'Portable relocation/GUI/user-data qualification failed.' }
 
 Compress-Archive -Path $DistRoot -DestinationPath $ZipPath -CompressionLevel Optimal
 $Hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $ZipPath).Hash

@@ -397,7 +397,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
     stone_average = _stone_average_quantity(profile)
     stone_group_average = _number(stones.get("cluster_typical_anchors"), 1.0)
     terrain_enabled = {
-        key: not (key == "mud" and mode != "legacy")
+        key: True
         for key in TERRAIN_FAMILY_KEYS
     }
 
@@ -548,7 +548,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
         "terrains": {
             key: {
                 "enabled": enabled,
-                "rate_percent": 100.0 if enabled else 0.0,
+                "rate_percent": 50.0 if mode != "legacy" and key in ("mud", "desert") else 100.0,
             }
             for key, enabled in terrain_enabled.items()
         },
@@ -700,6 +700,7 @@ def default_sections(profile: Mapping[str, Any], base_mode: str) -> dict[str, An
         },
         "objects": {
             "grass_compatible_on_dry_and_details": False,
+            "terrain_scaled_quotas": True,
         },
     }
 
@@ -1228,6 +1229,7 @@ def normalize_sections(value: Mapping[str, Any] | None, *, fallback: Mapping[str
             fallback_objects.get("grass_compatible_on_dry_and_details", False),
         )
     )
+    fallback_objects["terrain_scaled_quotas"] = bool(raw_objects.get("terrain_scaled_quotas", fallback_objects.get("terrain_scaled_quotas", True)))
     return base
 
 

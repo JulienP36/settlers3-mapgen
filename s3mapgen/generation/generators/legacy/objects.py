@@ -7,6 +7,7 @@ import numpy as np
 from ....map_data.constants import DESERT, GRASS, SNOW, SNOW_TRANS, SWAMP_IDS, WATER_IDS
 from ....map_data.hexgrid import HEX6, dilate, hex_distance, neighbor_count
 from ...custom.content import _full_range_quantities
+from ...object_quotas import ObjectQuotaBasis
 
 
 def _neighbours(x: int, y: int, side: int):
@@ -108,12 +109,13 @@ def add_trees(
     *,
     grass_support_ids: tuple[int, ...] = (GRASS,),
     collision_mask: np.ndarray | None = None,
+    quota_basis=None,
 ) -> dict:
     """Place a semantic Custom Legacy tree pool without exposing native IDs."""
 
+    quota_basis = quota_basis or ObjectQuotaBasis.capture(state, reservation)
     terrain, objects = state.terrain, state.objects
     cfg = profile["legacy_content"]["trees"]
-    scale = (state.side / 768.0) ** 2
     native_cfg = _native_objects_config(state, profile)
     density_key = _native_density_key(state, native_cfg) if native_cfg else ""
     object_clearance = (
@@ -131,7 +133,7 @@ def add_trees(
     if adult_base is None:
         adult_base = cfg["grass_adult_target_768"]
     base_quota = _bounded_percent(cfg.get("base_quota_percent", 100.0), maximum=500.0)
-    global_pool_target = int(round(float(adult_base) * scale * base_quota / 100.0))
+    global_pool_target = quota_basis.target(adult_base, grass_support_ids, base_quota, channel="trees.pool", reference_ids=(GRASS,))
     saplings_enabled = bool(cfg.get("saplings_enabled", False))
     saplings_in_global_pool = bool(cfg.get("saplings_in_global_pool", False)) if saplings_enabled else False
     sapling_global_share = _bounded_percent(cfg.get("saplings_global_share_percent", 0.0), maximum=100.0)
@@ -141,7 +143,7 @@ def add_trees(
     else:
         target = global_pool_target
         separate_quota = _bounded_percent(cfg.get("saplings_quota_percent", 0.0))
-        small_target = int(round(float(adult_base) * scale * separate_quota / 100.0)) if saplings_enabled else 0
+        small_target = quota_basis.target(adult_base, grass_support_ids, separate_quota, channel="trees.saplings", reference_ids=(GRASS,)) if saplings_enabled else 0
     target = min(target, int(grass.sum()))
     tree_ids = np.asarray(cfg["grass_adult_ids"], dtype=np.uint8)
     weights = np.asarray(cfg["grass_adult_weights"], dtype=float)
@@ -253,7 +255,7 @@ def add_trees(
     if palm_base is None:
         palm_base = cfg["desert_palm_target_768"]
     palm_quota = _bounded_percent(cfg.get("palm_quota_percent", 100.0), maximum=500.0)
-    palm_target = min(int(round(float(palm_base) * scale * palm_quota / 100.0)), int(desert.sum()))
+    palm_target = quota_basis.target(palm_base, (DESERT,), palm_quota, channel="trees.palms")
     points = np.argwhere(desert)
     for index in rng.permutation(len(points))[:palm_target]:
         y, x = map(int, points[index])
@@ -298,12 +300,13 @@ def add_building_stones(
     *,
     grass_support_ids: tuple[int, ...] = (GRASS,),
     collision_mask: np.ndarray | None = None,
+    quota_basis=None,
 ) -> dict:
     """Place legal stone anchors with their actual blocked 7-cell footprint."""
 
+    quota_basis = quota_basis or ObjectQuotaBasis.capture(state, reservation)
     terrain, objects, access = state.terrain, state.objects, state.accessibility
     cfg = profile["legacy_content"]["building_stones"]
-    scale = (state.side / 768.0) ** 2
     native_cfg = _native_objects_config(state, profile)
     density_key = _native_density_key(state, native_cfg) if native_cfg else ""
     object_clearance = (
@@ -321,7 +324,7 @@ def add_building_stones(
     average_quantity = cfg.get("average_quantity")
     if average_quantity is not None:
         average_quantity = _half_step_quantity(average_quantity)
-    target = int(round(float(native_target if native_target is not None else cfg["global_anchor_target_768"]) * scale * anchor_density / 100.0))
+    target = quota_basis.target(native_target if native_target is not None else cfg["global_anchor_target_768"], grass_support_ids, anchor_density, channel="stones.anchors", reference_ids=(GRASS,))
     footprint = [tuple(item) for item in cfg["footprint"]]
     blocked = object_clearance.copy()
     blocked |= dilate(np.isin(objects, (43, 44, *range(68, 82), 84)), 2)
@@ -441,15 +444,10 @@ def add_building_stones(
         else set()
     )
     active_indices = [index for index in range(len(anchors)) if index not in exhausted_indices]
-    if average_quantity is None:
-        stock_target = int(round(int(cfg["global_stock_target_768"]) * scale))
-    else:
-        profile_active = max(1, int(cfg.get("global_anchor_target_768", cfg.get("global_anchor_target", target))) - int(cfg.get("global_exhausted_anchor_target", 0)))
-        profile_average = int(round(int(cfg["global_stock_target_768"]) / profile_active))
-        if anchor_density == 100.0 and average_quantity == profile_average:
-            stock_target = int(round(int(cfg["global_stock_target_768"]) * scale))
-        else:
-            stock_target = int(round(len(active_indices) * average_quantity))
+    profile_active = max(1, int(cfg["global_anchor_target_768"]) - int(cfg.get("global_exhausted_anchor_target", 0)))
+    target_mean = (float(cfg["global_stock_target_768"]) / profile_active
+                   if average_quantity is None else float(average_quantity))
+    stock_target = int(round(len(active_indices) * target_mean))
     quantities = np.zeros(len(anchors), dtype=int)
     if average_quantity is None:
         quantities[active_indices] = 1

@@ -22,7 +22,7 @@ Cette description courte indique immédiatement l’objet réel du dépôt.
 
 Ne multiplier ni les variantes orthographiques ni les tags populaires sans rapport. Le cœur attendu reste `settlers-iii` ou `settlers3`, `map-generator`, `procedural-generation` et `reverse-engineering` ; les autres Topics restent optionnels.
 
-État appliqué : les neuf Topics ci-dessus sont actifs sur `JulienP36/settlers3-mapgen`.
+État consigné le 25 août 2026 : les neuf Topics ci-dessus ont été appliqués à `JulienP36/settlers3-mapgen`.
 
 ## Hors périmètre de la découvrabilité
 
@@ -46,21 +46,24 @@ dans `data/` et restent donc disponibles dans le dépôt public.
 - `README_EN.md` is linked at the top of both language entrypoints.
 - The substantial ChatGPT/OpenAI implementation assistance remains explicit.
 - Current STABLE and active DEV state are not confused.
-- Limits are visible: generation calibration, read-only SAV handling and partial EDM import defect.
+- Limits are visible: native sizes capped at 768, small-map viability, supported SAV-to-new-map conversion and omitted game-session entities; see MAP_EXPORT.md.
 - Screenshots show the current UI and real generated/imported map data only.
 - Each screenshot is checked for personal paths, private filenames and obsolete version labels.
 - Visual provenance is added to `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md` before publication.
 
 ## Real screenshots integrated
 
-The v1.8 README set now covers:
+The README uses seven real Windows captures supplied by the owner: six DEV11
+R11 captures (team islands, generator settings, custom archetype, mask editor,
+configurations and resource charts), plus the final R13 batch capture with
+shared settings, cache reuse and A/B assignments, integrated in R14. PNGs are
+copied unchanged. Historical v1.8 captures remain in the recovery references;
+the truncated Statistics PNG is not displayed. Provenance:
+references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md.
 
-1. main generation and Viewer;
-2. Statistics with a real map loaded;
-3. Charts with a meaningful real dataset;
-4. Batch generation and its real previews.
-
-The four files are stored in `docs/screenshots/` and recorded in `references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md`. They are recent Windows captures of the actual application. The Batch image deliberately includes one cache-reuse status; it does not pretend that the current generator already provides full morphological diversity. Do not reuse format-reference images, the archived seed-diversity evidence or invented illustrations as generic product screenshots.
+The About/Topics state above records the application reported on 25 August;
+check the live repository again at publication. No repository setting was
+queried or changed during this documentation review.
 
 ## Release hygiene
 
@@ -77,4 +80,4 @@ DEV9 completes the validated Large islands scope. The unsuffixed checkpoint
 is published to `dev` with source/tests/public notes. `references/` and local
 DEV9 candidate map examples remain outside the Git push, inside the recovery
 ZIP. No tag or Release. Earlier out-of-scope DEV9 work moves to DEV10 for
-prioritization; Small islands is DEV10 or DEV11. See `DEV_9_CHECKPOINT.md`.
+prioritization; This is historical: Small islands is no longer a 2.0 task; follow RELEASE_2_0_SCOPE.md. See `DEV_9_CHECKPOINT.md`.

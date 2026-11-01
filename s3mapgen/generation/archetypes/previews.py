@@ -203,6 +203,7 @@ def classify_macro(
     profile: dict | None = None,
     *,
     final_height: np.ndarray | None = None,
+    threshold_fields: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> np.ndarray:
     """Classify the native relief into five stable macro display classes.
 
@@ -229,8 +230,8 @@ def classify_macro(
     macro = np.select(
         (
             heights <= water_threshold,
-            heights < mountain_threshold,
-            heights < snow_threshold,
+            heights < (mountain_threshold if threshold_fields is None else threshold_fields[0]),
+            heights < (snow_threshold if threshold_fields is None else threshold_fields[1]),
         ),
         (MACRO_WATER, MACRO_GRASS, MACRO_MOUNTAIN),
         default=MACRO_SNOW,
@@ -264,7 +265,7 @@ def generate_archetype_preview(
             f"Moteur de prévisualisation non disponible : {normalized.get('layout_engine')}"
         )
     normalized = resolve_island_profile(
-        normalized, side, players, player_teams=player_teams,
+        normalized, side, players, player_teams=player_teams, seed=seed,
     )
     if uses_island_source(normalized):
         from ..generators.legacy.native_terrain import relax_large_island_height
@@ -285,7 +286,10 @@ def generate_archetype_preview(
             noise, height = finalize_relief_preview_fields(noise, height, int(mirror_mode))
             source_noise = finalize_relief_preview_noise(source_noise, int(mirror_mode))
             island_mask = np.where(noise > water, 1, 0).astype(np.int16)
-        macro = classify_macro(noise, normalized, final_height=height)
+        threshold_fields = fields.threshold_fields
+        if int(mirror_mode) and threshold_fields is not None:
+            threshold_fields = tuple(finalize_relief_preview_noise(v, int(mirror_mode)) for v in threshold_fields)
+        macro = classify_macro(noise, normalized, final_height=height, threshold_fields=threshold_fields)
         if progress is not None:
             progress(1., noise)
         return ArchetypePreview(
@@ -442,7 +446,7 @@ def generate_archetype_noise_preview(
             f"Moteur de prévisualisation non disponible : {normalized.get('layout_engine')}"
         )
     normalized = resolve_island_profile(
-        normalized, side, players, player_teams=player_teams,
+        normalized, side, players, player_teams=player_teams, seed=seed,
     )
     if uses_island_source(normalized):
         if int(mirror_mode) and normalized["morphology"]["relief_source"] != "continental_landmass":
@@ -521,15 +525,16 @@ def generate_archetype_indicative_preview(
         archetype_key=str((profile or {}).get("archetype_key", "continental")),
     )
     normalized = resolve_island_profile(
-        normalized, side, players, player_teams=player_teams,
+        normalized, side, players, player_teams=player_teams, seed=seed,
     )
     if uses_island_source(normalized):
-        noise = generate_archetype_noise_preview(
-            normalized, side, seed, mirror_mode,
-            noise_cache=noise_cache, lab_sink=lab_sink, players=players,
-            player_teams=player_teams,
+        preview = generate_archetype_preview(
+            normalized, side, seed, mirror_mode, players=players,
+            player_teams=player_teams, relax_macro=False,
         )
-        return noise, classify_macro(noise, normalized)
+        if lab_sink is not None:
+            lab_sink['report'] = preview.noise_lab
+        return preview.noise, preview.macro
     # Autonomous providers do not need the Legacy refinement merely to show
     # their source map.  Compose them directly on a small preview grid; the
     # exact native macro pass continues independently in the background.

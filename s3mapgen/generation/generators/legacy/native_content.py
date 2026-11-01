@@ -457,6 +457,7 @@ def populate_native_content(
     mode: int = 0,
     *,
     disabled_object_families: set[str] | tuple[str, ...] | None = None,
+    disabled_object_ids: tuple[int, ...] = (),
     protected_object_mask: np.ndarray | None = None,
     protected_resource_mask: np.ndarray | None = None,
     include_resources: bool = True,
@@ -488,11 +489,13 @@ def populate_native_content(
                 int(object_hitbox_radius),
             )
 
+    disabled_ids = frozenset(map(int, disabled_object_ids))
+
     def place_objects():
         fixed_attempts = 0
         fixed_accepts = 0
         for source, object_id, density, flag_mode, pattern_arg in FIXED_OBJECT_CALLS:
-            if _object_family(object_id) in disabled:
+            if _object_family(object_id) in disabled or object_id in disabled_ids:
                 continue
             attempts, accepted = _place_fixed(
                 grid,
@@ -513,7 +516,7 @@ def populate_native_content(
         range_attempts = 0
         range_accepts = 0
         for source, low_id, high_id, density, flag_mode, pattern_arg in RANGE_OBJECT_CALLS:
-            if _object_family(low_id) in disabled:
+            if _object_family(low_id) in disabled or all(i in disabled_ids for i in range(low_id, high_id + 1)):
                 continue
             attempts, accepted = _place_range(
                 grid,
@@ -651,6 +654,7 @@ def populate_native_content(
         "native_range_object_attempts": range_attempts,
         "native_range_object_accepts": range_accepts,
         "native_object_disabled_families": tuple(sorted(disabled)),
+        **({"native_object_disabled_ids": tuple(sorted(disabled_ids))} if disabled_ids else {}),
         "native_object_hitbox_radius": (
             int(object_hitbox_radius)
             if object_hitbox_radius is not None and int(object_hitbox_radius) > 0

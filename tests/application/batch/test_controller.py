@@ -50,6 +50,10 @@ def batch_dummy(rows, count=None, language="fr"):
     dummy._batch_rows = rows
     dummy._batch_count_var = Var(count if count is not None else len(rows))
     dummy._batch_label_key = MainWindow._batch_label_key
+    from s3mapgen.application.batch.context import BatchContext
+    from s3mapgen.generation.custom import build_custom_config
+    dummy._batch_context = BatchContext('legacy','classic',build_custom_config('legacy','continental').to_dict(),(255,)*20,(0,)*20,2)
+    dummy._batch_arch_choice = MainWindow._batch_arch_choice
     dummy._start_nations = lambda players: MainWindow._start_nations(dummy,players)
     return dummy
 
@@ -67,6 +71,8 @@ def test_batch_collects_one_to_four_independent_generation_keys():
         row(2, mode="Amélioré", players="8", seed="202", start="Îles — seul"),
     ])
     dummy.classic_start_nations = (255,1,2,3,0,1,2,3)
+    from dataclasses import replace
+    dummy._batch_context = replace(dummy._batch_context,nations=dummy.classic_start_nations)
     requests = MainWindow._batch_collect_requests(dummy)
     assert [request["key"].seed for request in requests] == [101, 202]
     assert [request["key"].players for request in requests] == [4, 8]
@@ -74,8 +80,8 @@ def test_batch_collects_one_to_four_independent_generation_keys():
     assert [request["key"].start_algorithm for request in requests] == ["balanced", "islands"]
     assert requests[0]["key"].start_nations == (255,1,2,3)
     assert requests[1]["key"].start_nations == dummy.classic_start_nations
-    assert requests[0]["key"].engine_revision == "continental_legacy_native_content"
-    assert requests[1]["key"].engine_revision == "continental_upgraded-native-v1"
+    assert requests[0]["key"].configuration_digest == requests[0]["config"].digest
+    assert requests[1]["key"].configuration_digest == requests[1]["config"].digest
 
 
 def test_batch_collects_native_size_and_mirror_parameters():
@@ -99,9 +105,42 @@ def test_batch_rejects_unknown_sizes_before_starting():
         MainWindow._batch_collect_requests(dummy)
 
 
+def test_queued_generation_uses_captured_payload_and_reuses_matching_cache():
+    from types import SimpleNamespace
+    from s3mapgen.application.session.cache import SessionGenerationCache
+    dummy=batch_dummy([row(1,seed='123'),row(2,seed='123')])
+    requests=MainWindow._batch_collect_requests(dummy)
+    calls=[];result=object()
+    def generate(*args,**kwargs):
+        calls.append(kwargs)
+        assert kwargs['custom_config'].digest==requests[0]['key'].configuration_digest
+        return result
+    dummy.generator=SimpleNamespace(generate=generate)
+    dummy.session_cache=SessionGenerationCache()
+    dummy._batch_running=True;dummy._batch_cancel_requested=False
+    dummy._batch_queue=list(requests);dummy._batch_active_count=2
+    dummy._batch_summary_var=Var('')
+    dummy._batch_text=lambda key,**values:key
+    dummy._batch_update_progress=lambda *args:None
+    dummy._batch_render_thumbnail=lambda *args:None
+    dummy._refresh_history=lambda:None
+    dummy.after=lambda *args:None
+    dummy._batch_run_next=lambda:None
+    def forbidden(*args):
+        raise AssertionError('Must not resolve mutable main-window settings during execution')
+    dummy._custom_config_for_generation=forbidden
+    for item in dummy._batch_rows:
+        item['state']='waiting';item['viability_warning']=False
+    MainWindow._batch_run_next(dummy)
+    MainWindow._batch_run_next(dummy)
+    assert len(calls)==1
+    assert dummy._batch_rows[1]['cached']
+    assert all(item['result'] is result for item in dummy._batch_rows)
+
+
 def test_batch_queue_is_sequential_and_populates_history_and_ab_actions():
     assert "request=self._batch_queue.pop(0)" in SRC
-    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams)" in SRC
+    assert "self.generator.generate(key.players,key.seed,mode=key.mode,archetype=key.archetype,side=key.side,mirror_mode=key.mirror_mode,custom_config=config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams,random_team_count=key.random_team_count)" in SRC
     assert "self.session_cache.put(key,out)" in SRC
     assert "self.after(30,self._batch_run_next)" in SRC
     assert "self._set_compare_output(slot,out)" in SRC
@@ -220,3 +259,79 @@ def test_initial_batch_geometry_fits_requested_content_when_screen_allows():
     assert "win.winfo_reqwidth()" in fit and "win.winfo_reqheight()" in fit
     assert "screen_w-64" in fit and "screen_h-96" in fit
     assert "win.geometry(f'{width}x{height}+{x}+{y}')" in fit
+
+
+@pytest.mark.parametrize("ending", ["success", "cached", "failure", "cancel"])
+def test_complete_queue_finalizes_and_retains_each_result_metadata(ending, monkeypatch):
+    from types import SimpleNamespace
+    import s3mapgen.application.batch.controller as controller
+    from s3mapgen.application.session.cache import SessionGenerationCache
+    from s3mapgen.application.ui.messages import localized_cause
+    rows = [row(1, archetype="Classique", seed="11"),
+            row(2, archetype="Continental", seed="22"), row(3, seed="33")]
+    if ending == 'cached':
+        rows[2]['seed_var'].set('22')
+    dummy = batch_dummy(rows, language="en")
+    requests = MainWindow._batch_collect_requests(dummy)
+    reports = []
+    monkeypatch.setattr(controller, 'show_report', lambda owner, report: reports.append(report))
+    error = ValueError('Le placement Îles nécessite les îles identifiées par la géographie')
+    def generate(players, seed, **kwargs):
+        if ending == 'failure' and seed == 33:
+            raise error
+        return object()
+    dummy.generator = SimpleNamespace(generate=generate)
+    dummy.session_cache = SessionGenerationCache(max_entries=2)
+    dummy.current = object()  # Existing viewer must remain unchanged.
+    current = dummy.current
+    dummy._batch_running = True
+    dummy._batch_cancel_requested = False
+    dummy._batch_queue = list(requests)
+    dummy._batch_active_count = 3
+    dummy._batch_last_success = None
+    dummy._batch_summary_var = Var('')
+    dummy._batch_text = lambda key, **values: BATCH_TEXT['en'][key].format(**values)
+    def progress(item, value, text, state):
+        item.update(state=state, status_text=text)
+    dummy._batch_update_progress = progress
+    dummy._batch_render_thumbnail = lambda *args: None
+    dummy._refresh_history = lambda: None
+    dummy._refresh_batch_assignment_buttons = lambda: None
+    dummy._batch_set_running_controls = lambda running: None
+    dummy._batch_should_autodisplay = lambda: MainWindow._batch_should_autodisplay(dummy)
+    dummy._output_in_history = lambda output: any(value is output for _,value in dummy.session_cache.entries())
+    dummy._feedback = lambda *args, **kwargs: None
+    dummy.after = lambda *args: None
+    dummy._batch_run_next = lambda: None
+    dummy._finish_batch = lambda: MainWindow._finish_batch(dummy)
+    for item in rows:
+        item.update(state='waiting', viability_warning=False)
+        for key in ('show', 'set_a', 'set_b'):
+            item[key] = SimpleNamespace(configure=lambda **kwargs: None)
+    MainWindow._batch_run_next(dummy)
+    MainWindow._batch_run_next(dummy)
+    if ending == 'cancel':
+        dummy._batch_cancel_requested = True
+    MainWindow._batch_run_next(dummy)
+    if dummy._batch_running:
+        MainWindow._batch_run_next(dummy)  # Exercise empty-queue finalization.
+    assert not dummy._batch_running
+    assert dummy.current is current
+    assert not dummy._batch_queue
+    assert len(dummy.session_cache.entries()) == 2
+    for item in rows:
+        key = item.get('history_key')
+        if key is not None and dummy.session_cache.peek(key) is not None:
+            metadata = dummy.session_cache.metadata(key)
+            assert metadata['origin'] == 'batch'
+            assert metadata['archetype_choice'] == ('classic' if item['index'] == 1 else 'continental')
+    if ending == 'failure':
+        assert len(reports) == 1
+        assert reports[0].cause == localized_cause(error, 'en')
+        assert rows[2]['status_text'] == BATCH_TEXT['en']['failed'].format(error=reports[0].cause)
+    else:
+        assert not reports
+    if ending == 'cached':
+        assert rows[2]['cached']
+    if ending == 'cancel':
+        assert rows[2]['state'] == 'cancelled'

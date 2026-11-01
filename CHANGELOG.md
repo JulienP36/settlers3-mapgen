@@ -1,3 +1,148 @@
+## 2.0 DEV_11 — 1er novembre 2026 (checkpoint complet)
+
+Clôture globale et publication autorisées par Julien. Équipes/secteurs/quotas,
+presets complets, Diagnostic, lots contextuels, sprites, conservation des données
+et portable Windows validés selon docs/DEV_11_CHECKPOINT.md. Code fonctionnel
+R15 conservé, métadonnées sans suffixe, publication STABLE préparée séparément.
+
+## Validation du portable DEV11 R15 — 1er novembre 2026
+
+- Construction Windows de Julien : SELFTEST et QUALIFICATION PASS ; ZIP et SHA-256 vérifiés.
+- Passe d’essai du portable acceptée globalement par Julien, aucun défaut signalé.
+- Bilan DEV11 prêt pour validation globale ; aucune modification de code/version ou publication.
+
+## 2.0 DEV_11_R15 — 31 octobre 2026 (revue documentaire)
+
+- Actualise VERSIONING, provenance des captures et présentation GitHub ; retire les anciens statuts de travail devenus périmés.
+- Ajoute docs/RELEASE_2_0_CHECKLIST.md : étapes accomplies, build local Windows avant clôture DEV11, CI après push du checkpoint complet, publication STABLE séparée.
+- Génération et comportement applicatif inchangés ; version et ressource Windows générée synchronisées. Aucun EXE, branche, push ou réglage GitHub modifié.
+
+## 2.0 DEV_11_R14 — 31 octobre 2026 (documentation)
+
+- Remplace la capture des lots par le PNG Windows R13 final fourni par Julien, sans retouche : résumé commun, cache et affectations A/B visibles.
+- Actualise les légendes FR/EN et consigne l’acceptation de la passe R13 ; DEV11 reste ouverte.
+- Code fonctionnel, génération et sprites identiques à R13 ; seules les métadonnées de version changent. Aucun EXE, branche ni push.
+
+## 2.0 DEV_11_R13 — 29 octobre 2026 (candidate locale)
+
+- Corrige `request` hors portée à la fin d’un lot ; métadonnées restaurées depuis chaque résultat.
+- Traduit les incompatibilités de départs insulaires dans les quatre langues, ligne du lot et rapport ; trace technique originale conservée.
+- Intègre les sprites soleil/lune 20px fournis par Julien, sans retouche.
+- Passe R12 acceptée pour la 2.0, sous réserve du défaut ensuite signalé ; DEV11 reste ouverte, portable Windows à qualifier, aucun push.
+
+## 2.0 DEV_11_R12 — 28 octobre 2026 (candidate locale)
+
+- Complète les archétypes des lots avec Classique natif et Continental moderne distincts.
+- Conserve les copies du générateur et de l’archétype personnalisés présentes à l’ouverture ;
+  choix contextuels indépendants, allers-retours sans perte, réglages communs explicités.
+- Fige configurations, civilisations et équipes pour la génération/cache de chaque tâche.
+- Intègre les quatre drapeaux 18×18 et la pipette 24×24 fournis par Julien, sans retouche.
+- Réécrit les README FR/EN autour de la 2.0 et des captures Windows récentes ;
+  ancienne présentation et captures v1.8 conservées en références historiques.
+- Aucun changement de génération, aucune branche ni push. Essai Windows et capture Batch finale à venir.
+
+## 2.0 DEV_11_R11 — 27 octobre 2026 (candidate locale)
+
+- Vérifie les chemins et la conservation des préférences, configurations et masques entre versions.
+- Corrige le filtre des départs valides : sauvegardé dès sélection et conservé lors des autres changements de préférences.
+- Documente changement de dossier/version, sauvegarde du dossier utilisateur et fichiers de sortie.
+- Génération et dessins inchangés ; aucun push ni nouvelle branche. Windows réel reste à qualifier.
+
+## 2.0 DEV_11_R10 — 27 octobre 2026 (candidate locale)
+
+- Vérifie les quatre lanceurs BAT : rôles distincts, tous conservés dans les sources.
+- Corrige le code retour du lanceur de compilation après succès.
+- Distingue lancement source et portable dans les README FR/EN.
+- Consigne la répartition des deux icônes acceptée ; dessin intermédiaire reporté, non bloquant 2.0.
+- Aucun changement fonctionnel applicatif, aucune branche créée ni push.
+
+## 2.0 DEV_11_R9 — 23 octobre 2026 (candidate locale)
+
+- Retire l’ancien lanceur/script de mise à jour et les mentions actives associées.
+- Conserve les deux dessins de Julien, 16×16 et 64×64, avec ICO multi-résolutions.
+- Ajoute l’identité Windows stable avant création des fenêtres, pour le regroupement.
+- Prépare la qualification du portable autonome et la conservation des données.
+- R8 acceptée provisoirement ; aucun push, aucune modification de génération.
+
+## 2.0 DEV_11_R8 — 21 octobre 2026 (candidate locale)
+
+- Regroupe Validations, Pipeline et Métadonnées dans Diagnostic, avec trois
+  sous-onglets traduits à chaud ; Statistiques reste directement accessible.
+- Consigne les décisions de fin 2.0 et la future lisibilité des diagnostics.
+- Contenu et génération conservés. R7 validée ; essai Windows R8 à venir.
+- Aucun push.
+
+## 2.0 DEV_11_R7 — 19 octobre 2026 (candidate locale)
+
+- Nouvel onglet Configurations pour conserver et réutiliser tous les réglages
+  de génération, y compris équipes/civilisations, compositions et masques.
+- Seed facultatif (OFF par défaut), chargement sans génération et indication
+  des réglages modifiés sans écraser les configurations enregistrées.
+- Collection locale autosauvegardée ; import/export de toute la collection dans
+  un seul JSON, fusion sans écrasement et suffixes pour les noms identiques.
+- Génération et réactivité R6 conservées. R7 validée par Julien le 19 octobre 2026 après essai ; aucun push.
+
+## DEV11 R4 — activation des quotas Classique et budget des îles d’équipe
+
+## 2.0 DEV_11_R6 — 18 octobre 2026 (candidate locale)
+
+- Corrige les blocages R5 à la sélection des îles et aux changements taille,
+  joueurs et seed : valeurs effectives calculées par le worker, jamais dans Tk.
+- Hors onglet Archétype : calcul différé ; sur l’onglet, demande temporisée,
+  anciens résultats invalidés immédiatement et seule la dernière demande publiée.
+- Une demande complète annulée reste à reprendre ; bascule automatique/manuelle
+  attend une valeur effective correspondant aux paramètres actuels.
+- Génération et calibration R5 conservées. Fluidité R6 validée par Julien
+  le18 octobre : lag disparu, paramétrage fluide pendant l’aperçu ; aucun push.
+
+## 2.0 DEV_11_R5 — 18 octobre 2026 (candidate locale)
+
+- Relief : calibration indépendante par surface réelle de chaque île avant les
+  lacs, seuils locaux partagés par aperçus et génération ; plages effectives UI.
+- Continental : aucune adaptation automatique héritée des îles, réglages manuels conservés.
+- Amélioré : défauts Générateur désert/boue à 50 %/50 %, valeurs enregistrées conservées.
+- Départs par équipes et quotas validés par Julien ; TODO presets complets consigné.
+- Validation Windows R5 à venir ; aucun push.
+
+Décocher le prorata active les remplacements Custom même aux pourcentages100%
+sur base Classique ; case ON et familles inchangées restent natives. Les îles
+par équipe reprennent la référence continentale terre/océan corrigée, atténuée
+par nombre d’îles. Budgets du Continental et des îles individuelles conservés.
+Qualification dans DEV_CANDIDATE_NOTES.md ; aucun push.
+
+## DEV11 R3 — placement par secteurs et option de quotas (16 octobre2026)
+
+Nouveau choix Par équipes dans GUI/lots/CLI : équipes chacune de son côté,
+alliés espacés, préférences montagne/rivière ; préserve les contrats insulaires.
+Case globale « Adapter les quotas aux terrains compatibles », cochée par défaut,
+OFF = quotas selon surface totale. Sérialisation/migration des profils et
+estimations explicites en quatre langues. Classique natif et bonus conservés.
+Qualification et essai utilisateur dans DEV_CANDIDATE_NOTES.md ; aucun push.
+
+## DEV11 R2 — quotas selon supports et décors Custom (14 octobre2026)
+
+Les quotas d’objets Amélioré et des remplacements Custom utilisent désormais
+leurs supports compatibles au lieu de la surface totale de carte. Référence
+médiane de cinq Continental768/12P ; arrondi fractionnaire par seed pour les
+rares objets. Bonus par joueur et tentatives natives conservés. Stocks de pierres
+liés aux ancres actives posées et à la moyenne réglée. Les décors Custom/Legacy
+ne désactivent que les sous-familles modifiées. Estimations des pierres : support
+réel d’une carte compatible ou référence estimée identifiée, en quatre langues.
+Candidate locale à tester, qualification dans DEV_CANDIDATE_NOTES.md.
+
+## DEV11 R1 — équipes aléatoires et audit des surfaces (14 octobre 2026)
+
+Étape R1 validée par Julien le14 octobre ; DEV11 reste ouverte.
+Départs par équipes ajoutés au TODO2.0 ; brainstorm quotas accepté, sans code. Joueurs… propose « ? » et
+un nombre d’équipes (2 par défaut). Tirage reproductible par seed, équilibrage
+des seuls joueurs « ? », alliances fixées et indépendants conservés. Même
+résolution en GUI, lots, aperçus et CLI ; cache distingue le nombre demandé.
+Export MAP/EDM avec groupes résolus et renumérotation native habituelle.
+
+Audit des surfaces sur 12 cartes : ressources adaptées aux supports ; quotas
+arbres/pierres/décors encore liés à la surface totale, sans recalibrage dans R1.
+Voir docs/DEV11_SURFACE_AUDIT.md. Classique natif et géographies conservés.
+
 ## Maintenance DEV10 — build Windows validé (13 octobre 2026)
 
 Build : https://github.com/JulienP36/settlers3-mapgen/actions/runs/38467559806

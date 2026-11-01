@@ -1,0 +1,36 @@
+{
+  "reason": "Intentional DEV11 R5 default desert/mud 50/50; Legacy R25 fixture remains unchanged",
+  "cases": [
+    {
+      "case": [
+        "upgraded",
+        "continental",
+        384,
+        4,
+        42
+      ],
+      "starts": [
+        [
+          93,
+          47
+        ],
+        [
+          51,
+          328
+        ],
+        [
+          349,
+          252
+        ],
+        [
+          296,
+          50
+        ]
+      ],
+      "channels": {
+        "height": "9f552c81fb450ddee8528ea0e3ec69633c1ff16a052e9a991959153b121a0635",
+        "terrain": "806f2a975403924da7b1e8eaae3b147b91c34bed477a4b59e9d28e31f69c1306"
+      }
+    }
+  ]
+}

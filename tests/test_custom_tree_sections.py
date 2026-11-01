@@ -47,15 +47,16 @@ def test_upgraded_tree_controls_keep_pools_and_outside_forest_placement_separate
     )
     trees = result.state.metadata["upgraded_trees"]
 
-    assert trees["adult_global_requested"] == 152
-    assert trees["small_separate_requested"] == trees["small_global_requested"] == 61
-    assert trees["small_global_placed"] == 61
+    quotas = result.state.metadata["object_quota_basis"]["quotas"]
+    assert trees["adult_global_requested"] == quotas["trees.pool"]["requested"]
+    assert trees["small_separate_requested"] == trees["small_global_requested"] == quotas["trees.saplings"]["requested"]
+    assert trees["small_global_placed"] == trees["small_global_requested"]
     assert trees["palm_requested"] == 0
     assert trees["forests_enabled"] is True
     assert trees["forest_share_percent"] == 50.0
     assert trees["forest_trees_per_forest"] == 10.0
     assert trees["forest_tree_count_variation_percent"] == 50.0
-    assert len(trees["global_forests"]) == 8
+    assert len(trees["global_forests"]) == round(trees["adult_forest_requested"] / 10)
     assert len(set(trees["global_forest_tree_quotas"])) > 1
 
     saplings = np.argwhere(result.state.objects == 84)
@@ -94,10 +95,11 @@ def test_upgraded_saplings_can_consume_the_base_global_pool():
     )
     trees = result.state.metadata["upgraded_trees"]
 
-    assert trees["adult_global_requested"] == 228
-    assert trees["small_global_requested"] == 76
+    pool = result.state.metadata["object_quota_basis"]["quotas"]["trees.pool"]["requested"]
+    assert trees["small_global_requested"] == round(pool * .25)
+    assert trees["adult_global_requested"] == pool - trees["small_global_requested"]
     assert trees["small_separate_requested"] == 0
-    assert trees["adult_global_requested"] + trees["small_global_requested"] == 304
+    assert trees["adult_global_requested"] + trees["small_global_requested"] == pool
     assert trees["saplings_in_global_pool"] is True
     assert trees["saplings_global_share_percent"] == 25.0
     assert trees["forests_enabled"] is False
@@ -137,13 +139,14 @@ def test_legacy_tree_controls_apply_forest_average_variation_and_palm_cap():
     )
     trees = result.state.metadata["trees"]
 
-    assert trees["tree_target"] == 152
-    assert trees["small_tree_target"] == 30
+    quotas = result.state.metadata["object_quota_basis"]["quotas"]
+    assert trees["tree_target"] == quotas["trees.pool"]["requested"]
+    assert trees["small_tree_target"] == quotas["trees.saplings"]["requested"]
     assert trees["palm_trees"] == 0
     assert trees["forests_enabled"] is True
-    assert trees["forest_count"] == 8
+    assert trees["forest_count"] == round(trees["adult_forest_target"] / 10)
     assert trees["forest_tree_count_variation_percent"] == 50.0
-    assert sum(trees["forest_tree_quotas"]) == trees["adult_forest_target"] == 76
+    assert sum(trees["forest_tree_quotas"]) == trees["adult_forest_target"] == round(trees["tree_target"] * .5)
     assert len(set(trees["forest_tree_quotas"])) > 1
     assert trees["adult_forest_placed"] == sum(trees["forest_tree_placed"])
 

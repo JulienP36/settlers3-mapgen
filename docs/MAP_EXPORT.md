@@ -38,7 +38,7 @@ Aucun changement d’entête ou de hauteur ne répare la superposition de la gri
 et des données joueurs. Recherche >768 suspendue sur décision du propriétaire.
 
 Preuves historiques : references/dev_notes/DEV10_R42_QUALIFICATION/.
-Prochain lot : validités jeu/éditeur après essai des fichiers exacts R45.
+Validation ultérieure : le parcours éditeur→réexport→jeu a été confirmé par Julien à la clôture DEV10 le 13 octobre 2026 ; cette confirmation ne détaille pas chaque fichier R45. Voir DEV_10_CHECKPOINT.md.
 
 ## Conversion SAV → nouvelle carte — R65
 

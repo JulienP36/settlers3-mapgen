@@ -75,7 +75,9 @@ def test_legacy_custom_reef_rate_uses_the_upgraded_reference_instead_of_zero_bas
     )
     decorations = result.state.metadata["custom_object_controls"]["decorations"]
     assert decorations["rates"]["reefs"] == 100.0
-    assert decorations["targets"]["reefs"] == 2
-    assert decorations["counts"]["reefs"] == 2
-    assert np.count_nonzero(np.isin(result.state.objects, (111, 112, 113, 114))) == 2
+    target = result.state.metadata["object_quota_basis"]["quotas"]["decor.reefs"]["requested"]
+    assert target > 0
+    assert decorations["targets"]["reefs"] == target
+    assert decorations["counts"]["reefs"] == target
+    assert np.count_nonzero(np.isin(result.state.objects, (111, 112, 113, 114))) == target
     assert all(value.passed for value in result.validations if value.hard)

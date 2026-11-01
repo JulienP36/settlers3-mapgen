@@ -140,10 +140,10 @@ def test_publication_and_maintenance_docs_are_linked_and_packaged():
         assert relative_path in REQUIRED_SOURCE_PATHS
 
     for screenshot_path in (
-        'docs/screenshots/v1_8_generation_viewer.png',
-        'docs/screenshots/v1_8_statistics.png',
-        'docs/screenshots/v1_8_charts.png',
-        'docs/screenshots/v1_8_batch.png',
+        'docs/screenshots/v2_0_team_islands.png',
+        'docs/screenshots/v2_0_configurations.png',
+        'docs/screenshots/v2_0_charts.png',
+        'docs/screenshots/v2_0_batch.png',
     ):
         screenshot = ROOT / screenshot_path
         assert screenshot_path in readme and screenshot_path in english
@@ -153,7 +153,7 @@ def test_publication_and_maintenance_docs_are_linked_and_packaged():
     provenance_path = ROOT / 'references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md'
     if provenance_path.is_file():
         provenance = provenance_path.read_text(encoding='utf-8')
-        assert 'docs/screenshots/v1_8_batch.png' in provenance
+        assert 'docs/screenshots/v2_0_batch.png' in provenance
         assert 'Reused from cache' in provenance
     else:
         assert 'source-package builder' in github_policy

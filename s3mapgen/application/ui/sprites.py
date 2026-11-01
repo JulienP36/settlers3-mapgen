@@ -11,6 +11,7 @@ NATION_SPRITES = {0: 'civilizations/roman', 1: 'civilizations/egyptian',
                   2: 'civilizations/chinese', 3: 'civilizations/amazon'}
 
 SPRITE_FILES = {
+    **{f'languages/{key}': f'languages/{key}.png' for key in ('fr','en','de','es')},
     **{key: key + '.png' for key in NATION_SPRITES.values()},
     **{f'views/{key}': f'views/{key}.png' for key in ('global','territories','initial_territory','heightmap','resources','paths','crops','heatmap','valid_starts')},
     **{f'heatmap/{key}': f'heatmap/{key}.png' for key in ('trees','building_stones','fish')},
@@ -19,6 +20,8 @@ SPRITE_FILES = {
     'ui/lock_open': 'ui/lock_open.png',
     'ui/seed_dice': 'ui/seed_dice.png',
     'ui/info': 'ui/info.png',
+    'ui/sun': 'ui/sun.png',
+    'ui/moon': 'ui/moon.png',
     'ui/recenter': 'ui/recenter.png',
     'players/start_markers': 'players/start_markers.png',
     **{f'minerals/{key}': f'minerals/{key}.png' for key in ('coal','iron','gold','gems','sulfur')},

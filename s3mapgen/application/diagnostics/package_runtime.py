@@ -11,6 +11,7 @@ from PIL import Image
 from ..paths import (
     APP_DIR,
     APP_ICON_PNG,
+    APP_ICON_LARGE_PNG,
     APP_ICON_ICO,
     BASE,
     EDM_SCAFFOLD,
@@ -60,10 +61,13 @@ def inspect_package() -> dict:
         errors.append('gui_runtime_import')
 
     try:
-        with Image.open(APP_ICON_PNG) as png, Image.open(APP_ICON_ICO) as ico:
+        with Image.open(APP_ICON_PNG) as png, Image.open(APP_ICON_LARGE_PNG) as large, Image.open(APP_ICON_ICO) as ico:
             sizes=sorted(ico.ico.sizes())
-            ok=png.size==(16,16) and sizes==[(16,16)]
-        checks['application_icon']={'ok':ok,'png':str(APP_ICON_PNG),'ico':str(APP_ICON_ICO),'ico_sizes':sizes}
+            ok=(png.size==(16,16) and large.size==(64,64)
+                and {(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)} <= set(sizes)
+                and ico.ico.getimage((16,16)).convert('RGBA').tobytes()==png.convert('RGBA').tobytes()
+                and ico.ico.getimage((64,64)).convert('RGBA').tobytes()==large.convert('RGBA').tobytes())
+        checks['application_icon']={'ok':ok,'png':str(APP_ICON_PNG),'large_png':str(APP_ICON_LARGE_PNG),'ico':str(APP_ICON_ICO),'ico_sizes':sizes}
         if not ok: errors.append('application_icon')
     except Exception as exc:
         checks['application_icon']={'ok':False,'error':repr(exc)}

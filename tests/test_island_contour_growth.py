@@ -28,7 +28,8 @@ class ContourGrowthTests(unittest.TestCase):
 
     def test_reported_seed_keeps_proportions_without_a_large_beach_only_appendix(self):
         labels,*_=build_island_masks(768,2,984499091,island_player_counts=[3,9])
-        self.assertEqual([int(np.count_nonzero(labels==i)) for i in [1,2]],[100477,301429])
+        # R4: +0.75 land percentage point for two islands at768; 3:9 shares.
+        self.assertEqual([int(np.count_nonzero(labels==i)) for i in [1,2]],[101583,304747])
         for i in [1,2]:
             mask=labels==i;self.assertEqual(component_labels(mask)[1],1)
             depth=distance_from(~mask)

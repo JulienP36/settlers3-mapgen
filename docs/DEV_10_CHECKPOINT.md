@@ -38,7 +38,7 @@ et la documentation changent depuis R66. Aucun algorithme, asset ou preset modif
 Éditeur Formule dédié avec visualiseur et explications : hors 2.0, sans échéance.
 Stats 2 : après 2.1. Recherches binaires/runtime et seeds rares : surveillance ou
 lots futurs. Tailles >768 et Petites îles abandonnées. Archipel hors 2.0.
-Build portable, installation propre, updater et préparation de Release relèvent
+Build portable, installation propre et préparation de Release relèvent
 de la qualification finale sur dev avant STABLE ; ils ne sont pas annoncés validés par ce push.
 
 Publication autorisée uniquement sur `dev`, sans suffixe R. Aucun tag ni Release.

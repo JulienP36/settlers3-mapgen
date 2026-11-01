@@ -26,9 +26,14 @@ class LanguageController:
             except tk.TclError:continue
             if text in TEXTS:self._i18n_widgets.append((w,text))
         self._i18n_tabs=[]
-        for tab in self.nb.tabs():
-            text=self.nb.tab(tab,'text')
-            if text in TEXTS:self._i18n_tabs.append((tab,text))
+        notebooks = [self.nb]
+        if hasattr(self, '_diagnostic_notebook'):
+            notebooks.append(self._diagnostic_notebook)
+        for notebook in notebooks:
+            for tab in notebook.tabs():
+                text = notebook.tab(tab, 'text')
+                if text in TEXTS:
+                    self._i18n_tabs.append((notebook, tab, text))
 
     def _apply_language(self):
         if not hasattr(self,'lang_var'):return
@@ -39,7 +44,7 @@ class LanguageController:
         for w,source in getattr(self,'_i18n_widgets',[]):
             try:w.configure(text=source if lang=='fr' else TEXTS[source].get(lang,TEXTS[source].get('en',source)))
             except tk.TclError:pass
-        for tab,source in getattr(self,'_i18n_tabs',[]):self.nb.tab(tab,text=source if lang=='fr' else TEXTS[source].get(lang,TEXTS[source].get('en',source)))
+        for notebook,tab,source in getattr(self,'_i18n_tabs',[]):notebook.tab(tab,text=source if lang=='fr' else TEXTS[source].get(lang,TEXTS[source].get('en',source)))
         if self._view_combo:
             self._view_combo.set_items([(k,VIEW_LABELS[lang][k],VIEW_ICON_COLORS[k],k) for k in VIEW_LABELS[lang]])
             self._view_combo.configure(width=max(12,max(len(v) for v in VIEW_LABELS[lang].values())+1))
@@ -56,10 +61,10 @@ class LanguageController:
             self.arch_input.set(ARCHETYPE_INPUT_LABELS[lang]['classic'])
         if hasattr(self,'start_menu'):
             self.start_text.set(START_LABELS[lang][self._start_algorithm_key()])
-            for index,key in enumerate(('auto','balanced','fair','islands')):
+            for index,key in enumerate(('auto','balanced','fair','islands','teams')):
                 self.start_menu.entryconfigure(index,label=START_LABELS[lang][key])
-            self.start_menu.entryconfigure(5,label=START_LABELS[lang]['classic'])
-            self.start_menu.entryconfigure(6,label=START_LABELS[lang]['nations'])
+            self.start_menu.entryconfigure(6,label=START_LABELS[lang]['classic'])
+            self.start_menu.entryconfigure(7,label=START_LABELS[lang]['nations'])
         if hasattr(self,'mirror_combo'):
             mirror=self._mirror_key()
             self.mirror_combo.configure(values=list(MIRROR_LABELS[lang].values()))
@@ -88,6 +93,8 @@ class LanguageController:
         self._refresh_stats_chart();self._refresh_compare_buttons()
         if hasattr(self, '_custom_refresh_after_language'):
             self._custom_refresh_after_language()
+        if hasattr(self, '_configuration_refresh_language'):
+            self._configuration_refresh_language()
         for cmd,lbl in getattr(self,'shortcut_labels',{}).items():lbl.configure(text=COMMAND_LABELS[lang][cmd])
         shortcut_text=SHORTCUT_UI_TEXT[lang]
         for btn in getattr(self,'shortcut_reset_buttons',{}).values():btn.configure(text=shortcut_text['reset'])

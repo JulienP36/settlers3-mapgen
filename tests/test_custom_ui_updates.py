@@ -340,3 +340,27 @@ def test_language_refresh_restores_the_last_computed_preview_on_new_canvases():
     c._custom_refresh_after_language()
     assert actions == ["rebuild", "restore"]
     assert c._custom_archetype_preview_last_result is computed
+
+
+def test_quota_scaling_checkbox_commits_preserves_decor_reset_and_resets_with_custom(editor):
+    c=editor
+    variable=c._custom_section_vars['objects.terrain_scaled_quotas']
+    assert variable.get() is True
+    identities=dict(c._custom_section_vars)
+    variable.set(False)
+    c._custom_quota_scaling_widget.options['command']()
+    assert c._custom_config.semantic_sections()['objects']['terrain_scaled_quotas'] is False
+    assert c._custom_section_vars==identities
+    def texts(widget):
+        values=[]
+        var=widget.options.get('textvariable')
+        if var is not None:values.append(str(var.get()))
+        for child in widget.children:values.extend(texts(child))
+        return values
+    assert module.custom_section_text('preview_basis_area',c.prefs['language'],value=int(c.size.get())**2) in texts(c._custom_generator_tab)
+    c._custom_section_changed(('decorations','cacti'),150)
+    c._custom_reset_section('decorations')
+    assert variable.get() is False
+    assert c._custom_config.semantic_sections()['objects']['terrain_scaled_quotas'] is False
+    c._custom_reset()
+    assert c._custom_section_vars['objects.terrain_scaled_quotas'].get() is True

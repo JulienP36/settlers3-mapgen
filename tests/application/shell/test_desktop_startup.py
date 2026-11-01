@@ -90,10 +90,10 @@ def test_desktop_generator_controls_and_departure_menu_are_reachable(tmp_path, m
                         # Collapsed section headers must be clickable, not hidden
                         # behind the independent-row geometry master.
                         assert_exposed(header, app._custom_generator_tab._scroll_canvas)
-            for index, key in enumerate(('auto', 'balanced', 'fair', 'islands')):
+            for index, key in enumerate(('auto', 'balanced', 'fair', 'islands', 'teams')):
                 app.start_menu.invoke(index)
                 assert app._start_algorithm_key() == key
                 assert app.start_text.get() == START_LABELS[language][key]
-            assert app.start_menu.entrycget(5, 'state') == 'normal'
+            assert app.start_menu.entrycget(6, 'state') == 'normal'
     finally:
         app.destroy()

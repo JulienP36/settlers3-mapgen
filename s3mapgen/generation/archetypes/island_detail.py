@@ -55,8 +55,8 @@ def add_plain_detail(
     """
     baseline = np.asarray(height, dtype=np.int16)
     land = np.asarray(labels) > 0
-    protection_height = int(mountain_threshold) - 10
-    if protection_height <= int(water_threshold) + 1:
+    protection_height = np.asarray(mountain_threshold) - 10
+    if np.all(protection_height <= int(water_threshold) + 1):
         return np.asarray(height, dtype=np.uint8).copy(), {
             "source": "fixed_cell_midpoint_8_4_2_1_and_coastal_variation", "changed_cells": 0,
             "slope_projection_passes": 0,

@@ -52,6 +52,7 @@ from ...custom.bonus_water import (
     native_lake_offsets,
     water_depths,
 )
+from ...object_quotas import ObjectQuotaBasis
 from ...custom.content import (
     _bounded_quantities,
     _full_range_quantities,
@@ -388,6 +389,7 @@ class UpgradedContent:
         self.progress = progress
         self.side = 0
         self.reference_side = max(1, int(profile.get("side", 768)))
+        self._quota_basis = None
         self._stage_log: list[str] = []
         self._start_bonus_reservation: np.ndarray | None = None
         self._start_bonus_swamp_mask: np.ndarray | None = None
@@ -486,6 +488,12 @@ class UpgradedContent:
         self._stage_log.append(stage + (f" — {detail}" if detail else ""))
         if self.progress is not None:
             self.progress(stage, detail)
+
+    def _quota(self, state, value, ids, percent=100.0, *, channel, reference_ids=None):
+        if self._quota_basis is None:
+            self._quota_basis = ObjectQuotaBasis.capture(state, self._content_core(state),
+                terrain_scaled=(self._custom_sections or {}).get("objects", {}).get("terrain_scaled_quotas", True))
+        return self._quota_basis.target(value, ids, percent, channel=channel, reference_ids=reference_ids)
 
     def _scaled_target(self, value: int) -> int:
         """Scale a 768-calibrated quota by map area, without changing 768."""
@@ -2107,6 +2115,7 @@ class UpgradedContent:
     def generate(self, state, rng: np.random.Generator, pr: random.Random, *, before_objects=None) -> dict[str, object]:
         self.side = state.side
         self._stage_log.clear()
+        self._quota_basis = None
         self._start_bonus_reservation = np.zeros((state.side, state.side), dtype=bool)
         self._start_bonus_swamp_mask = np.zeros((state.side, state.side), dtype=bool)
         self._start_bonus_water = np.zeros((state.side, state.side), dtype=bool)
@@ -2126,6 +2135,7 @@ class UpgradedContent:
         if before_objects is not None:
             self._final_accessibility(state)
             before_objects()
+        self._quota(state, 0, (GRASS,), channel="basis")
         self._place_trees(state, rng, pr)
         self._place_decorations(state, rng, pr)
         self._place_building_stones(state, rng, pr)
@@ -2157,6 +2167,7 @@ class UpgradedContent:
 
         self.side = state.side
         self._stage_log.clear()
+        self._quota_basis = None
         baseline = (
             np.asarray(occupied, dtype=bool).copy()
             if occupied is not None
@@ -2249,6 +2260,7 @@ class UpgradedContent:
 
         self.side = state.side
         self._stage_log.clear()
+        self._quota_basis = None
         self._start_bonus_reservation = np.zeros((state.side, state.side), dtype=bool)
         self._start_bonus_swamp_mask = np.zeros((state.side, state.side), dtype=bool)
         self._start_bonus_water = np.zeros((state.side, state.side), dtype=bool)
@@ -2317,6 +2329,7 @@ class UpgradedContent:
         self.apply_prioritized_start_resources(state, rng)
         self._generate_fish(state, rng)
         self._place_start_lake_fish(state, rng)
+        self._quota(state, 0, (GRASS,), channel="basis")
         self._place_building_stones(state, rng, pr, phase="start")
         self._place_trees(state, rng, pr)
         self._place_decorations(state, rng, pr)
@@ -2561,12 +2574,13 @@ class UpgradedContent:
             targets_by_density = family_cfg.get("target_768_by_density", {})
             profile_target = int(round(float(targets_by_density.get(density_key, 0)) * scale))
             rate = float(effective_custom_decorations.get(str(name), 100.0))
-            requested = int(round(profile_target * rate / 100.0))
+            requested = 0
             decoration_rates[str(name)] = rate
             ids = tuple(int(value) for value in family_cfg.get("ids", ()))
             support_ids = tuple(int(value) for value in family_cfg.get("support_ids", ()))
             if GRASS in support_ids and self._grass_object_support_enabled():
                 support_ids = tuple(dict.fromkeys((*support_ids, *GRASS_IDS)))
+            requested = self._quota(state, targets_by_density.get(density_key, 0), support_ids, rate, channel="decor." + str(name), reference_ids=family_cfg.get("support_ids", ()))
             candidates = np.argwhere(np.isin(terrain, support_ids) & ~occupied)
             placed = 0
             if requested and len(candidates) and ids:
@@ -2605,8 +2619,8 @@ class UpgradedContent:
         deep = np.argwhere(deep_candidates)
         reef_rate = float(effective_custom_decorations.get("reefs", 100.0))
         decoration_rates["reefs"] = reef_rate
-        reef_profile_target = self._scaled_target(cfg.get("reef_target", 0))
-        reef_target = min(int(round(reef_profile_target * reef_rate / 100.0)), len(deep))
+        reef_profile_target = cfg.get("reef_target", 0)
+        reef_target = self._quota(state, reef_profile_target, (7,), reef_rate, channel="decor.reefs")
         reef_count = 0
         reef_ids = np.asarray(REEF_IDS, dtype=np.uint8)
         if reef_target and len(deep):
@@ -2667,7 +2681,7 @@ class UpgradedContent:
         base_quota = self._custom_percent(
             "trees", "base_quota_percent", 100.0, maximum=500.0
         )
-        global_pool_target = int(round(self._scaled_target(profile_target) * base_quota / 100.0))
+        global_pool_target = self._quota(state, profile_target, GRASS_IDS if self._grass_object_support_enabled() else (GRASS,), base_quota, channel="trees.pool", reference_ids=(GRASS,)) if phase == "all" else self._scaled_target(profile_target)
         native_saplings_enabled = small_profile_target > 0
         native_saplings_separate = bool(cfg.get("small_tree_separate_pool", True))
         native_sapling_quota = (
@@ -2702,7 +2716,7 @@ class UpgradedContent:
             target = max(0, global_pool_target - small_target)
         else:
             target = global_pool_target
-            small_target = int(round(self._scaled_target(profile_target) * sapling_quota / 100.0)) if saplings_enabled else 0
+            small_target = (self._quota(state, profile_target, GRASS_IDS if self._grass_object_support_enabled() else (GRASS,), sapling_quota, channel="trees.saplings", reference_ids=(GRASS,)) if phase == "all" else self._scaled_target(small_profile_target)) if saplings_enabled else 0
         native_forest_enabled = "adult_cluster_share" in cfg and float(cfg.get("adult_cluster_share", 0.0)) > 0
         native_forest_share = float(cfg.get("adult_cluster_share", 0.0)) * 100.0
         native_forest_average = (
@@ -3124,7 +3138,7 @@ class UpgradedContent:
         palm_quota = self._custom_percent(
             "trees", "palm_quota_percent", 100.0, maximum=500.0
         )
-        palm_requested = int(round(self._scaled_target(palm_profile_target) * palm_quota / 100.0))
+        palm_requested = self._quota(state, palm_profile_target, DESERT_IDS, palm_quota, channel="trees.palms")
         palms = place(desert, palm_requested, cfg.get("palm_ids", (78, 79)), support=desert)
         metadata = {
             "adult_trees": int(start_adults + global_adults),
@@ -3605,7 +3619,7 @@ class UpgradedContent:
             group_variation = 0.0
         group_variation = min(100.0, max(0.0, group_variation))
 
-        requested_target = int(round(self._scaled_target(cfg["global_anchor_target"]) * anchor_density / 100.0))
+        requested_target = self._quota(state, cfg["global_anchor_target"], GRASS_IDS if self._grass_object_support_enabled() else (GRASS,), anchor_density, channel="stones.anchors", reference_ids=(GRASS,))
         global_target = requested_target
         cluster_target = round(global_target * cluster_share / 100.0)
         global_cluster_region = np.zeros_like(core)
@@ -3678,10 +3692,7 @@ class UpgradedContent:
             self._custom_sections is None
             or (anchor_density == 100.0 and average_quantity == profile_average)
         )
-        if anchor_density == 100.0 and average_quantity == profile_average:
-            global_stock_target = int(round(self._scaled_target(profile_stock_target)))
-        else:
-            global_stock_target = int(round(active_global * average_quantity))
+        global_stock_target = int(round(active_global * average_quantity))
         if preserve_profile_distribution:
             global_quantities = _allocate_quantities(
                 active_global,

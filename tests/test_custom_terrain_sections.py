@@ -70,16 +70,20 @@ def test_enabled_terrain_rate_zero_is_promoted_to_one_percent():
     assert effective_terrain_rates(normalized)["swamp"] == 1.0
 
 
-def test_upgraded_custom_can_activate_the_zero_native_mud_slot():
+def test_upgraded_mud_defaults_to_half_and_remains_disableable():
     from s3mapgen.generation.generators.upgraded.native_terrain import generate_primary_terrain
 
     native = generate_primary_terrain(256, 20260905)
-    assert not np.isin(native.terrain, (23, 144, 145)).any()
+    assert np.isin(native.terrain, (23, 144, 145)).any()
 
     sections = build_custom_config("upgraded").semantic_sections()
-    assert sections["terrains"]["mud"] == {"enabled": False, "rate_percent": 0.0}
+    assert sections["terrains"]["mud"] == {"enabled": True, "rate_percent": 50.0}
     custom_default = generate_primary_terrain(256, 20260905, surface_rates=sections)
-    assert not np.isin(custom_default.terrain, (23, 144, 145)).any()
+    assert np.array_equal(custom_default.terrain, native.terrain)
+
+    sections["terrains"]["mud"] = {"enabled": False, "rate_percent": 0.0}
+    disabled = generate_primary_terrain(256, 20260905, surface_rates=sections)
+    assert not np.isin(disabled.terrain, (23, 144, 145)).any()
 
     sections["terrains"]["mud"] = {"enabled": True, "rate_percent": 100.0}
     custom_enabled = generate_primary_terrain(256, 20260905, surface_rates=sections)

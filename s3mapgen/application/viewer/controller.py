@@ -186,6 +186,7 @@ class ViewerController:
         if self._view_key() == 'valid_starts':
             labels = VALID_START_LABELS[self.prefs.get('language','fr')]
             self.prefs['valid_start_filter'] = next((key for key, value in labels.items() if value == self.heatmap_var.get()), 'valid_all')
+            self._save_prefs()
             if self.current and hasattr(self, 'inspector_var'):
                 self.inspector_var.set(self._departure_summary(self._departure_report()))
         else:

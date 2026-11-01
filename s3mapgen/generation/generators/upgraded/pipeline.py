@@ -154,7 +154,7 @@ def generate(
             "generator": generator_name,
             "engine_revision": engine_revision,
             "upgraded_base_pipeline": "independent_copy_of_continental_legacy_native",
-            "upgraded_mud_generation": bool(
+            "upgraded_mud_generation": custom_sections is None or bool(
                 isinstance(custom_sections, dict)
                 and isinstance(custom_sections.get("terrains"), dict)
                 and bool(custom_sections["terrains"].get("mud", {}).get("enabled", False))
@@ -358,7 +358,7 @@ def generate(
         "minerals": "retained calibrated v7 no-gap routine",
         "fish": "direct uniform coastal-band routine shared with Custom",
         "objects": "Legacy static families plus upgraded reefs, start forests and stone clusters",
-        "mud": "native parameter 0; configurable in Custom",
+        "mud": "Generator parameter, default 50%; configurable in Custom",
         "starts": "provisional bridge coordinates retained; five start bonuses restored with separate reservations",
     }
     if request.start_algorithm == "fair":

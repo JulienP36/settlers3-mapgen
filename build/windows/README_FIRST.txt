@@ -1,23 +1,23 @@
-SETTLERS III MAPGEN — WINDOWS TEST CANDIDATE
+SETTLERS III MAPGEN — WINDOWS PORTABLE
 
 FR
-1. Décompressez entièrement le ZIP dans un dossier normal.
-2. Lancez Settlers3MapGen.exe. Python et pip ne sont pas nécessaires.
-3. Conservez le dossier _internal à côté de l'exécutable.
-4. Les exports proposés par défaut vont dans le dossier output créé à côté de l'exécutable.
-5. Les préférences restent dans %APPDATA%\Settlers3MapGen\settings.json.
-
-Cette candidate n'est pas signée numériquement : Windows SmartScreen peut demander
-une confirmation au premier lancement. L'updater pour l'exécutable est prévu
-pour STABLE, après qualification sur la branche dev.
+1. Décompressez entièrement le ZIP dans un dossier où vous pouvez écrire.
+2. Lancez Settlers3MapGen.exe : Aucune installation de Python, pip ou dépendances n’est nécessaire.
+3. Conservez le dossier _internal à côté de l’exécutable.
+4. Les exports par défaut vont dans output, à côté de l’exécutable.
+5. Préférences, configurations et masques personnels : %APPDATA%\Settlers3MapGen.
+6. Fermez l’ancienne version avant de lancer la nouvelle ; les données du point 5 restent communes.
+7. Gardez les anciens exports de output avant de supprimer un ancien dossier.
+8. Téléchargez manuellement les nouvelles versions depuis les Releases GitHub.
 
 EN
-1. Fully extract the ZIP to a normal folder.
-2. Run Settlers3MapGen.exe. Python and pip are not required.
+1. Fully extract the ZIP to a folder you can write to.
+2. Run Settlers3MapGen.exe: Python, pip and dependencies need no installation.
 3. Keep the _internal folder beside the executable.
-4. Default exports go to the output folder created beside the executable.
-5. Preferences remain in %APPDATA%\Settlers3MapGen\settings.json.
+4. Default exports go to output beside the executable.
+5. Preferences, saved configurations and personal masks: %APPDATA%\Settlers3MapGen.
+6. Close the previous version before running a new one; both share the data in step 5.
+7. Keep existing output exports before deleting an old program folder.
+8. Download new versions manually from GitHub Releases.
 
-This test candidate is not digitally signed, so Windows SmartScreen may ask for
-confirmation on first launch. The executable updater is planned for a future
-STABLE after qualification on the dev branch.
+https://github.com/JulienP36/settlers3-mapgen/releases

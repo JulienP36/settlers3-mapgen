@@ -1,3 +1,134 @@
+## 2.0 DEV_11 — checkpoint complet validé le 1er novembre 2026
+
+Clôture/push et publication 2.0 explicitement autorisés. Bilan et preuves :
+docs/DEV_11_CHECKPOINT.md. Portable R15 Windows accepté ; CI du checkpoint exact
+à contrôler avant promotion STABLE. Aucun changement fonctionnel de génération.
+
+## Portable Windows DEV11 R15 — validation du 1er novembre 2026
+
+Construction Windows de Julien, SELFTEST/QUALIFICATION PASS ; ZIP vérifié,
+SHA-256 d8f9beaf8448a0a45ecc3b0c55fc51e92f0a6fc9380bbf0db4139b28c9b8dddf.
+Retour positif global après les essais demandés : « tout me semble en ordre :D ».
+Détails de chaque scénario non précisés. Aucun code/version modifié ; bilan
+DEV11 prêt pour validation globale, aucun push ni publication.
+
+## 2.0 DEV_11_R15 — 31 octobre 2026 (revue documentaire)
+
+- Qualification : 16 contrôles maintenance/packaging PASS, 50 liens locaux vérifiés ; aucune nouvelle attestation Windows. Preuves : references/dev_notes/DEV11_R15_QUALIFICATION/.
+- Actualise VERSIONING, provenance des captures et présentation GitHub ; retire les anciens statuts de travail devenus périmés.
+- Ajoute docs/RELEASE_2_0_CHECKLIST.md : étapes accomplies, build local Windows avant clôture DEV11, CI après push du checkpoint complet, publication STABLE séparée.
+- Génération et comportement applicatif inchangés ; version et ressource Windows générée synchronisées. Aucun EXE, branche, push ou réglage GitHub modifié.
+
+## 2.0 DEV_11_R14 — 31 octobre 2026 (documentation)
+
+- Remplace la capture des lots par le PNG Windows R13 final fourni par Julien, sans retouche : résumé commun, cache et affectations A/B visibles.
+- Contrôles documentaires/packaging : 16 PASS ; PNG et liens vérifiés, code fonctionnel identique à R13. Preuves : references/dev_notes/DEV11_R14_QUALIFICATION/.
+- Actualise les légendes FR/EN et consigne l’acceptation de la passe R13 ; DEV11 reste ouverte.
+- Code fonctionnel, génération et sprites identiques à R13 ; seules les métadonnées de version changent. Aucun EXE, branche ni push.
+
+## 2.0 DEV_11_R13 — 29 octobre 2026 (candidate locale)
+
+- Corrige `request` hors portée à la fin d’un lot ; métadonnées restaurées depuis chaque résultat.
+- Traduit les incompatibilités de départs insulaires dans les quatre langues, ligne du lot et rapport ; trace technique originale conservée.
+- Intègre les sprites soleil/lune 20px fournis par Julien, sans retouche.
+- Qualification : 1366 PASS + 4 sous-tests dans la suite complète ; seul échec de métadonnée de version corrigé puis revalidé dans 43 contrôles PASS. 67 UI et deux probes de thème PASS. Preuves : references/dev_notes/DEV11_R13_QUALIFICATION/.
+- Passe R12 acceptée pour la 2.0, sous réserve du défaut ensuite signalé ; DEV11 reste ouverte, portable Windows à qualifier, aucun push.
+
+# 2.0 DEV_11_R12 — candidate locale du 28 octobre 2026
+
+Lots contextuels, archétype Classique, copies figées génération/cache ; sprites
+fournis et README/captures actualisés. Qualification dans
+references/dev_notes/DEV11_R12_QUALIFICATION/. Pas de nouvelle validation Windows,
+éditeur ou jeu revendiquée. Aucun portable, branche, push ou publication.
+
+# 2.0 DEV_11_R11 — candidate locale du 27 octobre 2026
+
+Audit des données utilisateur entre versions ; correction de la sauvegarde GUI
+du filtre des départs. Tests et expérience isolée dans
+references/dev_notes/DEV11_R11_QUALIFICATION/. Génération et ressources inchangées.
+Aucune nouvelle validation Windows ; aucune branche ni push.
+
+# 2.0 DEV_11_R10 — candidate locale du 27 octobre 2026
+
+Revue statique des quatre BAT, correction du code retour du lanceur de build.
+Aucune modification applicative/génération/asset hors version. Qualification R9
+conservée ci-dessous comme preuve antérieure ; contrôles R10 dans
+references/dev_notes/DEV11_R10_QUALIFICATION/verification.txt.
+Pas de nouvelle validation Windows ; aucun build portable, branche ou push.
+
+# 2.0 DEV_11_R9 — candidate locale du 23 octobre 2026
+
+Nettoyage updater et icônes : 1346 tests + 4 sous-tests, 66 UI et deux probes
+données/icônes PASS. Auto-test source PASS. Portable natif non construit ici
+(Wine bloqué par IPC), qualification Windows préparée et restant à exécuter.
+Voir DEV_CANDIDATE_NOTES.md. R8 acceptée provisoirement le 22 octobre. Aucun push.
+
+# 2.0 DEV_11_R8 — candidate locale (21 octobre 2026)
+
+Regroupement Diagnostic, contenu inchangé. 1343 tests + 4 sous-tests,
+66 contrôles UI séparés et probe Diagnostic PASS. Auto-test source PASS.
+Qualification détaillée : DEV_CANDIDATE_NOTES.md. R8 acceptée provisoirement par Julien le 22 octobre ; aucun push.
+
+# 2.0 DEV_11_R7 — candidate locale (19 octobre 2026)
+
+Onglet Configurations et collection JSON portable, seed facultatif, chargement
+sans génération. Qualification courante et limites : DEV_CANDIDATE_NOTES.md.
+R7 validée par Julien le 19 octobre 2026 après essai. R6 reste validée ; DEV11 ouverte, aucun push.
+
+# 2.0 DEV_11_R6 — candidate locale (18 octobre 2026)
+
+Réactivité des archétypes insulaires : résolution dans le worker, différée hors
+onglet, invalidation immédiate et réception des seuls résultats courants.
+Génération R5 conservée.1313 tests généraux,4 subtests,65 UI et2 cas supplémentaires
+PASS. Interface réelle sans calcul de contour sur Tk et sans résultat périmé.
+Qualification dans DEV_CANDIDATE_NOTES.md et
+references/dev_notes/DEV11_R6_QUALIFICATION/. Réactivité R6 validée par Julien
+le18 octobre (lag disparu, paramétrage fluide pendant calcul). Aucun nouvel
+essai éditeur/jeu attesté ; DEV11 ouverte, aucun push.
+
+# 2.0 DEV_11_R5 — candidate locale (18 octobre 2026)
+
+Relief et seuils propres à chaque contour insulaire avant les lacs ; Continental
+sans adaptation insulaire automatique. Défauts Amélioré désert/boue 50 %/50 %.
+Départs par équipes et quotas validés par Julien sur ses essais.
+Qualification :1371 cas consolidés et4 subtests,16 cartes,32 exports.
+Suite complète puis reprises ciblées des quatre échecs corrigés ; détail dans
+DEV_CANDIDATE_NOTES.md et
+references/dev_notes/DEV11_R5_QUALIFICATION/. R5 à tester sous Windows ; aucun push.
+
+# 2.0 DEV_11_R4 — candidate locale (17 octobre2026)
+
+Correction case de quotas en base Classique à100% ; référence terre/océan des
+îles d’équipe alignée sur le Continental R62. Qualification actuelle dans
+DEV_CANDIDATE_NOTES.md : derniers cas/contours, UI et maintenance PASS ;36
+roundtrips. Limite de log de la suite générale explicitée. Essai utilisateur R4
+attendu ; aucun push.
+
+# 2.0 DEV_11_R3 — candidate locale (16 octobre 2026)
+
+Placement Par équipes : départs espacés puis secteurs géographiques par alliance.
+Option globale de prorata des quotas, cochée par défaut. Qualification et limites
+courantes dans DEV_CANDIDATE_NOTES.md :1357 tests PASS consolidés,4 subtests,
+32 cartes et64 roundtrips,8 parités R2/R3. Aucun push ni essai Windows R3 revendiqué.
+
+# 2.0 DEV_11_R2 — candidate locale
+
+R2 autorisée : quotas par supports, décors Custom et estimations. Qualification
+courante dans DEV_CANDIDATE_NOTES.md :1335 tests PASS consolidés,12 cartes,
+24 roundtrips et4 parités natives. Essai utilisateur Windows/éditeur/jeu R2
+à effectuer. Aucun push ; mode Classique natif et données protégées conservés.
+
+# 2.0 DEV_11_R1 — candidate locale (14 octobre 2026)
+
+Lot : équipes « ? » configurables et audit des surfaces. Protocole/résultats
+courants dans DEV_CANDIDATE_NOTES.md et docs/DEV11_SURFACE_AUDIT.md.
+1321 tests et4 subtests PASS consolidés ; détail des deux comparaisons de
+version relancées dans DEV_CANDIDATE_NOTES.md. Hashes et auto-test source PASS.
+Étape R1 validée par Julien le14 octobre, sans détail sur tous les scénarios
+éditeur/jeu ; aucun push. Mise à jour suivante strictement documentaire.
+DEV10 et ses essais Windows ci-dessous restent l’historique de la base validée.
+Parcours désormais dev → main/STABLE, sans RC.
+
 ## Maintenance DEV10 — build Windows validé (13 octobre 2026)
 
 Build : https://github.com/JulienP36/settlers3-mapgen/actions/runs/38467559806
@@ -64,7 +195,7 @@ et la documentation changent depuis R66. Aucun algorithme, asset ou preset modif
 Éditeur Formule dédié avec visualiseur et explications : hors 2.0, sans échéance.
 Stats 2 : après 2.1. Recherches binaires/runtime et seeds rares : surveillance ou
 lots futurs. Tailles >768 et Petites îles abandonnées. Archipel hors 2.0.
-Build portable, installation propre, updater et préparation de Release relèvent
+Build portable, installation propre et préparation de Release relèvent
 de la qualification RC/STABLE ; ils ne sont pas annoncés validés par ce push.
 
 Publication autorisée uniquement sur `dev`, sans suffixe R. Aucun tag ni Release.

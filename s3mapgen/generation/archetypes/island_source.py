@@ -10,7 +10,7 @@ from collections.abc import Callable, Mapping
 import numpy as np
 
 from .large_islands import generate_independent_islands
-from .island_amplitude import resolve_island_profile, calibrated_thresholds, island_radius
+from .island_amplitude import resolve_island_profile, island_threshold_fields
 from .morphology import (
     NoiseLabReport, apply_archetype_morphology, build_noise_lab,
     has_active_noise_layers, has_active_mask_layers,
@@ -33,6 +33,7 @@ class IslandSourceFields:
     report: dict
     noise_lab: NoiseLabReport | None
     local_relief: np.ndarray
+    threshold_fields: tuple[np.ndarray, np.ndarray] | None
 
 
 def uses_island_source(profile: Mapping | None) -> bool:
@@ -51,7 +52,7 @@ def generate_island_source(
         profile, archetype_key=str(profile.get("archetype_key", "continental")),
     )
     normalized = resolve_island_profile(
-        normalized, side, players, player_teams=player_teams,
+        normalized, side, players, player_teams=player_teams, seed=seed,
     )
     continental = normalized["morphology"]["relief_source"] == RELIEF_SOURCE_CONTINENTAL
     preset = default_archetype_profile("large_islands")
@@ -70,11 +71,6 @@ def generate_island_source(
         land_cells = side * side * _continental_land_percent(side) / 100.
         # Physical scale units replace player count for a shared continental field.
         island_player_counts = [max(2, min(8, round(land_cells / 60_000)))]
-    mountain, snow = calibrated_thresholds(
-        0, 140, 200, amplitude,
-        island_radius(side, 1, [1]) if continental else island_radius(side, players, island_player_counts),
-    )
-    thresholds.update(mountain_threshold=mountain, snow_threshold=snow)
     stages = {}
     source_height, labels, report = generate_independent_islands(
         np.zeros((int(side), int(side)), dtype=np.uint8),
@@ -86,6 +82,8 @@ def generate_island_source(
         variant_r21=(normalized["morphology"]["relief_source"] == RELIEF_SOURCE_LARGE_ISLANDS_R21),
         island_player_counts=island_player_counts,
         target_land_percent=continental_land_target,
+        island_relief_values=normalized.get("_island_relief_values"),
+        calibrate_local_thresholds=True,
     )
     if continental:
         report.update(continental_source=True, physical_relief_scale_units=island_player_counts[0],
@@ -101,6 +99,8 @@ def generate_island_source(
             team_islands=True,
             player_island_labels=player_island_labels(team_groups, int(players)),
         )
+    thresholds.update(mountain_threshold=min(report["mountain_thresholds_by_island"]),
+                      snow_threshold=min(report["snow_thresholds_by_island"]))
     morphology = normalized["morphology"]
     source_noise = source_height.astype(np.int16)
     source_noise[labels == 0] = NATIVE_NOISE_MINIMUM
@@ -154,4 +154,5 @@ def generate_island_source(
             labels if not continental and (preserves_layout or team_groups is not None) else None
         ),
         report=report, noise_lab=lab, local_relief=stages["local_relief"],
+        threshold_fields=island_threshold_fields(normalized, labels),
     )

@@ -25,6 +25,7 @@ from .shortcuts.controller import ShortcutController
 from .viewer.controller import ViewerController
 from .imports import ImportController
 from .custom import CustomGeneratorController
+from .configurations.controller import ConfigurationsController
 from .settings import SettingsController
 from .ui.i18n.controller import LanguageController
 from .ui.theme.controller import ThemeController
@@ -57,7 +58,7 @@ def _mirror_combo_width(language: str) -> int:
     return max(8, max((len(str(label)) for label in labels), default=0) + 2)
 
 
-class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, CustomGeneratorController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
+class MainWindow(ViewerController, AnalysisController, ExportController, ShortcutController, BatchController, HistoryController, ImportController, TaskController, ConfigurationsController, CustomGeneratorController, GenerationWorkflowController, LanguageController, ThemeController, SettingsController, ShellWindow):
     """Composed desktop shell running the validated generation facade."""
     def __init__(self):
         self.prefs=load_settings();self._preview_base=None;self._preview_key=None
@@ -160,7 +161,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self.start_algorithm=tk.StringVar(value='auto');self.start_text=tk.StringVar(value=START_LABELS[selector_language]['auto'])
         self.start_button=ttk.Menubutton(start_group,textvariable=self.start_text,width=23,style='ImageSelect.TMenubutton')
         self.start_menu=tk.Menu(self.start_button,tearoff=False);self.start_button.configure(menu=self.start_menu)
-        for key in ('auto','balanced','fair','islands'):
+        for key in ('auto','balanced','fair','islands','teams'):
             self.start_menu.add_radiobutton(label=START_LABELS[selector_language][key],variable=self.start_algorithm,value=key,command=self._start_algorithm_selected)
         self.start_menu.add_separator()
         self.start_menu.add_radiobutton(label=START_LABELS[selector_language]['classic'],variable=self.start_algorithm,value='classic',command=self._start_algorithm_selected)
@@ -250,6 +251,7 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
         self._build_stats_charts_tab()
         self._shortcut_settings_tab()
         self._reorder_analysis_tabs()
+        self._build_configurations_tab()
         self._theme_combo=self._find_combo_for_var(self.theme_var);self._projection_combo=self._find_combo_for_var(self.projection_var)
         self._build_viewer_toolbar(top)
         self._capture_translatable_widgets();self._install_status_feedback(top)
@@ -474,6 +476,8 @@ class MainWindow(ViewerController, AnalysisController, ExportController, Shortcu
             self.stats.delete('1.0','end');self.stats.insert('end',format_stats_report(stats,lang=lang))
         for w in report_widgets:w.configure(state='disabled')
         self._refresh_stats_chart();self._refresh_state_indicators();self._refresh_history_preview()
+        for refresh in getattr(self, "_custom_generator_refreshers", ()):
+            refresh()
 
     def _walk(self,root):
         for child in root.winfo_children():

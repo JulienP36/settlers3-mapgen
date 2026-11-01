@@ -14,6 +14,7 @@ from s3mapgen.generation.archetypes.island_teams import (
 )
 from s3mapgen.generation.archetypes.large_islands import (
     _continental_land_percent,
+    _continental_ocean_land_percent,
     _inland_lake_count,
     _island_target_land_percent,
     _island_lakes,
@@ -66,16 +67,20 @@ def test_team_island_land_target_moves_from_island_profile_to_continental(side):
     one_island = _island_target_land_percent(side, 1)
 
     assert one_island >= two_islands > many_islands >= 56.5
-    assert one_island == pytest.approx(_continental_land_percent(side), abs=1e-9)
+    assert one_island == pytest.approx(_continental_ocean_land_percent(side), abs=1e-9)
+    correction = _continental_ocean_land_percent(side) - _continental_land_percent(side)
+    old_two = 56.5 + (_continental_land_percent(side) - 56.5) / 2
+    assert two_islands - old_two == pytest.approx(correction / 2)
 
 
-def test_team_island_relief_uses_smallest_actual_team_island():
+def test_team_island_relief_is_independent_for_each_actual_island():
     profile = default_archetype_profile("team_islands")
     independent = resolve_island_profile(profile, 384, 4, player_teams=(0, 0, 0, 0))
     allied = resolve_island_profile(profile, 384, 4, player_teams=(7, 7, 7, 7))
     mixed = resolve_island_profile(profile, 384, 4, player_teams=(7, 7, 0, 0))
     assert allied["morphology"]["island_amplitude_percent"] > mixed["morphology"]["island_amplitude_percent"]
-    assert mixed["morphology"]["island_amplitude_percent"] == independent["morphology"]["island_amplitude_percent"]
+    assert mixed["_island_relief_values"][0]["area"] > mixed["_island_relief_values"][1]["area"]
+    assert mixed["_island_relief_values"][0]["amplitude"] > mixed["_island_relief_values"][1]["amplitude"]
     assert allied["relief"]["mountain_threshold"] == 140
 
 

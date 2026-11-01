@@ -17,19 +17,20 @@ def main():
     ap.add_argument('--seed', type=int, required=True)
     ap.add_argument('--mode', choices=['legacy','upgraded','custom'], default='legacy')
     ap.add_argument('--archetype', choices=['continental','large_islands','team_islands'], default='continental')
-    ap.add_argument('--start-algorithm', choices=('auto','balanced','fair','islands','classic'), default='auto')
+    ap.add_argument('--start-algorithm', choices=('auto','balanced','fair','islands','teams','classic'), default='auto')
     ap.add_argument('--mirror-mode', type=int, choices=(0, 1, 2, 3), default=0, help='Miroir natif : 1 Axe long, 2 Axe court, 3 Les deux')
     ap.add_argument('--out', type=Path, default=Path('output'))
     ap.add_argument('--start-nations', type=lambda value: tuple(map(int,value.split(','))), default=(),
                     help='Une civilisation par joueur : 0 Romains, 1 Égyptiens, 2 Asiatiques, 3 Amazones, 255 Choisir')
     ap.add_argument('--start-slot-types',type=lambda value:tuple(map(int,value.split(','))),default=(),
                     help='Slots Classiques natifs : 1 normal, 2 avec les dix soldats supplémentaires du jeu')
-    ap.add_argument('--player-teams',type=lambda value:tuple(map(int,value.split(','))),default=(),help='Équipes par joueur : 0 aucune, 1 à 20 identifiant d’équipe')
+    ap.add_argument('--random-team-count',type=int,choices=range(2,21),default=2,help='Nombre d’équipes pour les joueurs ? (défaut 2)')
+    ap.add_argument('--player-teams',type=lambda value:tuple(-1 if t.strip()=='?' else 0 if t.strip() in ('−','-') else int(t) for t in value.split(',')),default=(),help='Équipes : −/0 aucune, ? aléatoire, 1 à 20 alliance')
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
     g = MapGenerator(LEGACY_PROFILE, LIBRARY, UPGRADED_REFERENCE)
-    res = g.generate(args.players, args.seed, mode=args.mode, archetype=args.archetype, side=args.side, mirror_mode=args.mirror_mode, start_algorithm=args.start_algorithm,start_nations=args.start_nations,start_slot_types=args.start_slot_types,player_teams=args.player_teams)
+    res = g.generate(args.players, args.seed, mode=args.mode, archetype=args.archetype, side=args.side, mirror_mode=args.mirror_mode, start_algorithm=args.start_algorithm,start_nations=args.start_nations,start_slot_types=args.start_slot_types,player_teams=args.player_teams,random_team_count=args.random_team_count)
     hard = [v for v in res.validations if v.hard and not v.passed]
     print('\n'.join(v.label() for v in res.validations))
     if hard:

@@ -40,6 +40,8 @@ def mineral_icon(master, key: str, *, disabled: bool = False):
 
 def selector_icon_image(color, kind="dot", size=18):
     """Return the Pillow image behind a selector icon without requiring Tk."""
+    if kind in ("flag_fr", "flag_en", "flag_de", "flag_es"):
+        return sprite_image("languages/" + kind[5:])
     if kind in ("lock_closed", "lock_open"):
         return sprite_image("ui/" + kind)
     if kind.startswith("sprite:"):
@@ -58,39 +60,6 @@ def selector_icon_image(color, kind="dot", size=18):
         d.line((size - 4, 3, 3, size - 4), fill="#111111", width=5)
         d.line((3, 3, size - 4, size - 4), fill=c, width=3)
         d.line((size - 4, 3, 3, size - 4), fill=c, width=3)
-    elif kind == "flag_fr":
-        x0, y0, x1, y1 = 2, 4, size - 3, size - 5
-        third = max(1, (x1 - x0 + 1) // 3)
-        d.rectangle((x0, y0, x0 + third - 1, y1), fill="#0055a4")
-        d.rectangle((x0 + third, y0, x0 + 2 * third - 1, y1), fill="#ffffff")
-        d.rectangle((x0 + 2 * third, y0, x1, y1), fill="#ef4135")
-        d.rectangle((x0, y0, x1, y1), outline="#111111")
-    elif kind == "flag_en":
-        x0, y0, x1, y1 = 2, 4, size - 3, size - 5
-        d.rectangle((x0, y0, x1, y1), fill="#21468b", outline="#111111")
-        d.line((x0, y0, x1, y1), fill="#ffffff", width=4)
-        d.line((x0, y1, x1, y0), fill="#ffffff", width=4)
-        d.line((x0, y0, x1, y1), fill="#cf142b", width=2)
-        d.line((x0, y1, x1, y0), fill="#cf142b", width=2)
-        cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
-        d.rectangle((x0, cy - 2, x1, cy + 2), fill="#ffffff")
-        d.rectangle((cx - 2, y0, cx + 2, y1), fill="#ffffff")
-        d.rectangle((x0, cy - 1, x1, cy + 1), fill="#cf142b")
-        d.rectangle((cx - 1, y0, cx + 1, y1), fill="#cf142b")
-    elif kind == "flag_de":
-        x0, y0, x1, y1 = 2, 4, size - 3, size - 5
-        third = max(1, (y1 - y0 + 1) // 3)
-        d.rectangle((x0, y0, x1, y0 + third - 1), fill="#000000")
-        d.rectangle((x0, y0 + third, x1, y0 + 2 * third - 1), fill="#dd0000")
-        d.rectangle((x0, y0 + 2 * third, x1, y1), fill="#ffce00")
-        d.rectangle((x0, y0, x1, y1), outline="#111111")
-    elif kind == "flag_es":
-        x0, y0, x1, y1 = 2, 4, size - 3, size - 5
-        quarter = max(1, (y1 - y0 + 1) // 4)
-        d.rectangle((x0, y0, x1, y0 + quarter - 1), fill="#aa151b")
-        d.rectangle((x0, y0 + quarter, x1, y1 - quarter), fill="#f1bf00")
-        d.rectangle((x0, y1 - quarter + 1, x1, y1), fill="#aa151b")
-        d.rectangle((x0, y0, x1, y1), outline="#111111")
     elif kind == "status_on":
         d.ellipse((0, 0, size - 1, size - 1), fill=c, outline="#111111", width=1)
         d.line((size * .23, size * .52, size * .43, size * .71, size * .77, size * .29), fill="#ffffff", width=max(2, size // 6), joint="curve")

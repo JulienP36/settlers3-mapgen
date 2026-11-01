@@ -91,7 +91,7 @@ class GenerationWorkflowController:
         try:
             index = menu.index('active')
             key = {0:'auto', 1:'balanced', 2:'fair', 3:'islands',
-                   5:'classic', 6:'nations'}.get(index)
+                   4:'teams', 6:'classic', 7:'nations'}.get(index)
             if key is None:
                 self._hide_ui_tooltip()
                 return
@@ -108,10 +108,12 @@ class GenerationWorkflowController:
 
     def _configure_classic_starts(self):
         from .classic_starts import choose_classic_nations
-        result=choose_classic_nations(self,getattr(self,'classic_start_nations',(255,)*20),int(self.players.get()),self.prefs.get('language','fr'),teams=getattr(self,'player_teams',(0,)*20))
+        result=choose_classic_nations(self,getattr(self,'classic_start_nations',(255,)*20),int(self.players.get()),self.prefs.get('language','fr'),teams=getattr(self,'player_teams',(0,)*20),random_team_count=getattr(self,'random_team_count',2))
         if result is None:return False
-        self.classic_start_nations,self.player_teams=result
-        if self._arch_key() == "team_islands" and hasattr(self, "_custom_schedule_archetype_preview_refresh"):
+        self.classic_start_nations,self.player_teams,self.random_team_count=result
+        for refresh in getattr(self, "_custom_generator_refreshers", ()):
+            refresh()
+        if hasattr(self, "_custom_schedule_archetype_preview_refresh"):
             self._custom_schedule_archetype_preview_refresh()
         return True
 
@@ -164,7 +166,7 @@ class GenerationWorkflowController:
         mode = self._mode_key()
         archetype = self._arch_key()
         digest = self._custom_config_digest() if hasattr(self, '_custom_config_digest') else ''
-        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest,start_algorithm=self._start_algorithm_key(),start_nations=self._start_nations(int(self.players.get())),player_teams=tuple(getattr(self,'player_teams',(0,)*20)[:int(self.players.get())]))
+        return GenerationCacheKey(seed=int(self.seed.get()),side=int(self.size.get()),players=int(self.players.get()),mode=mode,archetype=archetype,modifiers=self._modifier_keys(),engine_revision=cache_engine_revision(mode, archetype, digest),mirror_mode=self._mirror_key(),configuration_digest=digest,start_algorithm=self._start_algorithm_key(),start_nations=self._start_nations(int(self.players.get())),player_teams=tuple(getattr(self,'player_teams',(0,)*20)[:int(self.players.get())]),random_team_count=getattr(self,'random_team_count',2))
 
     def generate(self):
         phase = 'input'
@@ -181,7 +183,7 @@ class GenerationWorkflowController:
             msg=FEEDBACK_TEXT[lang]['generating'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()))
             phase='generation'
             custom_config = self._custom_config_for_generation(key.mode, key.archetype) if hasattr(self, '_custom_config_for_generation') else (getattr(self, '_custom_config', None) if key.mode == 'custom' else None)
-            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams)
+            self._task_begin(msg,2);self.current=self.generator.generate(int(self.players.get()),int(self.seed.get()),mode=self._mode_key(),archetype=self._arch_key(),side=side,mirror_mode=self._mirror_key(),custom_config=custom_config,start_algorithm=key.start_algorithm,start_nations=key.start_nations,player_teams=key.player_teams,random_team_count=key.random_team_count)
             phase='preview'
             retained=self.session_cache.put(key,self.current);self.session_cache.set_metadata(key,{'origin':'generated'});self._refresh_history();self._task_progress(97,_lang_text(lang,'Finalisation de l’aperçu…','Finalizing preview…','Vorschau wird fertiggestellt…','Finalizando vista previa…'));self._populate_current();self._invalidate_preview();self._refresh_preview(False)
             done=FEEDBACK_TEXT[lang]['generated'].format(archetype=arch,mode=mode,side=side,players=int(self.players.get()),seed=int(self.seed.get()));self._task_done(done)

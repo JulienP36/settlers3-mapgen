@@ -13,6 +13,7 @@ from typing import Any, Mapping
 
 import numpy as np
 
+from ..object_quotas import ObjectQuotaBasis
 from .bonus_placement import center_extension_limit, ordered_centers, plan_objects
 from .sections import (
     DECORATION_FAMILY_KEYS,
@@ -207,6 +208,17 @@ def _stone_footprint_mask(state, footprint=None) -> np.ndarray:
     return mask
 
 
+def changed_decoration_families(profile, sections):
+    fallback = default_sections(profile, "legacy")
+    normalized = normalize_sections(sections, fallback=fallback)
+    rates = effective_decoration_rates(normalized)
+    defaults = effective_decoration_rates(fallback)
+    expanded = _objects_grass_variant_enabled(normalized)
+    unscaled = not normalized.get("objects", {}).get("terrain_scaled_quotas", True)
+    return tuple(k for k in DECORATION_FAMILY_KEYS
+                 if unscaled or rates[k] != defaults[k] or (expanded and GRASS in DECORATION_FAMILY_SPECS[k].get("support_ids", ())))
+
+
 def semantic_object_changes(
     profile: Mapping[str, Any],
     sections: Mapping[str, Any],
@@ -218,11 +230,14 @@ def semantic_object_changes(
     effective_decorations = effective_decoration_rates(normalized)
     fallback_decorations = effective_decoration_rates(fallback)
     grass_variant_support = _objects_grass_variant_enabled(normalized)
+    # Explicit OFF requests map-area quotas, even at native 100% controls.
+    # ON keeps unchanged native families on their original attempt stream.
+    unscaled = not normalized.get("objects", {}).get("terrain_scaled_quotas", True)
     return (
         normalized,
-        normalized["trees"] != fallback["trees"] or grass_variant_support,
-        normalized["building_stones"] != fallback["building_stones"] or grass_variant_support,
-        effective_decorations != fallback_decorations or grass_variant_support,
+        normalized["trees"] != fallback["trees"] or grass_variant_support or unscaled,
+        normalized["building_stones"] != fallback["building_stones"] or grass_variant_support or unscaled,
+        effective_decorations != fallback_decorations or grass_variant_support or unscaled,
     )
 
 
@@ -254,17 +269,16 @@ def _replace_legacy_decorations(
     native_baseline_counts: Mapping[str, int],
     grass_support_ids: tuple[int, ...] = (GRASS,),
     collision_mask: np.ndarray | None = None,
+    quota_basis=None,
 ) -> dict[str, Any]:
-    """Scale only changed native decoration families from their actual count.
+    """Replace changed families using their calibrated reference quota.
 
-    The native pass has already created the selected profile's decorations.
-    A Custom rate therefore means ``target = native_count × rate`` rather
-    than an invented global map quota.  Reefs are the deliberate exception:
-    Legacy's native count is zero, so they use the shared calibrated Upgraded
-    target as their reference.  This keeps 100% untouched for ordinary
-    families and makes every rate proportional to the exact map size.
+    Unchanged families stay native. The shared quota basis chooses compatible
+    terrain density or total map area; placement still checks legal supports.
+    Reefs use the shared Upgraded reference because Legacy has no native reefs.
     """
 
+    quota_basis = quota_basis or ObjectQuotaBasis.capture(state)
     objects = state.objects
     access = state.accessibility
     blocked = occupied.copy()
@@ -296,16 +310,14 @@ def _replace_legacy_decorations(
         # Changed families were omitted from the native layer before any
         # bonus or Custom object placement, so their legal cells are available
         # without a later erase pass.
-        if family_key == "reefs":
-            # Legacy's native reef population is intentionally zero, but a
-            # positive Custom rate must still have a meaningful reference.
-            # Use the established Upgraded target, scaled to this map size;
-            # 0% remains empty and 100% means the current Upgraded behaviour.
-            scale = (float(state.side) / 768.0) ** 2
-            reference_target = int(round(UPGRADED_REEF_TARGET_768 * scale))
-            target = int(round(reference_target * rate / 100.0))
-        else:
-            target = int(round(baseline_count * rate / 100.0))
+        support_ids = tuple(spec.get("support_ids", ()))
+        expanded_ids = tuple(dict.fromkeys((*support_ids, *grass_support_ids))) if GRASS in support_ids else support_ids
+        target = quota_basis.target(
+            UPGRADED_REEF_TARGET_768 if family_key == "reefs" else baseline_count,
+            (7,) if family_key == "reefs" else expanded_ids,
+            rate, channel="decor." + family_key,
+            reference_ids=(7,) if family_key == "reefs" else support_ids,
+        )
         targets[family_key] = target
         support = _decoration_support_mask(
             state,
@@ -332,7 +344,7 @@ def _replace_legacy_decorations(
         shortfalls[family_key] = max(0, target - placed)
 
     return {
-        "model": "native_family_reference_count_scaled",
+        "model": "compatible_terrain_density_v1",
         "rates": normalized_rates,
         "baseline_counts": baseline_counts,
         "targets": targets,
@@ -359,6 +371,7 @@ def apply_custom_legacy_objects(
     if not replace_trees and not replace_stones and not replace_decorations:
         return {"trees": {}, "stones": {}, "decorations": {}, "replaced": (), "cleared": {}}
 
+    quota_basis = ObjectQuotaBasis.capture(state, start_occupied, terrain_scaled=normalized.get("objects", {}).get("terrain_scaled_quotas", True)) if (replace_trees or replace_stones or replace_decorations) else None
     legacy_profile = _legacy_profile(profile, normalized)
     stone_footprint = legacy_profile["legacy_content"]["building_stones"]["footprint"]
 
@@ -367,19 +380,7 @@ def apply_custom_legacy_objects(
     # against a hard-coded 100%.  In particular, Legacy's reef default is 0%
     # and must not be treated as a user-edited family when another decoration
     # is changed.
-    default_decoration_rates = effective_decoration_rates(default_sections(profile, "legacy"))
-    changed_decoration_families = tuple(
-        key for key in DECORATION_FAMILY_KEYS
-        if float(decoration_rates.get(key, default_decoration_rates.get(key, 100.0)))
-        != float(default_decoration_rates.get(key, 100.0))
-    ) if replace_decorations else ()
-    if grass_support_enabled:
-        changed_decoration_families = tuple(dict.fromkeys(
-            (*changed_decoration_families, *(
-                key for key in DECORATION_FAMILY_KEYS
-                if GRASS in tuple(int(value) for value in DECORATION_FAMILY_SPECS[key].get("support_ids", ()))
-            ))
-        ))
+    changed_families = changed_decoration_families(profile, normalized) if replace_decorations else ()
     decoration_baseline_counts = {
         family_key: int(
             np.count_nonzero(
@@ -412,8 +413,7 @@ def apply_custom_legacy_objects(
         native_objects, Mapping
     ) else 8
     density_key = "low" if int(state.metadata.get("players", 0)) <= split else "high"
-    scale = (float(state.side) / 768.0) ** 2
-    for family_key in changed_decoration_families:
+    for family_key in changed_families:
         if decoration_baseline_counts[family_key] != 0:
             continue
         family_profile = native_families.get(family_key, {})
@@ -424,7 +424,7 @@ def apply_custom_legacy_objects(
         )
         if isinstance(target_by_density, Mapping):
             decoration_baseline_counts[family_key] = int(round(
-                float(target_by_density.get(density_key, 0)) * scale
+                float(target_by_density.get(density_key, 0))
             ))
 
     # The native pass was told not to emit changed families.  There is
@@ -465,6 +465,7 @@ def apply_custom_legacy_objects(
             rng,
             grass_support_ids=grass_support_ids,
             collision_mask=live_collision,
+            quota_basis=quota_basis,
         )
         state.metadata["trees"] = result["trees"]
         live_collision = _live_object_collision_mask(
@@ -483,6 +484,7 @@ def apply_custom_legacy_objects(
             rng,
             grass_support_ids=grass_support_ids,
             collision_mask=live_collision,
+            quota_basis=quota_basis,
         )
         state.metadata["stones"] = result["stones"]
         live_collision = _live_object_collision_mask(
@@ -499,11 +501,12 @@ def apply_custom_legacy_objects(
             decoration_rates,
             occupied,
             rng,
-            changed_decoration_families,
+            changed_families,
             stone_footprint,
             decoration_baseline_counts,
             grass_support_ids,
             collision_mask=live_collision,
+            quota_basis=quota_basis,
         )
         state.metadata["decorations"] = result["decorations"]
     else:

@@ -9,6 +9,7 @@ from s3mapgen.generation.custom import build_custom_config
 from s3mapgen.generation.generators.legacy.objects import add_building_stones, finalize_accessibility
 from s3mapgen.generation.generators.upgraded.content import UpgradedContent
 from s3mapgen.map_data.model import MapState
+from s3mapgen.generation.object_quotas import support_reference
 from s3mapgen.map_data.hexgrid import hex_distance
 
 
@@ -20,12 +21,13 @@ def stone_state(engine, *, groups=True, density=100, average=6, group_average=8,
     state.terrain[:] = 16
     state.objects[30, 30] = 68
     state.accessibility[30, 30] = 1
+    reference_anchors = 100 * support_reference((16,)) / (side - 2) ** 2
     cfg = dict(
         footprint=FOOTPRINT, anchor_min_hex_distance=4, active_ids=list(range(115, 127)),
-        exhausted_id=127, global_anchor_target=100, global_stock_target=600,
+        exhausted_id=127, global_anchor_target=reference_anchors, global_stock_target=reference_anchors * 6,
         global_exhausted_anchor_target=5, cluster_share=0.3, cluster_centers=6,
-        global_anchor_target_768=100 * (768 / side) ** 2,
-        global_stock_target_768=600 * (768 / side) ** 2,
+        global_anchor_target_768=reference_anchors,
+        global_stock_target_768=reference_anchors * 6,
         anchor_density_percent=density, average_quantity=average,
         groups={
             'enabled': groups,
@@ -137,6 +139,11 @@ def test_stone_placement_reports_saturation_without_overlapping():
                global_anchor_target_768=1000000, global_stock_target_768=6000000)
     meta = add_building_stones(state, {'legacy_content': {'building_stones': cfg}},
                               np.ones((16, 16), bool), np.random.default_rng(1))
+    assert meta['building_stone_target'] == 0
+    assert meta['building_stone_anchors'] == 0
+    state.objects[:] = 68
+    meta = add_building_stones(state, {'legacy_content': {'building_stones': cfg}},
+                              np.zeros((16, 16), bool), np.random.default_rng(1))
     assert meta['building_stone_target'] > 0
     assert meta['building_stone_anchors'] == 0
 

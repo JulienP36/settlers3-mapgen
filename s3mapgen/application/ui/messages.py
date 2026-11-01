@@ -103,6 +103,29 @@ TEXT = {
 }
 
 
+_START_CAUSES = {
+    'Le placement Îles nécessite les îles identifiées par la géographie': {
+        'fr': 'Le placement Îles nécessite une géographie insulaire. Choisissez Automatique ou Éloignement pour cet archétype.',
+        'en': 'Islands placement requires island geography. Choose Automatic or Distance for this archetype.',
+        'de': 'Die Inselplatzierung benötigt eine Inselgeografie. Wählen Sie Automatisch oder Abstand für diesen Archetyp.',
+        'es': 'La colocación Islas requiere una geografía insular. Elige Automático o Distancia para este arquetipo.',
+    },
+    'Îles par équipe exige un placement insulaire pour garantir que les coéquipiers commencent sur la même île. Choisissez Auto, Éloignement ou Îles.': {
+        'fr': 'Îles par équipe exige un placement insulaire pour garantir que les coéquipiers commencent sur la même île. Choisissez Auto, Éloignement ou Îles.',
+        'en': 'Islands by team requires island placement so teammates start on the same island. Choose Automatic, Distance or Islands.',
+        'de': 'Teaminseln benötigt eine Inselplatzierung, damit Teammitglieder auf derselben Insel starten. Wählen Sie Automatisch, Abstand oder Inseln.',
+        'es': 'Islas por equipo requiere una colocación insular para que los compañeros empiecen en la misma isla. Elige Automático, Distancia o Islas.',
+    },
+}
+
+
+def localized_cause(exception, language='fr'):
+    """Translate known user-facing constraints, preserving unknown diagnostics."""
+    raw = str(exception)
+    translations = _START_CAUSES.get(raw)
+    return translations.get(language, translations['en']) if translations else raw
+
+
 @dataclass(frozen=True)
 class MessageReport:
     title: str
@@ -136,7 +159,7 @@ def make_report(operation, *, message=None, exception=None, title=None,
                 context=None, language='fr', severity='error', details=None):
     language = language if language in TEXT else 'en'
     labels = TEXT[language]
-    cause = str(exception) if exception is not None else ''
+    cause = localized_cause(exception, language) if exception is not None else ''
     summary = message or labels.get(operation, labels['ui'])
     if operation in ('generation', 'batch') and (
         cause.startswith('Aucune position de départ suffisamment dégagée')

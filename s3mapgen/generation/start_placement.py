@@ -37,6 +37,9 @@ def place_starts(state, players: int, rng: np.random.Generator, *, technical_cle
         raise ValueError('Le Classique doit être exécuté après le contenu global, avec les nations choisies')
     state.metadata['start_algorithm_requested'] = start_algorithm
     state.metadata['start_algorithm_effective'] = effective
+    if effective == 'teams':
+        from .team_starts import place_team_starts
+        return place_team_starts(state, players, rng, island_labels=island_labels, technical_clear=technical_clear)
     if effective == 'islands':
         from .archetypes.large_islands import place_island_starts
         return place_island_starts(state, players, rng, island_labels, technical_clear)

@@ -5,7 +5,8 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from PIL import Image, ImageDraw, ImageTk
+from PIL import ImageTk
+from ..sprites import sprite_image
 
 from .palettes import THEME_PALETTES
 from ..i18n.common import _lang_text
@@ -16,14 +17,9 @@ class ThemeController:
     """Host contract: composed widgets and subsystem theme hooks."""
     def _refresh_theme_button_icon(self):
         if not hasattr(self,'_theme_button'):return
-        # Small deterministic raster icon: show the action (sun in dark mode, moon in light mode).
+        # Show the destination theme using Julien’s unmodified 20px sprites.
         dark=self.prefs.get('theme','dark')=='dark'
-        im=Image.new('RGBA',(20,20),(0,0,0,0));d=ImageDraw.Draw(im)
-        if dark:
-            c=(245,195,55,255);d.ellipse((6,6,14,14),fill=c)
-            for x1,y1,x2,y2 in ((10,1,10,4),(10,16,10,19),(1,10,4,10),(16,10,19,10),(3,3,5,5),(15,15,17,17),(15,3,17,5),(3,15,5,17)):d.line((x1,y1,x2,y2),fill=c,width=2)
-        else:
-            c=(75,95,145,255);d.ellipse((4,3,16,17),fill=c);d.ellipse((8,1,18,13),fill=(0,0,0,0))
+        im=sprite_image('ui/sun' if dark else 'ui/moon')
         self._theme_button_icon=ImageTk.PhotoImage(im);self._theme_button.configure(image=self._theme_button_icon,text='',width=0,padding=(2,2,2,3))
         try:self._theme_button.configure(cursor='hand2')
         except tk.TclError:pass

@@ -1164,6 +1164,7 @@ def _classify_relief(
     grid: NativeTerrainGrid,
     archetype_profile: dict | None = None,
     signed_noise: np.ndarray | None = None,
+    threshold_fields: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> tuple[int, int, int]:
     water_threshold, mountain_threshold, snow_threshold = relief_thresholds(
         archetype_profile
@@ -1189,8 +1190,8 @@ def _classify_relief(
     classified = np.select(
         (
             heights <= water_threshold,
-            heights < mountain_threshold,
-            heights < snow_threshold,
+            heights < (mountain_threshold if threshold_fields is None else threshold_fields[0][interior]),
+            heights < (snow_threshold if threshold_fields is None else threshold_fields[1][interior]),
         ),
         (WATER, GRASS, ROCK),
         default=SNOW,
@@ -1918,6 +1919,7 @@ class DeferredTerrainPass:
     reference_grid: NativeTerrainGrid | None
     reference_rng: NativeRng16 | None
     disabled_object_families: tuple[str, ...]
+    disabled_object_ids: tuple[int, ...] = ()
 
 
 def _apply_micro_terrain_brushes(
@@ -2132,6 +2134,7 @@ def generate_primary_terrain(
     progress=None,
     surface_rates=None,
     disabled_object_families=None,
+    disabled_object_ids=(),
     defer_non_archetype: bool = False,
     defer_global_content: bool = False,
     archetype_profile: dict | None = None,
@@ -2150,7 +2153,7 @@ def generate_primary_terrain(
 
     from ...archetypes.island_amplitude import resolve_island_profile
     archetype_profile = resolve_island_profile(
-        archetype_profile, side, players, player_teams=player_teams,
+        archetype_profile, side, players, player_teams=player_teams, seed=seed,
     )
     side = int(side)
     mode = int(mode)
@@ -2189,6 +2192,7 @@ def generate_primary_terrain(
 
     topology_labels = None
     topology_report = None
+    threshold_fields = None
     if uses_island_source(archetype_profile):
         if mode and archetype_profile.get("morphology", {}).get("relief_source") != "continental_landmass":
             raise ValueError("Les archétypes insulaires utilisent le mode sans miroir")
@@ -2199,6 +2203,7 @@ def generate_primary_terrain(
             ),
             player_teams=player_teams,
         )
+        threshold_fields = fields.threshold_fields
         grid.height[:] = fields.height
         preview_noise = fields.noise
         topology_labels, topology_report = fields.topology_labels, fields.report
@@ -2208,6 +2213,7 @@ def generate_primary_terrain(
         grid,
         archetype_profile,
         signed_noise=preview_noise,
+        threshold_fields=threshold_fields,
     )
     _clear_pre_river_fields(grid)
     report("rivers")
@@ -2293,6 +2299,7 @@ def generate_primary_terrain(
             river_meta=river_meta,
             reference_grid=reference_grid,
             reference_rng=reference_rng,
+            disabled_object_ids=tuple(map(int, disabled_object_ids)),
             disabled_object_families=tuple(
                 str(value) for value in (disabled_object_families or ())
             ),
@@ -2400,6 +2407,7 @@ def generate_primary_terrain(
         rng,
         mode,
         disabled_object_families=disabled_object_families,
+        disabled_object_ids=disabled_object_ids,
         before_objects=before_objects,
     )
 
@@ -2588,6 +2596,7 @@ def resume_deferred_terrain(
             continuation.rng,
             continuation.mode,
             disabled_object_families=continuation.disabled_object_families,
+            disabled_object_ids=continuation.disabled_object_ids,
             protected_object_mask=protected_object_mask,
             protected_resource_mask=protected_resource_mask,
             include_resources=include_native_resources,

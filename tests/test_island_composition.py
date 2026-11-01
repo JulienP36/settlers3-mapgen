@@ -22,6 +22,7 @@ from s3mapgen.generation.custom import build_custom_config
 from s3mapgen.map_data.constants import WATER_IDS
 
 
+R5_UPGRADED = json.loads(Path("tests/fixtures/dev11_r5_upgraded_terrain.json").read_text())["cases"]
 R25_CONTINENTAL = json.loads(Path("tests/fixtures/continental_r25_starts.json").read_text())["cases"]
 BASELINES = json.loads(Path("tests/fixtures/islands_r12_presets.json").read_text())["cases"]
 
@@ -148,8 +149,10 @@ def test_inspectable_preset_matches_complete_map_and_current_baseline(row):
         players, seed, mode="custom", archetype=archetype, side=side, custom_config=config,
     )
     if archetype == "continental":
-        current = next(value for value in R25_CONTINENTAL if value["case"] == row["case"])
-        assert hashlib.sha256(result.state.area.tobytes()).hexdigest() == current["area_sha256"]
+        current = next(value for value in (R25_CONTINENTAL if mode == "legacy" else R5_UPGRADED) if value["case"] == row["case"])
+        if mode == "legacy":
+            assert hashlib.sha256(result.state.area.tobytes()).hexdigest() == current["area_sha256"]
+        # R2 changes semantic object quotas; relief, terrain and starts retain R25 hashes.
         assert [list(start) for start in result.state.starts] == current["starts"]
         for channel in ("height", "terrain"):
             assert hashlib.sha256(getattr(result.state, channel).tobytes()).hexdigest() == current["channels"][channel]
@@ -175,9 +178,9 @@ def test_real_generation_consumes_the_same_composed_height_as_preview(mode, kind
     captured = []
     classify = engine._classify_relief
 
-    def capture(grid, archetype_profile, signed_noise=None):
+    def capture(grid, archetype_profile, signed_noise=None, threshold_fields=None):
         captured.append((grid.height.copy(), signed_noise.copy()))
-        return classify(grid, archetype_profile, signed_noise)
+        return classify(grid, archetype_profile, signed_noise, threshold_fields)
 
     monkeypatch.setattr(engine, "_classify_relief", capture)
     config = build_custom_config(mode, "continental", start_packages=()).with_archetype_profile(profile)

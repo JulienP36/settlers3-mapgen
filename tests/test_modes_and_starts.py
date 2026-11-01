@@ -18,6 +18,14 @@ def upgraded4():return gen().generate(4,2026082202,mode='upgraded',archetype='co
 @pytest.fixture(scope='module')
 def upgraded20():return gen().generate(20,2026082203,mode='upgraded',archetype='continental')
 
+def assert_support_quota(state, channel, requested):
+    """The expectation uses measured compatible terrain, never map area."""
+    row = state.metadata['object_quota_basis']['quotas'][channel]
+    expected = row['reference_quota'] * row['support_cells'] / row['reference_cells'] * row['percent'] / 100
+    assert abs(requested - expected) < 1
+    assert requested == row['requested']
+
+
 def test_architecture_names_are_separate():
     assert set(MODES)=={'legacy','upgraded','custom'};assert 'continental' in ARCHETYPES;assert MODES['legacy'].implemented;assert MODES['upgraded'].implemented;assert MODES['custom'].implemented
 
@@ -37,7 +45,7 @@ def test_custom_uses_the_active_upgraded_profile():
     assert result.state.metadata['generator']=='continental_custom_upgraded'
     assert result.state.metadata['custom_profile_applied'] is True
     assert result.state.metadata['custom_configuration_digest']==config.digest
-    assert result.state.metadata['upgraded_trees']['adult_global_requested'] == 11
+    assert_support_quota(result.state, 'trees.pool', result.state.metadata['upgraded_trees']['adult_global_requested'])
     assert all(v.passed for v in result.validations if v.hard)
 
 
@@ -100,13 +108,13 @@ def test_custom_upgraded_tree_and_stone_sections_change_global_quotas_only():
 
     trees = result.state.metadata['upgraded_trees']
     stones = result.state.metadata['upgraded_stones']
-    assert trees['adult_global_requested'] == 152
+    assert_support_quota(result.state, 'trees.pool', trees['adult_global_requested'])
     assert trees['small_global_requested'] == 0
     assert trees['palm_requested'] == 0
     assert trees['adult_start_bonus_placed'] == 0
     assert trees['forests_enabled'] is True
     assert trees['forest_share_percent'] == 100.0
-    assert stones['global_anchor_requested'] == 94
+    assert_support_quota(result.state, 'stones.anchors', stones['global_anchor_requested'])
     assert stones['cluster_requested'] == 0
     assert stones['global_stock_requested'] == stones['global_active_anchors'] * 6
     assert stones['average_quantity'] == 6
@@ -191,8 +199,8 @@ def test_custom_legacy_tree_and_stone_sections_replace_the_selected_object_famil
     trees = result.state.metadata['trees']
     stones = result.state.metadata['stones']
     assert result.state.metadata['custom_object_controls']['replaced'] == ('trees', 'stones')
-    assert trees['tree_target'] == 152
-    assert stones['building_stone_target'] == 94
+    assert_support_quota(result.state, 'trees.pool', trees['tree_target'])
+    assert_support_quota(result.state, 'stones.anchors', stones['building_stone_target'])
     assert len(result.state.metadata['building_stone_footprint_cells']) == (stones['building_stone_anchors'] - stones['global_exhausted_anchors']) * 7
     stone_mask = np.isin(result.state.objects, tuple(range(115, 128)))
     assert np.all(np.isin(result.state.terrain[stone_mask], GRASS_IDS))
@@ -368,7 +376,7 @@ def test_upgraded_snow_is_blocked_and_swamp_chain_is_legal(upgraded4):
     from s3mapgen.map_data.constants import SNOW,SNOW_TRANS
     import numpy as np
     snow=np.isin(upgraded4.state.terrain,[SNOW_TRANS,SNOW]);assert snow.any();assert np.all(upgraded4.state.accessibility[snow]==1)
-    rules={v.rule_id:v for v in upgraded4.validations};assert rules['UPGRADED_WATER_ACCESS'].passed;assert rules['UPGRADED_NO_MUD'].passed
+    rules={v.rule_id:v for v in upgraded4.validations};assert rules['UPGRADED_WATER_ACCESS'].passed;assert rules['UPGRADED_MUD_TARGET'].passed
 
 
 def test_upgraded_preset_keeps_start_content_opt_in(upgraded4):
@@ -380,7 +388,8 @@ def test_upgraded_preset_keeps_start_content_opt_in(upgraded4):
     assert upgraded4.state.metadata['upgraded_trees']['adult_start_bonus_placed'] == 0
     assert upgraded4.state.metadata['upgraded_trees']['small_start_bonus_placed'] == 0
     assert upgraded4.state.metadata['upgraded_stones']['start_bonus_stock'] == 0
-    assert not any(int(v) in (23, 144, 145) for v in upgraded4.state.terrain.flat)
+    assert any(int(v) in (23, 144, 145) for v in upgraded4.state.terrain.flat)
+    assert upgraded4.state.metadata["custom_terrain"]["rates"]["mud"] == 50.0
 
 
 def test_active_upgraded_profile_exposes_round_mineral_and_start_rules():
@@ -426,10 +435,10 @@ def test_upgraded_default_resource_quantities_target_mean_ten_without_multiplier
 def test_upgraded_uses_legacy_static_quotas_and_stone_states(upgraded4):
     decorations = upgraded4.state.metadata['upgraded_decorations']
     assert not any(decorations['legacy_static_shortfalls'].values())
-    assert decorations['legacy_static']['reefs'] == 20
+    assert_support_quota(upgraded4.state, 'decor.reefs', decorations['legacy_static']['reefs'])
     stones = upgraded4.state.metadata['upgraded_stones']
-    assert stones['global_anchors'] == 1683
-    assert stones['global_stock'] == 16338
+    assert_support_quota(upgraded4.state, 'stones.anchors', stones['global_anchors'])
+    assert stones['global_stock'] == stones['global_stock_requested'] == round(stones['global_active_anchors'] * stones['average_quantity'])
     assert 0 <= stones['global_exhausted_anchors'] <= stones['global_anchors']
     assert stones['cluster_placed'] == stones['cluster_target']
     assert all(stones['id_counts'][str(object_id)] > 0 for object_id in range(115, 127))
@@ -441,8 +450,10 @@ def test_upgraded_start_bonuses_are_additional_and_forests_keep_legacy_spacing(u
 
     trees = upgraded4.state.metadata['upgraded_trees']
     assert trees['global_quota_excludes_start_bonus'] is True
-    assert trees['adult_global_placed'] == trees['adult_global_requested'] == 2736
-    assert trees['small_global_placed'] == trees['small_global_requested'] == 1067
+    assert trees['adult_global_placed'] == trees['adult_global_requested']
+    assert_support_quota(upgraded4.state, 'trees.pool', trees['adult_global_requested'])
+    assert trees['small_global_placed'] == trees['small_global_requested']
+    assert_support_quota(upgraded4.state, 'trees.saplings', trees['small_global_requested'])
     assert trees['adult_trees'] == trees['adult_global_placed'] + trees['adult_start_bonus_placed']
     assert trees['small_trees'] == trees['small_global_placed'] + trees['small_start_bonus_placed']
     assert trees['adult_start_bonus_placed'] == 0
@@ -475,5 +486,5 @@ def test_upgraded_start_bonuses_are_additional_and_forests_keep_legacy_spacing(u
     assert stones['global_quota_excludes_start_bonus'] is True
     assert stones['anchors'] == stones['global_anchors']
     assert stones['stock'] == stones['global_stock']
-    assert stones['global_anchors'] == 1683
-    assert stones['global_stock'] == 16338
+    assert_support_quota(upgraded4.state, 'stones.anchors', stones['global_anchors'])
+    assert stones['global_stock'] == stones['global_stock_requested'] == round(stones['global_active_anchors'] * stones['average_quantity'])

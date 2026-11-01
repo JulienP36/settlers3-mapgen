@@ -17,7 +17,7 @@ from ..rendering.preview import START_MARKER_SCALES, render
 from ..session.cache import ImportedHistoryKey
 from ..ui.i18n.common import _lang_text
 from ..ui.i18n.history import HISTORY_TEXT, _CONTEXT_TEXT, _HISTORY_CAPACITY_DIALOG_TEXT
-from ..ui.i18n.shell import ARCHETYPE_LABELS, FEEDBACK_TEXT, MODE_LABELS, TEXTS
+from ..ui.i18n.shell import ARCHETYPE_INPUT_LABELS, ARCHETYPE_LABELS, FEEDBACK_TEXT, MODE_LABELS, TEXTS
 from ..ui.theme import THEME_PALETTES
 from ..ui.widgets import _history_heading_lock_icon, _history_role_icon, _thumbnail_with_magnifier
 
@@ -93,6 +93,8 @@ class HistoryController:
             return f'{prefix} · {name} · {key.source_format} · {meta.get("side","?")} · {meta.get("players",0)}P'
         lang=self.prefs.get('language','fr')
         mode=MODE_LABELS[lang].get(key.mode,key.mode);archetype=ARCHETYPE_LABELS[lang].get(key.archetype,key.archetype)
+        choice=meta.get('archetype_choice')
+        if choice is not None:archetype=ARCHETYPE_INPUT_LABELS[lang].get('edited_option' if choice=='edited' else choice,archetype)
         return f'{prefix} · {key.seed} · {key.side} · {key.players}P · {mode} · {archetype}'
 
     def _history_origin(self,key):

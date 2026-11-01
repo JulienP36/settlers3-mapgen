@@ -1,5 +1,5 @@
 """Implemented departure strategies and geography dispatch."""
-START_ALGORITHMS = ('auto', 'balanced', 'islands', 'classic', 'fair')
+START_ALGORITHMS = ('auto', 'balanced', 'islands', 'classic', 'fair', 'teams')
 
 def check_start_algorithm(value):
     if value not in START_ALGORITHMS:
@@ -8,7 +8,7 @@ def check_start_algorithm(value):
 
 def resolve_start_algorithm(value, island_labels=None):
     check_start_algorithm(value)
-    if value in ('classic', 'fair'):
+    if value in ('classic', 'fair', 'teams'):
         return value
     if island_labels is not None:
         return 'islands'

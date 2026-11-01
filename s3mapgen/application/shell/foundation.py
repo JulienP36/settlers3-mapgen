@@ -13,7 +13,8 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
-from ..paths import APP_ICON_PNG, APP_ICON_ICO
+from ..paths import APP_ICON_PNG, APP_ICON_LARGE_PNG, APP_ICON_ICO
+from ..platform.identity import set_windows_app_identity
 from ..analysis.core import analyze_map, format_stats_report
 from ...generation.core import NATIVE_PLAYER_LIMITS
 
@@ -31,9 +32,11 @@ class ShellWindow(tk.Tk):
     """Tk root with the stable widgets required by the composed application."""
 
     def __init__(self):
+        set_windows_app_identity()
         super().__init__()
         self._application_icon=tk.PhotoImage(master=self,file=str(APP_ICON_PNG))
-        self.iconphoto(True,self._application_icon)
+        self._application_icon_large=tk.PhotoImage(master=self,file=str(APP_ICON_LARGE_PNG))
+        self.iconphoto(True,self._application_icon_large,self._application_icon)
         if sys.platform == "win32":
             self.iconbitmap(str(APP_ICON_ICO))
             self.iconbitmap(default=str(APP_ICON_ICO))
@@ -86,7 +89,14 @@ class ShellWindow(tk.Tk):
         left=ttk.Frame(pan);right=ttk.Frame(pan);pan.add(left,weight=3);pan.add(right,weight=2)
         self.canvas=tk.Canvas(left,bg='#181818',highlightthickness=0);self.canvas.pack(fill='both',expand=True);self.canvas.bind('<Configure>',self._preview_canvas_configured,add='+');self.canvas.bind('<MouseWheel>',self._mouse_zoom)
         self.nb=ttk.Notebook(right);self.nb.pack(fill='both',expand=True)
-        self.validation=self._text_tab('Validations');self.pipeline=self._text_tab('Pipeline');self.meta=self._text_tab('Métadonnées');self.stats=self._text_tab('Statistiques')
+        self._diagnostic_tab = ttk.Frame(self.nb)
+        self.nb.add(self._diagnostic_tab, text='Diagnostic')
+        self._diagnostic_notebook = ttk.Notebook(self._diagnostic_tab)
+        self._diagnostic_notebook.pack(fill='both', expand=True)
+        self.validation = self._text_tab('Validations', self._diagnostic_notebook)
+        self.pipeline = self._text_tab('Pipeline', self._diagnostic_notebook)
+        self.meta = self._text_tab('Métadonnées', self._diagnostic_notebook)
+        self.stats = self._text_tab('Statistiques')
         vertical.bind('<ButtonPress-1>',self._vertical_split_press,add='+')
         vertical.bind('<ButtonRelease-1>',self._vertical_split_release,add='+')
         vertical.bind('<Configure>',self._vertical_split_configure,add='+')
@@ -196,8 +206,16 @@ class ShellWindow(tk.Tk):
             # A manual drag takes ownership immediately, including a collapsed pane.
             self._workspace_default_split_active = False
 
-    def _text_tab(self,name):
-        frame=ttk.Frame(self.nb);self.nb.add(frame,text=name);txt=tk.Text(frame,wrap='word',font=('Consolas',10));sb=ttk.Scrollbar(frame,orient='vertical',command=txt.yview);txt.configure(yscrollcommand=sb.set);txt.pack(side='left',fill='both',expand=True);sb.pack(side='right',fill='y');return txt
+    def _text_tab(self, name, notebook=None):
+        notebook = self.nb if notebook is None else notebook
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text=name)
+        txt = tk.Text(frame, wrap='word', font=('Consolas', 10))
+        sb = ttk.Scrollbar(frame, orient='vertical', command=txt.yview)
+        txt.configure(yscrollcommand=sb.set)
+        txt.pack(side='left', fill='both', expand=True)
+        sb.pack(side='right', fill='y')
+        return txt
 
     def random_seed(self):self.seed.set(str(random.randint(1,2_147_483_647)))
 

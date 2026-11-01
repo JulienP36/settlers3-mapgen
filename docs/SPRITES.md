@@ -59,3 +59,17 @@ R40 : nouveaux lock_closed/lock_open 16×16 et drapeau vert views/valid_starts,
 fournis le 2026-10-09 ; originaux conservés octet par octet. Manifest mis à jour.
 
 R41 : quatre sprites civilisations originaux fournis par Julien, 16×16 RGBA, copiés sans transformation dans civilizations/. Registre commun, manifest et packaging à jour.
+
+## DEV11 R12
+
+Les quatre drapeaux de langue fournis par Julien (18×18 RGBA) sont dans
+assets/sprites/languages/ ; ils remplacent les dessins Pillow du sélecteur.
+La nouvelle pipette pipette-0002.png remplace mask_editor/picker.png (24×24).
+Fichiers copiés sans redimensionnement ou retouche ; origines et hashes dans
+assets/sprites/manifest.json. Aucun nouveau dessin à produire pour cette intégration.
+
+## DEV11 R13 — thème (29 octobre 2026)
+
+Soleil-0001.png et Lune-0001.png, dessins de Julien, copiés sans retouche dans
+assets/sprites/ui/sun.png et moon.png : 20×20 RGBA transparents. Le bouton
+affiche le thème de destination : soleil en sombre, lune en clair.

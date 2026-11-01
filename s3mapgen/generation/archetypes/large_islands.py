@@ -32,8 +32,8 @@ _CONTINENTAL_LAND_REFERENCE = (
 )
 _NATIVE_EFFECTIVE_OCEAN_MARGIN = 40.26
 # R61 paired ocean-only measurements (three seeds per size, both engines).
-# This source-budget correction belongs to the named Continental alone;
-# the historical team-island and solo-island budgets remain unchanged.
+# Team islands now blend towards this same ocean-calibrated reference.
+# The standalone individual-island budget remains unchanged.
 _CONTINENTAL_OCEAN_LAND_CORRECTION = (
     (256, 0.0), (384, 3.0), (512, 2.25), (768, 1.5),
 )
@@ -560,7 +560,7 @@ def _island_target_land_percent(side, island_count):
     count = int(island_count)
     if count < 1:
         raise ValueError("Le nombre d’îles doit être positif")
-    continental = _continental_land_percent(side)
+    continental = _continental_ocean_land_percent(side)
     return _ISLAND_BASE_LAND_PERCENT + (continental - _ISLAND_BASE_LAND_PERCENT) / count
 
 
@@ -696,6 +696,8 @@ def generate_independent_islands(
     amplitude: float = 1.,
     island_player_counts=None,
     target_land_percent=None,
+    island_relief_values=None,
+    calibrate_local_thresholds=False,
 ):
     """Pack independent masks, generate local relief, then relax natively.
 
@@ -715,6 +717,15 @@ def generate_independent_islands(
         island_player_counts=(group_sizes if adaptive_land_target else None),
         target_land_percent=target_land_percent,
     )
+    contour_sizes = [int(np.count_nonzero(labels == n)) for n in range(1, count + 1)]
+    from .island_amplitude import calibrated_thresholds
+    local_amplitudes = ([v['amplitude'] / 100. for v in island_relief_values]
+                        if island_relief_values else [amplitude] * count)
+    local_thresholds = [calibrated_thresholds(0, 140, 200, amp, np.sqrt(area / np.pi))
+                        for amp, area in zip(local_amplitudes, contour_sizes)]
+    # Preserve direct callers' explicit source calibration when no local plan exists.
+    if not island_relief_values and not calibrate_local_thresholds:
+        local_thresholds = [(mountain_threshold, snow_threshold)] * count
     signal_provider = midpoint_signal_r21 if variant_r21 else simplex_signal
     yy, xx = np.indices(source.shape, dtype=np.float32)
     outer_depth = distance_from(labels == 0).astype(np.float32)
@@ -813,7 +824,7 @@ def generate_independent_islands(
                 team_relief_profiles[n - 1]["player_scoped_fields"] = 0
                 team_relief_profiles[n - 1]["ridge_weight"] = ridge_weight
             raw_relief, relief = _local_island_relief(
-                signal, depths[island], radius, threshold, amplitude=amplitude,
+                signal, depths[island], radius, threshold, amplitude=local_amplitudes[n - 1],
                 progression_override=relief_progression,
                 source_mean_shift=source_mean_shift,
             )
@@ -832,7 +843,7 @@ def generate_independent_islands(
             output = selected.copy()
         output[labels == 0] = 0
         missing = {n for n in range(1, count + 1)
-                   if np.count_nonzero((labels == n) & (output >= mountain_threshold + 3)) < 20}
+                   if np.count_nonzero((labels == n) & (output >= local_thresholds[n - 1][0] + 3)) < 20}
         if not missing:
             break
     if missing:
@@ -841,9 +852,12 @@ def generate_independent_islands(
     # rather than silently deleting or reconnecting land fragments.
     if np.any(output[labels > 0] <= threshold):
         raise RuntimeError("La relaxation a noyé une partie du masque d’île")
+    mountain_field = np.full(source.shape, mountain_threshold, dtype=np.int16)
+    for n, (mountain, _) in enumerate(local_thresholds, 1):
+        mountain_field[labels == n] = mountain
     output, detail_report = add_plain_detail(
         output, labels, seed=seed, water_threshold=threshold,
-        mountain_threshold=mountain_threshold,
+        mountain_threshold=mountain_field,
     )
     if stage_sink is not None:
         stage_sink.update(mask=mask, local_relief=raw_output.copy(), coastal_relief=selected.copy())
@@ -871,10 +885,15 @@ def generate_independent_islands(
         ),
         "coastal_profile": "nonzero_initial_slope_midpoint_soft_summits",
         "source_amplitude_percent": float(amplitude) * 100.,
-        "source_mountain_threshold": int(mountain_threshold),
-        "source_snow_threshold": int(snow_threshold),
+        "contour_sizes_before_lakes": contour_sizes,
+        "amplitudes_percent_by_island": [round(v * 100) for v in local_amplitudes],
+        "mountain_thresholds_by_island": [v[0] for v in local_thresholds],
+        "snow_thresholds_by_island": [v[1] for v in local_thresholds],
+        "source_mountain_threshold": min(v[0] for v in local_thresholds),
+        "source_snow_threshold": min(v[1] for v in local_thresholds),
         "base_island_land_percent": _ISLAND_BASE_LAND_PERCENT,
         "continental_reference_land_percent": _continental_land_percent(side),
+        "adaptive_continental_land_reference_percent": (_continental_ocean_land_percent(side) if adaptive_land_target else None),
         "target_land_percent": (
             float(target_land_percent) if target_land_percent is not None else
             _island_target_land_percent(side, count) if adaptive_land_target else

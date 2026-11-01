@@ -1,9 +1,16 @@
 # Settlers III MapGen — Project Workflow
 
-État courant : **2.0 DEV_10**, checkpoint complet validé par Julien le
-13 octobre 2026, issu de R66. Parcours éditeur→réexport→jeu confirmé testé et
-publication sur `dev` explicitement autorisée. Voir `docs/DEV_10_CHECKPOINT.md`.
-Le TODO conserve les reports hors DEV10. Maximum 768 ; Classique natif inchangé.
+État courant : **2.0 DEV_11**, checkpoint complet validé le 1er novembre 2026,
+issu de la source R15 et du portable Windows R15 acceptés par Julien.
+Autorisation explicite reçue : push DEV11, puis publication STABLE 2.0 sur main,
+tag/Release/archives et suppression rc à la publication réussie.
+Bilan : docs/DEV_11_CHECKPOINT.md ; étapes : docs/RELEASE_2_0_CHECKLIST.md.
+Le code fonctionnel reste celui testé ; la CI reconstruit le checkpoint exact.
+Les preuves R13/R15 et la limite de portée des retours utilisateur sont conservées.
+Dernier DEV publié avant ce transfert : DEV10, commit 936404b75d078f2b05bcbdae856c4ef2f1530890.
+Ne pas publier de candidate Rn. Les références restent dans les ZIP de reprise,
+hors Git et hors archive source publique. Après la release, discussion Actions
+souhaitée par Julien ; aucune généralisation du workflow n’est engagée ici.
 
 ## Session start
 1. Read `PROJECT_WORKFLOW.md`.
@@ -67,7 +74,7 @@ validation du placement réel dans les éditeurs et le jeu.
 ## Permanent branches
 - `main` = STABLE only.
 - `dev` = current development, avec publication des checkpoints **DEV complets uniquement** (`DEV_1`, `DEV_2`, etc.).
-- `rc` = ancienne branche de qualification, hors du parcours actif.
+- `rc` = ancienne branche à supprimer à la publication 2.0, pas avant (autorisation Julien du 20 octobre).
 
 Parcours actif (décision Julien du 14 octobre 2026) : `dev` → `main` / STABLE.
 Les tests, corrections, builds portables et validations externes restent sur
@@ -95,7 +102,7 @@ DEV builds do not need tags or GitHub Releases. STABLE receives an annotated `vX
 
 Update `references/SETTLERS3_CURRENT_SNAPSHOT.md` immediately after every explicitly validated DEV stage/checkpoint and every validated STABLE release. This refresh is mandatory before the final commit, package or push for that stage; it must record the validation result, known limitations and the actual next work.
 
-When a suffixed local candidate such as `DEV_X_RY` is validated but its full DEV scope is not complete, update the snapshot locally without publishing that intermediate revision. Keep `TODO_MAPGEN.md`, `DEV_CANDIDATE_NOTES.md` and the changelog synchronized whenever the validation changes the known issues or next action. La validation d’une tranche ne clôt jamais implicitement la DEV entière.
+When a suffixed local candidate such as `DEV_X_RY` is validated but its full DEV scope is not complete, update the snapshot locally without publishing that intermediate revision. Keep `TODO_MAPGEN.md`, `docs/DEV_11_CHECKPOINT.md` and the changelog synchronized whenever the validation changes the known issues or next action. La validation d’une tranche ne clôt jamais implicitement la DEV entière.
 
 Checklist obligatoire à chaque étape validée :
 
@@ -185,7 +192,7 @@ the computed DEV_2 baseline.
 1. Open branch `dev`.
 2. Read this workflow.
 3. Read `REFERENCE_INDEX.md` and `SETTLERS3_CURRENT_SNAPSHOT.md`.
-4. Read TODO, the consolidated development log and `DEV_CANDIDATE_NOTES.md` when a candidate is active.
+4. Read TODO, the consolidated development log and `docs/DEV_11_CHECKPOINT.md` when a candidate is active.
 5. Verify current `dev` tip and protected hashes before making generation-sensitive changes.
 6. Continue from the "Next work" section of the living snapshot unless the user gives a newer explicit direction.
 
@@ -212,5 +219,5 @@ Le partage Discord/wiki/sites de maps reste optionnel et seulement sur décision
 - Public-facing README material must transparently mention the substantial use of ChatGPT/OpenAI in implementation assistance, especially backend, analysis and reverse-engineering tooling, while keeping project direction/validation accurately attributed to the project owner.
 - Keep daily DEV work source-first through `run_gui.bat` / `run_gui.py`; do not rebuild or carry PyInstaller output during ordinary feature revisions.
 - Before STABLE, finish tests, fixes, polish, optimization and documentation on `dev`, then produce source and installation-free Windows x64 portable ZIPs.
-- Rebuild and validate the standalone Windows `.exe` and evolve the GitHub-Releases updater on `dev` before STABLE; preserve user settings, verify release integrity and never require an installer.
+- Rebuild and validate the standalone Windows `.exe` on `dev` before STABLE; remove the obsolete updater/check mechanism (20 October decision); preserve user settings, verify release integrity and never require an installer.
 - **No AI-generated imagery/assets for this project.** Application/executable artwork and icons are to be manually created (final icon planned as user-drawn pixel art). Deterministic previews rendered from actual EDM/MAP/SAV data remain allowed and required.
