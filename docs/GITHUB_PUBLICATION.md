@@ -8,21 +8,20 @@ La **découvrabilité** visée ici correspond aux emplacements GitHub jusque-là
 
 Cette description courte indique immédiatement l’objet réel du dépôt.
 
-## Topics appliqués
+## Topics observés le 1er novembre 2026
 
 - `settlers-iii`
 - `settlers3`
 - `siedler-iii`
 - `map-generator`
 - `procedural-generation`
-- `reverse-engineering`
 - `python`
 - `tkinter`
 - `game-tools`
 
 Ne multiplier ni les variantes orthographiques ni les tags populaires sans rapport. Le cœur attendu reste `settlers-iii` ou `settlers3`, `map-generator`, `procedural-generation` et `reverse-engineering` ; les autres Topics restent optionnels.
 
-État consigné le 25 août 2026 : les neuf Topics ci-dessus ont été appliqués à `JulienP36/settlers3-mapgen`.
+État relu le 1er novembre 2026 : les huit Topics ci-dessus sont présents sur `JulienP36/settlers3-mapgen`. Aucun réglage n’a été modifié pendant la publication.
 
 ## Hors périmètre de la découvrabilité
 
@@ -61,9 +60,8 @@ copied unchanged. Historical v1.8 captures remain in the recovery references;
 the truncated Statistics PNG is not displayed. Provenance:
 references/SETTLERS3_VISUAL_ASSET_PROVENANCE.md.
 
-The About/Topics state above records the application reported on 25 August;
-check the live repository again at publication. No repository setting was
-queried or changed during this documentation review.
+The repository description and eight current Topics were verified on 1 November
+2026 before publication. No repository setting was changed.
 
 ## Release hygiene
 

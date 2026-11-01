@@ -1,3 +1,11 @@
+## 2.0 STABLE — publication autorisée le 1er novembre 2026
+
+Base : checkpoint DEV11 publié c9a3cc79ad41dd75613a74dc99cc6c61faf65cc8,
+portable R15 Windows et essai utilisateur acceptés. Le commit STABLE change les
+métadonnées et documents de publication ; le moteur et les fonctionnalités restent
+identiques. Le workflow main reconstruit et qualifie les artefacts exacts avant
+publication du tag annoté v2.0 et de la Release. Rapports et empreintes joints.
+
 ## 2.0 DEV_11 — checkpoint complet validé le 1er novembre 2026
 
 Clôture/push et publication 2.0 explicitement autorisés. Bilan et preuves :

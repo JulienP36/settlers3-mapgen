@@ -4,7 +4,7 @@
 
 A reproducible map generator and analysis workbench for **The Settlers III**, with generation and relief controls, `.EDM` / `.MAP` / `.SAV` import, inspection and native map export.
 
-**Status: 2.0 DEV_11, validated development checkpoint.** The 2.0 STABLE release has not been published. The R15 portable was built, qualified and accepted on Windows; CI rebuilds the complete checkpoint before publication.
+**Version: 2.0 STABLE.** [Downloads and release notes](https://github.com/JulienP36/settlers3-mapgen/releases/tag/v2.0): source archive and Windows x64 portable. The portable requires no Python installation or dependency downloads.
 
 The project is conceived, directed, tested and validated by its human owner, with substantial **ChatGPT / OpenAI implementation assistance**, especially for backend development, technical analysis and reverse-engineering tools. Owner-supplied drawings and sprites are preserved. Map previews are deterministic renderings of real data; no invented map artwork is used.
 
@@ -91,7 +91,7 @@ The valid-start filter distinguishes editor rules from game rules. A playable po
 
 ## Run on Windows
 
-**Portable:** when a Windows ZIP is available in [GitHub Releases](https://github.com/JulienP36/settlers3-mapgen/releases), extract it fully and run `Settlers3MapGen.exe`. Keep `_internal` beside the executable. This package needs no Python installation or dependency downloads. The R15 acceptance portable was qualified on Windows; the final public package will identify as 2.0 STABLE.
+**Portable:** when a Windows ZIP is available in [GitHub Releases](https://github.com/JulienP36/settlers3-mapgen/releases), extract it fully and run `Settlers3MapGen.exe`. Keep `_internal` beside the executable. This package needs no Python installation or dependency downloads. The R15 acceptance portable was approved on Windows; the final package is rebuilt and qualified from the 2.0 STABLE commit.
 
 **Sources:** with Python installed, run `install_and_run.bat` to install dependencies, then use `run_gui.bat` for later launches. If Python is missing, `install_python_and_run.bat` can install Python 3.12 through winget. These scripts are for the sources, not the portable.
 

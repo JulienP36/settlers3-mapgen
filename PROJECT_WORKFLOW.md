@@ -1,16 +1,15 @@
 # Settlers III MapGen — Project Workflow
 
-État courant : **2.0 DEV_11**, checkpoint complet validé le 1er novembre 2026,
-issu de la source R15 et du portable Windows R15 acceptés par Julien.
-Autorisation explicite reçue : push DEV11, puis publication STABLE 2.0 sur main,
-tag/Release/archives et suppression rc à la publication réussie.
-Bilan : docs/DEV_11_CHECKPOINT.md ; étapes : docs/RELEASE_2_0_CHECKLIST.md.
-Le code fonctionnel reste celui testé ; la CI reconstruit le checkpoint exact.
-Les preuves R13/R15 et la limite de portée des retours utilisateur sont conservées.
-Dernier DEV publié avant ce transfert : DEV10, commit 936404b75d078f2b05bcbdae856c4ef2f1530890.
-Ne pas publier de candidate Rn. Les références restent dans les ZIP de reprise,
-hors Git et hors archive source publique. Après la release, discussion Actions
-souhaitée par Julien ; aucune généralisation du workflow n’est engagée ici.
+État courant : **2.0 STABLE**, issue du checkpoint DEV11 validé le 1er novembre 2026.
+DEV11 publié sur dev : c9a3cc79ad41dd75613a74dc99cc6c61faf65cc8.
+Julien autorise main, tag v2.0, Release, sources/portable et suppression rc après succès.
+Code fonctionnel conservé depuis R15 ; métadonnées de version finales et notes publiques.
+Publication : workflow Windows release-2-0.yml, avec build, qualification, vérification
+SHA-256 des assets téléversés, tag annoté, Release puis suppression rc contrôlée.
+Bilan DEV11 : docs/DEV_11_CHECKPOINT.md ; notes : docs/RELEASE_2_0.md.
+Les références restent dans les ZIP de reprise privés, hors Git et sources publiques.
+Après publication : discuter avec Julien de l’usage de GitHub Actions ; ne pas
+élargir automatiquement les workflows à chaque petite modification.
 
 ## Session start
 1. Read `PROJECT_WORKFLOW.md`.

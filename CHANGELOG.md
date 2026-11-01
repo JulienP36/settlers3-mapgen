@@ -1,3 +1,13 @@
+## 2.0 STABLE — 1er novembre 2026
+
+Nouveau socle de génération natif/Classique, modes Amélioré/Personnalisé,
+archétypes Continental/Îles individuelles/Îles par équipe, éditeurs de relief
+et masques, configurations complètes, équipes/départs, lots/cache/A-B,
+sprites du propriétaire et premier portable Windows sans installation.
+Import EDM/MAP/SAV et export EDM/MAP ; plafond 768, mises à jour manuelles.
+Détails et limites : docs/RELEASE_2_0.md. DEV11 et recette Windows acceptés ;
+publication finale autorisée. Aucun nouvel algorithme entre DEV11 et STABLE.
+
 ## 2.0 DEV_11 — 1er novembre 2026 (checkpoint complet)
 
 Clôture globale et publication autorisées par Julien. Équipes/secteurs/quotas,

@@ -23,7 +23,7 @@ def sha256(path):
 
 
 def command(args, **kwargs):
-    return subprocess.run(args, cwd=ROOT, text=True, capture_output=True, **kwargs)
+    return subprocess.run(args, cwd=ROOT, text=True, encoding='utf-8', capture_output=True, **kwargs)
 
 
 def api(path, *, method='GET', data=None, missing_ok=False):

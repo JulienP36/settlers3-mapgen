@@ -25,16 +25,14 @@ Exemples : `2.0 DEV_11_R1` (candidate locale), `2.0 DEV_11` (checkpoint complet)
 
 ## État courant
 
-Dernier checkpoint publié : **2.0 DEV_10**, issu de R66 validée. Build Windows
-DEV10 validé : 1306 tests, 4 subtests, smokes et auto-test figé PASS
-(run `38467559806`, version Windows `(2, 0, 10, 0)`).
-
-Candidate locale : **2.0 DEV_11**, revue documentaire du 31 octobre 2026.
-La passe fonctionnelle R13 est acceptée ; captures finales intégrées en R14.
-DEV11 reste ouverte pour la construction et qualification du portable Windows,
-puis validation globale. Aucun push intermédiaire ni nouvelle branche.
-La qualification DEV10 ne vaut pas qualification du portable DEV11.
-Checklist active : `docs/RELEASE_2_0_CHECKLIST.md`.
+**2.0 STABLE**, issue de DEV11 complet validé par Julien le 1er novembre 2026.
+DEV11 publié sur dev : `c9a3cc79ad41dd75613a74dc99cc6c61faf65cc8`.
+Le code fonctionnel est celui de la R15 essayée sous Windows ; métadonnées finales
+`2.0 STABLE`, version de fichier Windows `(2, 0, 0, 0)`.
+Publication autorisée sur main avec tag annoté `v2.0`, deux archives publiques
+sources/portable, SHA-256 et rapports natifs. Le build final est issu du commit
+de publication exact ; le portable DEV11 n’est pas simplement renommé.
+Bilan : `docs/DEV_11_CHECKPOINT.md`. Notes : `docs/RELEASE_2_0.md`.
 
 ## Historique
 

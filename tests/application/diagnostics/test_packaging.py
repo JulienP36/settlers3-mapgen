@@ -13,11 +13,15 @@ ROOT=Path(__file__).resolve().parents[3]
 
 
 def test_current_version_metadata():
-    match = re.fullmatch(r'2\.0 DEV_(\d+)(?:_R(\d+))?', APP_VERSION)
-    assert match is not None
-    assert ENGINE_VERSION=='2.0'
-    assert WINDOWS_FILE_VERSION==(2,0,int(match[1]),int(match[2] or 0))
-    assert SOURCE_CANDIDATE_LABEL == APP_VERSION.split(' ',1)[1]
+    assert ENGINE_VERSION == '2.0'
+    if APP_VERSION == '2.0 STABLE':
+        assert WINDOWS_FILE_VERSION == (2, 0, 0, 0)
+        assert SOURCE_CANDIDATE_LABEL == 'STABLE'
+    else:
+        match = re.fullmatch(r'2\.0 DEV_(\d+)(?:_R(\d+))?', APP_VERSION)
+        assert match is not None
+        assert WINDOWS_FILE_VERSION == (2, 0, int(match[1]), int(match[2] or 0))
+        assert SOURCE_CANDIDATE_LABEL == APP_VERSION.split(' ', 1)[1]
 
 
 def test_source_paths_are_independent_from_current_working_directory(monkeypatch,tmp_path):

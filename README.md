@@ -4,7 +4,7 @@
 
 Générateur et outil d’analyse de cartes pour **The Settlers III** : cartes reproductibles, réglages de génération et de relief, import `.EDM` / `.MAP` / `.SAV`, inspection et export natif.
 
-**État : 2.0 DEV_11, checkpoint de développement validé.** La 2.0 STABLE n’est pas encore publiée. Le portable R15 a été construit, qualifié et accepté sous Windows ; la CI reconstruit le checkpoint complet avant publication.
+**Version : 2.0 STABLE.** [Téléchargements et notes de version](https://github.com/JulienP36/settlers3-mapgen/releases/tag/v2.0) : sources et portable Windows x64. Le portable fonctionne sans installer Python ni télécharger de dépendances.
 
 Le projet est conçu, dirigé, testé et validé par son propriétaire, avec une assistance importante de **ChatGPT / OpenAI** pour l’implémentation, notamment le backend, l’analyse technique et les outils de rétro-ingénierie. Les dessins et sprites fournis par le propriétaire sont conservés ; les cartes affichées sont des rendus déterministes de données réelles. Aucun visuel de carte fictif n’est utilisé.
 
@@ -91,7 +91,7 @@ Le filtre des départs distingue les règles de l’éditeur et du jeu. Une posi
 
 ## Lancer sous Windows
 
-**Portable :** lorsqu’un ZIP Windows est publié dans les [Releases GitHub](https://github.com/JulienP36/settlers3-mapgen/releases), le décompresser entièrement et lancer `Settlers3MapGen.exe`. Conserver `_internal` à côté de l’exécutable. Aucune installation de Python ni téléchargement de dépendances n’est nécessaire pour ce paquet. Le portable de recette R15 a été qualifié sous Windows ; le paquet public final portera la version 2.0 STABLE.
+**Portable :** lorsqu’un ZIP Windows est publié dans les [Releases GitHub](https://github.com/JulienP36/settlers3-mapgen/releases), le décompresser entièrement et lancer `Settlers3MapGen.exe`. Conserver `_internal` à côté de l’exécutable. Aucune installation de Python ni téléchargement de dépendances n’est nécessaire pour ce paquet. Le portable de recette R15 a été accepté sous Windows ; le paquet final est reconstruit et qualifié depuis le commit 2.0 STABLE.
 
 **Sources :** avec Python installé, lancer `install_and_run.bat` pour installer les dépendances, puis `run_gui.bat` pour les lancements suivants. Si Python manque, `install_python_and_run.bat` peut installer Python 3.12 via winget. Ces scripts concernent les sources, pas le portable.
 

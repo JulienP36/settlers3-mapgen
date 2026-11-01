@@ -211,14 +211,13 @@ hors quotas sont conservés. Maximum 768 ; Petites îles abandonné ; Archipel h
 - Nombre de zones par minerai : déprogrammé indéfiniment ; reprendre seulement
   sur demande explicite. Pixel art manuel dédié à planifier.
 
-## Préparation STABLE sur dev — sans étape RC
+## Publication 2.0 autorisée — sans étape RC
 
-- [ ] Geler fonctionnalités, qualifier ressources/exports/settings et données utilisateur,
+- [x] Fonctionnalités gelées ; ressources/exports/settings et données utilisateur de recette qualifiés,
   intégrité et lancement sans dépendances à télécharger ; ZIP source et Windows portable.
 - [x] Présentation courante des README français/anglais actualisée en R14/R15 ;
   historique détaillé conservé dans CHANGELOG et les références du ZIP.
-- [ ] À la publication : revoir captures réelles, About/Topics et icône manuelle ;
-  contrôler les informations publiques au moment de publier.
+- [x] Captures réelles et icônes acceptées ; About/Topics vérifiés le 1er novembre.
 - [x] Notes et snapshot synchronisés avant promotion DEV10 ; nom sans suffixe R.
   Publication sur dev autorisée ; main/tags/releases exigent instruction explicite.
 
@@ -239,8 +238,8 @@ hors quotas sont conservés. Maximum 768 ; Petites îles abandonné ; Archipel h
 - [x] Passe d’essai Windows R15 acceptée globalement : petite/grande version selon
   l’affichage réel ; vérifier Explorer, raccourcis, fenêtres, Alt+Tab, barre des
   tâches et Gestionnaire des tâches là où Windows permet cette présentation.
-- [ ] À la publication 2.0 seulement : supprimer la branche GitHub rc ;
-  autorisation explicite de Julien le 20 octobre, pas de suppression anticipée.
+- Suppression de rc : étape automatique du workflow 2.0 après publication réussie ;
+  autorisation reçue, pointe protégée contre un changement concurrent.
 - [x] R11 — audit source entre versions : chemins communs, préférences, configurations
   et masques ; corrige l’oubli du filtre de départs dans la sauvegarde GUI.
 - [x] Passe de conservation des données du portable R15 acceptée globalement par Julien le 1er novembre ; détails des cas individuels non précisés.
